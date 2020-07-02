@@ -1,0 +1,14 @@
+#! /bin/sh
+
+# this script should be run *after* nixOS is installed and has been used to install yadm
+OS=$(uname -s)
+
+cd /etc/
+
+for file in bashrc shells skhdrc zprofile zshenv zshrc; do
+    # if an /etc file isn't a symlink, then we should move it
+    [[ ! -L $file ]] && sudo mv $file "$file.orig"
+done
+
+cd ~/.config/nixpkgs && type nix-shell > /dev/null && nix-shell --run 'rebuild'
+

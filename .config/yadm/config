@@ -1,0 +1,2 @@
+[pull]
+	rebase = false
