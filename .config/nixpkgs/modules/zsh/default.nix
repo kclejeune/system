@@ -10,7 +10,7 @@ let
     lst = "exa --tree";
   };
 in {
-  home.packages = with pkgs; [ fzf exa ];
+  home.packages = with pkgs; [ fzf exa tree ];
 
   programs.bash = {
     enable = true;
