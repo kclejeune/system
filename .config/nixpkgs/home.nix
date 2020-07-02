@@ -64,6 +64,7 @@
       # command line utilities
       exa
       youtube-dl
+      speedtest-cli
 
       # dotfile management
       yadm
