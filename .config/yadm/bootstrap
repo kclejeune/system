@@ -1,14 +1,28 @@
-#! /bin/sh
+#! /bin/bash
 
-# this script should be run *after* nixOS is installed and has been used to install yadm
 OS=$(uname -s)
+
+# check nix-shell installation
+if ! type nix-shell > /dev/null; then
+    echo "Installing nix package manager"
+    if [[ $OS == "Darwin" ]]; then
+        sh <(curl https://nixos.org/nix/install) --daemon --darwin-use-unencrypted-nix-store-volume
+    else
+        sh <(curl https://nixos.org/nix/install) --daemon
+    fi
+fi
+
+if ! type brew > /dev/null; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+fi
 
 cd /etc/
 
+# back up necessary files
 for file in bashrc shells skhdrc zprofile zshenv zshrc; do
-    # if an /etc file isn't a symlink, then we should move it
-    [[ ! -L $file ]] && sudo mv $file "$file.orig"
+    # if an /etc config file isn't a symlink, then we should move it
+    [[ ! -L $file ]] && sudo mv $file "$file.backup" && echo "backed up $file"
 done
 
-cd ~/.config/nixpkgs && type nix-shell > /dev/null && nix-shell --run 'rebuild'
+cd ~/.config/nixpkgs && nix-shell --run 'rebuild'
 
