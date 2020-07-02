@@ -1,14 +1,8 @@
-# dotfiles
-
-## Installing Dotfiles
-
-```
-curl -fLo ./yadm https://github.com/TheLocehiliosan/yadm/raw/master/yadm && chmod a+x ./yadm && ./yadm clone https://github.com/kclejeune/dotfiles
-```
+# Dotfiles: System Configuration with Nix
 
 ## Installing Nix Package Manager
 
-Run the following to perform a multifor darwin or standard linux:
+Run the following to perform a multi-user installation for darwin or standard linux:
 
 ```
 if [[ $(uname -s) == 'Darwin' ]]; then
@@ -18,22 +12,22 @@ else
 fi
 ```
 
-## Installing Home Manager
+## Cloning Dotfiles
 
-`home-manager` bootstraps our user configured packages and program modules. Install it with:
-
-```
-nix-channel --add https://nixos.org/channels/nixpkgs-unstable && nix-channel --add https://github.com/rycee/home-manager/archive/master.tar.gz home-manager && nix-channel --update && nix-shell '<home-manager>' -A install
-```
-
-To run a generation, use 
+Create a shell with `yadm`
 
 ```
-home-manager switch
+nix-shell -p yadm
 ```
 
-## Installing `nix-darwin`
+and clone this repository
 
 ```
-nix-build https://github.com/LnL7/nix-darwin/archive/master.tar.gz -A installer && ./result/bin/darwin-installer
+yadm clone https://github.com/kclejeune/dotfiles
+```
+
+When prompted with `y/n`, choose (y) to run `bootstrap` and begin installing the nix configuration. If no prompt appears, do so manually after cloning with
+
+```
+yadm bootstrap
 ```
