@@ -9,6 +9,7 @@ brew "dark-mode"
 brew "gnupg"
 brew "mas"
 brew "pinentry-mac"
+brew "beeftornado/rmtree/brew-rmtree"
 cask "1password"
 cask "alfred"
 cask "appcleaner"
@@ -29,4 +30,5 @@ cask "pycharm"
 cask "visual-studio-code"
 cask "zoomus"
 mas "Logic Pro X", id: 634148309
+mas "Pages", id: 409201541
 mas "Spark", id: 1176895641
