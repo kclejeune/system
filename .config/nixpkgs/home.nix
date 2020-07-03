@@ -52,7 +52,7 @@
       python3Packages.bpython
       python3Packages.black
       python3Packages.numpy
-      # python3Packages.scipy
+      python3Packages.scipy
       # python3Packages.pandas
       ruby
       openjdk11

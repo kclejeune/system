@@ -36,15 +36,27 @@ in {
     initExtra = ''
       ${functions}
     '';
-    plugins = [{
-      name = "zsh-syntax-highlighting";
-      src = pkgs.fetchFromGitHub {
-        owner = "zsh-users";
-        repo = "zsh-syntax-highlighting";
-        rev = "0.7.1";
-        sha256 = "03r6hpb5fy4yaakqm3lbf4xcvd408r44jgpv4lnzl9asp4sb9qc0";
-      };
-    }];
+    plugins = [
+      {
+        name = "zsh-syntax-highlighting";
+        src = pkgs.fetchFromGitHub {
+          owner = "zsh-users";
+          repo = "zsh-syntax-highlighting";
+          rev = "0.7.1";
+          sha256 = "03r6hpb5fy4yaakqm3lbf4xcvd408r44jgpv4lnzl9asp4sb9qc0";
+        };
+      }
+
+      {
+        name = "fz";
+        src = pkgs.fetchFromGitHub {
+          owner = "changyuheng";
+          repo = "fz";
+          rev = "ae0cd3ab0f0daebc80256f1236eda3a3283e4c1c";
+          sha256 = "0x3w03gcqhyhfhjfxvbp5m1i96ihq9l3m52w4xnpbkchqfsyw737";
+        };
+      }
+    ];
     oh-my-zsh = {
       enable = true;
       theme = "agnoster";
