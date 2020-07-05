@@ -6,7 +6,7 @@
     userName = "Kennan LeJeune";
     signing = {
       key = "kennan@case.edu";
-      signByDefault = false;
+      signByDefault = true;
     };
   };
 }
