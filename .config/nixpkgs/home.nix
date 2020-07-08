@@ -71,15 +71,8 @@
     ];
   };
 
-  services.kbfs = {
-    enable = false;
-    mountPoint = "/keybase";
-    extraFlags = [ "-label kbfs" ];
-  };
-
-  services.keybase = { enable = false; };
-
   nixpkgs.config.allowUnfree = true;
+
   programs.home-manager = {
     enable = true;
     path = "${config.xdg.configHome}/nixpkgs/home.nix";
