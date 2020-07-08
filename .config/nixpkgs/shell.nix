@@ -2,19 +2,10 @@
 
 { sources ? import ./nix/sources.nix }:
 let
+
   pkgs = import sources.nixpkgs { };
 
   isDarwin = pkgs.stdenvNoCC.isDarwin;
-
-  niv = pkgs.symlinkJoin {
-    name = "niv";
-    paths = [ sources.niv ];
-    buildInputs = [ pkgs.makeWrapper ];
-    # postBuild = ''
-    #   wrapProgram $out/bin/niv \
-    #     --add-flags "--sources-file ${toString ./sources.json}"
-    # '';
-  };
 
   configuration = if isDarwin then
     ~/.config/nixpkgs/darwin/configuration.nix
@@ -41,4 +32,4 @@ let
 
   rebuild = if isDarwin then darwinRebuild else nixosRebuild;
 
-in pkgs.mkShell { buildInputs = [ niv rebuild ]; }
+in pkgs.mkShell { buildInputs = [ rebuild ]; }
