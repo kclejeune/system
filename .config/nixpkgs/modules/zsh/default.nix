@@ -3,7 +3,8 @@ let
   functions = builtins.readFile ./functions.sh;
   aliases = {
     brewup = "brew upgrade && brew cask upgrade && brew cleanup";
-    rebuild = "nix-shell --run 'rebuild' ${config.xdg.configHome}/nixpkgs/shell.nix";
+    rebuild =
+      "nix-shell --run 'rebuild' ${config.xdg.configHome}/nixpkgs/shell.nix";
     ls = "exa";
     ll = "exa -l";
     la = "exa -la";

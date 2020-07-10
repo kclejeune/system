@@ -43,7 +43,7 @@ in {
       shiftwidth = 4;
       smartcase = true;
       number = true;
-      relativenumber = true;
+      relativenumber = false;
       history = 10000;
     };
     extraConfig = ''
@@ -62,8 +62,7 @@ in {
     withRuby = true;
     withPython = true;
     withPython3 = true;
-    extraPython3Packages =
-      (ps: with ps; [ black jedi pylint ]);
+    extraPython3Packages = (ps: with ps; [ black jedi pylint ]);
 
     # share vim plugins since nothing is specific to nvim
     plugins = vimPlugins;

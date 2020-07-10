@@ -7,13 +7,13 @@
 let
   defaultUser = "kclejeune";
   defaultHome = "/home/kclejeune";
+  sources = import "${defaultHome}/.config/nixpkgs/nix/sources.nix";
 in {
-  imports = [ # Include the results of the hardware scan.
-    ./hardware-configuration.nix
-    (import "${
-        builtins.fetchTarball
-        "https://github.com/rycee/home-manager/archive/master.tar.gz"
-      }/nixos")
+  imports = [
+    # Include the results of the hardware scan.
+    "${defaultHome}/.config/nixpkgs/nixos/hardware-configuration.nix"
+    "${defaultHome}/.config/nixpkgs/modules/keybase.nix"
+    "${sources.home-manager}/nixos"
   ];
 
   # Use the GRUB 2 boot loader.
@@ -78,11 +78,11 @@ in {
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  #   pinentryFlavor = "gnome3";
-  # };
+  programs.gnupg.agent = {
+    enable = true;
+    enableSSHSupport = true;
+    pinentryFlavor = "gnome3";
+  };
 
   # List services that you want to enable:
 
@@ -117,6 +117,7 @@ in {
   services.xserver.desktopManager.gnome3.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
+  users.defaultUserShell = pkgs.zsh;
   users.users = {
     kclejeune = {
       isNormalUser = true;
