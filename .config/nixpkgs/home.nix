@@ -5,6 +5,7 @@
     ./modules/kitty
     ./modules/core.nix
     ./modules/personal-settings.nix
+    ./modules/gnome
   ];
 
   # Home Manager needs a bit of information about you and the

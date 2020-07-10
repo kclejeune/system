@@ -125,9 +125,9 @@ in {
       home = "/home/kclejeune";
       description = "Kennan LeJeune";
       extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
-      shell = pkgs.zsh;
     };
   };
+  environment.shells = [ pkgs.zsh ];
 
   home-manager.users.kclejeune = { pkgs, ... }: {
     imports = [ "${defaultHome}/.config/nixpkgs/home.nix" ];
