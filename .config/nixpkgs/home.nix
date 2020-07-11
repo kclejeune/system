@@ -5,7 +5,7 @@
     ./modules/kitty
     ./modules/core.nix
     ./modules/personal-settings.nix
-    ./modules/gnome
+    # ./modules/gnome
   ];
 
   # Home Manager needs a bit of information about you and the
@@ -69,6 +69,9 @@
 
       # dotfile management
       yadm
+
+      gnupg
+      pinentry_mac
     ];
   };
 
@@ -79,4 +82,5 @@
     path = "${config.xdg.configHome}/nixpkgs/home.nix";
   };
   programs.direnv.enable = true;
+  programs.gpg.enable = true;
 }
