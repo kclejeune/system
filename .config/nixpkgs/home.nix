@@ -70,8 +70,14 @@
       # dotfile management
       yadm
 
+      # encryption and signing utilities
       gnupg
       pinentry_mac
+
+      # system upgrade wrapper for niv
+      (pkgs.writeShellScriptBin "sysup" ''
+        ${pkgs.niv}/bin/niv --sources-file ${config.xdg.configHome}/nixpkgs/nix/sources.json update
+      '')
     ];
   };
 
