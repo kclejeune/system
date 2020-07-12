@@ -32,7 +32,7 @@ echo "Building nix configuration"
 cd ~/.config/nixpkgs && nix-shell --run 'rebuild' &
 
 # install apps with homebrew if on macOS
-[[ $OS == "Darwin" ]] && cd ~ && brew bundle install &
+# [[ $OS == "Darwin" ]] && cd ~ && brew bundle install &
 
 echo "Installation complete!"
 
