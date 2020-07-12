@@ -2,7 +2,7 @@
 
 ## Installing Nix Package Manager
 
-Run the following to perform a multi-user installation for darwin or standard linux:
+Run the following to perform a multi-user installation for darwin or standard linux. This step is skipped on NixOS.
 
 ```bash
 if [[ $(uname -s) == 'Darwin' ]]; then
@@ -14,19 +14,14 @@ fi
 
 ## Cloning Dotfiles
 
-Create a shell with `yadm`
+Spawn a shell with `yadm`, clone the repository, and run the bootstrapping script:
 
 ```bash
 nix-shell -p yadm --run "yadm clone --bootstrap https://github.com/kclejeune/dotfiles"
 ```
 
-and clone this repository
+The bootstrap script will clone this repo, build the configuration, and install Homebrew for additional dependencies if we're in a macOS environment.
 
-```
-```
+## Installing Homebrew dependencies
 
-When prompted with `y/n`, choose (y) to run `bootstrap` and begin installing the nix configuration. If no prompt appears, do so manually after cloning with
-
-```
-yadm bootstrap
-```
+The few leftover homebrew packages and brew casks are stored in `~/Brewfile`. They can be installed using `cd ~ && brew bundle`.
