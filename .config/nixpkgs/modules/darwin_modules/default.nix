@@ -5,6 +5,7 @@ in {
     "${sources.home-manager}/nix-darwin"
     ./lorri.nix
     ./yabai.nix
+    ./preferences.nix
     ../nix-path/darwin
   ];
 }

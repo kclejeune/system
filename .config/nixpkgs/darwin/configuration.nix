@@ -62,6 +62,17 @@ in {
   nix = {
     package = pkgs.nix;
     trustedUsers = [ defaultUser "root" "@admin" "@wheel" ];
+    gc = {
+      automatic = true;
+      interval = {
+        Hour = 3;
+        Minute = 15;
+      };
+      options = "--delete-older-than 14d";
+    };
+    buildCores = 8;
+    maxJobs = 8;
+    readOnlyStore = true;
   };
 
   security.sandbox.profiles.${defaultUser}.allowSystemPaths = true;

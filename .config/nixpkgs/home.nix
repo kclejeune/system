@@ -61,6 +61,8 @@
       # dev garbage
       yarn
       nodejs
+      nodePackages."@angular/cli"
+      nodePackages."@vue/cli"
 
       # command line utilities
       exa
