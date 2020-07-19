@@ -1,5 +1,22 @@
 { config, pkgs, ... }: {
   system.defaults = {
+    # login window settings
+    loginwindow = {
+      # disable guest account
+      GuestEnabled = false;
+      LoginwindowText = "Kennan LeJeune | kennan@case.edu | 763-367-0848";
+      # show name instead of username
+      SHOWFULLNAME = false;
+    };
+
+    # file viewer settings
+    finder = {
+      AppleShowAllExtensions = true;
+      FXEnableExtensionChangeWarning = true;
+      _FXShowPosixPathInTitle = true;
+    };
+
+    # trackpad settings
     trackpad = {
       # silent clicking = 0, default = 1
       ActuationStrength = 0;
@@ -8,12 +25,13 @@
       # firmness level, 0 = lightest, 2 = heaviest
       FirstClickThreshold = 1;
       # firmness level for force touch
-      SecondClickThreshold = 2;
+      SecondClickThreshold = 1;
       # don't allow positional right click
       TrackpadRightClick = false;
       # three finger drag for space switching
       TrackpadThreeFingerDrag = true;
     };
+
     # firewall settings
     alf = {
       # 0 = disabled 1 = enabled 2 = blocks all connections except for essential services
@@ -22,6 +40,7 @@
       stealthenabled = 1;
     };
 
+    # dock settings
     dock = {
       # auto show and hide dock
       autohide = true;
@@ -38,18 +57,15 @@
       mru-spaces = false;
     };
 
-    # NSGlobalDomain.com.apple.sound.beep = {
-    #   feedback = 0;
-    #   volume = 0.0;
-    # };
-
     NSGlobalDomain = {
-            # allow key repeat
+      "com.apple.sound.beep.feedback" = 0;
+      "com.apple.sound.beep.volume" = "0.000";
+      # allow key repeat
       ApplePressAndHoldEnabled = false;
       # delay before repeating keystrokes
-      InitialKeyRepeat = 15;
+      InitialKeyRepeat = 10;
       # delay between repeated keystrokes upon holding a key
-      KeyRepeat = 2;
+      KeyRepeat = 1;
       AppleShowAllExtensions = true;
       AppleShowScrollBars = "Automatic";
     };

@@ -80,6 +80,9 @@
       (pkgs.writeShellScriptBin "sysup" ''
         ${pkgs.niv}/bin/niv --sources-file ${config.xdg.configHome}/nixpkgs/nix/sources.json update
       '')
+      (pkgs.writeShellScriptBin "rebuild" ''
+        nix-shell --run 'rebuild' ${config.xdg.configHome}/nixpkgs/shell.nix
+      '')
     ];
   };
 

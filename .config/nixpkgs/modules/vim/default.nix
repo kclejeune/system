@@ -20,14 +20,14 @@ let
     # IDE-esque utilities
     ale
     coc-nvim
-    coc-css
-    coc-html
-    coc-eslint
-    coc-prettier
-    coc-tslint
-    coc-tsserver
-    coc-python
-    coc-java
+    # coc-css
+    # coc-html
+    # coc-eslint
+    # coc-prettier
+    # coc-tslint
+    # coc-tsserver
+    # coc-python
+    # coc-java
 
     # theming
     awesome-vim-colorschemes

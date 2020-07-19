@@ -8,4 +8,12 @@ in {
     ./preferences.nix
     ../nix-path/darwin
   ];
+
+  fonts = {
+    enableFontDir = true;
+    fonts = [
+      pkgs.jetbrains-mono
+    ];
+  };
+
 }
