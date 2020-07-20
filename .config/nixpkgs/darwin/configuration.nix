@@ -42,6 +42,8 @@ in {
       # scripting languages
       python3
       ruby
+
+      jetbrains.idea-ultimate
     ];
 
     # list of acceptable shells in /etc/shells
