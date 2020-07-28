@@ -4,7 +4,6 @@ let
   # generalize this for any user so that I can use it on a work machine
   defaultUser = (builtins.getEnv "USER");
   defaultHome = (builtins.getEnv "HOME");
-  sources = import ../../nix/sources.nix;
   userShell = "zsh";
 in {
   imports = [ ~/.config/nixpkgs/modules/darwin_modules ];
@@ -64,10 +63,10 @@ in {
     trustedUsers = [ defaultUser "root" "@admin" "@wheel" ];
     gc = {
       automatic = true;
-      interval = {
-        Hour = 3;
-        Minute = 15;
-      };
+      # interval = {
+      #   Hour = 3;
+      #   Minute = 15;
+      # };
       options = "--delete-older-than 14d";
     };
     buildCores = 8;

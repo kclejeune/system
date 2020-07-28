@@ -1,12 +1,5 @@
 { config, pkgs, ... }: {
-  imports = [
-    ./modules/vim
-    ./modules/zsh
-    ./modules/kitty
-    ./modules/core.nix
-    ./modules/personal-settings.nix
-    # ./modules/gnome
-  ];
+  imports = [ ./modules/core.nix ./modules/personal-settings.nix ];
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
@@ -68,6 +61,7 @@
       exa
       youtube-dl
       speedtest-cli
+      ranger
 
       # dotfile management
       yadm

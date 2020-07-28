@@ -4,7 +4,6 @@
     loginwindow = {
       # disable guest account
       GuestEnabled = false;
-      LoginwindowText = "Kennan LeJeune | kennan@case.edu | 763-367-0848";
       # show name instead of username
       SHOWFULLNAME = false;
     };

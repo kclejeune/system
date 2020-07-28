@@ -4,16 +4,13 @@ in {
   imports = [
     "${sources.home-manager}/nix-darwin"
     ./lorri.nix
-    ./yabai.nix
+    ./display-manager.nix
     ./preferences.nix
-    ../nix-path/darwin
+    ../nix-path/darwin.nix
   ];
 
   fonts = {
     enableFontDir = true;
-    fonts = [
-      pkgs.jetbrains-mono
-    ];
+    fonts = [ pkgs.jetbrains-mono ];
   };
-
 }

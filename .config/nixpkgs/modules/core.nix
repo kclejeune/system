@@ -1,5 +1,5 @@
 { config, pkgs, ... }: {
-
+  imports = [ ./vim ./zsh ./kitty ];
   # install extra common packages
   home.packages = with pkgs; [
     fzf
@@ -16,6 +16,7 @@
     mawk
     coreutils-full
   ];
+
   programs.fzf = {
     enable = true;
     enableZshIntegration = true;
