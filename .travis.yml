@@ -1,0 +1,7 @@
+language: nix
+os: osx
+script: nix-shell --run "rebuild" .config/nixpkgs/default.nix
+branches:
+  only:
+    - master
+

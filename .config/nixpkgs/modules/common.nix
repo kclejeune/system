@@ -1,4 +1,8 @@
-{ config, pkgs, ... }: {
+{ config, pkgs, ... }:
+let
+  defaultUser =
+    if pkgs.stdenv.isDarwin then (builtins.getEnv ("HOME")) else "kclejeune";
+in {
 
   # environment setup
   environment = {
