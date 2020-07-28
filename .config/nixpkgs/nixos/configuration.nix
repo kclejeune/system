@@ -2,13 +2,14 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ pkgs, config, ... }:
+{ config, pkgs, ... }:
 let
   defaultUser = "kclejeune";
   defaultHome = "/home/kclejeune";
   sources = import "${defaultHome}/.config/nixpkgs/nix/sources.nix";
 in {
   imports = [
+    "${defaultHome}/.config/nixpkgs/modules/common.nix"
     # Include the results of the hardware scan.
     "${defaultHome}/.config/nixpkgs/nixos/hardware-configuration.nix"
     "${defaultHome}/.config/nixpkgs/modules/keybase.nix"
@@ -16,14 +17,20 @@ in {
     "${sources.home-manager}/nixos"
   ];
 
-  # Use the GRUB 2 boot loader.
-  boot.loader.grub.enable = true;
-  boot.loader.grub.version = 2;
-  # boot.loader.grub.efiSupport = true;
-  # boot.loader.grub.efiInstallAsRemovable = true;
-  # boot.loader.efi.efiSysMountPoint = "/boot/efi";
-  # Define on which hard drive you want to install Grub.
-  boot.loader.grub.device = "/dev/sda"; # or "nodev" for efi only
+  # Define a user account. Don't forget to set a password with ‘passwd’.
+  users.defaultUserShell = pkgs.zsh;
+  users.users = {
+    kclejeune = {
+      isNormalUser = true;
+      home = "/home/kclejeune";
+      description = "Kennan LeJeune";
+      extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
+    };
+  };
+
+  home-manager.users.kclejeune = { pkgs, ... }: {
+    imports = [ "${defaultHome}/.config/nixpkgs/home.nix" ];
+  };
 
   networking.hostName = "Phil"; # Define your hostname.
   networking.networkmanager.enable = false;
@@ -34,6 +41,15 @@ in {
         "3d7ab55ea15c9f1e82e3bb728c1aabb3a5f688ed02888007e9b4fb530a430fda";
     };
   };
+
+  # Use the GRUB 2 boot loader.
+  boot.loader.grub.enable = true;
+  boot.loader.grub.version = 2;
+  # boot.loader.grub.efiSupport = true;
+  # boot.loader.grub.efiInstallAsRemovable = true;
+  # boot.loader.efi.efiSysMountPoint = "/boot/efi";
+  # Define on which hard drive you want to install Grub.
+  boot.loader.grub.device = "/dev/sda"; # or "nodev" for efi only
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
@@ -62,17 +78,7 @@ in {
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     firefox
-    nixfmt
     gnome3.gnome-tweaks
-    coreutils-full
-    wget
-    vim
-    neovim
-    ripgrep
-    fzf
-    bat
-    git
-    yadm
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -116,21 +122,7 @@ in {
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome3.enable = true;
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.defaultUserShell = pkgs.zsh;
-  users.users = {
-    kclejeune = {
-      isNormalUser = true;
-      home = "/home/kclejeune";
-      description = "Kennan LeJeune";
-      extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
-    };
-  };
-  environment.shells = [ pkgs.zsh ];
 
-  home-manager.users.kclejeune = { pkgs, ... }: {
-    imports = [ "${defaultHome}/.config/nixpkgs/home.nix" ];
-  };
   services.lorri.enable = true;
 
   # This value determines the NixOS release from which the default

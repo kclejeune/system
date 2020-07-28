@@ -42,12 +42,7 @@
       exa
 
       # scripting
-      python3
-      python3Packages.bpython
-      python3Packages.black
-      python3Packages.numpy
-      python3Packages.scipy
-      # python3Packages.pandas
+      (python3.withPackages (ps: with ps; [ bpython black numpy scipy pandas ]))
       ruby
       openjdk11
 

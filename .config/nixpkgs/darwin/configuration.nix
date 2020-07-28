@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, pkgs, ... }:
 
 let
   # generalize this for any user so that I can use it on a work machine
@@ -6,7 +6,7 @@ let
   defaultHome = (builtins.getEnv "HOME");
   userShell = "zsh";
 in {
-  imports = [ ~/.config/nixpkgs/modules/darwin_modules ];
+  imports = [ ~/.config/nixpkgs/modules/darwin_modules ../modules/common.nix ];
 
   users.users.${defaultUser} = {
     description = "Kennan LeJeune";
@@ -26,25 +26,6 @@ in {
     # Use a custom configuration.nix location.
     # $ darwin-rebuild switch -I darwin-config=$HOME/.config/nixpkgs/darwin/configuration.nix
     darwinConfig = ~/.config/nixpkgs/darwin/configuration.nix;
-    systemPackages = with pkgs; [
-      # editors
-      vim
-      neovim
-
-      # standard toolset
-      coreutils-full
-      bat
-      ripgrep
-      zsh
-      curl
-
-      # scripting languages
-      python3
-      ruby
-    ];
-
-    # list of acceptable shells in /etc/shells
-    shells = with pkgs; [ bash zsh fish ];
 
     # packages installed in system profile
     # systemPackages = [ ];
@@ -58,31 +39,10 @@ in {
     '';
   };
 
-  nix = {
-    package = pkgs.nix;
-    trustedUsers = [ defaultUser "root" "@admin" "@wheel" ];
-    gc = {
-      automatic = true;
-      # interval = {
-      #   Hour = 3;
-      #   Minute = 15;
-      # };
-      options = "--delete-older-than 14d";
-    };
-    buildCores = 8;
-    maxJobs = 8;
-    readOnlyStore = true;
-  };
-
   security.sandbox.profiles.${defaultUser}.allowSystemPaths = true;
 
   # Auto upgrade nix package and the daemon service.
   services.nix-daemon.enable = true;
-
-  # Create /etc/bashrc that loads the nix-darwin environment.
-  programs.bash.enable = true;
-  programs.zsh.enable = true;
-  programs.fish.enable = true;
 
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
