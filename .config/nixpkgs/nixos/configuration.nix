@@ -13,7 +13,7 @@ in {
     # Include the results of the hardware scan.
     "${defaultHome}/.config/nixpkgs/nixos/hardware-configuration.nix"
     "${defaultHome}/.config/nixpkgs/modules/keybase.nix"
-    "${defaultHome}/.config/nixpkgs/modules/nix-path/nixos"
+    "${defaultHome}/.config/nixpkgs/modules/nix-path/nixos.nix"
     "${sources.home-manager}/nixos"
   ];
 
