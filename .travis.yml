@@ -3,7 +3,7 @@ os: osx
 git:
   clone: false
 before_script: nix-shell -p yadm --run "yadm clone --no-bootstrap https://github.com/$TRAVIS_REPO_SLUG.git"
-script: cd $HOME/.config/nixpkgs/default.nix && nix-shell --run "install"
+script: cd $HOME/.config/nixpkgs && nix-shell --run "install"
 branches:
   only:
     - master
