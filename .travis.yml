@@ -1,5 +1,8 @@
 language: nix
 os: osx
+git:
+  clone: false
+before_script: nix-shell -p yadm --run "yadm clone --no-bootstrap https://github.com/$TRAVIS_REPO_SLUG.git"
 script: nix-shell --run "rebuild" .config/nixpkgs/default.nix
 branches:
   only:
