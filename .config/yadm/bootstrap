@@ -12,13 +12,13 @@ if ! type nix-shell > /dev/null; then
     fi
     source /etc/static/bashrc
 fi
-
+if ! type brew > /dev/null; then
+    echo "Installing Homebrew"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+fi
 # back up necessary files if darwin
 if [[ $OS == "Darwin" ]]; then
-    if ! type brew > /dev/null; then
-        echo "Installing Homebrew"
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-    fi
+
     cd /etc
     echo "Backing up /etc files"
     for file in bashrc shells skhdrc zprofile zshenv zshrc nix/nix.conf; do
