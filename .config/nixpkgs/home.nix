@@ -51,6 +51,7 @@
       nodejs
       nodePackages."@angular/cli"
       nodePackages."@vue/cli"
+      pre-commit
 
       # command line utilities
       exa
