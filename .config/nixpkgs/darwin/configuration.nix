@@ -6,7 +6,10 @@ let
   defaultHome = (builtins.getEnv "HOME");
   userShell = "zsh";
 in {
-  imports = [ ~/.config/nixpkgs/modules/darwin_modules ~/.config/nixpkgs/modules/common.nix ];
+  imports = [
+    ~/.config/nixpkgs/modules/darwin_modules
+    ~/.config/nixpkgs/modules/common.nix
+  ];
 
   users.users.${defaultUser} = {
     description = "Kennan LeJeune";

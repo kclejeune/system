@@ -76,10 +76,7 @@ in {
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
-  environment.systemPackages = with pkgs; [
-    firefox
-    gnome3.gnome-tweaks
-  ];
+  environment.systemPackages = with pkgs; [ firefox gnome3.gnome-tweaks ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -121,7 +118,6 @@ in {
   # services.xserver.desktopManager.plasma5.enable = true;
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome3.enable = true;
-
 
   services.lorri.enable = true;
 

@@ -52,6 +52,9 @@ inoremap <silent><expr> <Tab>
       \ <SID>check_back_space() ? "\<Tab>" :
       \ coc#refesh()
 
+"" set vimtex default to latex syntax
+let g:tex_flavor = 'latex'
+
 "" FZF SETTINGS
 "" Customize fzf colors to match your color scheme
 "" - fzf#wrap translates this to a set of `--color` options

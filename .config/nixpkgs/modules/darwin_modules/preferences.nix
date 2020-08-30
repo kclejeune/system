@@ -28,7 +28,7 @@
       # don't allow positional right click
       TrackpadRightClick = false;
       # three finger drag for space switching
-      TrackpadThreeFingerDrag = true;
+      # TrackpadThreeFingerDrag = true;
     };
 
     # firewall settings

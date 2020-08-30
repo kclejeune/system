@@ -18,16 +18,22 @@ let
     vim-nix
 
     # IDE-esque utilities
-    ale
     coc-nvim
-    # coc-css
-    # coc-html
-    # coc-eslint
-    # coc-prettier
-    # coc-tslint
-    # coc-tsserver
-    # coc-python
-    # coc-java
+    vimtex
+    coc-vimtex
+    coc-css
+    coc-html
+    coc-eslint
+    coc-tslint
+    coc-json
+    coc-prettier
+    coc-tsserver
+    coc-yaml
+    coc-snippets
+    coc-pairs
+    coc-git
+    coc-python
+    coc-java
 
     # theming
     awesome-vim-colorschemes
