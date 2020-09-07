@@ -4,6 +4,11 @@ let
     if pkgs.stdenv.isDarwin then (builtins.getEnv ("HOME")) else "kclejeune";
 in {
 
+  fonts = {
+    enableFontDir = true;
+    fonts = with pkgs; [ jetbrains-mono iosevka ];
+  };
+
   # environment setup
   environment = {
     systemPackages = with pkgs; [

@@ -49,8 +49,10 @@
       # dev garbage
       yarn
       nodejs
-      nodePackages."@angular/cli"
-      nodePackages."@vue/cli"
+
+      # include node package in shell.nix instead, they have way too many dependencies for system updates :(
+      # nodePackages."@angular/cli"
+      # nodePackages."@vue/cli"
       pre-commit
 
       # command line utilities
