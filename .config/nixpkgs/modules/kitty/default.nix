@@ -17,11 +17,10 @@ in {
       term = "xterm-256color";
       macos_titlebar_color = "background";
       macos_option_as_alt = "yes";
-      # include = "./themes/OneDark.conf";
+      scrollback_lines = 10000;
     };
     extraConfig = ''
       ${theme}
     '';
   };
-
 }
