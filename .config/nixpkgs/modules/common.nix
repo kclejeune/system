@@ -16,7 +16,7 @@ in {
       neovim
 
       # standard toolset
-      coreutils-full
+      coreutils
       curl
       wget
       git

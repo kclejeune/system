@@ -42,17 +42,13 @@
       exa
 
       # scripting
-      (python3.withPackages (ps: with ps; [ bpython black numpy scipy pandas ]))
+      (python3.withPackages (ps: with ps; [ bpython black numpy scipy pandas networkx ]))
       ruby
       openjdk11
 
       # dev garbage
       yarn
       nodejs
-
-      # include node package in shell.nix instead, they have way too many dependencies for system updates :(
-      # nodePackages."@angular/cli"
-      # nodePackages."@vue/cli"
       pre-commit
 
       # command line utilities
@@ -60,6 +56,9 @@
       youtube-dl
       speedtest-cli
       ranger
+      rsync
+      httpie
+      pandoc
 
       # dotfile management
       yadm
@@ -75,6 +74,10 @@
       (pkgs.writeShellScriptBin "rebuild" ''
         cd ${config.xdg.configHome}/nixpkgs && nix-shell --run 'rebuild'
       '')
+
+      # typesetting
+      tectonic
+      texlive.combined.scheme-full
     ];
   };
 
