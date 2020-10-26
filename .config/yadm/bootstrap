@@ -6,9 +6,9 @@ OS=$(uname -s)
 if ! type nix-shell > /dev/null; then
     echo "Installing multi-user Nix"
     if [[ $OS == "Darwin" ]]; then
-        sh <(curl https://nixos.org/nix/install) --daemon --darwin-use-unencrypted-nix-store-volume
+        sh <(curl -L https://nixos.org/nix/install) --daemon --darwin-use-unencrypted-nix-store-volume
     else
-        sh <(curl https://nixos.org/nix/install) --daemon
+        sh <(curl -L https://nixos.org/nix/install) --daemon
     fi
     source /etc/static/bashrc
 fi
@@ -16,23 +16,20 @@ if ! type brew > /dev/null; then
     echo "Installing Homebrew"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
-# back up necessary files if darwin
-if [[ $OS == "Darwin" ]]; then
 
-    cd /etc
-    echo "Backing up /etc files"
-    for file in bashrc shells skhdrc zprofile zshenv zshrc nix/nix.conf; do
-        # if an /etc config file isn't a symlink, then we should move it
-        [[ ! -L $file ]] && sudo mv $file "$file.backup" && echo "backed up $file"
-    done
-fi
+# # back up necessary files if darwin
+# if [[ $OS == "Darwin" ]]; then
 
-# run darwin rebuild or nixOS rebuild to bootstrap system configuration
-echo "Building nix configuration"
-cd ~/.config/nixpkgs && nix-shell --run 'rebuild' &
+#     cd /etc
+#     echo "Backing up /etc files"
+#     for file in bashrc shells skhdrc zprofile zshenv zshrc nix/nix.conf; do
+#         # if an /etc config file isn't a symlink, then we should move it
+#         [[ ! -L $file ]] && sudo mv $file "$file.backup" && echo "backed up $file"
+#     done
+# fi
 
-# install apps with homebrew if on macOS
-# [[ $OS == "Darwin" ]] && cd ~ && brew bundle install &
-
-echo "Installation complete!"
+# install home-manager and create the first generation
+nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+export NIX_PATH=$HOME/.nix-defexpr/channels${NIX_PATH:+:}$NIX_PATH
+nix-shell '<home-manager>' -A install
 

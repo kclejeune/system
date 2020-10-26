@@ -32,7 +32,7 @@ in {
       nixfmt
       niv
 
-      # scripting languages
+      # languages
       python3
       ruby
     ];

@@ -4,8 +4,6 @@ let
   aliases = {
     brewup = "brew upgrade && brew cask upgrade && brew cleanup";
     ls = "exa";
-    ll = "exa -l";
-    la = "exa -la";
     lt = "exa --tree";
     lst = "exa --tree";
   };

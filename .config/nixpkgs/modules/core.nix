@@ -2,8 +2,6 @@
   imports = [ ./vim ./zsh ./kitty ];
   # install extra common packages
   home.packages = with pkgs; [
-    fzf
-    bat
     fd
     ripgrep
     htop
@@ -13,16 +11,11 @@
     openssh
     neofetch
     gawk
-    mawk
     coreutils-full
   ];
 
   programs.fzf = {
     enable = true;
-    enableZshIntegration = true;
-    enableBashIntegration = true;
-    enableFishIntegration = true;
-
     defaultOptions = [ "--height 40%" "--border" ];
     changeDirWidgetCommand = "fd --type d";
     changeDirWidgetOptions = [ "--preview 'tree -C {} | head -200'" ];

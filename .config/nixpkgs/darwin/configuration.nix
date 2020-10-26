@@ -7,6 +7,7 @@ let
   userShell = "zsh";
 in {
   imports = [
+    <home-manager/darwin>
     ~/.config/nixpkgs/modules/darwin_modules
     ~/.config/nixpkgs/modules/common.nix
   ];

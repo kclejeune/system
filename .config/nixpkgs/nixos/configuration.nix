@@ -6,15 +6,14 @@
 let
   defaultUser = "kclejeune";
   defaultHome = "/home/kclejeune";
-  sources = import "${defaultHome}/.config/nixpkgs/nix/sources.nix";
 in {
   imports = [
+    <home-manager/nixos>
     "${defaultHome}/.config/nixpkgs/modules/common.nix"
     # Include the results of the hardware scan.
     "${defaultHome}/.config/nixpkgs/nixos/hardware-configuration.nix"
     "${defaultHome}/.config/nixpkgs/modules/keybase.nix"
     "${defaultHome}/.config/nixpkgs/modules/nix-path/nixos.nix"
-    "${sources.home-manager}/nixos"
   ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.

@@ -5,8 +5,8 @@
   # paths it should manage.
   home = {
     # only need this if not managed by nix-darwin
-    # username = "kclejeune";
-    # homeDirectory = "/Users/kclejeune";
+    username = "kclejeune";
+    homeDirectory = "/Users/kclejeune";
 
     # This value determines the Home Manager release that your
     # configuration is compatible with. This helps avoid breakage
@@ -30,19 +30,14 @@
       # "${config.xdg.configHome}/asdf/tool-versions";
       # ASDF_DATA_DIR = "${config.xdg.dataHome}/asdf";
       # KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
+      NIX_PATH="$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
     };
 
     # define package definitions for current user environment
     packages = with pkgs; [
-      # nix package utilities
-      nixfmt
-      niv
-      direnv
-      lorri
-      exa
-
       # scripting
-      (python3.withPackages (ps: with ps; [ bpython black numpy scipy pandas networkx ]))
+      (python3.withPackages
+        (ps: with ps; [ bpython black numpy scipy pandas networkx ]))
       ruby
       openjdk11
 
@@ -52,13 +47,16 @@
       pre-commit
 
       # command line utilities
-      exa
-      youtube-dl
-      speedtest-cli
+      yadm
       ranger
       rsync
       httpie
       pandoc
+      ripgrep-all
+
+      # other useful stuff
+      youtube-dl
+      speedtest-cli
 
       # dotfile management
       yadm
@@ -67,17 +65,11 @@
       gnupg
       pinentry_mac
 
-      # system upgrade wrapper for niv
-      (pkgs.writeShellScriptBin "sysup" ''
-        ${pkgs.niv}/bin/niv --sources-file ${config.xdg.configHome}/nixpkgs/nix/sources.json update
-      '')
-      (pkgs.writeShellScriptBin "rebuild" ''
-        cd ${config.xdg.configHome}/nixpkgs && nix-shell --run 'rebuild'
-      '')
+      # nix stuff
+      nixfmt
 
       # typesetting
-      tectonic
-      # texlive.combined.scheme-full
+      (texlive.combine { inherit (texlive) scheme-full; })
     ];
   };
 
