@@ -29,7 +29,7 @@
       # ASDF_DEFAULT_TOOL_VERSIONS_FILENAME =
       # "${config.xdg.configHome}/asdf/tool-versions";
       # ASDF_DATA_DIR = "${config.xdg.dataHome}/asdf";
-      # KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
+      KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       NIX_PATH="$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
     };
 
@@ -69,7 +69,7 @@
       nixfmt
 
       # typesetting
-      (texlive.combine { inherit (texlive) scheme-full; })
+      # texlive.scheme-full
     ];
   };
 
