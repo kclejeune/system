@@ -1,5 +1,7 @@
 # Dotfiles: System Configuration with Nix
 
+[![Build Status](https://travis-ci.com/kclejeune/dotfiles.svg?branch=master)](https://travis-ci.com/kclejeune/dotfiles)
+
 ## Installing Nix Package Manager
 
 Run the following to perform a multi-user installation for darwin or standard linux. This step is skipped on NixOS.
