@@ -69,7 +69,7 @@
       nixfmt
 
       # typesetting
-      # texlive.scheme-full
+      texlive.combined.scheme-full
     ];
   };
 
