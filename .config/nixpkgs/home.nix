@@ -30,7 +30,7 @@
       # "${config.xdg.configHome}/asdf/tool-versions";
       # ASDF_DATA_DIR = "${config.xdg.dataHome}/asdf";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
-      NIX_PATH="$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
+      NIX_PATH = "$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
     };
 
     # define package definitions for current user environment
@@ -75,10 +75,15 @@
 
   nixpkgs.config.allowUnfree = true;
 
-  programs.home-manager = {
-    enable = true;
-    path = "${config.xdg.configHome}/nixpkgs/home.nix";
+  programs = {
+    home-manager = {
+      enable = true;
+      path = "${config.xdg.configHome}/nixpkgs/home.nix";
+    };
+    direnv = {
+      enable = true;
+      enableNixDirenvIntegration = true;
+    };
+    gpg.enable = true;
   };
-  programs.direnv.enable = true;
-  programs.gpg.enable = true;
 }
