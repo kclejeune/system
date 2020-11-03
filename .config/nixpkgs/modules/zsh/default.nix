@@ -4,8 +4,8 @@ let
   aliases = {
     brewup = "brew upgrade && brew cask upgrade && brew cleanup";
     ls = "exa";
+    la = "exa -la";
     lt = "exa --tree";
-    lst = "exa --tree";
   };
 in {
   home.packages = with pkgs; [ fzf exa tree ];

@@ -9,7 +9,7 @@
     };
   };
   programs.gh = {
-    enable = true;
+    enable = false;
     gitProtocol = "ssh";
   };
 }
