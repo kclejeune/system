@@ -2,7 +2,6 @@
 let
   functions = builtins.readFile ./functions.sh;
   aliases = {
-    brewup = "brew upgrade && brew cask upgrade && brew cleanup";
     ls = "exa";
     la = "exa -la";
     lt = "exa --tree";
