@@ -13,7 +13,6 @@ in {
     # Include the results of the hardware scan.
     "${defaultHome}/.config/nixpkgs/nixos/hardware-configuration.nix"
     "${defaultHome}/.config/nixpkgs/modules/keybase.nix"
-    "${defaultHome}/.config/nixpkgs/modules/nix-path/nixos.nix"
   ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.

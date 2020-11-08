@@ -57,6 +57,8 @@
       # other useful stuff
       youtube-dl
       speedtest-cli
+      wireshark-cli
+      termshark
 
       # dotfile management
       yadm
@@ -69,7 +71,8 @@
       nixfmt
 
       # typesetting
-      # texlive.combined.scheme-full
+      (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
+      tectonic
     ];
   };
 
