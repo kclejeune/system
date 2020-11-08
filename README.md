@@ -1,4 +1,4 @@
-# Dotfiles: System Configuration with Nix
+# MacOS System Configuration with Nix
 
 [![Build Status](https://travis-ci.com/kclejeune/dotfiles.svg?branch=master)](https://travis-ci.com/kclejeune/dotfiles)
 
@@ -16,13 +16,13 @@ fi
 
 ## Cloning Dotfiles
 
-Spawn a shell with `yadm`, clone the repository, and run the bootstrapping script:
+Clone this repository into `~/.nixpkgs` with
 
-```bash
-nix-shell -p yadm --run "yadm clone --bootstrap https://github.com/kclejeune/dotfiles"
+```
+git clone https://github.com/kclejeune/system ~/.nixpkgs
 ```
 
-The bootstrap script will clone this repo, build the configuration, and install Homebrew for additional dependencies if we're in a macOS environment.
+Install nix-darwin and home-manager. Then, run `darwin-rebuild switch`.
 
 ## Installing Homebrew dependencies
 
