@@ -5,8 +5,8 @@
   # paths it should manage.
   home = {
     # only need this if not managed by nix-darwin
-    username = "kclejeune";
-    homeDirectory = "/Users/kclejeune";
+    # username = "kclejeune";
+    # homeDirectory = "/Users/kclejeune";
 
     # This value determines the Home Manager release that your
     # configuration is compatible with. This helps avoid breakage
@@ -30,7 +30,7 @@
       # "${config.xdg.configHome}/asdf/tool-versions";
       # ASDF_DATA_DIR = "${config.xdg.dataHome}/asdf";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
-      NIX_PATH = "$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
+      # NIX_PATH = "$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
     };
 
     # define package definitions for current user environment
@@ -65,7 +65,6 @@
 
       # encryption and signing utilities
       gnupg
-      pinentry_mac
 
       # nix stuff
       nixfmt

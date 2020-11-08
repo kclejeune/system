@@ -55,7 +55,6 @@ in {
         "virtualenv"
       ];
     };
-
     zplug = {
       enable = true;
       plugins = [

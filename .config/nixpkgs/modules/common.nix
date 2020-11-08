@@ -52,9 +52,4 @@ in {
     maxJobs = 8;
     readOnlyStore = true;
   };
-
-  # Create /etc/bashrc that loads the nix-darwin environment.
-  programs.bash.enable = true;
-  programs.zsh.enable = true;
-  programs.fish.enable = true;
 }

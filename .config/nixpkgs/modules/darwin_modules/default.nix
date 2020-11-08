@@ -1,3 +1,2 @@
 { pkgs, ... }:
-let darwin = import <darwin>;
-in { imports = [ ./lorri.nix ./display-manager.nix ./preferences.nix ]; }
+{ imports = [ ./lorri.nix ./display-manager.nix ./preferences.nix ]; }

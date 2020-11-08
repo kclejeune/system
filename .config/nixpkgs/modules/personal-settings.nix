@@ -8,8 +8,5 @@
       signByDefault = true;
     };
   };
-  programs.gh = {
-    enable = false;
-    gitProtocol = "ssh";
-  };
+
 }

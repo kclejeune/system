@@ -17,12 +17,16 @@ in {
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.defaultUserShell = pkgs.zsh;
+  users.mutableUsers = false;
   users.users = {
     kclejeune = {
       isNormalUser = true;
+      useDefaultShell = true;
+      uid = 1000;
       home = "/home/kclejeune";
       description = "Kennan LeJeune";
       extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
+      hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
     };
   };
 
@@ -31,14 +35,7 @@ in {
   };
 
   networking.hostName = "Phil"; # Define your hostname.
-  networking.networkmanager.enable = false;
-  networking.wireless = {
-    enable = true; # Enables wireless support via wpa_supplicant.
-    networks = {
-      DEKK.pskRaw =
-        "3d7ab55ea15c9f1e82e3bb728c1aabb3a5f688ed02888007e9b4fb530a430fda";
-    };
-  };
+  networking.networkmanager.enable = true;
 
   # Use the GRUB 2 boot loader.
   boot.loader.grub.enable = true;
@@ -74,7 +71,12 @@ in {
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
-  environment.systemPackages = with pkgs; [ firefox gnome3.gnome-tweaks ];
+  environment.systemPackages = with pkgs; [
+    firefox
+    gnome3.gnome-tweaks
+    wireshark-cli
+    wireshark
+  ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -114,7 +116,12 @@ in {
   # Enable the KDE Desktop Environment.
   # services.xserver.displayManager.sddm.enable = true;
   # services.xserver.desktopManager.plasma5.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
+  services.xserver.displayManager = {
+    gdm = {
+      enable = true;
+      wayland = true;
+    };
+  };
   services.xserver.desktopManager.gnome3.enable = true;
 
   services.lorri.enable = true;
