@@ -2,9 +2,9 @@
 let
   functions = builtins.readFile ./functions.sh;
   aliases = {
-    ls = "exa";
-    la = "exa -la";
-    lt = "exa --tree";
+    ls = "${pkgs.exa}/bin/exa";
+    la = "${pkgs.exa}/bin/exa -la";
+    lt = "${pkgs.exa}/bin/exa --tree";
   };
 in {
   home.packages = with pkgs; [ fzf exa tree ];
@@ -19,7 +19,7 @@ in {
     enableCompletion = true;
     enableAutosuggestions = true;
     autocd = true;
-    # dotDir = ".config/zsh";
+    dotDir = ".config/zsh";
     localVariables = {
       LANG = "en_US.UTF-8";
       GPG_TTY = "/dev/ttys000";
@@ -27,7 +27,7 @@ in {
       CLICOLOR = 1;
       LS_COLORS = "ExFxBxDxCxegedabagacad";
     };
-    # shellAliases = aliases;
+    shellAliases = aliases;
     initExtra = ''
       ${functions}
     '';
