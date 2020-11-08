@@ -3,16 +3,13 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, ... }:
-let
-  defaultUser = "kclejeune";
-  defaultHome = "/home/kclejeune";
-in {
+{
   imports = [
     <home-manager/nixos>
-    "${defaultHome}/.config/nixpkgs/modules/common.nix"
+    ./modules/common.nix
     # Include the results of the hardware scan.
-    "${defaultHome}/.config/nixpkgs/nixos/hardware-configuration.nix"
-    "${defaultHome}/.config/nixpkgs/modules/keybase.nix"
+    ./hardware-configuration.nix
+    ./modules/keybase.nix
   ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
@@ -21,17 +18,18 @@ in {
   users.users = {
     kclejeune = {
       isNormalUser = true;
-      useDefaultShell = true;
-      uid = 1000;
       home = "/home/kclejeune";
+      name = "Kennan LeJeune";
       description = "Kennan LeJeune";
+      createHome = true;
+      useDefaultShell = true;
       extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
       hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
     };
   };
 
   home-manager.users.kclejeune = { pkgs, ... }: {
-    imports = [ "${defaultHome}/.config/nixpkgs/home.nix" ];
+    imports = [ ./home.nix ];
   };
 
   networking.hostName = "Phil"; # Define your hostname.

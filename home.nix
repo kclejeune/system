@@ -1,5 +1,5 @@
 { config, pkgs, ... }: {
-  imports = [ ./modules/core.nix ./modules/personal-settings.nix ];
+  imports = [ ./modules/core.nix ./modules/personal-settings.nix ./modules/dotfiles ];
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
@@ -17,18 +17,12 @@
     # the Home Manager release notes for a list of state version
     # changes in each release.
     stateVersion = "20.09";
-
     sessionVariables = {
       GPG_TTY = "/dev/ttys000";
-      DEFAULT_USER = "${config.home.username}";
       EDITOR = "nvim";
       VISUAL = "nvim";
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
-      # ASDF_CONFIG_FILE = "${config.xdg.configHome}/asdf/asdfrc";
-      # ASDF_DEFAULT_TOOL_VERSIONS_FILENAME =
-      # "${config.xdg.configHome}/asdf/tool-versions";
-      # ASDF_DATA_DIR = "${config.xdg.dataHome}/asdf";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       # NIX_PATH = "$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
     };
@@ -57,11 +51,6 @@
       # other useful stuff
       youtube-dl
       speedtest-cli
-      wireshark-cli
-      termshark
-
-      # dotfile management
-      yadm
 
       # encryption and signing utilities
       gnupg
@@ -74,18 +63,5 @@
       tectonic
     ];
   };
-
   nixpkgs.config.allowUnfree = true;
-
-  programs = {
-    home-manager = {
-      enable = true;
-      path = "${config.xdg.configHome}/nixpkgs/home.nix";
-    };
-    direnv = {
-      enable = true;
-      enableNixDirenvIntegration = true;
-    };
-    gpg.enable = true;
-  };
 }

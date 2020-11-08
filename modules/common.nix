@@ -1,8 +1,5 @@
 { config, pkgs, ... }:
-let
-  defaultUser =
-    if pkgs.stdenv.isDarwin then (builtins.getEnv ("HOME")) else "kclejeune";
-in {
+{
 
   fonts = {
     enableFontDir = true;
@@ -43,7 +40,7 @@ in {
 
   nix = {
     package = pkgs.nix;
-    trustedUsers = [ defaultUser "root" "@admin" "@wheel" ];
+    trustedUsers = [ "kclejeune" "root" "@admin" "@wheel" ];
     gc = {
       automatic = true;
       options = "--delete-older-than 14d";

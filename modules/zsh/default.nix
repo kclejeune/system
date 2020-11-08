@@ -19,17 +19,15 @@ in {
     enableCompletion = true;
     enableAutosuggestions = true;
     autocd = true;
-    dotDir = ".config/zsh";
+    # dotDir = ".config/zsh";
     localVariables = {
       LANG = "en_US.UTF-8";
       GPG_TTY = "/dev/ttys000";
       DEFAULT_USER = "${config.home.username}";
       CLICOLOR = 1;
       LS_COLORS = "ExFxBxDxCxegedabagacad";
-      XDG_CONFIG_HOME = "${config.xdg.configHome}";
-      XDG_DATA_HOME = "${config.xdg.dataHome}";
     };
-    shellAliases = aliases;
+    # shellAliases = aliases;
     initExtra = ''
       ${functions}
     '';
