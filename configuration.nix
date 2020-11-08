@@ -2,8 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }:
-{
+{ config, pkgs, ... }: {
   imports = [
     <home-manager/nixos>
     ./modules/common.nix
@@ -24,13 +23,12 @@
       createHome = true;
       useDefaultShell = true;
       extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
-      hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
+      hashedPassword =
+        "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
     };
   };
 
-  home-manager.users.kclejeune = { pkgs, ... }: {
-    imports = [ ./home.nix ];
-  };
+  home-manager.users.kclejeune = { pkgs, ... }: { imports = [ ./home.nix ]; };
 
   networking.hostName = "Phil"; # Define your hostname.
   networking.networkmanager.enable = true;
