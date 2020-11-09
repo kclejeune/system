@@ -22,6 +22,12 @@ let
       done
 
       # create the inital generation
+      $(nix-build ${sources.nix-darwin} -A system --no-out-link)/sw/bin/darwin-rebuild build --show-trace \
+        -I nixpkgs=${sources.nixpkgs} \
+        -I darwin=${sources.nix-darwin} \
+        -I home-manager=${sources.home-manager} \
+        -I darwin-config=${configuration} \
+
       $(nix-build ${sources.nix-darwin} -A system --no-out-link)/sw/bin/darwin-rebuild switch --show-trace \
         -I nixpkgs=${sources.nixpkgs} \
         -I darwin=${sources.nix-darwin} \
