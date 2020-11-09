@@ -57,5 +57,12 @@ let
 
   rebuild = if isDarwin then darwinRebuild else nixosRebuild;
 
-in pkgs.mkShell { buildInputs = [ rebuild darwin-bootstrap ]; }
+in pkgs.mkShell {
+  buildInputs = [
+    # keep this line if you use bash
+    pkgs.bashInteractive
+    rebuild
+    darwin-bootstrap
+  ];
+}
 
