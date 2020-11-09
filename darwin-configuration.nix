@@ -43,7 +43,7 @@ in {
     loginShell = pkgs.zsh;
     pathsToLink = [ "/Applications" ];
     shellAliases = {
-      darwin-rebuild = ''
+      rebuild = ''
         darwin-rebuild \
           -I nixpkgs=${sources.nixpkgs} \
           -I darwin=${sources.nix-darwin} \
