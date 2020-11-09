@@ -9,7 +9,7 @@ let
   sources = import ./nix/sources.nix { };
 in {
   imports =
-    [ <home-manager/nix-darwin> ./modules/darwin_modules ./modules/common.nix ];
+    [ ./modules/darwin_modules ./modules/common.nix ];
 
   users.users.${defaultUser} = {
     description = "Kennan LeJeune";
@@ -20,8 +20,10 @@ in {
   };
 
   # bootstrap home manager from darwin rebuild
-  home-manager.users.${defaultUser} = { pkgs, ... }: {
-    imports = [ ./home.nix ];
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    users.${defaultUser} = { pkgs, ... }: { imports = [ ./home.nix ]; };
   };
 
   # environment setup
@@ -95,9 +97,7 @@ in {
           rev = "f08a5cc832809dd28ac95be1cf94db19c8f53ba6";
           sha256 = "0qk61b86i3adz9xy188zrj6vrgg75ri7jjd0505nrxwknnd3nxdf";
         };
-      in {
-        inherit (nixpkgs-b3c3a0b) nixFlakes;
-      })
+      in { inherit (nixpkgs-b3c3a0b) nixFlakes; })
   ];
 
   programs.zsh.enable = true;

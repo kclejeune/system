@@ -40,6 +40,7 @@
       yarn
       nodejs
       pre-commit
+      jq
 
       # command line utilities
       yadm
@@ -64,5 +65,4 @@
       tectonic
     ];
   };
-  nixpkgs.config.allowUnfree = true;
 }
