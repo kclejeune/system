@@ -1,4 +1,6 @@
-{ config, pkgs, ... }: {
+{ config, pkgs, ... }:
+let sources = import ../nix/sources.nix { };
+in {
 
   fonts = {
     enableFontDir = true;
@@ -47,5 +49,9 @@
     buildCores = 8;
     maxJobs = 8;
     readOnlyStore = true;
+    nixPath = [
+      { nixpkgs = "${sources.nixpkgs}"; }
+      { home-manager = "${sources.home-manager}"; }
+    ];
   };
 }

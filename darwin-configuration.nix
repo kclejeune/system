@@ -6,7 +6,7 @@ let
   defaultHome = (builtins.getEnv "HOME");
   prefix = "/run/current-system/sw/bin";
   userShell = "zsh";
-  sources = import ./nix/sources.nix {};
+  sources = import ./nix/sources.nix { };
 in {
   imports =
     [ <home-manager/nix-darwin> ./modules/darwin_modules ./modules/common.nix ];
@@ -42,14 +42,20 @@ in {
 
     loginShell = pkgs.zsh;
     pathsToLink = [ "/Applications" ];
-    systemPackages = [ ];
+    shellAliases = {
+      darwin-rebuild = ''
+        darwin-rebuild \
+          -I nixpkgs=${sources.nixpkgs} \
+          -I darwin=${sources.nix-darwin} \
+          -I home-manager=${sources.home-manager} \
+          -I darwin-config=${config.environment.darwinConfig} \
+      '';
+    };
   };
 
   nix.nixPath = [
     { darwin-config = "${config.environment.darwinConfig}"; }
-    { nixpkgs = "${sources.nixpkgs}"; }
     { darwin = "${sources.nix-darwin}"; }
-    { home-manager = "${sources.home-manager}"; }
   ];
 
   programs.zsh.enable = true;

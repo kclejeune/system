@@ -5,9 +5,9 @@ let
   pkgs = import sources.nixpkgs { };
   isDarwin = pkgs.stdenvNoCC.isDarwin;
   configuration = if isDarwin then
-    ~/.nixpkgs/darwin-configuration.nix
+    "$HOME/.nixpkgs/darwin-configuration.nix"
   else
-    /etc/nixos/configuration.nix;
+    "/etc/nixos/configuration.nix";
 
   darwin-bootstrap = pkgs.writeShellScriptBin "darwin-bootstrap" ''
     set -e
