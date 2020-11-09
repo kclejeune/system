@@ -33,13 +33,13 @@ in {
     # change macOS login shell to nix provided zsh if it's set to something else
     # extraInit = ''
     #   currentShell=$(finger ${defaultUser} | awk '/Shell/ {print $NF}')
-    #   shellPath=
+    #   shellPath=${prefix}/${userShell}
     #   if [[ $currentShell != $shellPath ]]; then
     #     chsh -s $shellPath ${defaultUser}
     #   fi
     # '';
 
-    loginShell = "${prefix}/${userShell}";
+    loginShell = pkgs.zsh;
     pathsToLink = [ "/Applications" ];
   };
 
