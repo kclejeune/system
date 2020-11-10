@@ -2,6 +2,10 @@ language: nix
 os: osx
 git:
   clone: false
+cache:
+  directories:
+    - /nix
+    - /run
 before_script: git clone https://github.com/$TRAVIS_REPO_SLUG.git ~/.nixpkgs
 script: cd ~/.nixpkgs && nix-shell --run "darwin-bootstrap"
 branches:
