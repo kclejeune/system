@@ -32,6 +32,11 @@ let
     darwin-rebuild switch --flake ${configuration}
   '';
 
+  nixosRebuild = pkgs.writeShellScriptBin "rebuild" ''
+    set -e
+    sudo nixos-rebuild switch --flake ${configuration}
+  '';
+
   rebuild = if isDarwin then darwinRebuild else nixosRebuild;
 
 in pkgs.mkShell {
