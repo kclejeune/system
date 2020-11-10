@@ -55,6 +55,6 @@ function restartService() {
 }
 
 function rebuildFlake() {
-    darwin-rebuild --flake "$HOME/.nixpkgs/#randall" $@
+    darwin-rebuild --flake "$HOME/.nixpkgs/#Randall" $@
 }
 

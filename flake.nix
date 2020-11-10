@@ -14,7 +14,7 @@
   };
 
   outputs = { self, darwin, home-manager, nixpkgs }: {
-    darwinConfigurations."randall" = darwin.lib.darwinSystem {
+    darwinConfigurations."Randall" = darwin.lib.darwinSystem {
       modules =
         [ ./darwin-configuration.nix home-manager.darwinModules.home-manager ];
     };

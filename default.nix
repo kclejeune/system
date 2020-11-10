@@ -34,7 +34,7 @@ let
     export NIX_PATH=darwin-config=${configuration}:darwin=${sources.nix-darwin}
 
     # build the actual configuration once we do that
-    sudo ./result/sw/bin/darwin-rebuild switch --flake ".#randall"
+    sudo ./result/sw/bin/darwin-rebuild switch --flake ".#Randall"
   '';
 
   darwinRebuild = pkgs.writeShellScriptBin "rebuild" ''
