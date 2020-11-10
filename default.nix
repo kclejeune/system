@@ -22,37 +22,13 @@ let
       done
 
       # create the inital generation
-      $(nix-build ${sources.nix-darwin} -A system --no-out-link)/sw/bin/darwin-rebuild build --show-trace \
-        -I nixpkgs=${sources.nixpkgs} \
-        -I darwin=${sources.nix-darwin} \
-        -I home-manager=${sources.home-manager} \
-        -I darwin-config=${configuration} \
-
-      $(nix-build ${sources.nix-darwin} -A system --no-out-link)/sw/bin/darwin-rebuild switch --show-trace \
-        -I nixpkgs=${sources.nixpkgs} \
-        -I darwin=${sources.nix-darwin} \
-        -I home-manager=${sources.home-manager} \
-        -I darwin-config=${configuration} \
+      $(nix-build ${sources.nix-darwin} -A system --no-out-link)/sw/bin/darwin-rebuild switch --flake ${configuration}
     ''}
-
-    ${pkgs.lib.optionalString pkgs.stdenvNoCC.isDarwin darwinRebuild}
   '';
 
   darwinRebuild = pkgs.writeShellScriptBin "rebuild" ''
     set -e
-    darwin-rebuild switch --show-trace \
-      -I nixpkgs=${sources.nixpkgs} \
-      -I darwin=${sources.nix-darwin} \
-      -I home-manager=${sources.home-manager} \
-      -I darwin-config=${configuration} \
-  '';
-
-  nixosRebuild = pkgs.writeShellScriptBin "rebuild" ''
-    set -e
-    sudo nixos-rebuild switch --show-trace \
-      -I nixpkgs=${sources.nixpkgs} \
-      -I home-manager=${sources.home-manager} \
-      -I nixos-config=${configuration} \
+    darwin-rebuild switch --flake ${configuration}
   '';
 
   rebuild = if isDarwin then darwinRebuild else nixosRebuild;
