@@ -15,10 +15,12 @@
 
   outputs = { self, darwin, home-manager, nixpkgs }: {
     darwinConfigurations."randall" = darwin.lib.darwinSystem {
-      modules = [
-        ./darwin-configuration.nix
-        home-manager.darwinModules.home-manager
-      ];
+      modules =
+        [ ./darwin-configuration.nix home-manager.darwinModules.home-manager ];
+    };
+    nixosConfigurations."Phil" = nixpkgs.lib.nixosSystem {
+      modules =
+        [ ./configuration.nix home-manager.nixosModules.home-manager ];
     };
   };
 }

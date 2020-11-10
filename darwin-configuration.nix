@@ -2,9 +2,8 @@
 
 let
   # generalize this for any user so that I can use it on a work machine
-  defaultUser = (builtins.getEnv "USER");
-  defaultHome = (builtins.getEnv "HOME");
   prefix = "/run/current-system/sw/bin";
+  defaultUser = "kclejeune";
   userShell = "zsh";
   sources = import ./nix/sources.nix { };
 in {
@@ -13,7 +12,7 @@ in {
 
   users.users.${defaultUser} = {
     description = "Kennan LeJeune";
-    home = defaultHome;
+    home = /Users/kclejeune;
     shell = pkgs.${userShell};
     isHidden = false;
     createHome = false;

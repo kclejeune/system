@@ -3,6 +3,7 @@
   environment = {
     systemPackages = with pkgs; [
       # editors
+      vim
       neovim
 
       # standard toolset
@@ -10,6 +11,7 @@
       curl
       wget
       git
+      jq
 
       # helpful shell stuff
       bat
