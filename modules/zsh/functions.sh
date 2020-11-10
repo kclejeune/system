@@ -54,3 +54,7 @@ function restartService() {
     launchctl stop $service && launchctl start $service
 }
 
+function rebuildFlake() {
+    darwin-rebuild --flake "$HOME/.nixpkgs" $@
+}
+

@@ -7,8 +7,7 @@ let
   userShell = "zsh";
   sources = import ./nix/sources.nix { };
 in {
-  imports =
-    [ ./modules/darwin_modules ./modules/common.nix ];
+  imports = [ ./modules/darwin_modules ./modules/common.nix ];
 
   users.users.${defaultUser} = {
     description = "Kennan LeJeune";
@@ -43,18 +42,6 @@ in {
 
     loginShell = pkgs.zsh;
     pathsToLink = [ "/Applications" ];
-    shellAliases = {
-      # rebuild = ''
-      #   darwin-rebuild \
-      #     -I nixpkgs=${sources.nixpkgs} \
-      #     -I darwin=${sources.nix-darwin} \
-      #     -I home-manager=${sources.home-manager} \
-      #     -I darwin-config=${config.environment.darwinConfig} \
-      # '';
-      niv-system = ''
-        niv -s ~/.nixpkgs/nix/sources.json
-      '';
-    };
     etc = {
       darwin = {
         source = "${sources.nix-darwin}";
