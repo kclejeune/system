@@ -48,7 +48,6 @@ in {
         "sudo"
         "command-not-found"
         "common-aliases"
-        "fzf"
         "history-substring-search"
         "virtualenv"
       ];
@@ -56,6 +55,10 @@ in {
     zplug = {
       enable = true;
       plugins = [
+        {
+          name = "plugins/fzf";
+          tags = [ "from:oh-my-zsh" ];
+        }
         {
           name = "changyuheng/fz";
           tags = [ "defer:1" ];
