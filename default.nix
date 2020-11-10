@@ -22,6 +22,7 @@ let
       done
 
       # create the inital generation
+      $(nix-build ${sources.nix-darwin} -A system --no-out-link)/sw/bin/darwin-rebuild build
       $(nix-build ${sources.nix-darwin} -A system --no-out-link)/sw/bin/darwin-rebuild switch --flake ${configuration}
     ''}
   '';
