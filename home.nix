@@ -25,6 +25,7 @@
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
+      JAVA_HOME = "${pkgs.jdk11}";
       # NIX_PATH = "$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
     };
 
@@ -34,7 +35,7 @@
       (python3.withPackages
         (ps: with ps; [ bpython black numpy scipy pandas networkx ]))
       ruby
-      openjdk11
+      jdk11
 
       # dev garbage
       yarn
