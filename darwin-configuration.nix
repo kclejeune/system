@@ -47,20 +47,12 @@ in {
         source = "${sources.nix-darwin}";
         target = "sources/darwin";
       };
-      home-manager = {
-        source = "${sources.home-manager}";
-        target = "sources/home-manager";
-      };
-      nixpkgs = {
-        source = "${sources.nixpkgs}";
-        target = "sources/nixpkgs";
-      };
     };
   };
 
   nix.nixPath = [
-    { darwin-config = "${config.environment.darwinConfig}"; }
-    { darwin = "/etc/sources/darwin"; }
+    "darwin-config=${config.environment.darwinConfig}"
+    "darwin=/etc/${config.environment.etc.darwin.target}"
   ];
 
   # Overlay for temporary fixes to broken packages on nixos-unstable

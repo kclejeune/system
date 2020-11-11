@@ -1,4 +1,6 @@
-{ config, pkgs, ... }: {
+{ config, pkgs, ... }:
+let sources = import ../nix/sources.nix { };
+in {
   # environment setup
   environment = {
     systemPackages = with pkgs; [
@@ -18,17 +20,24 @@
       fzf
       ripgrep
       zsh
-      yadm
 
       # nix stuff
       nixfmt
-      niv
 
       # languages
       python3
       ruby
     ];
-
+    etc = {
+      home-manager = {
+        source = "${sources.home-manager}";
+        target = "sources/home-manager";
+      };
+      nixpkgs = {
+        source = "${sources.nixpkgs}";
+        target = "sources/nixpkgs";
+      };
+    };
     # list of acceptable shells in /etc/shells
     shells = with pkgs; [ bash zsh fish ];
   };
@@ -47,8 +56,8 @@
     maxJobs = 8;
     readOnlyStore = true;
     nixPath = [
-      { nixpkgs = "/etc/sources/nixpkgs"; }
-      { home-manager = "/etc/sources/home-manager"; }
+      "nixpkgs=/etc/${config.environment.etc.nixpkgs.target}"
+      "home-manager=/etc/${config.environment.etc.home-manager.target}"
     ];
   };
 
