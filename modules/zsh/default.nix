@@ -44,29 +44,13 @@ in {
       enable = true;
       theme = "agnoster";
       plugins = [
+        "z"
         "git"
         "sudo"
         "command-not-found"
         "common-aliases"
         "history-substring-search"
         "virtualenv"
-      ];
-    };
-    zplug = {
-      enable = true;
-      plugins = [
-        {
-          name = "plugins/fzf";
-          tags = [ "from:oh-my-zsh" ];
-        }
-        {
-          name = "changyuheng/fz";
-          tags = [ "defer:1" ];
-        }
-        {
-          name = "rupa/z";
-          tags = [ "use:z.sh" ];
-        }
       ];
     };
   };
