@@ -7,11 +7,11 @@ let
   userShell = "zsh";
   sources = import ./nix/sources.nix { };
 in {
-  imports = [ ./modules/darwin_modules ./modules/common.nix ];
+  imports = [ ./modules/darwin_modules ./modules/common.nix ./modules/personal-settings.nix ];
 
   users.users.${defaultUser} = {
     description = "Kennan LeJeune";
-    home = /Users/kclejeune;
+    home = "/Users/${defaultUser}";
     shell = pkgs.${userShell};
     isHidden = false;
     createHome = false;
