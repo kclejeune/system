@@ -35,13 +35,13 @@
       (python3.withPackages
         (ps: with ps; [ bpython black numpy scipy pandas networkx ]))
       ruby
-      jdk11
 
       # dev garbage
       yarn
       nodejs
       pre-commit
       jq
+      jdk11
 
       # command line utilities
       yadm
@@ -60,6 +60,7 @@
 
       # nix stuff
       nixfmt
+      niv
 
       # typesetting
       (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })

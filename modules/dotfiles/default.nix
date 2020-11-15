@@ -16,10 +16,6 @@
       source = ./../..;
       recursive = true;
     };
-    kitty = {
-      source = ./kitty;
-      recursive = true;
-    };
     karabiner = {
       source = ./karabiner;
       recursive = true;

@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ inputs, config, pkgs, ... }:
 
 let
   # generalize this for any user so that I can use it on a work machine
@@ -7,7 +7,12 @@ let
   userShell = "zsh";
   sources = import ./nix/sources.nix { };
 in {
-  imports = [ ./modules/darwin_modules ./modules/common.nix ./modules/personal-settings.nix ];
+  imports = [
+    # <home-manager/nix-darwin>
+    ./modules/darwin_modules
+    ./modules/common.nix
+    ./modules/personal-settings.nix
+  ];
 
   users.users.${defaultUser} = {
     description = "Kennan LeJeune";
@@ -44,14 +49,13 @@ in {
     pathsToLink = [ "/Applications" ];
     etc = {
       darwin = {
-        source = "${sources.nix-darwin}";
+        source = "${inputs.darwin}";
         target = "sources/darwin";
       };
     };
   };
 
   nix.nixPath = [
-    "darwin-config=${config.environment.darwinConfig}"
     "darwin=/etc/${config.environment.etc.darwin.target}"
   ];
 
@@ -71,11 +75,19 @@ in {
             overlays = [ ];
           };
 
-        nixpkgs-b3c3a0b = importNixpkgsRev {
+        nixpkgs-nixFlake = importNixpkgsRev {
           rev = "f08a5cc832809dd28ac95be1cf94db19c8f53ba6";
           sha256 = "0qk61b86i3adz9xy188zrj6vrgg75ri7jjd0505nrxwknnd3nxdf";
         };
-      in { inherit (nixpkgs-b3c3a0b) nixFlakes; })
+
+        nixpkgs-stable = importNixpkgsRev {
+          rev = "9be6b03fe1524db55a5277f87751cded5313b64b";
+          sha256 = "0rz47yybzh9aihmyy1a82j5qbdc5k0a0l06ci3hm8fsva3cfz29r";
+        };
+      in {
+        inherit (nixpkgs-nixFlake) nixFlakes;
+        inherit (nixpkgs-stable) kitty ripgrep-all;
+      })
   ];
 
   programs.zsh.enable = true;

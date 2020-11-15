@@ -25,26 +25,29 @@ let
         [[ -e $file ]] && [[ ! -L $file ]] && sudo mv $file "$file.bak" && echo "backed up $file"
     done
 
-    echo darwin-config=${sources.nix-darwin}/modules/examples/simple.nix
-    export NIX_PATH=darwin-config=${sources.nix-darwin}/modules/examples/simple.nix:darwin=${sources.nix-darwin}
+
+    export NIX_PATH=darwin-config=${configuration}:darwin=${sources.nix-darwin}
 
     # build nix darwin
     nix-build ${sources.nix-darwin} -A system --no-out-link build
 
-    export NIX_PATH=darwin-config=${configuration}:darwin=${sources.nix-darwin}
-
     # build the actual configuration once we do that
-    sudo ./result/sw/bin/darwin-rebuild switch --flake ".#Randall"
+    sudo ./result/sw/bin/darwin-rebuild switch
   '';
 
   darwinRebuild = pkgs.writeShellScriptBin "rebuild" ''
     set -e
-    darwin-rebuild switch --flake ${configuration}
+    darwin-rebuild switch -I darwin-config=${configuration} \
+      -I nixpkgs=${sources.nixpkgs} \
+      -I darwin=${sources.nix-darwin} \
+      -I home-manager=${sources.home-manager} \
   '';
 
   nixosRebuild = pkgs.writeShellScriptBin "rebuild" ''
     set -e
-    sudo nixos-rebuild switch --flake ${configuration}
+    sudo nixos-rebuild switch -I nixos-config=${configuration} \
+      -I nixpkgs=${sources.nixpkgs} \
+      -I home-manager=${sources.home-manager} \
   '';
 
   rebuild = if isDarwin then darwinRebuild else nixosRebuild;

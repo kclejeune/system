@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ inputs, config, pkgs, ... }:
 let sources = import ../nix/sources.nix { };
 in {
   # environment setup
@@ -30,11 +30,11 @@ in {
     ];
     etc = {
       home-manager = {
-        source = "${sources.home-manager}";
+        source = "${inputs.home-manager}";
         target = "sources/home-manager";
       };
       nixpkgs = {
-        source = "${sources.nixpkgs}";
+        source = "${inputs.nixpkgs}";
         target = "sources/nixpkgs";
       };
     };
