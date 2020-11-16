@@ -55,6 +55,7 @@ function restartService() {
 }
 
 function rebuildFlake() {
-    darwin-rebuild --flake "$HOME/.nixpkgs/#Randall" $@
+    command -v darwin-rebuild > /dev/null && darwin-rebuild --flake "$HOME/.nixpkgs/#Randall" $@
+    command -v nixos-rebuild > /dev/null && sudo nixos-rebuild --flake "/etc/nixos/#Phil" $@
 }
 

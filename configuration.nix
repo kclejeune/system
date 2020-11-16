@@ -8,6 +8,7 @@
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
     ./modules/keybase.nix
+    ./modules/personal-settings.nix
   ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
@@ -17,8 +18,8 @@
     kclejeune = {
       isNormalUser = true;
       home = "/home/kclejeune";
-      name = "Kennan LeJeune";
-      description = "Kennan LeJeune";
+      name = "kclejeune";
+      description = "kclejeune";
       createHome = true;
       useDefaultShell = true;
       extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
@@ -27,7 +28,7 @@
     };
   };
 
-  home-manager.users.kclejeune = { pkgs, ... }: { imports = [ ./home.nix ]; };
+  # home-manager.users.kclejeune = { pkgs, ... }: { imports = [ ./home.nix ./modules/gnome ]; };
 
   networking.hostName = "Phil"; # Define your hostname.
   networking.networkmanager.enable = true;
