@@ -68,8 +68,6 @@
       AppleShowAllExtensions = true;
       AppleShowScrollBars = "Automatic";
     };
-
-    SoftwareUpdate.AutomaticallyInstallMacOSUpdates = true;
   };
 
 }

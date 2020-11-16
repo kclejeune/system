@@ -9,7 +9,7 @@ let
   else
     "/etc/nixos/configuration.nix";
 
-  darwin-bootstrap = pkgs.writeShellScriptBin "darwin-bootstrap" ''
+  darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
     set -e
     echo >&2
     echo >&2 "Installing Nix-Darwin..."
@@ -33,6 +33,10 @@ let
 
     # build the actual configuration once we do that
     sudo ./result/sw/bin/darwin-rebuild switch
+  '';
+
+  homebrewInstall = pkgs.writeShellScriptBin "homebrewInstall" ''
+    ${pkgs.bash}/bin/bash -c "$(${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   '';
 
   darwinRebuild = pkgs.writeShellScriptBin "rebuild" ''

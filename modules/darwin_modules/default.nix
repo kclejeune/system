@@ -1,3 +1,3 @@
 { pkgs, ... }: {
-  imports = [ ./lorri.nix ./display-manager.nix ./preferences.nix ];
+  imports = [ ./display-manager.nix ./preferences.nix ];
 }
