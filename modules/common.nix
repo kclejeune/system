@@ -61,6 +61,14 @@ in {
       "nixpkgs=/etc/${config.environment.etc.nixpkgs.target}"
       "home-manager=/etc/${config.environment.etc.home-manager.target}"
     ];
+    # registry = {
+    #   nixpkgs = {
+    #     flake = inputs.nixpkgs;
+    #   };
+    #   stable = {
+    #     flake = inputs.stable;
+    #   };
+    # };
   };
 
   fonts = {
