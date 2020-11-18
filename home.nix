@@ -31,36 +31,41 @@
 
     # define package definitions for current user environment
     packages = with pkgs; [
+      # nix stuff
+      nixfmt
+      niv
+
       # scripting
-      (python3.withPackages
+      (python38.withPackages
         (ps: with ps; [ bpython black numpy scipy pandas networkx ]))
-      ruby
+
+      # gnu stuff
+      # encryption and signing utilities
+      gnupg
+      gawk
+      gnused
+      gnugrep
 
       # dev garbage
-      yarn
       nodejs
       pre-commit
       jq
       jdk11
 
       # command line utilities
-      yadm
+      git
+      curl
+      wget
       ranger
       rsync
       httpie
       pandoc
+      ripgrep
       ripgrep-all
 
       # other useful stuff
       youtube-dl
       speedtest-cli
-
-      # encryption and signing utilities
-      gnupg
-
-      # nix stuff
-      nixfmt
-      niv
 
       # typesetting
       (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })

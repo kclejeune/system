@@ -21,9 +21,6 @@ in {
       ripgrep
       zsh
 
-      # nix stuff
-      nixfmt
-
       # languages
       python3
       ruby
@@ -61,14 +58,6 @@ in {
       "nixpkgs=/etc/${config.environment.etc.nixpkgs.target}"
       "home-manager=/etc/${config.environment.etc.home-manager.target}"
     ];
-    # registry = {
-    #   nixpkgs = {
-    #     flake = inputs.nixpkgs;
-    #   };
-    #   stable = {
-    #     flake = inputs.stable;
-    #   };
-    # };
   };
 
   fonts = {
