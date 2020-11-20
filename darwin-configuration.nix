@@ -75,18 +75,11 @@ in {
             overlays = [ ];
           };
 
-        nixpkgs-nixFlake = importNixpkgsRev {
-          rev = "f08a5cc832809dd28ac95be1cf94db19c8f53ba6";
-          sha256 = "0qk61b86i3adz9xy188zrj6vrgg75ri7jjd0505nrxwknnd3nxdf";
-        };
-
         nixpkgs-stable = importNixpkgsRev {
           rev = "9be6b03fe1524db55a5277f87751cded5313b64b";
           sha256 = "0rz47yybzh9aihmyy1a82j5qbdc5k0a0l06ci3hm8fsva3cfz29r";
         };
       in {
-        inherit (nixpkgs-nixFlake) nixFlakes;
-        inherit (nixpkgs-stable) kitty ripgrep-all;
       })
   ];
 
