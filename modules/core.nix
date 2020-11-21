@@ -38,6 +38,7 @@
       enable = true;
       config = { theme = "TwoDark"; };
     };
+    jq.enable = true;
     htop.enable = true;
     gpg.enable = true;
   };
