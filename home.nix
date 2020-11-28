@@ -36,7 +36,7 @@
       niv
 
       # scripting
-      (python38.withPackages
+      (python3.withPackages
         (ps: with ps; [ bpython black numpy scipy pandas networkx ]))
 
       # gnu stuff

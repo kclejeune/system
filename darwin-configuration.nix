@@ -56,9 +56,7 @@ in {
     };
   };
 
-  nix.nixPath = [
-    "darwin=/etc/${config.environment.etc.darwin.target}"
-  ];
+  nix.nixPath = [ "darwin=/etc/${config.environment.etc.darwin.target}" ];
 
   # Overlay for temporary fixes to broken packages on nixos-unstable
   nixpkgs.overlays = [
@@ -76,12 +74,12 @@ in {
             overlays = [ ];
           };
 
-        nixpkgs-stable = importNixpkgsRev {
-          rev = "9be6b03fe1524db55a5277f87751cded5313b64b";
-          sha256 = "0rz47yybzh9aihmyy1a82j5qbdc5k0a0l06ci3hm8fsva3cfz29r";
+        stable = import inputs.stable {
+          system = "x86_64-darwin";
+          inherit (config.nixpkgs) config;
+          overlays = [ ];
         };
-      in {
-      })
+      in { })
   ];
 
   programs.zsh.enable = true;
