@@ -6,7 +6,8 @@ before_script: git clone https://github.com/$TRAVIS_REPO_SLUG.git ~/.nixpkgs
 cache:
   directories:
     - /nix/store
-script: cd ~/.nixpkgs && nix-shell --run "darwin-bootstrap"
+    - /run
+script: cd ~/.nixpkgs && nix-shell --run "darwinTest"
 branches:
   only:
     - master
