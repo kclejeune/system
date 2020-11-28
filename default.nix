@@ -10,7 +10,7 @@ let
     "/etc/nixos/configuration.nix";
 
   darwinBuild = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.Randall.config.system.build.toplevel"
+    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.Randall.config.system.build.toplevel" --experimental-features "flakes nix-command"
   '';
   darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
     set -e
