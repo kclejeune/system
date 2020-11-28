@@ -1,6 +1,6 @@
 # MacOS System Configuration with Nix
 
-[![Build Status](https://travis-ci.com/kclejeune/dotfiles.svg?branch=master)](https://travis-ci.com/kclejeune/dotfiles)
+[![Build Status](https://travis-ci.com/kclejeune/system.svg?branch=master)](https://travis-ci.com/kclejeune/system)
 
 ## Installing Nix Package Manager
 
@@ -14,7 +14,7 @@ else
 fi
 ```
 
-## Cloning Dotfiles
+## System Bootstrapping
 
 Clone this repository into `~/.nixpkgs` with
 
@@ -22,7 +22,13 @@ Clone this repository into `~/.nixpkgs` with
 git clone https://github.com/kclejeune/system ~/.nixpkgs
 ```
 
-Install nix-darwin and home-manager. Then, run `darwin-rebuild switch`.
+You can bootstrap a new system using
+
+```
+cd ~/.nixpkgs && nix-shell --run "darwinInstall"
+```
+
+or run the build only with `darwinTest` instead of `darwinInstall`.
 
 ## Installing Homebrew dependencies
 
