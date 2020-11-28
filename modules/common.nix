@@ -46,7 +46,7 @@ in {
       keep-outputs = true
       keep-derivations = true
     '';
-    trustedUsers = [ "kclejeune" "root" "@admin" "@wheel" ];
+    trustedUsers = [ "kclejeune" "travis" "root" "@admin" "@wheel" ];
     gc = {
       automatic = true;
       options = "--delete-older-than 30d";

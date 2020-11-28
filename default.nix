@@ -35,7 +35,7 @@ let
         [[ -e $file ]] && [[ ! -L $file ]] && sudo mv $file "$file.backup" && echo "backed up $file"
     done
 
-    ${darwinBuild} $$ ./result/activate
+    ${darwinBuild} $$ sudo ./result/activate
   '';
 
   darwinTest = pkgs.writeShellScriptBin "darwinTest" ''
