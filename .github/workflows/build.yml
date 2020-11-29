@@ -12,4 +12,4 @@ jobs:
         nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
         nix-channel --update
     - run: |
-        nix-shell ./shell.nix --run "darwinTest"
+        NIX_PATH=$HOME/.nix-defexpr/channels && nix-shell ./shell.nix --run "darwinTest"
