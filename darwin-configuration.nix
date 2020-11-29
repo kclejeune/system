@@ -3,37 +3,19 @@
 let
   # generalize this for any user so that I can use it on a work machine
   prefix = "/run/current-system/sw/bin";
-  defaultUser = "kclejeune";
   userShell = "zsh";
-  sources = import ./nix/sources.nix { };
 in {
   imports = [
-    # <home-manager/nix-darwin>
     ./modules/darwin_modules
     ./modules/common.nix
     ./modules/personal-settings.nix
   ];
 
-  users.users.${defaultUser} = {
-    description = "Kennan LeJeune";
-    home = "/Users/${defaultUser}";
-    shell = pkgs.${userShell};
-    isHidden = false;
-    createHome = false;
-  };
-
-  # bootstrap home manager from darwin rebuild
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    backupFileExtension = "backup";
-    users.${defaultUser} = { pkgs, ... }: { imports = [ ./home.nix ]; };
-  };
-
   # environment setup
   environment = {
     # Use a custom configuration.nix location.
     # $ darwin-rebuild switch -I darwin-config=$HOME/.config/nixpkgs/darwin/configuration.nix
+    darwinConfig = "~/.nixpkgs/darwin-configuration.nix"
 
     # packages installed in system profile
     # systemPackages = [ ];

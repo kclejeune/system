@@ -1,6 +1,26 @@
 { inputs, config, pkgs, ... }:
-let sources = import ../nix/sources.nix { };
+let
+  defaultUser = "kclejeune";
+  homePrefix = if builtins.stdenvNoCC.isDarwin then "/Users" else "/home";
 in {
+  users.users = {
+    "${defaultUser}" = {
+      description = "Kennan LeJeune";
+      home = "${homePrefix}/${defaultUser}";
+      shell = pkgs.${userShell};
+      isHidden = false;
+      createHome = false;
+    };
+  };
+
+  # bootstrap home manager using system config
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    backupFileExtension = "backup";
+    users.${defaultUser} = { pkgs, ... }: { imports = [ ./home.nix ]; };
+  };
+
   # environment setup
   environment = {
     systemPackages = with pkgs; [
@@ -42,11 +62,12 @@ in {
   nix = {
     package = pkgs.nixFlakes;
     extraOptions = ''
-      experimental-features = nix-command flakes
       keep-outputs = true
       keep-derivations = true
+      ${lib.optionalString (config.nix.package == pkgs.nixFlakes)
+      "experimental-features = nix-command flakes"}
     '';
-    trustedUsers = [ "kclejeune" "travis" "root" "@admin" "@wheel" ];
+    trustedUsers = [ "${defaultUser}" "travis" "root" "@wheel" ];
     gc = {
       automatic = true;
       options = "--delete-older-than 30d";

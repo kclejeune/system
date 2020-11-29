@@ -2,7 +2,9 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }: {
+{ config, pkgs, ... }:
+let defaultUser = "kclejeune";
+in {
   imports = [
     ./modules/common.nix
     # Include the results of the hardware scan.
@@ -15,11 +17,8 @@
   users.defaultUserShell = pkgs.zsh;
   users.mutableUsers = false;
   users.users = {
-    kclejeune = {
+    "${defaulUser}" = {
       isNormalUser = true;
-      home = "/home/kclejeune";
-      name = "kclejeune";
-      description = "kclejeune";
       createHome = true;
       useDefaultShell = true;
       extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
@@ -28,7 +27,7 @@
     };
   };
 
-  # home-manager.users.kclejeune = { pkgs, ... }: { imports = [ ./home.nix ./modules/gnome ]; };
+  home-manager.users.${defaultUser} = { pkgs, ... }: { imports = [ ./home.nix ./modules/gnome ]; };
 
   networking.hostName = "Phil"; # Define your hostname.
   networking.networkmanager.enable = true;
