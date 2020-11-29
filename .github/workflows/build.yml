@@ -1,0 +1,15 @@
+name: "Darwin Build Test"
+on: 
+  push:
+    branches: master
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: cachix/install-nix-action@v12
+    - run: |
+        nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+        nix-channel --update
+    - run: |
+        NIX_PATH=$HOME/.nix-defexpr/channels && nix-shell ./shell.nix --run "darwinTest"
