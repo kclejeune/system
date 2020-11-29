@@ -29,7 +29,8 @@ let
 
   darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
     ${systemSetup}
-    ${darwinBuild} && sudo ./result/activate
+    ${darwinBuild}
+    sudo ./result/activate
   '';
 
   darwinTest = pkgs.writeShellScriptBin "darwinTest" ''
