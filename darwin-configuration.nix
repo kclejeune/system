@@ -14,6 +14,7 @@ in {
   environment = {
     loginShell = pkgs.zsh;
     pathsToLink = [ "/Applications" ];
+    backupFileExtension = "backup";
     etc = {
       darwin = {
         source = "${inputs.darwin}";

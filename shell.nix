@@ -6,10 +6,7 @@ let
   else
     "/etc/nixos/configuration.nix";
 
-  darwinBuild = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.Randall.config.system.build.toplevel" --experimental-features "flakes nix-command"
-  '';
-  darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
+  systemSetup = ''
     set -e
     echo >&2 "Installing Nix-Darwin..."
 
@@ -24,15 +21,15 @@ let
         echo "setting up /run..."
         sudo ln -sfn private/var/run /run
     fi
+  '';
 
-    # back up
-    cd /etc
-    for file in bashrc shells skhdrc zprofile zshenv zshrc nix/nix.conf; do
-        # if an /etc config file isn't a symlink, then we should move it
-        [[ -e $file ]] && [[ ! -L $file ]] && sudo mv $file "$file.backup" && echo "backed up $file"
-    done
+  darwinBuild = ''
+    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.Randall.config.system.build.toplevel" --experimental-features "flakes nix-command"
+  '';
 
-    ${darwinBuild} $$ sudo ./result/activate
+  darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
+    ${systemSetup}
+    ${darwinBuild} && sudo ./result/activate
   '';
 
   darwinTest = pkgs.writeShellScriptBin "darwinTest" ''
