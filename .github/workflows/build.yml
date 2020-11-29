@@ -7,7 +7,9 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
-      with:
-        path: ~/.nixpkgs
     - uses: cachix/install-nix-action@v12
-    - run: cd ~/.nixpkgs && nix-shell --run "darwinTest"
+    - run: |
+        nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+        nix-channel --update
+    - run: |
+        nix-shell ./shell.nix --run "darwinTest"
