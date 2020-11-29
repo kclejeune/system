@@ -1,6 +1,5 @@
 { config, pkgs, ... }: {
-  imports =
-    [ ./modules/core.nix ./modules/dotfiles ];
+  imports = [ ./modules/core.nix ./modules/dotfiles ];
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.

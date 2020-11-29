@@ -1,9 +1,8 @@
 { inputs, config, pkgs, ... }:
-
 let
   # generalize this for any user so that I can use it on a work machine
+  defaultUser = "kclejeune";
   prefix = "/run/current-system/sw/bin";
-  userShell = "zsh";
 in {
   imports = [
     ./modules/darwin_modules
@@ -13,9 +12,16 @@ in {
 
   # environment setup
   environment = {
+    loginShell = pkgs.zsh;
+    pathsToLink = [ "/Applications" ];
+    etc = {
+      darwin = {
+        source = "${inputs.darwin}";
+        target = "sources/darwin";
+      };
+    };
     # Use a custom configuration.nix location.
     # $ darwin-rebuild switch -I darwin-config=$HOME/.config/nixpkgs/darwin/configuration.nix
-    darwinConfig = "~/.nixpkgs/darwin-configuration.nix"
 
     # packages installed in system profile
     # systemPackages = [ ];
@@ -27,15 +33,6 @@ in {
     #     chsh -s $shellPath ${defaultUser}
     #   fi
     # '';
-
-    loginShell = pkgs.zsh;
-    pathsToLink = [ "/Applications" ];
-    etc = {
-      darwin = {
-        source = "${inputs.darwin}";
-        target = "sources/darwin";
-      };
-    };
   };
 
   nix.nixPath = [ "darwin=/etc/${config.environment.etc.darwin.target}" ];

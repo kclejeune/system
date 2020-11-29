@@ -22,8 +22,7 @@
     };
     nixosConfigurations."Phil" = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
-      modules =
-        [ ./configuration.nix home-manager.nixosModules.home-manager ];
+      modules = [ ./configuration.nix home-manager.nixosModules.home-manager ];
       specialArgs = { inherit inputs nixpkgs; };
     };
   };
