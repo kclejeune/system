@@ -1,0 +1,13 @@
+name: "Darwin Build Test"
+on: 
+  push:
+    branches: master
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path: ~/.nixpkgs
+    - uses: cachix/install-nix-action@v12
+    - run: cd ~/.nixpkgs && nix-shell --run "darwinTest"
