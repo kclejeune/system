@@ -28,7 +28,7 @@ in {
   };
 
   home-manager.users.${defaultUser} = { pkgs, ... }: {
-    imports = [ ./home.nix ./modules/gnome ];
+    imports = [ ./modules/gnome ];
   };
 
   networking.hostName = "Phil"; # Define your hostname.

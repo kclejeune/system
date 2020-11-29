@@ -19,7 +19,7 @@ in {
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";
-    users.${defaultUser} = { pkgs, ... }: { imports = [ ./home.nix ]; };
+    users.${defaultUser} = { pkgs, ... }: { imports = [ ../home.nix ]; };
   };
 
   # environment setup
