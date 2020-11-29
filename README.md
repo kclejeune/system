@@ -1,6 +1,6 @@
 # MacOS System Configuration with Nix
 
-[![Build Status](https://travis-ci.com/kclejeune/system.svg?branch=master)](https://travis-ci.com/kclejeune/system)
+![Darwin Build Test](https://github.com/kclejeune/system/workflows/Darwin%20Build%20Test/badge.svg?branch=master)
 
 ## Installing Nix Package Manager
 
