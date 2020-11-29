@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> { } }:
+{ pkgs }:
 let
   isDarwin = pkgs.stdenvNoCC.isDarwin;
   configuration = if isDarwin then

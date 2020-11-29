@@ -8,9 +8,9 @@ Run the following to perform a multi-user installation for darwin or standard li
 
 ```bash
 if [[ $(uname -s) == 'Darwin' ]]; then
-    sh <(curl https://nixos.org/nix/install) --daemon --darwin-use-unencrypted-nix-store-volume
+    sh <(curl -L https://nixos.org/nix/install) --daemon --darwin-use-unencrypted-nix-store-volume
 else
-    sh <(curl https://nixos.org/nix/install) --daemon
+    sh <(curl -L https://nixos.org/nix/install) --daemon
 fi
 ```
 
@@ -18,14 +18,14 @@ fi
 
 Clone this repository into `~/.nixpkgs` with
 
-```
+```bash
 git clone https://github.com/kclejeune/system ~/.nixpkgs
 ```
 
 You can bootstrap a new system using
 
-```
-cd ~/.nixpkgs && nix-shell --run "darwinInstall"
+```bash
+cd ~/.nixpkgs && nix develop --command "darwinInstall"
 ```
 
 or run the build only with `darwinTest` instead of `darwinInstall`.
