@@ -1,7 +1,7 @@
 { inputs, config, lib, pkgs, ... }:
 let
   defaultUser = "kclejeune";
-  homePrefix = if builtins.stdenvNoCC.isDarwin then "/Users" else "/home";
+  homePrefix = if pkgs.stdenvNoCC.isDarwin then "/Users" else "/home";
   userShell = "zsh";
 in {
   users.users = {
