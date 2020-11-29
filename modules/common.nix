@@ -68,7 +68,7 @@ in {
       ${lib.optionalString (config.nix.package == pkgs.nixFlakes)
       "experimental-features = nix-command flakes"}
     '';
-    trustedUsers = [ "${defaultUser}" "travis" "root" "@wheel" ];
+    trustedUsers = [ "${defaultUser}" "root" "@admin" "@wheel" ];
     gc = {
       automatic = true;
       options = "--delete-older-than 30d";
