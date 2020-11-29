@@ -1,8 +1,5 @@
-# taken with heavy inspiration from https://github.com/Nimor111/nixos-config/
-
-{ sources ? import ./nix/sources.nix }:
+{ pkgs ? import <nixpkgs> { } }:
 let
-  pkgs = import sources.nixpkgs { };
   isDarwin = pkgs.stdenvNoCC.isDarwin;
   configuration = if isDarwin then
     "$HOME/.nixpkgs/darwin-configuration.nix"
@@ -46,5 +43,7 @@ let
     ${pkgs.bash}/bin/bash -c "$(${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   '';
 
-in pkgs.mkShell { buildInputs = [ darwinTest darwinInstall homebrewInstall ]; }
+in pkgs.mkShell {
+  buildInputs = [ pkgs.nixFlakes darwinTest darwinInstall homebrewInstall ];
+}
 
