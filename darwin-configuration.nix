@@ -1,7 +1,5 @@
 { inputs, config, pkgs, ... }:
 let
-  # generalize this for any user so that I can use it on a work machine
-  defaultUser = "kclejeune";
   prefix = "/run/current-system/sw/bin";
 in {
   imports = [
@@ -65,8 +63,6 @@ in {
   programs.zsh.enable = true;
   programs.fish.enable = true;
   programs.bash.enable = true;
-
-  security.sandbox.profiles.${defaultUser}.allowSystemPaths = true;
 
   # Auto upgrade nix package and the daemon service.
   services.nix-daemon.enable = true;
