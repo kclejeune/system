@@ -47,14 +47,8 @@ in {
       ruby
     ];
     etc = {
-      home-manager = {
-        source = "${inputs.home-manager}";
-        target = "sources/home-manager";
-      };
-      nixpkgs = {
-        source = "${inputs.nixpkgs}";
-        target = "sources/nixpkgs";
-      };
+      home-manager.source = "${inputs.home-manager}";
+      nixpkgs.source = "${inputs.nixpkgs}";
     };
     # list of acceptable shells in /etc/shells
     shells = with pkgs; [ bash zsh fish ];

@@ -14,10 +14,7 @@ in {
     pathsToLink = [ "/Applications" ];
     backupFileExtension = "backup";
     etc = {
-      darwin = {
-        source = "${inputs.darwin}";
-        target = "sources/darwin";
-      };
+      darwin.source = "${inputs.darwin}";
     };
     # Use a custom configuration.nix location.
     # $ darwin-rebuild switch -I darwin-config=$HOME/.config/nixpkgs/darwin/configuration.nix
