@@ -21,14 +21,10 @@ in {
 
     # packages installed in system profile
     # systemPackages = [ ];
-    # change macOS login shell to nix provided zsh if it's set to something else
-    # extraInit = ''
-    #   currentShell=$(finger ${defaultUser} | awk '/Shell/ {print $NF}')
-    #   shellPath=${prefix}/${userShell}
-    #   if [[ $currentShell != $shellPath ]]; then
-    #     chsh -s $shellPath ${defaultUser}
-    #   fi
-    # '';
+    extraInit = ''
+      # install homebrew
+      command -v brew > /dev/null || ${pkgs.bash}/bin/bash -c "$(${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+    '';
   };
 
   nix.nixPath = [ "darwin=/etc/${config.environment.etc.darwin.target}" ];
