@@ -24,7 +24,7 @@ let
   '';
 
   darwinBuild = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.Randall.config.system.build.toplevel" --experimental-features "flakes nix-command"
+    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.Randall.config.system.build.toplevel" --experimental-features "flakes nix-command" --show-trace
   '';
 
   darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
