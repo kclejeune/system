@@ -2,6 +2,7 @@ name: "nix-darwin system build"
 on:
   push:
     branches: [master]
+  pull_request:
 jobs:
   build:
     runs-on: macos-latest
