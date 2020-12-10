@@ -25,14 +25,12 @@ function mkvenv() {
     # create .envrc if it isn't already there
     touch .envrc
     cat .envrc | grep "source $DIR/bin/activate" > /dev/null || echo "source $DIR/bin/activate" >> .envrc
-    cat .envrc | grep "unset PS1" > /dev/null || echo "unset PS1" >> .envrc
 
     touch .gitignore
-    cat .gitignore | grep .env
-    cat .gitignore | grep .envrc > /dev/null ||echo .envrc >>.gitignore
-    cat .gitignore | grep $DIR > /dev/null ||echo "$DIR/" >>.gitignore
+    cat .gitignore | grep .envrc > /dev/null || echo .envrc >> .gitignore
+    cat .gitignore | grep $DIR > /dev/null || echo "$DIR/" >> .gitignore
 
-    type direnv > /dev/null & direnv allow
+    type direnv > /dev/null && direnv allow
 }
 
 function weather() {
@@ -44,19 +42,26 @@ function config() {
     cd "$XDG_CONFIG_HOME/$1"
 }
 
-function restartService() {
-    if [[ -z "$1" ]]; then
+function service() {
+    if [[ -z "$1" ]] then
+        echo "no command provided from [stop, start, restart]"
+        return 1
+    fi
+    if [[ -z "$2" ]]; then
         echo "No service name provided"
-        return 0
+        return 1
     fi
 
-    service=$(launchctl list | grep $1 | awk '{print $NF}')
-    launchctl stop $service && launchctl start $service
+    service=$(launchctl list | grep $2 | awk '{print $NF}')
+    if [[ "$1" == "restart" ]]; then
+        launchctl start $service && launchctl start $service
+    else
+        launchctl $1 $service
+    fi
 }
 
 function rebuildFlake() {
-    command -v darwin-rebuild > /dev/null && darwin-rebuild --flake "$HOME/.nixpkgs/#Randall" $@ || true
-    command -v nixos-rebuild > /dev/null && sudo nixos-rebuild --flake "/etc/nixos/#Phil" $@ || true
+    command -v darwin-rebuild > /dev/null && darwin-rebuild --flake "$HOME/.nixpkgs/#Randall" $@ || command -v nixos-rebuild > /dev/null && sudo nixos-rebuild --flake "/etc/nixos/#Phil" $@ || true
 }
 
 function gi() {
