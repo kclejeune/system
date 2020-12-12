@@ -54,14 +54,15 @@ function service() {
 
     service=$(launchctl list | grep $2 | awk '{print $NF}')
     if [[ "$1" == "restart" ]]; then
-        launchctl start $service && launchctl start $service
+        launchctl stop $service && launchctl start $service
     else
         launchctl $1 $service
     fi
 }
 
 function rebuildFlake() {
-    command -v darwin-rebuild > /dev/null && darwin-rebuild --flake "$HOME/.nixpkgs/#Randall" $@ || command -v nixos-rebuild > /dev/null && sudo nixos-rebuild --flake "/etc/nixos/#Phil" $@ || true
+    command -v darwin-rebuild > /dev/null && darwin-rebuild --flake "$HOME/.nixpkgs/#Randall" $@ || true
+    command -v nixos-rebuild > /dev/null && sudo nixos-rebuild --flake "/etc/nixos/#Phil" $@ || true
 }
 
 function gi() {
