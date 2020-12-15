@@ -31,6 +31,7 @@
     # define package definitions for current user environment
     packages = with pkgs; [
       # nix stuff
+      nixpkgs-fmt
       nixfmt
       niv
 
@@ -68,6 +69,7 @@
 
       # typesetting
       (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
+      # texlive.combined.scheme-full
       tectonic
     ];
   };
