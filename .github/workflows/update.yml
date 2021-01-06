@@ -34,13 +34,13 @@ jobs:
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.REPO_ACCESS_TOKEN }}
         branch: flakebot
         force: true
     - name: pull-request-action
       uses: vsoch/pull-request-action@1.0.12
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
         PULL_REQUEST_FROM_BRANCH: "flakebot"
         PULL_REQUEST_BRANCH: "master"
         MAINTAINER_CANT_MODIFY: true
