@@ -4,6 +4,8 @@ on:
     branches: 
       - master
       - flakebot
+  pull_request:
+    types: [opened]
 jobs:
   build_darwin:
     runs-on: macos-latest
