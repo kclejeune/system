@@ -9,8 +9,6 @@ in {
       description = "Kennan LeJeune";
       home = "${homePrefix}/${defaultUser}";
       shell = pkgs.${userShell};
-      isHidden = false;
-      createHome = false;
     };
   };
 
