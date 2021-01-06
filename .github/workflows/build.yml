@@ -1,7 +1,7 @@
-name: "nix-darwin system build"
+name: "system build"
 on:
   push:
-    branches: [master]
+    branches: [master, flakebot]
   pull_request:
 jobs:
   build_darwin:
