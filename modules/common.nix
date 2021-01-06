@@ -74,6 +74,9 @@ in {
       "nixpkgs=/etc/${config.environment.etc.nixpkgs.target}"
       "home-manager=/etc/${config.environment.etc.home-manager.target}"
     ];
+
+    binaryCaches = [ "https://kclejeune.cachix.org" ];
+    binaryCachePublicKeys = [ "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=" ];
   };
 
   fonts = {

@@ -68,8 +68,8 @@
       speedtest-cli
 
       # typesetting
-      (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
-      # texlive.combined.scheme-full
+      # (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
+      texlive.combined.scheme-full
       tectonic
     ];
   };

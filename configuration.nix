@@ -17,7 +17,7 @@ in {
   users.defaultUserShell = pkgs.zsh;
   users.mutableUsers = false;
   users.users = {
-    "${defaulUser}" = {
+    "${defaultUser}" = {
       isNormalUser = true;
       createHome = true;
       useDefaultShell = true;
