@@ -16,25 +16,36 @@
   };
 
   outputs = inputs@{ self, nixpkgs, darwin, home-manager, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let pkgs = nixpkgs.legacyPackages.${system};
-      in { devShell = import ./shell.nix { inherit pkgs; }; }) // {
-        darwinConfigurations = {
-          Randall = darwin.lib.darwinSystem {
-            modules = [
-              ./darwin-configuration.nix
-              home-manager.darwinModules.home-manager
-            ];
-            specialArgs = { inherit inputs nixpkgs; };
-          };
+    {
+      darwinConfigurations = {
+        randall = darwin.lib.darwinSystem {
+          modules = [
+            ./darwin-configuration.nix
+            home-manager.darwinModules.home-manager
+            ./modules/personal-settings.nix
+          ];
+          specialArgs = { inherit inputs nixpkgs; };
         };
-        nixosConfigurations = {
-          Phil = nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules =
-              [ ./configuration.nix home-manager.nixosModules.home-manager ];
-            specialArgs = { inherit inputs nixpkgs; };
-          };
+        work = darwin.lib.darwinSystem {
+          modules = [
+            ./darwin-configuration.nix
+            home-manager.darwinModules.home-manager
+            ./modules/work-settings.nix
+          ];
+          specialArgs = { inherit inputs nixpkgs; };
         };
       };
+      nixosConfigurations = {
+        phil = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules =
+            [ ./configuration.nix home-manager.nixosModules.home-manager ];
+          specialArgs = { inherit inputs nixpkgs; };
+        };
+      };
+    } //
+    # add a devShell to this flake
+    (flake-utils.lib.eachDefaultSystem (system:
+      let pkgs = nixpkgs.legacyPackages.${system};
+      in { devShell = import ./shell.nix { inherit pkgs; }; }));
 }

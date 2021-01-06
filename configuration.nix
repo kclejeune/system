@@ -10,7 +10,6 @@ in {
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
     ./modules/keybase.nix
-    ./modules/personal-settings.nix
   ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
