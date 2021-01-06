@@ -19,14 +19,12 @@ jobs:
           install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20201221_9fab14a/install
           extra_nix_config: |
             experimental-features = nix-command flakes
-            substituters = https://kclejeune.cachix.org https://cache.nixos.org
-            trusted-public-keys = kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
       - uses: cachix/cachix-action@v8
         with:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Randall
-        run: nix build .#darwinConfigurations.Randall.config.system.build.toplevel
+        run: nix build .#darwinConfigurations.randall.config.system.build.toplevel
   build_nixos:
     runs-on: ubuntu-latest
     steps:
@@ -42,11 +40,9 @@ jobs:
           install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20201221_9fab14a/install
           extra_nix_config: |
             experimental-features = nix-command flakes
-            substituters = https://kclejeune.cachix.org https://cache.nixos.org
-            trusted-public-keys = kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
       - uses: cachix/cachix-action@v8
         with:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Phil
-        run: nix build .#nixosConfigurations.Phil.config.system.build.toplevel
+        run: nix build .#nixosConfigurations.phil.config.system.build.toplevel
