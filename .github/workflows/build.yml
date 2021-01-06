@@ -24,7 +24,7 @@ jobs:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Randall
-        run: nix build .#darwinConfigurations.randall.config.system.build.toplevel
+        run: nix build -v .#darwinConfigurations.randall.config.system.build.toplevel
   build_nixos:
     runs-on: ubuntu-latest
     steps:
@@ -45,4 +45,4 @@ jobs:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Phil
-        run: nix build .#nixosConfigurations.phil.config.system.build.toplevel
+        run: nix build -v .#nixosConfigurations.phil.config.system.build.toplevel

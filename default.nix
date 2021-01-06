@@ -23,18 +23,25 @@ let
     fi
   '';
 
-  darwinBuild = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.Randall.config.system.build.toplevel" --experimental-features "flakes nix-command" --show-trace
+  darwinBuildScript = ''
+    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.randall.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
   '';
 
   darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
     ${systemSetup}
-    ${darwinBuild}
+    ${darwinBuildScript}
     sudo ./result/activate
   '';
 
-  darwinTest = pkgs.writeShellScriptBin "darwinTest" ''
-    ${darwinBuild}
+  darwinBuild = pkgs.writeShellScriptBin "darwinBuild" ''
+    ${darwinBuildScript}
+  '';
+
+  nixosBuild = ''
+    ${pkgs.nixFlakes}/bin/nix build ".#nixosConfigurations.phil.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
+  '';
+
+
   '';
 
   homebrewInstall = pkgs.writeShellScriptBin "homebrewInstall" ''
@@ -42,6 +49,6 @@ let
   '';
 
 in pkgs.mkShell {
-  buildInputs = [ pkgs.nixFlakes darwinTest darwinInstall homebrewInstall ];
+  buildInputs = [ pkgs.nixFlakes darwinBuild darwinInstall homebrewInstall ];
 }
 
