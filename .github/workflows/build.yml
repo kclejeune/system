@@ -1,8 +1,11 @@
 name: "system build"
 on:
   push:
-    branches: [master, flakebot]
+    branches: 
+      - master
   pull_request:
+    branches:
+      - master
 jobs:
   build_darwin:
     runs-on: macos-latest
