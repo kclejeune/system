@@ -3,9 +3,9 @@ on:
   push:
     branches: 
       - master
-      - flakebot
   pull_request:
-    types: [opened]
+    branches: 
+      - master
 jobs:
   build_darwin:
     runs-on: macos-latest
