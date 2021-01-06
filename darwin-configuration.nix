@@ -5,7 +5,6 @@ in {
   imports = [
     ./modules/darwin_modules
     ./modules/common.nix
-    ./modules/personal-settings.nix
   ];
 
   # environment setup
