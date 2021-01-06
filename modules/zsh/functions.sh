@@ -61,8 +61,8 @@ function service() {
 }
 
 function rebuildFlake() {
-    command -v darwin-rebuild > /dev/null && darwin-rebuild --flake "$HOME/.nixpkgs/#Randall" $@ || true
-    command -v nixos-rebuild > /dev/null && sudo nixos-rebuild --flake "/etc/nixos/#Phil" $@ || true
+    command -v darwin-rebuild > /dev/null && darwin-rebuild switch --flake "$HOME/.nixpkgs/#$1" || true
+    command -v nixos-rebuild > /dev/null && sudo nixos-rebuild switch --flake "/etc/nixos/#$1" || true
 }
 
 function gi() {
