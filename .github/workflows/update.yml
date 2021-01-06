@@ -1,0 +1,43 @@
+name: Auto Update Flake Inputs
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+    - uses: cachix/install-nix-action@v12
+      with:
+        install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20201221_9fab14a/install
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+    - name: Commit updated lockfile
+      run: |
+        git config --local user.email "flakebot@users.noreply.github.com"
+        git config --local user.name "flakebot"
+        git checkout -b flakebot
+        nix flake update --recreate-lock-file
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: flakebot
+    - name: pull-request-action
+      uses: vsoch/pull-request-action@1.0.6
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PULL_REQUEST_FROM_BRANCH: "flakebot"
+        PULL_REQUEST_BRANCH: "master"
+        MAINTAINER_CANT_MODIFY: true
+        PASS_IF_EXISTS: true
+        PASS_ON_ERROR: true
+        PULL_REQUEST_TITLE: "Update Flake Inputs"
