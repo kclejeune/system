@@ -41,9 +41,6 @@ let
     ${pkgs.nixFlakes}/bin/nix build ".#nixosConfigurations.phil.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
   '';
 
-
-  '';
-
   homebrewInstall = pkgs.writeShellScriptBin "homebrewInstall" ''
     ${pkgs.bash}/bin/bash -c "$(${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   '';
