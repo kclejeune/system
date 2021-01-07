@@ -2,8 +2,8 @@ name: Auto Update Flake Inputs
 
 on:
   schedule:
-    # run this weekly
-    - cron: '0 0 * * 0'
+    # run this daily
+    - cron: '0 0 * * *'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -24,13 +24,13 @@ jobs:
         install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20201221_9fab14a/install
         extra_nix_config: |
           experimental-features = nix-command flakes
-    - name: Commit updated lockfile
+    - name: Prepare flakebot branch
       run: |
         git config --local user.email "flakebot@users.noreply.github.com"
         git config --local user.name "flakebot"
-        git checkout -b flakebot || git checkout flakebot
-        git rebase master
-        nix flake update --recreate-lock-file --commit-lock-file
+        git checkout -B flakebot
+    - name: Update and commit lockfile
+      run: nix flake update --recreate-lock-file --commit-lock-file
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
