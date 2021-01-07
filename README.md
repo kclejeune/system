@@ -1,17 +1,21 @@
-# MacOS System Configuration with Nix
+# Nix System Configuration
 
-![nix-darwin system build](https://github.com/kclejeune/system/workflows/nix-darwin%20system%20build/badge.svg?branch=master)
+![system build](https://github.com/kclejeune/system/workflows/system%20build/badge.svg)
 
 ## Installing Nix Package Manager
 
 Run the following to perform a multi-user installation for darwin or standard linux. This step is skipped on NixOS.
 
+### macOS
+
 ```bash
-if [[ $(uname -s) == 'Darwin' ]]; then
-    sh <(curl -L https://nixos.org/nix/install) --daemon --darwin-use-unencrypted-nix-store-volume
-else
+sh <(curl -L https://nixos.org/nix/install) --daemon --darwin-use-unencrypted-nix-store-volume
+```
+
+### Linux
+
+```bash
     sh <(curl -L https://nixos.org/nix/install) --daemon
-fi
 ```
 
 ## System Bootstrapping
@@ -25,7 +29,7 @@ git clone https://github.com/kclejeune/system ~/.nixpkgs
 You can bootstrap a new system using
 
 ```bash
-cd ~/.nixpkgs && nix develop --command "darwinInstall"
+cd ~/.nixpkgs && nix-shell --run "darwinInstall"
 ```
 
 or run the build only with `darwinTest` instead of `darwinInstall`.
