@@ -17,7 +17,9 @@ in {
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";
-    users.${defaultUser} = { pkgs, ... }: { imports = [ ../home.nix ]; };
+    users.${defaultUser} = { pkgs, ... }: {
+      imports = [ ../modules/home.nix ];
+    };
   };
 
   # environment setup
@@ -74,7 +76,8 @@ in {
     ];
 
     binaryCaches = [ "https://kclejeune.cachix.org" ];
-    binaryCachePublicKeys = [ "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=" ];
+    binaryCachePublicKeys =
+      [ "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=" ];
   };
 
   fonts = {

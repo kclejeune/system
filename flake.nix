@@ -20,18 +20,14 @@
       darwinConfigurations = {
         randall = darwin.lib.darwinSystem {
           modules = [
-            ./darwin-configuration.nix
             home-manager.darwinModules.home-manager
-            ./modules/personal-settings.nix
+            ./machines/darwin/randall
           ];
           specialArgs = { inherit inputs nixpkgs; };
         };
         work = darwin.lib.darwinSystem {
-          modules = [
-            ./darwin-configuration.nix
-            home-manager.darwinModules.home-manager
-            ./modules/work-settings.nix
-          ];
+          modules =
+            [ home-manager.darwinModules.home-manager ./machines/darwin/work ];
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
@@ -39,7 +35,7 @@
         phil = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules =
-            [ ./configuration.nix home-manager.nixosModules.home-manager ];
+            [ home-manager.nixosModules.home-manager ./machines/nixos/phil ];
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
@@ -47,5 +43,5 @@
     # add a devShell to this flake
     (flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system};
-      in { devShell = import ./shell.nix { inherit pkgs; }; }));
+      in { devShell = import ./default.nix { inherit pkgs; }; }));
 }

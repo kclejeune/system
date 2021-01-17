@@ -5,13 +5,7 @@
 { config, pkgs, ... }:
 let defaultUser = "kclejeune";
 in {
-  imports = [
-    ./modules/common.nix
-    # Include the results of the hardware scan.
-    ./hardware-configuration.nix
-    ./modules/keybase.nix
-  ];
-
+  imports = [ ../common.nix ];
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.defaultUserShell = pkgs.zsh;
   users.mutableUsers = false;
@@ -27,7 +21,7 @@ in {
   };
 
   home-manager.users.${defaultUser} = { pkgs, ... }: {
-    imports = [ ./modules/gnome ];
+    imports = [ ../../modules/gnome ];
   };
 
   networking.hostName = "Phil"; # Define your hostname.

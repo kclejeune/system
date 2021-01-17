@@ -24,7 +24,7 @@ let
   '';
 
   darwinBuildScript = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.randall.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
+    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.$1.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
   '';
 
   darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
@@ -38,7 +38,7 @@ let
   '';
 
   nixosBuild = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#nixosConfigurations.phil.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
+    ${pkgs.nixFlakes}/bin/nix build ".#nixosConfigurations.$1.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
   '';
 
   homebrewInstall = pkgs.writeShellScriptBin "homebrewInstall" ''

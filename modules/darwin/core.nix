@@ -1,20 +1,12 @@
 { inputs, config, pkgs, ... }:
-let
-  prefix = "/run/current-system/sw/bin";
+let prefix = "/run/current-system/sw/bin";
 in {
-  imports = [
-    ./modules/darwin_modules
-    ./modules/common.nix
-  ];
-
   # environment setup
   environment = {
     loginShell = pkgs.zsh;
     pathsToLink = [ "/Applications" ];
     backupFileExtension = "backup";
-    etc = {
-      darwin.source = "${inputs.darwin}";
-    };
+    etc = { darwin.source = "${inputs.darwin}"; };
     # Use a custom configuration.nix location.
     # $ darwin-rebuild switch -I darwin-config=$HOME/.config/nixpkgs/darwin/configuration.nix
 

@@ -1,5 +1,5 @@
 { config, pkgs, ... }: {
-  imports = [ ./modules/core.nix ./modules/dotfiles ];
+  imports = [ ./core.nix ./dotfiles ];
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
@@ -66,9 +66,6 @@
       # other useful stuff
       youtube-dl
       speedtest-cli
-      (pkgs.writeShellScriptBin "sysup" ''
-        cd ${if (stdenvNoCC.isDarwin) then "~/.nixpkgs" else "/etc/nixos"} && nix flake update --recreate-lock-file --commit-lock-file
-      '')
 
       # typesetting
       # (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
