@@ -1,3 +1,4 @@
 { config, pkgs, ... }: {
-  imports = [ ../base.nix ../../../modules/users/personal-settings.nix ];
+  imports =
+    [ ../darwin-common.nix ../../../modules/users/personal-settings.nix ];
 }
