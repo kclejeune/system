@@ -4,8 +4,6 @@ let
   homePrefix = if pkgs.stdenvNoCC.isDarwin then "/Users" else "/home";
   userShell = "zsh";
 in {
-  imports = [ ./core.nix ];
-
   users.users = {
     "${defaultUser}" = {
       description = "Kennan LeJeune";
@@ -19,7 +17,7 @@ in {
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";
-    users.${defaultUser} = { pkgs, ... }: { imports = [ ../home.nix ]; };
+    users.${defaultUser} = { pkgs, ... }: { imports = [ ./home.nix ]; };
   };
 
   # environment setup
