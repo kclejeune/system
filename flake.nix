@@ -20,18 +20,14 @@
       darwinConfigurations = {
         randall = darwin.lib.darwinSystem {
           modules = [
-            ./darwin-configuration.nix
             home-manager.darwinModules.home-manager
-            ./modules/personal-settings.nix
+            ./devices/darwin/randall
           ];
           specialArgs = { inherit inputs nixpkgs; };
         };
         work = darwin.lib.darwinSystem {
-          modules = [
-            ./darwin-configuration.nix
-            home-manager.darwinModules.home-manager
-            ./modules/work-settings.nix
-          ];
+          modules =
+            [ home-manager.darwinModules.home-manager ./devices/darwin/work ];
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
@@ -39,7 +35,7 @@
         phil = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules =
-            [ ./configuration.nix home-manager.nixosModules.home-manager ];
+            [ ./devices/nixos/phil home-manager.nixosModules.home-manager ];
           specialArgs = { inherit inputs nixpkgs; };
         };
       };

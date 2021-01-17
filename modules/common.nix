@@ -4,6 +4,8 @@ let
   homePrefix = if pkgs.stdenvNoCC.isDarwin then "/Users" else "/home";
   userShell = "zsh";
 in {
+  imports = [ ./core.nix ];
+
   users.users = {
     "${defaultUser}" = {
       description = "Kennan LeJeune";
@@ -74,7 +76,8 @@ in {
     ];
 
     binaryCaches = [ "https://kclejeune.cachix.org" ];
-    binaryCachePublicKeys = [ "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=" ];
+    binaryCachePublicKeys =
+      [ "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=" ];
   };
 
   fonts = {

@@ -6,10 +6,8 @@
 let defaultUser = "kclejeune";
 in {
   imports = [
-    ./modules/common.nix
-    # Include the results of the hardware scan.
-    ./hardware-configuration.nix
-    ./modules/keybase.nix
+    ../common.nix
+    ./keybase.nix
   ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
@@ -27,7 +25,7 @@ in {
   };
 
   home-manager.users.${defaultUser} = { pkgs, ... }: {
-    imports = [ ./modules/gnome ];
+    imports = [ ../gnome ];
   };
 
   networking.hostName = "Phil"; # Define your hostname.
