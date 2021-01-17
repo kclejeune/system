@@ -39,6 +39,19 @@
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
+
+      # Build and activate with
+      # `nix build .#server.activationPackage; ./result/activate`
+      # courtesy of @malob - https://github.com/malob/nixpkgs/
+      server = home-manager.lib.homeManagerConfiguration rec {
+        system = "x86_64-linux";
+        username = "kclejeune";
+        homeDirectory = "/home/${username}";
+        configuration = {
+          imports = [ ./modules/home.nix ];
+        };
+      };
+
     } //
     # add a devShell to this flake
     (flake-utils.lib.eachDefaultSystem (system:
