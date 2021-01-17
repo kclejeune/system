@@ -66,11 +66,6 @@
       # other useful stuff
       youtube-dl
       speedtest-cli
-      (pkgs.writeShellScriptBin "sysup" ''
-        cd ${
-          if (stdenvNoCC.isDarwin) then "~/.nixpkgs" else "/etc/nixos"
-        } && nix flake update --recreate-lock-file --commit-lock-file
-      '')
 
       # typesetting
       # (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
