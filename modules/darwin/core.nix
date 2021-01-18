@@ -44,10 +44,6 @@ in {
       in { })
   ];
 
-  programs.zsh.enable = true;
-  programs.fish.enable = true;
-  programs.bash.enable = true;
-
   # Auto upgrade nix package and the daemon service.
   services.nix-daemon.enable = true;
 
