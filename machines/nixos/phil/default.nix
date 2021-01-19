@@ -5,7 +5,6 @@
 { config, pkgs, ... }: {
   imports = [
     ../nixos-common.nix
-    ../../../modules/users/personal-settings.nix
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
   ];

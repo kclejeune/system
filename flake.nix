@@ -38,8 +38,11 @@
       nixosConfigurations = {
         phil = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
-          modules =
-            [ home-manager.nixosModules.home-manager ./machines/nixos/phil ];
+          modules = [
+            home-manager.nixosModules.home-manager
+            ./machines/nixos/phil
+            ./modules/profiles/personal.nix
+          ];
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
