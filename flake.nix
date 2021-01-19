@@ -62,7 +62,7 @@
           username = "lejeukc1";
           homeDirectory = "/home/${username}";
           extraSpecialArgs = { inherit inputs nixpkgs; };
-          configuration = { imports = [ ./machines/home-manager/server ]; };
+          configuration = { imports = [ ./machines/home-manager ]; };
         };
       };
     } //
