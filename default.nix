@@ -1,10 +1,6 @@
 { pkgs ? import <nixpkgs> { } }:
 let
   isDarwin = pkgs.stdenvNoCC.isDarwin;
-  configuration = if isDarwin then
-    "$HOME/.nixpkgs/darwin-configuration.nix"
-  else
-    "/etc/nixos/configuration.nix";
 
   systemSetup = ''
     set -e
@@ -27,6 +23,14 @@ let
     ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.$1.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
   '';
 
+  nixosBuildScript = ''
+    ${pkgs.nixFlakes}/bin/nix build ".#nixosConfigurations.$1.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
+  '';
+
+  homeManagerBuildScript = ''
+    ${pkgs.nixFlakes}/bin/nix build ".#homeManagerConfigurations.$1.activationPackage" -v --experimental-features "flakes nix-command" --show-trace
+  '';
+
   darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
     ${systemSetup}
     ${darwinBuildScript}
@@ -37,8 +41,12 @@ let
     ${darwinBuildScript}
   '';
 
-  nixosBuild = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#nixosConfigurations.$1.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
+  nixosBuild = pkgs.writeShellScriptBin "nixosBuild" ''
+    ${nixosBuildScript}
+  '';
+
+  homeManagerBuild = pkgs.writeShellScriptBin "homeManagerBuild" ''
+    ${homeManagerBuildScript}
   '';
 
   homebrewInstall = pkgs.writeShellScriptBin "homebrewInstall" ''
@@ -46,6 +54,13 @@ let
   '';
 
 in pkgs.mkShell {
-  buildInputs = [ pkgs.nixFlakes darwinBuild darwinInstall homebrewInstall ];
+  buildInputs = [
+    pkgs.nixFlakes
+    darwinBuild
+    nixosBuild
+    homeManagerBuild
+    darwinInstall
+    homebrewInstall
+  ];
 }
 

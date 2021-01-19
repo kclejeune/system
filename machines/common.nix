@@ -24,7 +24,6 @@ in {
   environment = {
     systemPackages = with pkgs; [
       # editors
-      vim
       neovim
 
       # standard toolset
@@ -51,6 +50,8 @@ in {
     # list of acceptable shells in /etc/shells
     shells = with pkgs; [ bash zsh fish ];
   };
+
+  programs.zsh.enable = true;
 
   nix = {
     package = pkgs.nixFlakes;

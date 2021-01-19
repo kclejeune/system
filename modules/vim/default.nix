@@ -39,24 +39,6 @@ let
     awesome-vim-colorschemes
   ];
 in {
-  programs.vim = {
-    enable = false;
-    plugins = vimPlugins;
-    settings = {
-      background = "dark";
-      expandtab = true;
-      tabstop = 4;
-      shiftwidth = 4;
-      smartcase = true;
-      number = true;
-      relativenumber = true;
-      history = 10000;
-    };
-    extraConfig = ''
-      ${readVimSection "settings"}
-    '';
-  };
-
   programs.neovim = {
     enable = true;
     viAlias = true;

@@ -1,5 +1,5 @@
 { config, pkgs, ... }: {
-  imports = [ ./vim ./zsh ./kitty ];
+  imports = [ ./vim ./zsh ./kitty ./dotfiles ];
 
   xdg.enable = true;
 
