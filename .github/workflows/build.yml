@@ -27,7 +27,7 @@ jobs:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Randall
-        run: nix-shell --run "darwinBuild randall"
+        run: nix develop -c darwinBuild randall
   build_nixos:
     runs-on: ubuntu-latest
     steps:
@@ -48,7 +48,7 @@ jobs:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Phil
-        run: nix-shell --run "nixosBuild phil"
+        run: nix develop -c nixosBuild phil
   build_server:
     runs-on: ubuntu-latest
     steps:
@@ -69,4 +69,4 @@ jobs:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Server
-        run: nix-shell --run "homeManagerBuild server"
+        run: nix develop -c homeManagerBuild server
