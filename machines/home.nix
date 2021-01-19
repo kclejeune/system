@@ -1,6 +1,9 @@
 { inputs, config, pkgs, ... }: {
   imports = [ ../modules/core.nix ];
 
+  # don't use the manpages since this breaks nixos-install currently
+  manual.manpages.enable = false;
+
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
   home = {
