@@ -1,2 +1,4 @@
 result
 .DS_STORE
+.direnv/
+.vscode/

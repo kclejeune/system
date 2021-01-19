@@ -1,23 +1,24 @@
-{ inputs, config, lib, pkgs, ... }:
-let
-  defaultUser = "kclejeune";
-  homePrefix = if pkgs.stdenvNoCC.isDarwin then "/Users" else "/home";
-  userShell = "zsh";
-in {
-  users.users = {
-    "${defaultUser}" = {
-      description = "Kennan LeJeune";
-      home = "${homePrefix}/${defaultUser}";
-      shell = pkgs.${userShell};
-    };
+{ inputs, config, lib, pkgs, ... }: {
+  imports = [ ../modules/primary.nix ];
+
+  programs.zsh.enable = true;
+
+  user = {
+    description = "Kennan LeJeune";
+    home = "${
+        if pkgs.stdenvNoCC.isDarwin then "/Users" else "/home"
+      }/${config.user.name}";
+    shell = pkgs.zsh;
   };
 
   # bootstrap home manager using system config
+  hm = { pkgs, ... }: { imports = [ ./home.nix ]; };
+
+  # let nix manage home-manager profiles and use global nixpkgs
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";
-    users.${defaultUser} = { pkgs, ... }: { imports = [ ./home.nix ]; };
   };
 
   # environment setup
@@ -51,8 +52,6 @@ in {
     shells = with pkgs; [ bash zsh fish ];
   };
 
-  programs.zsh.enable = true;
-
   nix = {
     package = pkgs.nixFlakes;
     extraOptions = ''
@@ -61,7 +60,7 @@ in {
       ${lib.optionalString (config.nix.package == pkgs.nixFlakes)
       "experimental-features = nix-command flakes"}
     '';
-    trustedUsers = [ "${defaultUser}" "root" "@admin" "@wheel" ];
+    trustedUsers = [ "${config.user.name}" "root" "@admin" "@wheel" ];
     gc = {
       automatic = true;
       options = "--delete-older-than 30d";

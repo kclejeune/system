@@ -2,15 +2,13 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }:
-let defaultUser = "kclejeune";
-in {
+{ config, pkgs, ... }: {
   imports = [ ../common.nix ];
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.defaultUserShell = pkgs.zsh;
   users.mutableUsers = false;
   users.users = {
-    "${defaultUser}" = {
+    "${config.user.name}" = {
       isNormalUser = true;
       createHome = true;
       useDefaultShell = true;
@@ -20,9 +18,7 @@ in {
     };
   };
 
-  home-manager.users.${defaultUser} = { pkgs, ... }: {
-    imports = [ ../../modules/gnome ];
-  };
+  hm = { pkgs, ... }: { imports = [ ../../modules/gnome ]; };
 
   networking.hostName = "Phil"; # Define your hostname.
   networking.networkmanager.enable = true;

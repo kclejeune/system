@@ -1,5 +1,6 @@
-{ config, pkgs, ... }: {
-  home-manager.users.lejeukc1 = {
+{ config, lib, pkgs, ... }: {
+  user.name = "lejeukc1";
+  hm = {
     home.packages = [ pkgs.cacert ];
     programs.git = {
       enable = true;
@@ -12,7 +13,7 @@
   };
 
   security.pki.certificateFiles = [
-    "${config.users.users.lejeukc1.home}/root-cert.cer"
+    "${config.user.home}/root-cert.cer"
     "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
   ];
 }

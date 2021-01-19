@@ -21,13 +21,17 @@
         randall = darwin.lib.darwinSystem {
           modules = [
             home-manager.darwinModules.home-manager
-            ./machines/darwin/randall
+            ./machines/darwin
+            ./modules/profiles/personal.nix
           ];
           specialArgs = { inherit inputs nixpkgs; };
         };
         work = darwin.lib.darwinSystem {
-          modules =
-            [ home-manager.darwinModules.home-manager ./machines/darwin/work ];
+          modules = [
+            home-manager.darwinModules.home-manager
+            ./machines/darwin
+            ./modules/profiles/work.nix
+          ];
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
@@ -46,6 +50,13 @@
         server = home-manager.lib.homeManagerConfiguration rec {
           system = "x86_64-linux";
           username = "kclejeune";
+          homeDirectory = "/home/${username}";
+          extraSpecialArgs = { inherit inputs nixpkgs; };
+          configuration = { imports = [ ./machines/home-manager ]; };
+        };
+        workServer = home-manager.lib.homeManagerConfiguration rec {
+          system = "x86_64-linux";
+          username = "lejeukc1";
           homeDirectory = "/home/${username}";
           extraSpecialArgs = { inherit inputs nixpkgs; };
           configuration = { imports = [ ./machines/home-manager/server ]; };

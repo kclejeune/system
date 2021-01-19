@@ -1,6 +1,6 @@
-{ config, pkgs, ... }: {
-  home-manager.users.kclejeune = {
-    home.packages = [ pkgs.cacert ];
+{ config, lib, pkgs, ... }: {
+  user.name = "kclejeune";
+  hm = {
     programs.git = {
       userEmail = "kennan@case.edu";
       userName = "Kennan LeJeune";
