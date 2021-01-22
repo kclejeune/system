@@ -55,19 +55,29 @@
           username = "kclejeune";
           homeDirectory = "/home/${username}";
           extraSpecialArgs = { inherit inputs nixpkgs; };
-          configuration = { imports = [ ./machines/home-manager ]; };
+          configuration = {
+            imports = [
+              ./machines/home-manager
+              ./modules/profiles/home-manager/personal.nix
+            ];
+          };
         };
         workServer = home-manager.lib.homeManagerConfiguration rec {
           system = "x86_64-linux";
           username = "lejeukc1";
           homeDirectory = "/home/${username}";
           extraSpecialArgs = { inherit inputs nixpkgs; };
-          configuration = { imports = [ ./machines/home-manager ]; };
+          configuration = {
+            imports = [
+              ./machines/home-manager
+              ./modules/profiles/home-manager/work.nix
+            ];
+          };
         };
       };
     } //
     # add a devShell to this flake
     (flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system};
-      in { devShell = import ./default.nix { inherit pkgs; }; }));
+      in { devShell = import ./shell.nix { inherit pkgs; }; }));
 }
