@@ -2,7 +2,8 @@
 let
   isDarwin = pkgs.stdenvNoCC.isDarwin;
 
-  systemSetup = ''
+  # /run volume setup for nix darwin
+  darwinDiskSetup = pkgs.writeShellScriptBin "darwinDiskSetup" ''
     set -e
     echo >&2 "Installing Nix-Darwin..."
 
@@ -19,34 +20,20 @@ let
     fi
   '';
 
-  darwinBuildScript = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.$1.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
-  '';
-
-  nixosBuildScript = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#nixosConfigurations.$1.config.system.build.toplevel" -v --experimental-features "flakes nix-command" --show-trace
-  '';
-
-  homeManagerBuildScript = ''
-    ${pkgs.nixFlakes}/bin/nix build ".#homeManagerConfigurations.$1.activationPackage" -v --experimental-features "flakes nix-command" --show-trace
-  '';
-
-  darwinInstall = pkgs.writeShellScriptBin "darwinInstall" ''
-    ${systemSetup}
-    ${darwinBuildScript}
-    sudo ./result/activate
+  buildScriptFlags = ''
+    -v --experimental-features "flakes nix-command" --show-trace
   '';
 
   darwinBuild = pkgs.writeShellScriptBin "darwinBuild" ''
-    ${darwinBuildScript}
+    ${pkgs.nixFlakes}/bin/nix build ".#darwinConfigurations.$1.config.system.build.toplevel" ${buildScriptFlags}
   '';
 
   nixosBuild = pkgs.writeShellScriptBin "nixosBuild" ''
-    ${nixosBuildScript}
+    ${pkgs.nixFlakes}/bin/nix build ".#nixosConfigurations.$1.config.system.build.toplevel" ${buildScriptFlags}
   '';
 
   homeManagerBuild = pkgs.writeShellScriptBin "homeManagerBuild" ''
-    ${homeManagerBuildScript}
+    ${pkgs.nixFlakes}/bin/nix build ".#homeManagerConfigurations.$1.activationPackage" ${buildScriptFlags}
   '';
 
   homebrewInstall = pkgs.writeShellScriptBin "homebrewInstall" ''
@@ -56,10 +43,10 @@ let
 in pkgs.mkShell {
   buildInputs = [
     pkgs.nixFlakes
+    darwinDiskSetup
     darwinBuild
     nixosBuild
     homeManagerBuild
-    darwinInstall
     homebrewInstall
   ];
 }

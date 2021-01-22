@@ -69,5 +69,5 @@
     # add a devShell to this flake
     (flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system};
-      in { devShell = import ./default.nix { inherit pkgs; }; }));
+      in { devShell = import ./shell.nix { inherit pkgs; }; }));
 }
