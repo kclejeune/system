@@ -2,15 +2,15 @@
   description = "nix system configurations";
 
   inputs = {
-    nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
-    stable.url = github:nixos/nixpkgs/nixos-20.09;
-    flake-utils.url = github:numtide/flake-utils/master;
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    stable.url = "github:nixos/nixpkgs/nixos-20.09";
+    flake-utils.url = "github:numtide/flake-utils/master";
     darwin = {
-      url = github:kclejeune/nix-darwin/brew-bundle;
+      url = "github:kclejeune/nix-darwin/brew-bundle";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = github:nix-community/home-manager/master;
+      url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
