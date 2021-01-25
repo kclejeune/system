@@ -12,7 +12,7 @@
   };
 
   # bootstrap home manager using system config
-  hm = { pkgs, ... }: { imports = [ ./home.nix ]; };
+  hm = (import ./home.nix);
 
   # let nix manage home-manager profiles and use global nixpkgs
   home-manager = {
