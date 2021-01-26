@@ -43,6 +43,7 @@ let
 in pkgs.mkShell {
   buildInputs = [
     pkgs.nixFlakes
+    pkgs.rnix-lsp
     (pkgs.python3.withPackages (ps: with ps; [ black pylint click distro ]))
     darwinDiskSetup
     darwinBuild
