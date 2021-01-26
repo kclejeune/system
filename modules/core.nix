@@ -49,7 +49,7 @@
           "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
       };
     };
-
+    command-not-found.enable = true;
   };
 
 }

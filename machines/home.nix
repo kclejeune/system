@@ -6,6 +6,9 @@ let
     "[[ -d /etc/nixos ]] && cd /etc/nixos && ${nixFlakes} develop -c /etc/nixos/do $@";
   sysDoDarwin =
     "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${nixFlakes} develop -c ${homeDir}/.nixpkgs/do $@";
+  sysdo = (pkgs.writeShellScriptBin "sysdo" ''
+    ${sysDoNixos} || ${sysDoDarwin}
+  '');
 in {
   imports = [ ../modules/core.nix ];
 
@@ -29,7 +32,6 @@ in {
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       JAVA_HOME = "${pkgs.jdk11}";
-      # NIX_PATH = "$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
     };
 
     # define package definitions for current user environment
@@ -38,10 +40,11 @@ in {
       nixpkgs-fmt
       nixfmt
       niv
+      sysdo
 
       # scripting
       (python3.withPackages
-        (ps: with ps; [ bpython black numpy scipy pandas networkx ]))
+        (ps: with ps; [ bpython black numpy scipy pandas networkx click ]))
 
       # gnu stuff
       # encryption and signing utilities
@@ -75,10 +78,6 @@ in {
       # (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
       # texlive.combined.scheme-full
       tectonic
-
-      (pkgs.writeShellScriptBin "sysdo" ''
-        ${sysDoNixos} || ${sysDoDarwin}
-      '')
     ];
   };
 }

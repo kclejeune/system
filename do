@@ -161,7 +161,7 @@ def gc(delete_older_than: str, dry_run: bool):
     run_cmd(cmd)
 
 
-@cli.command(help="run formatter on all nix files", no_args_is_help=True)
+@cli.command(help="run formatter on all nix files")
 def fmt():
     cmd = "nixfmt **/*.nix"
     run_cmd(cmd)
@@ -178,7 +178,6 @@ def clean():
 
 @cli.command(
     help="run the nix installer",
-    no_args_is_help=True,
 )
 @click.option(
     "--installer",
@@ -199,7 +198,6 @@ def install(installer: str):
 
 @cli.command(
     help="configure disk setup for nix-darwin",
-    no_args_is_help=True,
 )
 def diskSetup():
     if not IS_DARWIN:
