@@ -96,7 +96,7 @@ def build(nixos: bool, darwin: bool, home_manager: bool, host: str):
         cfg = infer_platform()
         if home_manager or cfg == FlakeOutputs.HOME_MANAGER:
             flake = f".#{FlakeOutputs.HOME_MANAGER.value}.{host}.activationPackage"
-            cmd = f"nix build {flake}"
+            cmd = f"nix build {flake} --experimental-features 'flakes nix-command'"
             run_cmd(cmd)
         elif darwin or cfg == FlakeOutputs.DARWIN:
             flake = f".#{host}"
@@ -123,7 +123,6 @@ def build(nixos: bool, darwin: bool, home_manager: bool, host: str):
 def switch(nixos: bool, darwin: bool, home_manager: bool, host: str):
     if not host:
         click.secho("Error: host configuration not specified.", fg=Colors.ERROR.value)
-        return False
     else:
         cfg = infer_platform()
         if home_manager or cfg == FlakeOutputs.HOME_MANAGER:
