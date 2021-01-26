@@ -37,6 +37,10 @@ def fmt_command(cmd: str):
     return f"> {cmd}"
 
 
+def test_cmd(cmd: str):
+    return os.system(f"{cmd} > /dev/null") == 0
+
+
 def run_cmd(cmd: str):
     click.secho(fmt_command(cmd), fg=Colors.INFO.value)
     return os.system(cmd)
@@ -169,7 +173,6 @@ def fmt():
 
 @cli.command(
     help="remove previously built configurations and symlinks from the current directory",
-    no_args_is_help=True,
 )
 def clean():
     cmd = "for i in *; do [[ -L $i ]] && rm -f $i; done"
@@ -177,27 +180,8 @@ def clean():
 
 
 @cli.command(
-    help="run the nix installer",
-)
-@click.option(
-    "--installer",
-    "-i",
-    default="https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20210122_b7bfc7e/install",
-    help="specify an alternate link for the installer",
-)
-def install(installer: str):
-    check = "command -v nix > /dev/null"
-    flags = "--darwin-use-unencrypted-nix-store-volume" if IS_DARWIN else ""
-    cmd = f"sh <(curl -L {installer}) --daemon {flags}"
-    if run_cmd(check) == 0:
-        click.secho("nix is already installed. aborting...", fg=Colors.ERROR.value)
-    else:
-        click.secho("installing nix...", fg=Colors.INFO.value)
-        run_cmd(cmd)
-
-
-@cli.command(
     help="configure disk setup for nix-darwin",
+    hidden=not IS_DARWIN,
 )
 def diskSetup():
     if not IS_DARWIN:
@@ -205,23 +189,25 @@ def diskSetup():
             "nix-darwin does not apply on this platform. aborting...",
             fg=Colors.ERROR.value,
         )
-    else:
-        cmd = """
-set -e
+        return
 
-# setup /run directory for darwin system installations
-if ! grep -q '^run\\b' /etc/synthetic.conf 2>/dev/null; then
-echo "setting up /etc/synthetic.conf..."
-echo -e "run\\tprivate/var/run" | sudo tee -a /etc/synthetic.conf >/dev/null
-/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -B 2>/dev/null || true
-/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -t 2>/dev/null || true
-fi
-if ! test -L /run; then
-    echo "setting up /run..."
-    sudo ln -sfn private/var/run /run
-fi
-        """
-        run_cmd(cmd)
+    if not test_cmd("grep -q '^run\\b' /etc/synthetic.conf 2>/dev/null"):
+        click.secho("setting up /etc/synthetic.conf", fg=Colors.INFO.value)
+        run_cmd(
+            'echo -e "run\\tprivate/var/run" | sudo tee -a /etc/synthetic.conf >/dev/null'
+        )
+        run_cmd(
+            "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -B 2>/dev/null || true"
+        )
+        run_cmd(
+            "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -t 2>/dev/null || true"
+        )
+
+    if not test_cmd("test -L /run"):
+        click.secho("linking /run directory", fg=Colors.INFO.value)
+        run_cmd("sudo ln -sfn private/var/run /run")
+
+    click.secho("disk setup complete", fg=Colors.SUCCESS.value)
 
 
 if __name__ == "__main__":
