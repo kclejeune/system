@@ -1,4 +1,12 @@
-{ inputs, config, pkgs, ... }: {
+{ inputs, config, pkgs, ... }:
+let
+  homeDir = config.home.homeDirectory;
+  nixFlakes = "${pkgs.nixFlakes}/bin/nix";
+  sysDoNixos =
+    "[[ -d /etc/nixos ]] && cd /etc/nixos && ${nixFlakes} develop -c /etc/nixos/do $@";
+  sysDoDarwin =
+    "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${nixFlakes} develop -c ${homeDir}/.nixpkgs/do $@";
+in {
   imports = [ ../modules/core.nix ];
 
   # Home Manager needs a bit of information about you and the
@@ -67,6 +75,10 @@
       # (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
       # texlive.combined.scheme-full
       tectonic
+
+      (pkgs.writeShellScriptBin "sysdo" ''
+        ${sysDoNixos} || ${sysDoDarwin}
+      '')
     ];
   };
 }
