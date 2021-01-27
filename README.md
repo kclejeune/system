@@ -15,23 +15,26 @@ possible in [./machines/common.nix](./machines/common.nix).
 ## Prerequisites
 ### Installing Nix Package Manager
 
-Run the following to perform a multi-user installation
-for darwin or standard linux. This step is naturally
-skipped on NixOS since `nix` is the package manager by default.
-
-#### macOS
+Run the installer script to perform a multi-user installation
+on darwin or any other type of linux.
 
 ```bash
-sh <(curl -L https://nixos.org/nix/install) --daemon --darwin-use-unencrypted-nix-store-volume
+./install-nix.sh
 ```
 
-#### Linux
-
-```bash
-sh <(curl -L https://nixos.org/nix/install) --daemon
-```
+Note that this step is naturally skipped on NixOS since `nix` is the package manager by default.
 
 ## System Bootstrapping
+
+### NixOS
+
+Follow the installation instructions, then run
+
+```bash
+sudo nixos-install --flake github:kclejeune/system#phil
+```
+
+### Darwin/Linux
 
 Clone this repository into `~/.nixpkgs` with
 
@@ -39,18 +42,14 @@ Clone this repository into `~/.nixpkgs` with
 git clone https://github.com/kclejeune/system ~/.nixpkgs
 ```
 
-You can bootstrap a new system using
+You can bootstrap a new nix-darwin system using
 
 ```bash
-cd ~/.nixpkgs && nix-shell --run "darwinInstall"
+nix develop -c ./do disksetup && ./do build --darwin [host] && ./result/activate-user && ./result/activate
 ```
 
-or run the build only by running
+or a home-manager configuration using
 
 ```bash
-cd ~/.nixpkgs && nix-shell --run "darwinTest"
+nix develop -c ./do build --home-manager [host] && ./result/activate
 ```
-
-### Installing Homebrew dependencies
-
-The few leftover homebrew packages and brew casks are stored in `~/Brewfile`. They can be installed using `cd ~ && brew bundle`.
