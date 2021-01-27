@@ -203,7 +203,6 @@ def switch(
         help="look in homeManagerConfigurations for the specified host",
     ),
 ):
-    print(f"{nixos=},{darwin=},{home_manager=}")
     if not host:
         typer.secho("Error: host configuration not specified.", fg=Colors.ERROR.value)
     else:
