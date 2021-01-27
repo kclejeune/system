@@ -2,12 +2,11 @@
 
 import os
 from enum import Enum
-from typing import Iterable
+from typing import List
 
-import click
-import distro
+import typer
 
-IS_DARWIN = distro.id().lower() == "darwin"
+app = typer.Typer()
 
 
 class FlakeOutputs(Enum):
@@ -17,9 +16,9 @@ class FlakeOutputs(Enum):
 
 
 class Colors(Enum):
-    SUCCESS = "green"
-    INFO = "blue"
-    ERROR = "red"
+    SUCCESS = typer.colors.GREEN
+    INFO = typer.colors.BLUE
+    ERROR = typer.colors.RED
 
 
 def infer_platform():
@@ -33,6 +32,12 @@ def infer_platform():
         return FlakeOutputs.HOME_MANAGER
 
 
+PLATFORM = infer_platform()
+IS_DARWIN = PLATFORM == FlakeOutputs.DARWIN
+IS_NIXOS = PLATFORM == FlakeOutputs.NIXOS
+# IS_LINUX = PLATFORM != FlakeOutputs.DARWIN and PLATFORM != FlakeOutputs.NIXOS and distro.
+
+
 def fmt_command(cmd: str):
     return f"> {cmd}"
 
@@ -42,87 +47,165 @@ def test_cmd(cmd: str):
 
 
 def run_cmd(cmd: str):
-    click.secho(fmt_command(cmd), fg=Colors.INFO.value)
+    typer.secho(fmt_command(cmd), fg=Colors.INFO.value)
     return os.system(cmd)
 
 
-@click.group()
-def cli():
-    # dummy command to group all subcommands
-    pass
-
-
-@cli.command(
-    help="update all flake inputs, or a specific flake using the -f argument",
-)
-@click.option(
-    "--flake",
-    "-f",
-    default="",
-    metavar="[HOST]",
-    multiple=True,
-    help="specify an individual flake to be updated",
-)
-@click.option(
-    "--commit", flag_value=True, is_flag=True, help="commit the updated lockfile"
-)
-def update(commit: bool, flake: Iterable[str]):
-    flags = "--commit-lock-file" if commit else ""
-    if not flake:
-        click.echo("updating all flake inputs")
-        cmd = f"nix flake update --recreate-lock-file {flags}"
-        run_cmd(cmd)
+@app.command(help="builds an initial configuration")
+def bootstrap(
+    host: str, nixos: bool = False, darwin: bool = False, home_manager: bool = False
+):
+    cfg = infer_platform()
+    if home_manager or cfg == FlakeOutputs.HOME_MANAGER:
+        flake = f".#{FlakeOutputs.HOME_MANAGER.value}.{host}.activationPackage"
+        run_cmd(f"nix build {flake} --experimental-features 'flakes nix-command'")
+        run_cmd("./result/activate")
+    elif darwin or cfg == FlakeOutputs.DARWIN:
+        flake = f".#{host}"
+        run_cmd(f"darwin-rebuild build --flake {flake} --show-trace")
+        run_cmd("./result/activate-user && ./result/activate")
+    elif nixos or cfg == FlakeOutputs.NIXOS:
+        typer.secho(
+            "boostrap does not apply to nixos systems. aborting...",
+            fg=Colors.ERROR.value,
+        )
     else:
-        for input in flake:
-            click.echo(f"updating {input}")
-            cmd = f"nix flake update --update-input {input} {flags}"
-            click.echo(fmt_command(cmd))
-            os.system(cmd)
+        typer.secho("could not infer system type. aborting...", fg=Colors.ERROR.value)
 
 
-@cli.command(
+@app.command(
     help="builds the specified flake output; infers correct platform to use if not specified",
     no_args_is_help=True,
 )
-@click.option("--nixos", flag_value=True, is_flag=True)
-@click.option("--darwin", flag_value=True, is_flag=True)
-@click.option("--home-manager", flag_value=True, is_flag=True)
-@click.argument("host", default="")
-def build(nixos: bool, darwin: bool, home_manager: bool, host: str):
-    if not host:
-        click.secho("Error: host configuration not specified.", fg=Colors.ERROR.value)
-        return False
+def build(
+    host: str = typer.Argument(
+        default=None, help="the hostname of the configuration to build"
+    ),
+    nixos: bool = typer.Option(
+        default=False,
+        flag_value=True,
+        is_flag=True,
+        help="look in nixosConfigurations for the specified host",
+    ),
+    darwin: bool = typer.Option(
+        False,
+        flag_value=True,
+        is_flag=True,
+        help="look in darwinConfigurations for the specified host",
+    ),
+    home_manager: bool = typer.Option(
+        False,
+        flag_value=True,
+        is_flag=True,
+        help="look in homeManagerConfigurations for the specified host",
+    ),
+):
+    cfg = infer_platform()
+    if home_manager or cfg == FlakeOutputs.HOME_MANAGER:
+        flake = f".#{FlakeOutputs.HOME_MANAGER.value}.{host}.activationPackage"
+        run_cmd(f"nix build {flake} --experimental-features 'flakes nix-command'")
+    elif darwin or cfg == FlakeOutputs.DARWIN:
+        flake = f".#{host}"
+        run_cmd(f"darwin-rebuild build --flake {flake} --show-trace")
+    elif nixos or cfg == FlakeOutputs.NIXOS:
+        flake = f".#{host}"
+        run_cmd(f"sudo nixos-rebuild build --flake {flake} --show-trace")
     else:
-        cfg = infer_platform()
-        if home_manager or cfg == FlakeOutputs.HOME_MANAGER:
-            flake = f".#{FlakeOutputs.HOME_MANAGER.value}.{host}.activationPackage"
-            cmd = f"nix build {flake} --experimental-features 'flakes nix-command'"
-            run_cmd(cmd)
-        elif darwin or cfg == FlakeOutputs.DARWIN:
-            flake = f".#{host}"
-            cmd = f"darwin-rebuild build {flake}"
-            run_cmd(cmd)
-        elif nixos or cfg == FlakeOutputs.NIXOS:
-            flake = f".#{host}"
-            cmd = f"sudo nixos-rebuild build {flake}"
-            run_cmd(cmd)
-        else:
-            click.echo(
-                "could not infer system type. aborting...", fg=Colors.ERROR.value
-            )
+        typer.secho("could not infer system type. aborting...", fg=Colors.ERROR.value)
 
 
-@cli.command(
+@app.command(
+    help="remove previously built configurations and symlinks from the current directory",
+)
+def clean():
+    run_cmd("for i in *; do [[ -L $i ]] && rm -f $i; done")
+
+
+@app.command(
+    help="configure disk setup for nix-darwin",
+    hidden=not IS_DARWIN,
+)
+def diskSetup():
+    if not IS_DARWIN:
+        typer.secho(
+            "nix-darwin does not apply on this platform. aborting...",
+            fg=Colors.ERROR.value,
+        )
+        return
+
+    if not test_cmd("grep -q '^run\\b' /etc/synthetic.conf 2>/dev/null"):
+        typer.secho("setting up /etc/synthetic.conf", fg=Colors.INFO.value)
+        run_cmd(
+            'echo -e "run\\tprivate/var/run" | sudo tee -a /etc/synthetic.conf >/dev/null'
+        )
+        run_cmd(
+            "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -B 2>/dev/null || true"
+        )
+        run_cmd(
+            "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -t 2>/dev/null || true"
+        )
+
+    if not test_cmd("test -L /run"):
+        typer.secho("linking /run directory", fg=Colors.INFO.value)
+        run_cmd("sudo ln -sfn private/var/run /run")
+
+    typer.secho("disk setup complete", fg=Colors.SUCCESS.value)
+
+
+@app.command(help="run formatter on all nix files")
+def fmt():
+    cmd = "nixfmt **/*.nix"
+    run_cmd(cmd)
+
+
+@app.command(help="run garbage collection on unused nix store paths")
+def gc(
+    delete_older_than: str = typer.Option(
+        "14d",
+        "--delete-older-than",
+        "-d",
+        metavar="[AGE]",
+        help="specify minimum age for deleting store paths",
+    ),
+    dry_run: bool = typer.Option(False, help="test the result of garbage collection"),
+):
+    cmd = f"nix-collect-garbage --delete-older-than {delete_older_than} {'--dry-run' if dry_run else ''}"
+    run_cmd(cmd)
+
+
+@app.command(
     help="builds and activates the specified flake output; infers correct platform to use if not specified",
     no_args_is_help=True,
 )
-@click.option("--nixos", flag_value=True, is_flag=True)
-@click.option("--darwin", flag_value=True, is_flag=True)
-@click.option("--home-manager", flag_value=True, is_flag=True)
-@click.argument("host", default="")
-def switch(nixos: bool, darwin: bool, home_manager: bool, host: str):
+def switch(
+    host: str = typer.Argument(
+        default=None, help="the hostname of the configuration to build"
+    ),
+    nixos: bool = typer.Option(
+        False,
+        "--nixos",
+        flag_value=True,
+        is_flag=True,
+        help="look in nixosConfigurations for the specified host",
+    ),
+    darwin: bool = typer.Option(
+        False,
+        "--darwin",
+        flag_value=True,
+        is_flag=True,
+        help="look in darwinConfigurations for the specified host",
+    ),
+    home_manager: bool = typer.Option(
+        False,
+        "--home-manager",
+        flag_value=True,
+        is_flag=True,
+        help="look in homeManagerConfigurations for the specified host",
+    ),
+):
+    print(f"{nixos=},{darwin=},{home_manager=}")
     if not host:
-        click.secho("Error: host configuration not specified.", fg=Colors.ERROR.value)
+        typer.secho("Error: host configuration not specified.", fg=Colors.ERROR.value)
     else:
         cfg = infer_platform()
         if home_manager or cfg == FlakeOutputs.HOME_MANAGER:
@@ -138,76 +221,36 @@ def switch(nixos: bool, darwin: bool, home_manager: bool, host: str):
             cmd = f"sudo nixos-rebuild switch --flake {flake} --show-trace"
             run_cmd(cmd)
         else:
-            click.echo(
+            typer.secho(
                 "could not infer system type. aborting...", fg=Colors.ERROR.value
             )
 
 
-@cli.command(
-    help="run garbage collection on unused nix store paths", no_args_is_help=True
+@app.command(
+    help="update all flake inputs or optionally specific flakes",
 )
-@click.option(
-    "--delete-older-than",
-    "-d",
-    metavar="[AGE]",
-    default="14d",
-    help="specify minimum age for deleting store paths",
-)
-@click.option(
-    "--dry-run",
-    flag_value=True,
-    is_flag=True,
-    help="test the result of garbage collection",
-)
-def gc(delete_older_than: str, dry_run: bool):
-    cmd = f"nix-collect-garbage --delete-older-than {delete_older_than} {'--dry-run' if dry_run else ''}"
-    run_cmd(cmd)
-
-
-@cli.command(help="run formatter on all nix files")
-def fmt():
-    cmd = "nixfmt **/*.nix"
-    run_cmd(cmd)
-
-
-@cli.command(
-    help="remove previously built configurations and symlinks from the current directory",
-)
-def clean():
-    cmd = "for i in *; do [[ -L $i ]] && rm -f $i; done"
-    run_cmd(cmd)
-
-
-@cli.command(
-    help="configure disk setup for nix-darwin",
-    hidden=not IS_DARWIN,
-)
-def diskSetup():
-    if not IS_DARWIN:
-        click.secho(
-            "nix-darwin does not apply on this platform. aborting...",
-            fg=Colors.ERROR.value,
-        )
-        return
-
-    if not test_cmd("grep -q '^run\\b' /etc/synthetic.conf 2>/dev/null"):
-        click.secho("setting up /etc/synthetic.conf", fg=Colors.INFO.value)
-        run_cmd(
-            'echo -e "run\\tprivate/var/run" | sudo tee -a /etc/synthetic.conf >/dev/null'
-        )
-        run_cmd(
-            "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -B 2>/dev/null || true"
-        )
-        run_cmd(
-            "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -t 2>/dev/null || true"
-        )
-
-    if not test_cmd("test -L /run"):
-        click.secho("linking /run directory", fg=Colors.INFO.value)
-        run_cmd("sudo ln -sfn private/var/run /run")
-
-    click.secho("disk setup complete", fg=Colors.SUCCESS.value)
+def update(
+    flake: List[str] = typer.Option(
+        None,
+        "--flake",
+        "-f",
+        metavar="[FLAKE]",
+        help="specify an individual flake to be updated",
+    ),
+    commit: bool = typer.Option(False, help="commit the updated lockfile"),
+):
+    flags = "--commit-lock-file" if commit else ""
+    if not flake:
+        typer.secho("updating all flake inputs")
+        cmd = f"nix flake update --recreate-lock-file {flags}"
+        run_cmd(cmd)
+    else:
+        for input in flake:
+            typer.secho(f"updating {input}")
+            cmd = f"nix flake update --update-input {input} {flags}"
+            typer.secho(fmt_command(cmd))
+            os.system(cmd)
 
 
 if __name__ == "__main__":
-    cli()
+    app()
