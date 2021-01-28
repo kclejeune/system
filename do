@@ -67,7 +67,9 @@ def select(nixos: bool, darwin: bool, home_manager: bool):
         return PLATFORM
 
 
-@app.command(help="builds an initial configuration")
+@app.command(
+    help="builds an initial configuration", hidden=PLATFORM == FlakeOutputs.NIXOS
+)
 def bootstrap(
     host: str = typer.Argument(None, help="the hostname of the configuration to build"),
     nixos: bool = False,
