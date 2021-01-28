@@ -4,6 +4,7 @@ import os
 from enum import Enum
 from typing import List
 
+import platform
 import typer
 
 app = typer.Typer()
@@ -21,21 +22,18 @@ class Colors(Enum):
     ERROR = typer.colors.RED
 
 
-def infer_platform():
-    # if we're on nixos, this command should be in the path
-    if os.system("command -v nixos-rebuild > /dev/null") == 0:
-        return FlakeOutputs.NIXOS
+if os.system("command -v nixos-rebuild > /dev/null") == 0:
+    # if we're on nixos, this command is built in
+    PLATFORM = FlakeOutputs.NIXOS
+elif (
+    os.system("command -v darwin-rebuild > /dev/null") == 0
+    or platform.uname().system.lower() == "darwin".lower()
+):
     # if we're on darwin, we might have darwin-rebuild or the distro id will be 'darwin'
-    elif os.system("command -v darwin-rebuild > /dev/null") == 0 or IS_DARWIN:
-        return FlakeOutputs.DARWIN
-    else:
-        return FlakeOutputs.HOME_MANAGER
-
-
-PLATFORM = infer_platform()
-IS_DARWIN = PLATFORM == FlakeOutputs.DARWIN
-IS_NIXOS = PLATFORM == FlakeOutputs.NIXOS
-# IS_LINUX = PLATFORM != FlakeOutputs.DARWIN and PLATFORM != FlakeOutputs.NIXOS and distro.
+    PLATFORM = FlakeOutputs.DARWIN
+else:
+    # in all other cases of linux
+    PLATFORM = FlakeOutputs.HOME_MANAGER
 
 
 def fmt_command(cmd: str):
@@ -51,24 +49,51 @@ def run_cmd(cmd: str):
     return os.system(cmd)
 
 
+def select(nixos: bool, darwin: bool, home_manager: bool):
+    if sum([nixos, darwin, home_manager]) > 1:
+        typer.secho(
+            "cannot apply more than one of [--nixos, --darwin, --home-manager]. aborting...",
+            fg=Colors.ERROR.value,
+        )
+        return None
+
+    if nixos:
+        return FlakeOutputs.NIXOS
+    elif darwin:
+        return FlakeOutputs.DARWIN
+    elif home_manager:
+        return FlakeOutputs.HOME_MANAGER
+    else:
+        return PLATFORM
+
+
 @app.command(help="builds an initial configuration")
 def bootstrap(
-    host: str, nixos: bool = False, darwin: bool = False, home_manager: bool = False
+    host: str = typer.Argument(None, help="the hostname of the configuration to build"),
+    nixos: bool = False,
+    darwin: bool = False,
+    home_manager: bool = False,
 ):
-    cfg = infer_platform()
-    if home_manager or cfg == FlakeOutputs.HOME_MANAGER:
-        flake = f".#{FlakeOutputs.HOME_MANAGER.value}.{host}.activationPackage"
-        run_cmd(f"nix build {flake} --experimental-features 'flakes nix-command'")
-        run_cmd("./result/activate")
-    elif darwin or cfg == FlakeOutputs.DARWIN:
-        flake = f".#{host}"
-        run_cmd(f"darwin-rebuild build --flake {flake} --show-trace")
-        run_cmd("./result/activate-user && ./result/activate")
-    elif nixos or cfg == FlakeOutputs.NIXOS:
+    cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
+    flags = "-v --experimental-features 'flakes nix-command'"
+    if cfg is None:
+        return
+    elif cfg == FlakeOutputs.NIXOS:
         typer.secho(
             "boostrap does not apply to nixos systems. aborting...",
             fg=Colors.ERROR.value,
         )
+    elif cfg == FlakeOutputs.DARWIN:
+        flake = f".#{host}"
+        diskSetup()
+        flake = f".#{cfg.value}.{host}.config.system.build.toplevel {flags}"
+        run_cmd(f"nix build {flake} ")
+        run_cmd("./result/activate-user && ./result/activate")
+    elif cfg == FlakeOutputs.HOME_MANAGER:
+        flags = "-v --experimental-features 'flakes nix-command'"
+        flake = f".#{FlakeOutputs.HOME_MANAGER.value}.{host}.activationPackage"
+        run_cmd(f"nix build {flake} {flags}")
+        run_cmd("./result/activate")
     else:
         typer.secho("could not infer system type. aborting...", fg=Colors.ERROR.value)
 
@@ -78,38 +103,24 @@ def bootstrap(
     no_args_is_help=True,
 )
 def build(
-    host: str = typer.Argument(
-        default=None, help="the hostname of the configuration to build"
-    ),
-    nixos: bool = typer.Option(
-        default=False,
-        flag_value=True,
-        is_flag=True,
-        help="look in nixosConfigurations for the specified host",
-    ),
-    darwin: bool = typer.Option(
-        False,
-        flag_value=True,
-        is_flag=True,
-        help="look in darwinConfigurations for the specified host",
-    ),
-    home_manager: bool = typer.Option(
-        False,
-        flag_value=True,
-        is_flag=True,
-        help="look in homeManagerConfigurations for the specified host",
-    ),
+    host: str = typer.Argument(None, help="the hostname of the configuration to build"),
+    nixos: bool = False,
+    darwin: bool = False,
+    home_manager: bool = False,
 ):
-    cfg = infer_platform()
-    if home_manager or cfg == FlakeOutputs.HOME_MANAGER:
-        flake = f".#{FlakeOutputs.HOME_MANAGER.value}.{host}.activationPackage"
-        run_cmd(f"nix build {flake} --experimental-features 'flakes nix-command'")
-    elif darwin or cfg == FlakeOutputs.DARWIN:
-        flake = f".#{host}"
-        run_cmd(f"darwin-rebuild build --flake {flake} --show-trace")
-    elif nixos or cfg == FlakeOutputs.NIXOS:
+    cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
+    if cfg is None:
+        return
+    elif cfg == FlakeOutputs.NIXOS:
         flake = f".#{host}"
         run_cmd(f"sudo nixos-rebuild build --flake {flake} --show-trace")
+    elif cfg == FlakeOutputs.DARWIN:
+        flake = f".#{host}"
+        run_cmd(f"darwin-rebuild build --flake {flake} --show-trace")
+    elif cfg == FlakeOutputs.HOME_MANAGER:
+        flags = "-v --experimental-features 'flakes nix-command'"
+        flake = f".#{FlakeOutputs.HOME_MANAGER.value}.{host}.activationPackage"
+        run_cmd(f"nix build {flake} {flags}")
     else:
         typer.secho("could not infer system type. aborting...", fg=Colors.ERROR.value)
 
@@ -123,10 +134,10 @@ def clean():
 
 @app.command(
     help="configure disk setup for nix-darwin",
-    hidden=not IS_DARWIN,
+    hidden=PLATFORM != FlakeOutputs.DARWIN,
 )
 def diskSetup():
-    if not IS_DARWIN:
+    if PLATFORM != FlakeOutputs.DARWIN:
         typer.secho(
             "nix-darwin does not apply on this platform. aborting...",
             fg=Colors.ERROR.value,
@@ -158,10 +169,12 @@ def fmt():
     run_cmd(cmd)
 
 
-@app.command(help="run garbage collection on unused nix store paths")
+@app.command(
+    help="run garbage collection on unused nix store paths", no_args_is_help=True
+)
 def gc(
     delete_older_than: str = typer.Option(
-        "14d",
+        None,
         "--delete-older-than",
         "-d",
         metavar="[AGE]",
@@ -181,43 +194,28 @@ def switch(
     host: str = typer.Argument(
         default=None, help="the hostname of the configuration to build"
     ),
-    nixos: bool = typer.Option(
-        False,
-        "--nixos",
-        flag_value=True,
-        is_flag=True,
-        help="look in nixosConfigurations for the specified host",
-    ),
-    darwin: bool = typer.Option(
-        False,
-        "--darwin",
-        flag_value=True,
-        is_flag=True,
-        help="look in darwinConfigurations for the specified host",
-    ),
-    home_manager: bool = typer.Option(
-        False,
-        "--home-manager",
-        flag_value=True,
-        is_flag=True,
-        help="look in homeManagerConfigurations for the specified host",
-    ),
+    nixos: bool = False,
+    darwin: bool = False,
+    home_manager: bool = False,
 ):
     if not host:
         typer.secho("Error: host configuration not specified.", fg=Colors.ERROR.value)
     else:
-        cfg = infer_platform()
-        if home_manager or cfg == FlakeOutputs.HOME_MANAGER:
-            flake = f".#{cfg.value}.{host}.activationPackage"
-            cmd = f"nix build {flake} && ./result/activate"
+        cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
+        if cfg is None:
+            return
+        elif cfg == FlakeOutputs.NIXOS:
+            flake = f".#{host}"
+            cmd = f"sudo nixos-rebuild switch --flake {flake} --show-trace"
             run_cmd(cmd)
-        elif darwin or cfg == FlakeOutputs.DARWIN:
+        elif cfg == FlakeOutputs.DARWIN:
             flake = f".#{host}"
             cmd = f"darwin-rebuild switch --flake {flake} --show-trace"
             run_cmd(cmd)
-        elif nixos or cfg == FlakeOutputs.NIXOS:
-            flake = f".#{host}"
-            cmd = f"sudo nixos-rebuild switch --flake {flake} --show-trace"
+        elif cfg == FlakeOutputs.HOME_MANAGER:
+
+            flake = f".#{cfg.value}.{host}.activationPackage"
+            cmd = f"nix build {flake} {flags} && ./result/activate"
             run_cmd(cmd)
         else:
             typer.secho(
