@@ -247,9 +247,12 @@ def update(
         for input in flake:
             typer.secho(f"updating {input}")
             cmd = f"nix flake update --update-input {input} {flags}"
-            typer.secho(fmt_command(cmd))
-            os.system(cmd)
+            run_cmd(cmd)
 
+@app.command(help="cache the output environment of flake.nix")
+def cache(cache_name: str = "kclejeune"):
+    cmd = f"nix flake archive --json | jq -r '.path,(.inputs|to_entries[].value.path)' | cachix push {cache_name}"
+    run_cmd(cmd)
 
 if __name__ == "__main__":
     app()

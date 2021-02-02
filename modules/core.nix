@@ -4,6 +4,7 @@
   # install extra common packages
   home.packages = with pkgs; [
     nixFlakes
+    cachix
     fd
     ripgrep
     htop

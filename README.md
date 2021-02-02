@@ -82,6 +82,7 @@ $ ./do.py [OPTIONS] COMMAND [ARGS]...
 
 * `bootstrap`: builds an initial configuration
 * `build`: builds the specified flake output; infers...
+* `cache`: cache the output environment of flake.nix
 * `clean`: remove previously built configurations and...
 * `disksetup`: configure disk setup for nix-darwin
 * `fmt`: run formatter on all nix files
@@ -129,6 +130,21 @@ $ ./do.py build [OPTIONS] [HOST]
 * `--nixos / --no-nixos`: [default: False]
 * `--darwin / --no-darwin`: [default: False]
 * `--home-manager / --no-home-manager`: [default: False]
+* `--help`: Show this message and exit.
+
+## `./do.py cache`
+
+cache the output environment of flake.nix
+
+**Usage**:
+
+```console
+$ ./do.py cache [OPTIONS]
+```
+
+**Options**:
+
+* `--cache-name TEXT`: [default: kclejeune]
 * `--help`: Show this message and exit.
 
 ## `./do.py clean`
