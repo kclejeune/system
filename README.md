@@ -64,12 +64,12 @@ or a home-manager configuration using
 ```bash
 nix develop -c ./do.py build --home-manager [host] && ./result/activate
 ```
-## CLI Documentation
+## CLI Documentation: `./do.py`
 
 **Usage**:
 
 ```console
-$ [OPTIONS] COMMAND [ARGS]...
+$ ./do.py [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options**:
@@ -89,14 +89,14 @@ $ [OPTIONS] COMMAND [ARGS]...
 * `switch`: builds and activates the specified flake...
 * `update`: update all flake inputs or optionally...
 
-## `bootstrap`
+## `./do.py bootstrap`
 
 builds an initial configuration
 
 **Usage**:
 
 ```console
-$ bootstrap [OPTIONS] [HOST]
+$ ./do.py bootstrap [OPTIONS] [HOST]
 ```
 
 **Arguments**:
@@ -110,14 +110,14 @@ $ bootstrap [OPTIONS] [HOST]
 * `--home-manager / --no-home-manager`: [default: False]
 * `--help`: Show this message and exit.
 
-## `build`
+## `./do.py build`
 
 builds the specified flake output; infers correct platform to use if not specified
 
 **Usage**:
 
 ```console
-$ build [OPTIONS] [HOST]
+$ ./do.py build [OPTIONS] [HOST]
 ```
 
 **Arguments**:
@@ -131,56 +131,56 @@ $ build [OPTIONS] [HOST]
 * `--home-manager / --no-home-manager`: [default: False]
 * `--help`: Show this message and exit.
 
-## `clean`
+## `./do.py clean`
 
 remove previously built configurations and symlinks from the current directory
 
 **Usage**:
 
 ```console
-$ clean [OPTIONS]
+$ ./do.py clean [OPTIONS]
 ```
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-## `disksetup`
+## `./do.py disksetup`
 
 configure disk setup for nix-darwin
 
 **Usage**:
 
 ```console
-$ disksetup [OPTIONS]
+$ ./do.py disksetup [OPTIONS]
 ```
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-## `fmt`
+## `./do.py fmt`
 
 run formatter on all nix files
 
 **Usage**:
 
 ```console
-$ fmt [OPTIONS]
+$ ./do.py fmt [OPTIONS]
 ```
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-## `gc`
+## `./do.py gc`
 
 run garbage collection on unused nix store paths
 
 **Usage**:
 
 ```console
-$ gc [OPTIONS]
+$ ./do.py gc [OPTIONS]
 ```
 
 **Options**:
@@ -189,14 +189,14 @@ $ gc [OPTIONS]
 * `--dry-run / --no-dry-run`: test the result of garbage collection  [default: False]
 * `--help`: Show this message and exit.
 
-## `switch`
+## `./do.py switch`
 
 builds and activates the specified flake output; infers correct platform to use if not specified
 
 **Usage**:
 
 ```console
-$ switch [OPTIONS] [HOST]
+$ ./do.py switch [OPTIONS] [HOST]
 ```
 
 **Arguments**:
@@ -210,14 +210,14 @@ $ switch [OPTIONS] [HOST]
 * `--home-manager / --no-home-manager`: [default: False]
 * `--help`: Show this message and exit.
 
-## `update`
+## `./do.py update`
 
 update all flake inputs or optionally specific flakes
 
 **Usage**:
 
 ```console
-$ update [OPTIONS]
+$ ./do.py update [OPTIONS]
 ```
 
 **Options**:
