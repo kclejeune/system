@@ -5,6 +5,10 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     stable.url = "github:nixos/nixpkgs/nixos-20.09";
     flake-utils.url = "github:numtide/flake-utils/master";
+    flake-compat = {
+      url = "github:edolstra/flake-compat";
+      flake = false;
+    };
     darwin = {
       url = "github:kclejeune/nix-darwin/brew-bundle";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -77,7 +81,41 @@
       };
     } //
     # add a devShell to this flake
-    (flake-utils.lib.eachDefaultSystem (system:
+    flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system};
-      in { devShell = import ./shell.nix { inherit pkgs; }; }));
+      in {
+        devShell = let
+          nixBuild = "${pkgs.nixFlakes}/bin/nix build";
+          buildScriptFlags = ''
+            -v --experimental-features "flakes nix-command" --show-trace
+          '';
+          mkBuildScript = { title, buildAttr }:
+            pkgs.writeShellScriptBin title ''
+              ${nixBuild} ${buildAttr} ${buildScriptFlags}
+            '';
+          darwinBuild = mkBuildScript {
+            title = "darwinBuild";
+            buildAttr =
+              ".#darwinConfigurations.$1.config.system.build.toplevel";
+          };
+          nixosBuild = mkBuildScript {
+            title = "nixosBuild";
+            buildAttr = ".#nixosConfigurations.$1.config.system.build.toplevel";
+          };
+          homeManagerBuild = mkBuildScript {
+            title = "homeManagerBuild";
+            buildAttr = ".#homeManagerConfigurations.$1.activationPackage";
+          };
+        in pkgs.mkShell {
+          buildInputs = with pkgs; [
+            pkgs.nixFlakes
+            pkgs.rnix-lsp
+            (pkgs.python3.withPackages
+              (ps: with ps; [ black pylint typer colorama shellingham distro ]))
+            darwinBuild
+            nixosBuild
+            homeManagerBuild
+          ];
+        };
+      });
 }
