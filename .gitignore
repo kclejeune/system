@@ -4,3 +4,4 @@ result
 .vscode/
 venv/
 env/
+__pycache__/
