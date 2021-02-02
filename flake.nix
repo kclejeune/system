@@ -17,9 +17,14 @@
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    mach-nix = {
+      url = "github:DavHau/mach-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, darwin, home-manager, flake-utils, ... }:
+  outputs =
+    inputs@{ self, nixpkgs, darwin, home-manager, mach-nix, flake-utils, ... }:
     {
       darwinConfigurations = {
         randall = darwin.lib.darwinSystem {
@@ -106,12 +111,22 @@
             platform = "homeManager";
             buildAttr = ".#homeManagerConfigurations.$1.activationPackage";
           };
+          pyEnv = (mach-nix.lib.${system}.mkPython {
+            requirements = ''
+              black
+              pylint
+              typer-cli
+              typer
+              colorama
+              shellingham
+              distro
+            '';
+          });
         in pkgs.mkShell {
           buildInputs = with pkgs; [
-            pkgs.nixFlakes
-            pkgs.rnix-lsp
-            (pkgs.python3.withPackages
-              (ps: with ps; [ black pylint typer colorama shellingham distro ]))
+            nixFlakes
+            rnix-lsp
+            pyEnv
             darwinBuild
             nixosBuild
             homeManagerBuild
