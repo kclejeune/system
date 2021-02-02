@@ -3,9 +3,9 @@ let
   homeDir = config.home.homeDirectory;
   nixFlakes = "${pkgs.nixFlakes}/bin/nix";
   sysDoNixos =
-    "[[ -d /etc/nixos ]] && cd /etc/nixos && ${nixFlakes} develop -c /etc/nixos/do $@";
+    "[[ -d /etc/nixos ]] && cd /etc/nixos && ${nixFlakes} develop -c /etc/nixos/do.py $@";
   sysDoDarwin =
-    "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${nixFlakes} develop -c ${homeDir}/.nixpkgs/do $@";
+    "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${nixFlakes} develop -c ${homeDir}/.nixpkgs/do.py $@";
   sysdo = (pkgs.writeShellScriptBin "sysdo" ''
     ${sysDoNixos} || ${sysDoDarwin}
   '');

@@ -1,5 +1,5 @@
 { config, pkgs, ... }: {
-  imports = [ ./vim ./zsh ./kitty ./do.pytfiles ./git.nix ];
+  imports = [ ./vim ./zsh ./kitty ./dotfiles ./git.nix ];
 
   # install extra common packages
   home.packages = with pkgs; [
