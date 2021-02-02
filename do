@@ -215,7 +215,7 @@ def switch(
             cmd = f"darwin-rebuild switch --flake {flake} --show-trace"
             run_cmd(cmd)
         elif cfg == FlakeOutputs.HOME_MANAGER:
-
+            flags = "-v --experimental-features 'flakes nix-command'"
             flake = f".#{cfg.value}.{host}.activationPackage"
             cmd = f"nix build {flake} {flags} && ./result/activate"
             run_cmd(cmd)
