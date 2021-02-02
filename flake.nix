@@ -89,21 +89,21 @@
           buildScriptFlags = ''
             -v --experimental-features "flakes nix-command" --show-trace
           '';
-          mkBuildScript = { title, buildAttr }:
-            pkgs.writeShellScriptBin title ''
+          mkBuildScript = { platform, buildAttr, ... }:
+            pkgs.writeShellScriptBin "${platform}Build" ''
               ${nixBuild} ${buildAttr} ${buildScriptFlags}
             '';
           darwinBuild = mkBuildScript {
-            title = "darwinBuild";
+            platform = "darwin";
             buildAttr =
               ".#darwinConfigurations.$1.config.system.build.toplevel";
           };
           nixosBuild = mkBuildScript {
-            title = "nixosBuild";
+            platform = "nixos";
             buildAttr = ".#nixosConfigurations.$1.config.system.build.toplevel";
           };
           homeManagerBuild = mkBuildScript {
-            title = "homeManagerBuild";
+            platform = "homeManager";
             buildAttr = ".#homeManagerConfigurations.$1.activationPackage";
           };
         in pkgs.mkShell {
