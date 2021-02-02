@@ -13,7 +13,7 @@
 
   xdg.configFile = {
     nix = {
-      target = "nix.conf";
+      target = "nix/nix.conf";
       text = ''
         substituters = https://kclejeune.cachix.org https://cache.nixos.org/ https://hydra.nixos.org
         trusted-substituters =
