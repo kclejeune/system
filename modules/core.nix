@@ -1,8 +1,6 @@
 { config, pkgs, ... }: {
   imports = [ ./vim ./zsh ./kitty ./dotfiles ./git.nix ];
 
-  xdg.enable = true;
-
   # install extra common packages
   home.packages = with pkgs; [
     nixFlakes
