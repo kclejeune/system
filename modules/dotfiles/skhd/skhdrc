@@ -1,5 +1,5 @@
 # open terminal
-cmd - return : /Applications/Kitty.app/Contents/MacOS/kitty --single-instance -d ~
+cmd + ctrl - t: /Applications/Kitty.app/Contents/MacOS/kitty --single-instance -d ~
 
 # focus window
 cmd + ctrl - h : yabai -m window --focus west
