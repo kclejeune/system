@@ -1,6 +1,12 @@
 {
   description = "nix system configurations";
 
+  nixConfig = {
+    experimental-features = [ "nix-command" "flakes"];
+    substituters = ["https://cache.nixos.org" "https://kclejeune.cachix.org"];
+    trusted-public-keys = ["cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="];
+  };
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     stable.url = "github:nixos/nixpkgs/nixos-20.09";
