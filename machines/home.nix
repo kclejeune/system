@@ -58,6 +58,7 @@ in {
       pre-commit
       jq
       jdk11
+      kotlin
 
       # command line utilities
       git

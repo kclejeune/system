@@ -11,6 +11,7 @@ let
     vim-closetag
     vim-nix
     vim-polyglot
+    kotlin-vim
 
     # vim addon utilities
     ranger-vim
