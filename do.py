@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-
 import os
 from enum import Enum
 from typing import List
@@ -26,8 +25,8 @@ if os.system("command -v nixos-rebuild > /dev/null") == 0:
     # if we're on nixos, this command is built in
     PLATFORM = FlakeOutputs.NIXOS
 elif (
-    os.system("command -v darwin-rebuild > /dev/null") == 0
-    or platform.uname().system.lower() == "darwin".lower()
+    os.system("command -v darwin-rebuild > /dev/null") == 0 or
+    platform.uname().system.lower() == "darwin".lower()
 ):
     # if we're on darwin, we might have darwin-rebuild or the distro id will be 'darwin'
     PLATFORM = FlakeOutputs.DARWIN
@@ -59,10 +58,13 @@ def select(nixos: bool, darwin: bool, home_manager: bool):
 
     if nixos:
         return FlakeOutputs.NIXOS
+
     elif darwin:
         return FlakeOutputs.DARWIN
+
     elif home_manager:
         return FlakeOutputs.HOME_MANAGER
+
     else:
         return PLATFORM
 
@@ -71,7 +73,7 @@ def select(nixos: bool, darwin: bool, home_manager: bool):
     help="builds an initial configuration", hidden=PLATFORM == FlakeOutputs.NIXOS
 )
 def bootstrap(
-    host: str = typer.Argument(None, help="the hostname of the configuration to build"),
+    host: str =typer.Argument(None, help="the hostname of the configuration to build"),
     nixos: bool = False,
     darwin: bool = False,
     home_manager: bool = False,
@@ -80,6 +82,7 @@ def bootstrap(
     flags = "-v --experimental-features 'flakes nix-command'"
     if cfg is None:
         return
+
     elif cfg == FlakeOutputs.NIXOS:
         typer.secho(
             "boostrap does not apply to nixos systems. aborting...",
@@ -105,7 +108,7 @@ def bootstrap(
     no_args_is_help=True,
 )
 def build(
-    host: str = typer.Argument(None, help="the hostname of the configuration to build"),
+    host: str =typer.Argument(None, help="the hostname of the configuration to build"),
     nixos: bool = False,
     darwin: bool = False,
     home_manager: bool = False,
@@ -113,6 +116,7 @@ def build(
     cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
     if cfg is None:
         return
+
     elif cfg == FlakeOutputs.NIXOS:
         flake = f".#{host}"
         run_cmd(f"sudo nixos-rebuild build --flake {flake} --show-trace")
@@ -135,8 +139,7 @@ def clean():
 
 
 @app.command(
-    help="configure disk setup for nix-darwin",
-    hidden=PLATFORM != FlakeOutputs.DARWIN,
+    help="configure disk setup for nix-darwin", hidden=PLATFORM != FlakeOutputs.DARWIN
 )
 def diskSetup():
     if PLATFORM != FlakeOutputs.DARWIN:
@@ -157,11 +160,9 @@ def diskSetup():
         run_cmd(
             "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -t 2>/dev/null || true"
         )
-
     if not test_cmd("test -L /run"):
         typer.secho("linking /run directory", fg=Colors.INFO.value)
         run_cmd("sudo ln -sfn private/var/run /run")
-
     typer.secho("disk setup complete", fg=Colors.SUCCESS.value)
 
 
@@ -175,14 +176,14 @@ def fmt():
     help="run garbage collection on unused nix store paths", no_args_is_help=True
 )
 def gc(
-    delete_older_than: str = typer.Option(
+    delete_older_than: str =typer.Option(
         None,
         "--delete-older-than",
         "-d",
         metavar="[AGE]",
         help="specify minimum age for deleting store paths",
     ),
-    dry_run: bool = typer.Option(False, help="test the result of garbage collection"),
+    dry_run: bool =typer.Option(False, help="test the result of garbage collection"),
 ):
     cmd = f"nix-collect-garbage --delete-older-than {delete_older_than} {'--dry-run' if dry_run else ''}"
     run_cmd(cmd)
@@ -193,7 +194,7 @@ def gc(
     no_args_is_help=True,
 )
 def switch(
-    host: str = typer.Argument(
+    host: str =typer.Argument(
         default=None, help="the hostname of the configuration to build"
     ),
     nixos: bool = False,
@@ -206,6 +207,7 @@ def switch(
         cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
         if cfg is None:
             return
+
         elif cfg == FlakeOutputs.NIXOS:
             flake = f".#{host}"
             cmd = f"sudo nixos-rebuild switch --flake {flake} --show-trace"
@@ -225,18 +227,16 @@ def switch(
             )
 
 
-@app.command(
-    help="update all flake inputs or optionally specific flakes",
-)
+@app.command(help="update all flake inputs or optionally specific flakes",)
 def update(
-    flake: List[str] = typer.Option(
+    flake: List[str] =typer.Option(
         None,
         "--flake",
         "-f",
         metavar="[FLAKE]",
         help="specify an individual flake to be updated",
     ),
-    commit: bool = typer.Option(False, help="commit the updated lockfile"),
+    commit: bool =typer.Option(False, help="commit the updated lockfile"),
 ):
     flags = "--commit-lock-file" if commit else ""
     if not flake:
@@ -249,10 +249,12 @@ def update(
             cmd = f"nix flake update --update-input {input} {flags}"
             run_cmd(cmd)
 
+
 @app.command(help="cache the output environment of flake.nix")
 def cache(cache_name: str = "kclejeune"):
     cmd = f"nix flake archive --json | jq -r '.path,(.inputs|to_entries[].value.path)' | cachix push {cache_name}"
     run_cmd(cmd)
+
 
 if __name__ == "__main__":
     app()
