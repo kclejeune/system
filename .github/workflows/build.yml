@@ -28,6 +28,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Randall
         run: nix develop -c darwinBuild randall
+        timeout-minutes: 60
   build_nixos:
     runs-on: ubuntu-latest
     steps:
@@ -49,6 +50,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Phil
         run: nix develop -c nixosBuild phil
+        timeout-minutes: 60
   build_server:
     runs-on: ubuntu-latest
     steps:
@@ -70,3 +72,4 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Server
         run: nix develop -c homeManagerBuild server
+        timeout-minutes: 60
