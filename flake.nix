@@ -1,12 +1,6 @@
 {
   description = "nix system configurations";
 
-  nixConfig = {
-    experimental-features = [ "nix-command" "flakes"];
-    substituters = ["https://cache.nixos.org" "https://kclejeune.cachix.org"];
-    trusted-public-keys = ["cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="];
-  };
-
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     stable.url = "github:nixos/nixpkgs/nixos-20.09";
@@ -96,27 +90,6 @@
       let pkgs = nixpkgs.legacyPackages.${system};
       in {
         devShell = let
-          nixBuild = "${pkgs.nixFlakes}/bin/nix build";
-          buildScriptFlags = ''
-            -v --experimental-features "flakes nix-command" --show-trace
-          '';
-          mkBuildScript = { platform, buildAttr, ... }:
-            pkgs.writeShellScriptBin "${platform}Build" ''
-              ${nixBuild} ${buildAttr} ${buildScriptFlags}
-            '';
-          darwinBuild = mkBuildScript {
-            platform = "darwin";
-            buildAttr =
-              ".#darwinConfigurations.$1.config.system.build.toplevel";
-          };
-          nixosBuild = mkBuildScript {
-            platform = "nixos";
-            buildAttr = ".#nixosConfigurations.$1.config.system.build.toplevel";
-          };
-          homeManagerBuild = mkBuildScript {
-            platform = "homeManager";
-            buildAttr = ".#homeManagerConfigurations.$1.activationPackage";
-          };
           pyEnv = (mach-nix.lib.${system}.mkPython {
             requirements = ''
               black
@@ -133,9 +106,6 @@
             nixFlakes
             rnix-lsp
             pyEnv
-            darwinBuild
-            nixosBuild
-            homeManagerBuild
           ];
         };
       });

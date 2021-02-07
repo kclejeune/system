@@ -27,7 +27,7 @@ jobs:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Randall
-        run: nix develop -c darwinBuild randall
+        run: nix build -v .#darwinConfigurations.randall.config.system.build.toplevel
         timeout-minutes: 60
   build_nixos:
     runs-on: ubuntu-latest
@@ -49,7 +49,7 @@ jobs:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Phil
-        run: nix develop -c nixosBuild phil
+        run: nix build -v .#nixosConfigurations.phil.config.system.build.toplevel
         timeout-minutes: 60
   build_server:
     runs-on: ubuntu-latest
@@ -71,5 +71,5 @@ jobs:
           name: kclejeune
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Build Server
-        run: nix develop -c homeManagerBuild server
+        run: nix build -v .#homeManagerConfigurations.server.activationPackage
         timeout-minutes: 60
