@@ -1,6 +1,10 @@
 {
   description = "nix system configurations";
 
+  nixConfig = {
+    experimental-settings = ["nix-command" "flakes"];
+  };
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     stable.url = "github:nixos/nixpkgs/nixos-20.09";
