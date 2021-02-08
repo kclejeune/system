@@ -2,7 +2,12 @@
   description = "nix system configurations";
 
   nixConfig = {
-    experimental-settings = ["nix-command" "flakes"];
+    experimental-settings = [ "nix-command" "flakes" ];
+    substituters = [ "https://kclejeune.cachix.org" "https://cache.nixos.org" ];
+    trusted-public-keys = [
+      "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+    ];
   };
 
   inputs = {
@@ -106,11 +111,7 @@
             '';
           });
         in pkgs.mkShell {
-          buildInputs = with pkgs; [
-            nixFlakes
-            rnix-lsp
-            pyEnv
-          ];
+          buildInputs = with pkgs; [ nixFlakes rnix-lsp pyEnv ];
         };
       });
 }
