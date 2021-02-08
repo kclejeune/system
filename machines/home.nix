@@ -55,6 +55,7 @@ in {
 
       # dev garbage
       nodejs
+      yarn
       pre-commit
       jq
       jdk11
