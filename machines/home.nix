@@ -78,8 +78,8 @@ in {
 
       # typesetting
       # (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
-      # texlive.combined.scheme-full
-      tectonic
+      texlive.combined.scheme-full
+      # tectonic
     ];
   };
 }
