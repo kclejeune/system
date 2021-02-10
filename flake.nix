@@ -30,10 +30,6 @@
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    mach-nix = {
-      url = "github:DavHau/mach-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     neovim-nightly-overlay = {
       url = "github:nix-community/neovim-nightly-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -110,22 +106,17 @@
     } //
     # add a devShell to this flake
     flake-utils.lib.eachDefaultSystem (system:
-      let pkgs = nixpkgs.legacyPackages.${system};
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        python = pkgs.python3;
       in {
-        devShell = let
-          pyEnv = (mach-nix.lib.${system}.mkPython {
-            requirements = ''
-              black
-              pylint
-              typer-cli
-              typer
-              colorama
-              shellingham
-              distro
-            '';
-          });
-        in pkgs.mkShell {
-          buildInputs = with pkgs; [ nixFlakes rnix-lsp pyEnv ];
+        devShell = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            nixFlakes
+            rnix-lsp
+            (python.withPackages
+              (ps: with ps; [ black pylint typer colorama shellingham ]))
+          ];
         };
       });
 }

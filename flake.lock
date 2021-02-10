@@ -139,9 +139,7 @@
     "mach-nix": {
       "inputs": {
         "flake-utils": "flake-utils_2",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
+        "nixpkgs": "nixpkgs",
         "pypi-deps-db": "pypi-deps-db"
       },
       "locked": {
@@ -153,9 +151,8 @@
         "type": "github"
       },
       "original": {
-        "owner": "DavHau",
-        "repo": "mach-nix",
-        "type": "github"
+        "id": "mach-nix",
+        "type": "indirect"
       }
     },
     "neovim-nightly": {
@@ -200,6 +197,22 @@
       }
     },
     "nixpkgs": {
+      "locked": {
+        "lastModified": 1612813619,
+        "narHash": "sha256-8yGqFXo426Vg4u0L8yXfS/WrgDV4ytMGZQb7SopoZCo=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "8c8731330b53ba0061686f36f10f101e662a4717",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
       "locked": {
         "lastModified": 1612813619,
         "narHash": "sha256-8yGqFXo426Vg4u0L8yXfS/WrgDV4ytMGZQb7SopoZCo=",
@@ -255,7 +268,7 @@
         "home-manager": "home-manager",
         "mach-nix": "mach-nix",
         "neovim-nightly-overlay": "neovim-nightly-overlay",
-        "nixpkgs": "nixpkgs",
+        "nixpkgs": "nixpkgs_2",
         "stable": "stable"
       }
     },
