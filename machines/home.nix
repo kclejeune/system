@@ -43,8 +43,8 @@ in {
       sysdo
 
       # scripting
-      (python3.withPackages
-        (ps: with ps; [ bpython black numpy scipy pandas networkx click ]))
+      (python39.withPackages
+        (ps: with ps; [ bpython black numpy scipy networkx ]))
 
       # gnu stuff
       # encryption and signing utilities

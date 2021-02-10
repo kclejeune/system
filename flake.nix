@@ -56,7 +56,7 @@
       };
       mkNixosConfig =
         { hostname, system ? "x86_64-linux", extraModules ? [ ] }: {
-          hostname = nixpkgs.lib.nixosSystem {
+          "${hostname}" = nixpkgs.lib.nixosSystem {
             inherit system;
             modules = [
               home-manager.nixosModules.home-manager
