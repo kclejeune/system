@@ -60,7 +60,7 @@
             inherit system;
             modules = [
               home-manager.nixosModules.home-manager
-              "./machines/nixos/${hostname}"
+              ./machines/nixos/phil
             ] ++ extraModules;
             specialArgs = { inherit inputs nixpkgs; };
           };
