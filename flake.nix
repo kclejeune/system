@@ -54,21 +54,21 @@
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
-      mkNixosConfig = { hostname, extraModules ? [ ] }: {
-        hostname = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = [
-            home-manager.nixosModules.home-manager
-            "./machines/nixos/${hostname}"
-          ] ++ extraModules;
-          specialArgs = { inherit inputs nixpkgs; };
+      mkNixosConfig =
+        { hostname, system ? "x86_64-linux", extraModules ? [ ] }: {
+          hostname = nixpkgs.lib.nixosSystem {
+            inherit system;
+            modules = [
+              home-manager.nixosModules.home-manager
+              "./machines/nixos/${hostname}"
+            ] ++ extraModules;
+            specialArgs = { inherit inputs nixpkgs; };
+          };
         };
-      };
       mkHomeManagerConfig =
         { hostname, username, system ? "x86_64-linux", extraModules ? [ ] }: {
           "${hostname}" = home-manager.lib.homeManagerConfiguration rec {
-            system = "${system}";
-            username = "${username}";
+            inherit system username;
             homeDirectory = "/home/${username}";
             extraSpecialArgs = { inherit inputs nixpkgs; };
             configuration = {
