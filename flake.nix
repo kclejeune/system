@@ -2,10 +2,14 @@
   description = "nix system configurations";
 
   nixConfig = {
-    experimental-settings = [ "nix-command" "flakes" ];
-    substituters = [ "https://kclejeune.cachix.org" "https://cache.nixos.org" ];
+    substituters = [
+      "https://kclejeune.cachix.org"
+      "https://nix-community.cachix.org"
+      "https://cache.nixos.org"
+    ];
     trusted-public-keys = [
       "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
     ];
   };
@@ -30,68 +34,76 @@
       url = "github:DavHau/mach-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    neovim-nightly-overlay = {
+      url = "github:nix-community/neovim-nightly-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
     inputs@{ self, nixpkgs, darwin, home-manager, mach-nix, flake-utils, ... }:
-    {
-      darwinConfigurations = {
-        randall = darwin.lib.darwinSystem {
-          modules = [
-            home-manager.darwinModules.home-manager
-            ./machines/darwin
-            ./modules/profiles/personal.nix
-          ];
-          specialArgs = { inherit inputs nixpkgs; };
-        };
-        work = darwin.lib.darwinSystem {
-          modules = [
-            home-manager.darwinModules.home-manager
-            ./machines/darwin
-            ./modules/profiles/work.nix
-          ];
+    let
+      overlays = [ inputs.neovim-nightly-overlay.overlay ];
+      mkDarwinConfig = { hostname, baseModules ? [
+        home-manager.darwinModules.home-manager
+        ./machines/darwin
+      ], extraModules ? [ ] }: {
+        "${hostname}" = darwin.lib.darwinSystem {
+          # system = "x86_64-darwin";
+          modules = baseModules ++ extraModules;
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
-      nixosConfigurations = {
-        phil = nixpkgs.lib.nixosSystem {
+      mkNixosConfig = { hostname, extraModules ? [ ] }: {
+        hostname = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
             home-manager.nixosModules.home-manager
-            ./machines/nixos/phil
-            ./modules/profiles/personal.nix
-          ];
+            "./machines/nixos/${hostname}"
+          ] ++ extraModules;
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
-      homeManagerConfigurations = {
-        # Build and activate with
-        # `nix build .#server.activationPackage; ./result/activate`
-        # courtesy of @malob - https://github.com/malob/nixpkgs/
-        server = home-manager.lib.homeManagerConfiguration rec {
-          system = "x86_64-linux";
-          username = "kclejeune";
-          homeDirectory = "/home/${username}";
-          extraSpecialArgs = { inherit inputs nixpkgs; };
-          configuration = {
-            imports = [
-              ./machines/home-manager
-              ./modules/profiles/home-manager/personal.nix
-            ];
+      mkHomeManagerConfig =
+        { hostname, username, system ? "x86_64-linux", extraModules ? [ ] }: {
+          "${hostname}" = home-manager.lib.homeManagerConfiguration rec {
+            system = "${system}";
+            username = "${username}";
+            homeDirectory = "/home/${username}";
+            extraSpecialArgs = { inherit inputs nixpkgs; };
+            configuration = {
+              nixpkgs.overlays = overlays;
+              imports = [ ./machines/home-manager ] ++ extraModules;
+            };
           };
         };
-        workServer = home-manager.lib.homeManagerConfiguration rec {
-          system = "x86_64-linux";
-          username = "lejeukc1";
-          homeDirectory = "/home/${username}";
-          extraSpecialArgs = { inherit inputs nixpkgs; };
-          configuration = {
-            imports = [
-              ./machines/home-manager
-              ./modules/profiles/home-manager/work.nix
-            ];
-          };
-        };
+    in {
+      darwinConfigurations = mkDarwinConfig {
+        hostname = "randall";
+        extraModules = [ ./modules/profiles/personal.nix ];
+      } // mkDarwinConfig {
+        hostname = "work";
+        extraModules = [ ./modules/profiles/work.nix ];
+      };
+      nixosConfigurations = mkNixosConfig {
+        hostname = "phil";
+        extraModules = [ ./modules/profiles/personal.nix ];
+      };
+      # Build and activate with
+      # `nix build .#server.activationPackage; ./result/activate`
+      # courtesy of @malob - https://github.com/malob/nixpkgs/
+      homeManagerConfigurations = mkHomeManagerConfig {
+        hostname = "server";
+        username = "kclejeune";
+        extraModules = [ ./modules/profiles/home-manager/personal.nix ];
+      } // mkHomeManagerConfig {
+        hostname = "workServer";
+        username = "lejeukc1";
+        extraModules = [ ./modules/profiles/home-manager/work.nix ];
+      } // mkHomeManagerConfig {
+        hostname = "multipass";
+        username = "ubuntu";
+        extraModules = [ ./modules/profiles/home-manager/personal.nix ];
       };
     } //
     # add a devShell to this flake
