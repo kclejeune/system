@@ -50,21 +50,22 @@
       ], extraModules ? [ ] }: {
         "${hostname}" = darwin.lib.darwinSystem {
           # system = "x86_64-darwin";
-          modules = baseModules ++ extraModules;
+          modules = baseModules ++ extraModules
+            ++ [{ nixpkgs.overlays = overlays; }];
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
-      mkNixosConfig =
-        { hostname, system ? "x86_64-linux", extraModules ? [ ] }: {
-          "${hostname}" = nixpkgs.lib.nixosSystem {
-            inherit system;
-            modules = [
-              home-manager.nixosModules.home-manager
-              ./machines/nixos/phil
-            ] ++ extraModules;
-            specialArgs = { inherit inputs nixpkgs; };
-          };
+      mkNixosConfig = { hostname, system ? "x86_64-linux", baseModules ? [
+        home-manager.nixosModules.home-manager
+        ./machines/nixos
+      ], extraModules ? [ ] }: {
+        "${hostname}" = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = baseModules ++ extraModules
+            ++ [{ nixpkgs.overlays = overlays; }];
+          specialArgs = { inherit inputs nixpkgs; };
         };
+      };
       mkHomeManagerConfig =
         { hostname, username, system ? "x86_64-linux", extraModules ? [ ] }: {
           "${hostname}" = home-manager.lib.homeManagerConfiguration rec {
@@ -87,7 +88,8 @@
       };
       nixosConfigurations = mkNixosConfig {
         hostname = "phil";
-        extraModules = [ ./modules/profiles/personal.nix ];
+        extraModules =
+          [ ./machines/nixos/phil ./modules/profiles/personal.nix ];
       };
       # Build and activate with
       # `nix build .#server.activationPackage; ./result/activate`
