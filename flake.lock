@@ -21,6 +21,21 @@
         "type": "github"
       }
     },
+    "dev-shell": {
+      "locked": {
+        "lastModified": 1613310953,
+        "narHash": "sha256-GhAwxJ0Jfsj8LIQmEQylpVkcThUJgPChjo48DZeBQZA=",
+        "owner": "numtide",
+        "repo": "devshell",
+        "rev": "f64db97388dda7c2c6f8fb7aa5d6d08365fb1e01",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "devshell",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -228,21 +243,6 @@
         "type": "github"
       }
     },
-    "numtide-dev-shell": {
-      "locked": {
-        "lastModified": 1613310953,
-        "narHash": "sha256-GhAwxJ0Jfsj8LIQmEQylpVkcThUJgPChjo48DZeBQZA=",
-        "owner": "numtide",
-        "repo": "devshell",
-        "rev": "f64db97388dda7c2c6f8fb7aa5d6d08365fb1e01",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "devshell",
-        "type": "github"
-      }
-    },
     "pre-commit-hooks": {
       "flake": false,
       "locked": {
@@ -278,13 +278,13 @@
     "root": {
       "inputs": {
         "darwin": "darwin",
+        "dev-shell": "dev-shell",
         "flake-compat": "flake-compat",
         "flake-utils": "flake-utils",
         "home-manager": "home-manager",
         "mach-nix": "mach-nix",
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nixpkgs": "nixpkgs_2",
-        "numtide-dev-shell": "numtide-dev-shell",
         "stable": "stable"
       }
     },

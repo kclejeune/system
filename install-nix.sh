@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 # URL="https://nixos.org/nix/install"
-URL="https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20210122_b7bfc7e/install"
+URL="https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20210126_f15f0b8/install"
 
 # install using workaround for darwin systems
 [[ $(uname -s) = "Darwin" ]] && FLAG="--darwin-use-unencrypted-nix-store-volume"

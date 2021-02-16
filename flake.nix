@@ -34,13 +34,13 @@
       url = "github:nix-community/neovim-nightly-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    numtide-dev-shell = { url = "github:numtide/devshell"; };
+    dev-shell = { url = "github:numtide/devshell"; };
   };
 
   outputs = inputs@{ self, nixpkgs, darwin, home-manager, mach-nix, flake-utils
-    , numtide-dev-shell, ... }:
+    , dev-shell, ... }:
     let
-      overlays = [ inputs.neovim-nightly-overlay.overlay ];
+      overlays = [ inputs.neovim-nightly-overlay.overlay dev-shell.overlay ];
       mkDarwinConfig = { hostname, baseModules ? [
         home-manager.darwinModules.home-manager
         ./machines/darwin
@@ -70,8 +70,8 @@
             homeDirectory = "/home/${username}";
             extraSpecialArgs = { inherit inputs nixpkgs; };
             configuration = {
-              nixpkgs.overlays = overlays;
-              imports = [ ./machines/home-manager ] ++ extraModules;
+              imports = [ ./machines/home-manager ] ++ extraModules
+                ++ [{ nixpkgs.overlays = overlays; }];
             };
           };
         };
@@ -110,11 +110,9 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         python = pkgs.python3;
-        devshell = numtide-dev-shell.legacyPackages.${system};
       in {
-        devShell = devshell.mkShell {
+        devShell = dev-shell.legacyPackages.${system}.mkShell {
           packages = with pkgs; [
-            nixFlakes
             rnix-lsp
             (python.withPackages
               (ps: with ps; [ black pylint typer colorama shellingham ]))
