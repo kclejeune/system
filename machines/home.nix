@@ -43,8 +43,8 @@ in {
       sysdo
 
       # scripting
-      (python39.withPackages
-        (ps: with ps; [ bpython black numpy scipy networkx ]))
+      (python3.withPackages
+        (ps: with ps; [ bpython black pylint mypy numpy scipy networkx ]))
 
       # gnu stuff
       # encryption and signing utilities
@@ -79,7 +79,7 @@ in {
       # typesetting
       # (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
       texlive.combined.scheme-full
-      # tectonic
+      tectonic
     ];
   };
 }

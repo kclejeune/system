@@ -34,10 +34,11 @@
       url = "github:nix-community/neovim-nightly-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    numtide-dev-shell = { url = "github:numtide/devshell"; };
   };
 
-  outputs =
-    inputs@{ self, nixpkgs, darwin, home-manager, mach-nix, flake-utils, ... }:
+  outputs = inputs@{ self, nixpkgs, darwin, home-manager, mach-nix, flake-utils
+    , numtide-dev-shell, ... }:
     let
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
       mkDarwinConfig = { hostname, baseModules ? [
@@ -109,9 +110,10 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         python = pkgs.python3;
+        devshell = numtide-dev-shell.legacyPackages.${system};
       in {
-        devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [
+        devShell = devshell.mkShell {
+          packages = with pkgs; [
             nixFlakes
             rnix-lsp
             (python.withPackages
