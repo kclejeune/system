@@ -143,11 +143,11 @@
         "pypi-deps-db": "pypi-deps-db"
       },
       "locked": {
-        "lastModified": 1612459092,
-        "narHash": "sha256-fqwasylaMjOejc0/WlR6uOuiNZLIR378DZmXxvWz/EQ=",
+        "lastModified": 1613367062,
+        "narHash": "sha256-O7meSmhlAthEHGHDb9bmI7MKp6X8NtXhyiMLcccuO3g=",
         "owner": "DavHau",
         "repo": "mach-nix",
-        "rev": "f967f0fd511163cb0f6adc5571c586fee8b025af",
+        "rev": "876b78bcb43da547201f765145e0a3a5e16e9941",
         "type": "github"
       },
       "original": {
@@ -158,11 +158,11 @@
     "neovim-nightly": {
       "flake": false,
       "locked": {
-        "lastModified": 1613235636,
-        "narHash": "sha256-yFJn77lfkydmjNjTtvk+2M6hhECCAGnWXyHG33QP3Es=",
+        "lastModified": 1613320572,
+        "narHash": "sha256-Yj0aMlKvEKRTjaUdU3fg1Ski5Ns62feCHY7u8hLqlAI=",
         "owner": "neovim",
         "repo": "neovim",
-        "rev": "5ad32885d461e8ace052397b251f25fae24189a3",
+        "rev": "dc3ca16a99ec05c88df1b1fe6a3cfbe97ea34227",
         "type": "github"
       },
       "original": {
@@ -183,11 +183,11 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1613290278,
-        "narHash": "sha256-lNr66UmYyHxMD2rziSXBN2QuRhgpOMMF6axn3syv5oU=",
+        "lastModified": 1613376723,
+        "narHash": "sha256-1YmL4+WOx9i9p2w+8YNcEWovsHj7ncgjq56+rN4qk8A=",
         "owner": "nix-community",
         "repo": "neovim-nightly-overlay",
-        "rev": "76cf9a0b59e028258c05b4c15150e90ed9b73e71",
+        "rev": "61c66d56588888caefb14b5c969db1b5cd45404e",
         "type": "github"
       },
       "original": {
