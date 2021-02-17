@@ -76,6 +76,14 @@
     binaryCaches = [ "https://kclejeune.cachix.org" ];
     binaryCachePublicKeys =
       [ "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=" ];
+
+    registry.nixpkgs = {
+      from = {
+        id = "nixpkgs";
+        type = "indirect";
+      };
+      flake = inputs.nixpkgs;
+    };
   };
 
   fonts = {
