@@ -23,7 +23,7 @@
       flake = false;
     };
     darwin = {
-      url = "github:kclejeune/nix-darwin/brew-bundle";
+      url = "github:/LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
