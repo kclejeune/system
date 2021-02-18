@@ -5,6 +5,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     stable.url = "github:nixos/nixpkgs/nixos-20.09";
     flake-utils.url = "github:numtide/flake-utils/master";
+    dev-shell.url = "github:numtide/devshell";
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
     flake-compat = {
@@ -23,7 +24,6 @@
       url = "github:nix-community/neovim-nightly-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    dev-shell = { url = "github:numtide/devshell"; };
   };
 
   outputs = inputs@{ self, nixpkgs, darwin, home-manager, mach-nix, flake-utils
@@ -105,6 +105,7 @@
       in {
         devShell = dev-shell.legacyPackages.${system}.mkShell {
           packages = with pkgs; [
+            nixFlakes
             rnix-lsp
             (python.withPackages
               (ps: with ps; [ black pylint typer colorama shellingham ]))
