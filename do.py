@@ -25,8 +25,8 @@ if os.system("command -v nixos-rebuild > /dev/null") == 0:
     # if we're on nixos, this command is built in
     PLATFORM = FlakeOutputs.NIXOS
 elif (
-    os.system("command -v darwin-rebuild > /dev/null") == 0 or
-    platform.uname().system.lower() == "darwin".lower()
+    os.system("command -v darwin-rebuild > /dev/null") == 0
+    or platform.uname().system.lower() == "darwin".lower()
 ):
     # if we're on darwin, we might have darwin-rebuild or the distro id will be 'darwin'
     PLATFORM = FlakeOutputs.DARWIN
@@ -73,7 +73,7 @@ def select(nixos: bool, darwin: bool, home_manager: bool):
     help="builds an initial configuration", hidden=PLATFORM == FlakeOutputs.NIXOS
 )
 def bootstrap(
-    host: str =typer.Argument(None, help="the hostname of the configuration to build"),
+    host: str = typer.Argument(None, help="the hostname of the configuration to build"),
     nixos: bool = False,
     darwin: bool = False,
     home_manager: bool = False,
@@ -108,7 +108,7 @@ def bootstrap(
     no_args_is_help=True,
 )
 def build(
-    host: str =typer.Argument(None, help="the hostname of the configuration to build"),
+    host: str = typer.Argument(None, help="the hostname of the configuration to build"),
     nixos: bool = False,
     darwin: bool = False,
     home_manager: bool = False,
@@ -176,14 +176,14 @@ def fmt():
     help="run garbage collection on unused nix store paths", no_args_is_help=True
 )
 def gc(
-    delete_older_than: str =typer.Option(
+    delete_older_than: str = typer.Option(
         None,
         "--delete-older-than",
         "-d",
         metavar="[AGE]",
         help="specify minimum age for deleting store paths",
     ),
-    dry_run: bool =typer.Option(False, help="test the result of garbage collection"),
+    dry_run: bool = typer.Option(False, help="test the result of garbage collection"),
 ):
     cmd = f"nix-collect-garbage --delete-older-than {delete_older_than} {'--dry-run' if dry_run else ''}"
     run_cmd(cmd)
@@ -194,7 +194,7 @@ def gc(
     no_args_is_help=True,
 )
 def switch(
-    host: str =typer.Argument(
+    host: str = typer.Argument(
         default=None, help="the hostname of the configuration to build"
     ),
     nixos: bool = False,
@@ -227,16 +227,18 @@ def switch(
             )
 
 
-@app.command(help="update all flake inputs or optionally specific flakes",)
+@app.command(
+    help="update all flake inputs or optionally specific flakes",
+)
 def update(
-    flake: List[str] =typer.Option(
+    flake: List[str] = typer.Option(
         None,
         "--flake",
         "-f",
         metavar="[FLAKE]",
         help="specify an individual flake to be updated",
     ),
-    commit: bool =typer.Option(False, help="commit the updated lockfile"),
+    commit: bool = typer.Option(False, help="commit the updated lockfile"),
 ):
     flags = "--commit-lock-file" if commit else ""
     if not flake:
