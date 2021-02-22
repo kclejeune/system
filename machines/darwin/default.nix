@@ -1,1 +1,1 @@
-{ config, pkgs, ... }: { imports = [ ../common.nix ../../modules/darwin ]; }
+{ config, pkgs, ... }: { imports = [ ../../modules/common.nix ../../modules/darwin ]; }

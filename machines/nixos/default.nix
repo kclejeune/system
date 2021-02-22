@@ -3,7 +3,7 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, ... }: {
-  imports = [ ../common.nix ../../modules/nixos ];
+  imports = [ ../../modules/common.nix ../../modules/nixos ];
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.defaultUserShell = pkgs.zsh;
   users.mutableUsers = false;

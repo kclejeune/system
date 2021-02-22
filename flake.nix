@@ -5,7 +5,6 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     stable.url = "github:nixos/nixpkgs/nixos-20.09";
     flake-utils.url = "github:numtide/flake-utils/master";
-    dev-shell.url = "github:numtide/devshell";
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
     flake-compat = {
@@ -26,12 +25,11 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, darwin, home-manager, mach-nix, flake-utils
-    , dev-shell, nixos-hardware, ... }:
+  outputs = inputs@{ self, nixpkgs, darwin, home-manager, nixos-hardware, ... }:
     let
-      overlays = [ inputs.neovim-nightly-overlay.overlay dev-shell.overlay ];
+      overlays = [ inputs.neovim-nightly-overlay.overlay ];
       mkDarwinConfig = { hostname, baseModules ? [
-        home-manager.darwinModules.home-manager
+        inputs.home-manager.darwinModules.home-manager
         ./machines/darwin
       ], extraModules ? [ ] }: {
         "${hostname}" = darwin.lib.darwinSystem {
@@ -42,7 +40,7 @@
         };
       };
       mkNixosConfig = { hostname, system ? "x86_64-linux", baseModules ? [
-        home-manager.nixosModules.home-manager
+        inputs.home-manager.nixosModules.home-manager
         ./machines/nixos
       ], extraModules ? [ ] }: {
         "${hostname}" = nixpkgs.lib.nixosSystem {
@@ -54,7 +52,7 @@
       };
       mkHomeManagerConfig =
         { hostname, username, system ? "x86_64-linux", extraModules ? [ ] }: {
-          "${hostname}" = home-manager.lib.homeManagerConfiguration rec {
+          "${hostname}" = inputs.home-manager.lib.homeManagerConfiguration rec {
             inherit system username;
             homeDirectory = "/home/${username}";
             extraSpecialArgs = { inherit inputs nixpkgs; };
@@ -98,13 +96,13 @@
       };
     } //
     # add a devShell to this flake
-    flake-utils.lib.eachDefaultSystem (system:
+    inputs.flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         python = pkgs.python3;
       in {
-        devShell = dev-shell.legacyPackages.${system}.mkShell {
-          packages = with pkgs; [
+        devShell = pkgs.mkShell {
+          buildInputs = with pkgs; [
             nixFlakes
             rnix-lsp
             (python.withPackages
