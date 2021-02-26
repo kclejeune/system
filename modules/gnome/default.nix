@@ -6,14 +6,14 @@
   gtk = {
     enable = true;
 
-    #     iconTheme = {
-    #       package = pkgs.yaru;
-    #       name = "yaru";
-    #     };
+    iconTheme = {
+      package = pkgs.yaru-theme;
+      name = "yaru";
+    };
 
     theme = {
-      package = pkgs.gnome3.gnome_themes_standard;
-      name = "Adwaita-dark";
+      package = pkgs.yaru-theme;
+      name = "yaru-dark";
     };
 
   };
