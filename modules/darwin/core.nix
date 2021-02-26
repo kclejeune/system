@@ -12,10 +12,6 @@ in {
 
     # packages installed in system profile
     # systemPackages = [ ];
-    extraInit = ''
-      # install homebrew
-      command -v brew > /dev/null || ${pkgs.bash}/bin/bash -c "$(${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-    '';
   };
 
   nix.nixPath = [ "darwin=/etc/${config.environment.etc.darwin.target}" ];

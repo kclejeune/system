@@ -36,6 +36,8 @@ in {
       "git"
       "mas"
       "beeftornado/rmtree/brew-rmtree"
+      "yabai"
+      "skhd"
     ];
 
     casks = [
