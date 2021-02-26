@@ -52,6 +52,8 @@
     shells = with pkgs; [ bash zsh fish ];
   };
 
+  nixpkgs.config.allowUnfree = true;
+
   nix = {
     package = pkgs.nixFlakes;
     extraOptions = ''
