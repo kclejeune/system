@@ -1,1 +1,1 @@
-{ pkgs, ... }: { imports = [ ./core.nix ./preferences.nix ]; }
+{ pkgs, ... }: { imports = [ ./core.nix ./brew.nix ./preferences.nix ]; }
