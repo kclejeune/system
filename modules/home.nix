@@ -7,7 +7,7 @@ let
   sysDoDarwin =
     "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${nixFlakes} develop -c ${homeDir}/.nixpkgs/do.py $@";
   sysdo = (pkgs.writeShellScriptBin "sysdo" ''
-    ${sysDoNixos} || ${sysDoDarwin}
+    (${sysDoNixos}) || (${sysDoDarwin})
   '');
 in {
   imports = [ ../modules/core.nix ];
