@@ -7,8 +7,16 @@ on:
     branches:
       - master
 jobs:
-  build_darwin:
-    runs-on: macos-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        host: [nixosConfigurations.phil.config.system.build.toplevel, homeManagerConfigurations.server.activationPackage]
+        include:
+          - os: macos-latest
+            host: darwinConfigurations.randall.config.system.build.toplevel
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -22,45 +30,8 @@ jobs:
       - uses: cachix/cachix-action@v8
         with:
           name: kclejeune
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - name: Build Randall
-        run: nix build -v .#darwinConfigurations.randall.config.system.build.toplevel
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Build Configuration
+        run: nix build -v .#${{ matrix.host }}
         timeout-minutes: 60
-  build_nixos:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          # Shallow clones won't work
-          fetch-depth: 0
-      - uses: cachix/install-nix-action@v12
-        with:
-          install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20210126_f15f0b8/install
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - uses: cachix/cachix-action@v8
-        with:
-          name: kclejeune
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - name: Build Phil
-        run: nix build -v .#nixosConfigurations.phil.config.system.build.toplevel
-        timeout-minutes: 60
-  build_server:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          # Shallow clones won't work
-          fetch-depth: 0
-      - uses: cachix/install-nix-action@v12
-        with:
-          install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20210126_f15f0b8/install
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - uses: cachix/cachix-action@v8
-        with:
-          name: kclejeune
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - name: Build Server
-        run: nix build -v .#homeManagerConfigurations.server.activationPackage
-        timeout-minutes: 60
+
