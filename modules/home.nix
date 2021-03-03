@@ -2,10 +2,12 @@
 let
   homeDir = config.home.homeDirectory;
   nixFlakes = "${pkgs.nixFlakes}/bin/nix";
+  pyEnv = (pkgs.python3.withPackages
+    (ps: with ps; [ black pylint typer colorama shellingham ]));
   sysDoNixos =
-    "[[ -d /etc/nixos ]] && cd /etc/nixos && ${nixFlakes} develop -c /etc/nixos/do.py $@";
+    "[[ -d /etc/nixos ]] && cd /etc/nixos && ${pyEnv}/bin/python do.py $@";
   sysDoDarwin =
-    "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${nixFlakes} develop -c ${homeDir}/.nixpkgs/do.py $@";
+    "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${pyEnv}/bin/python do.py $@";
   sysdo = (pkgs.writeShellScriptBin "sysdo" ''
     (${sysDoNixos}) || (${sysDoDarwin})
   '');
@@ -31,7 +33,6 @@ in {
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
-      JAVA_HOME = "${pkgs.jdk11}";
     };
 
     # define package definitions for current user environment
@@ -58,7 +59,6 @@ in {
       yarn
       pre-commit
       jq
-      jdk11
       kotlin
 
       # command line utilities

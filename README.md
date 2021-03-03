@@ -12,10 +12,10 @@ macOS, nixOS, and linux machines.
 This repository is a flake, so configurations are specified
 in [flake.nix](./flake.nix). Platform specific base configurations are found
 in [./machines](./machines); these configurations share as much functionality as
-possible in [./machines/common.nix](./machines/common.nix).
+possible in [./modules/common.nix](./modules/common.nix).
 
 Additionally, for systems that aren't running nixOS or nix-darwin,
-[./machines/home.nix](./machines/home.nix) defines a usable configuration
+[./modules/home.nix](./modules/home.nix) defines a usable configuration
 for any linux system running nix.
 
 ### User Customization
@@ -27,7 +27,7 @@ contextual, identity-specific settings such as SSL certificates or work vs. pers
 ### Installing Nix Package Manager
 
 Run the installer script to perform a multi-user installation
-on darwin or any other type of linux.
+on darwin or any other type of linux. This script can optionally accept an argument with the URL to a nix installer, but will use the nixFlakes installer by default:
 
 ```bash
 ./install-nix.sh
