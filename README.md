@@ -56,20 +56,20 @@ git clone https://github.com/kclejeune/system ~/.nixpkgs
 You can bootstrap a new nix-darwin system using
 
 ```bash
-nix develop -c ./do.py disksetup && ./do.py build --darwin [host] && ./result/activate-user && ./result/activate
+nix develop -c sysdo disksetup && sysdo build --darwin [host] && ./result/activate-user && ./result/activate
 ```
 
 or a home-manager configuration using
 
 ```bash
-nix develop -c ./do.py build --home-manager [host] && ./result/activate
+nix develop -c sysdo build --home-manager [host] && ./result/activate
 ```
-## CLI Documentation: `./do.py`
+## CLI Documentation: `sysdo`
 
 **Usage**:
 
 ```console
-$ ./do.py [OPTIONS] COMMAND [ARGS]...
+$ sysdo [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options**:
@@ -90,14 +90,14 @@ $ ./do.py [OPTIONS] COMMAND [ARGS]...
 * `switch`: builds and activates the specified flake...
 * `update`: update all flake inputs or optionally...
 
-## `./do.py bootstrap`
+## `sysdo bootstrap`
 
 builds an initial configuration
 
 **Usage**:
 
 ```console
-$ ./do.py bootstrap [OPTIONS] [HOST]
+$ sysdo bootstrap [OPTIONS] [HOST]
 ```
 
 **Arguments**:
@@ -111,14 +111,14 @@ $ ./do.py bootstrap [OPTIONS] [HOST]
 * `--home-manager / --no-home-manager`: [default: False]
 * `--help`: Show this message and exit.
 
-## `./do.py build`
+## `sysdo build`
 
 builds the specified flake output; infers correct platform to use if not specified
 
 **Usage**:
 
 ```console
-$ ./do.py build [OPTIONS] [HOST]
+$ sysdo build [OPTIONS] [HOST]
 ```
 
 **Arguments**:
@@ -132,14 +132,14 @@ $ ./do.py build [OPTIONS] [HOST]
 * `--home-manager / --no-home-manager`: [default: False]
 * `--help`: Show this message and exit.
 
-## `./do.py cache`
+## `sysdo cache`
 
 cache the output environment of flake.nix
 
 **Usage**:
 
 ```console
-$ ./do.py cache [OPTIONS]
+$ sysdo cache [OPTIONS]
 ```
 
 **Options**:
@@ -147,56 +147,56 @@ $ ./do.py cache [OPTIONS]
 * `--cache-name TEXT`: [default: kclejeune]
 * `--help`: Show this message and exit.
 
-## `./do.py clean`
+## `sysdo clean`
 
 remove previously built configurations and symlinks from the current directory
 
 **Usage**:
 
 ```console
-$ ./do.py clean [OPTIONS]
+$ sysdo clean [OPTIONS]
 ```
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-## `./do.py disksetup`
+## `sysdo disksetup`
 
 configure disk setup for nix-darwin
 
 **Usage**:
 
 ```console
-$ ./do.py disksetup [OPTIONS]
+$ sysdo disksetup [OPTIONS]
 ```
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-## `./do.py fmt`
+## `sysdo fmt`
 
 run formatter on all nix files
 
 **Usage**:
 
 ```console
-$ ./do.py fmt [OPTIONS]
+$ sysdo fmt [OPTIONS]
 ```
 
 **Options**:
 
 * `--help`: Show this message and exit.
 
-## `./do.py gc`
+## `sysdo gc`
 
 run garbage collection on unused nix store paths
 
 **Usage**:
 
 ```console
-$ ./do.py gc [OPTIONS]
+$ sysdo gc [OPTIONS]
 ```
 
 **Options**:
@@ -205,14 +205,14 @@ $ ./do.py gc [OPTIONS]
 * `--dry-run / --no-dry-run`: test the result of garbage collection  [default: False]
 * `--help`: Show this message and exit.
 
-## `./do.py switch`
+## `sysdo switch`
 
 builds and activates the specified flake output; infers correct platform to use if not specified
 
 **Usage**:
 
 ```console
-$ ./do.py switch [OPTIONS] [HOST]
+$ sysdo switch [OPTIONS] [HOST]
 ```
 
 **Arguments**:
@@ -226,14 +226,14 @@ $ ./do.py switch [OPTIONS] [HOST]
 * `--home-manager / --no-home-manager`: [default: False]
 * `--help`: Show this message and exit.
 
-## `./do.py update`
+## `sysdo update`
 
 update all flake inputs or optionally specific flakes
 
 **Usage**:
 
 ```console
-$ ./do.py update [OPTIONS]
+$ sysdo update [OPTIONS]
 ```
 
 **Options**:
