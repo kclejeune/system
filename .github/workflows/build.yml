@@ -33,5 +33,5 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Build Configuration
         run: nix build -v .#${{ matrix.host }}
-        timeout-minutes: 60
+        timeout-minutes: 120
 
