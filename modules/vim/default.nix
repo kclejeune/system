@@ -1,47 +1,70 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 let
   readVimSection = file: builtins.readFile (./. + "/${file}.vim");
-  vimPlugins = with pkgs.vimPlugins; [
-    # basics
-    vim-sensible
-    vim-fugitive
-    vim-surround
-    vim-commentary
-    vim-sneak
-    vim-closetag
-    vim-nix
-    vim-polyglot
-    kotlin-vim
+  pluginWithCfg = plugin: {
+    inherit plugin;
+    config = readVimSection "plugins/${plugin.pname}";
+  };
+  # For plugins configured with lua
+  wrapLuaConfig = luaConfig: ''
+    lua<<EOF
+    ${luaConfig}
+    EOF
+  '';
+  readLuaSection = file:
+    wrapLuaConfig (builtins.readFile (./. + "/${file}.lua"));
+  pluginWithLua = plugin: {
+    inherit plugin;
+    config = readLuaSection "plugins/${plugin.pname}";
+  };
+  vimPlugins = with pkgs.vimPlugins;
+    with pkgs.tree-sitter.builtGrammars; [
+      # basics
+      vim-sensible
+      vim-fugitive
+      vim-surround
+      vim-commentary
+      vim-sneak
+      vim-closetag
+      vim-nix
+      vim-polyglot
+      kotlin-vim
 
-    # vim addon utilities
-    ranger-vim
-    fzf-vim
-    vim-nix
+      # vim addon utilities
+      direnv-vim
+      ranger-vim
+      (pluginWithCfg fzf-vim)
+      vim-nix
 
-    # IDE-esque utilities
-    coc-nvim
-    vimtex
-    coc-vimtex
-    coc-css
-    coc-html
-    coc-eslint
-    coc-tslint
-    coc-json
-    coc-prettier
-    coc-tsserver
-    coc-yaml
-    coc-snippets
-    coc-pairs
-    coc-git
-    coc-python
-    coc-java
+      # IDE-esque utilities
+      (pluginWithCfg coc-nvim)
+      (pluginWithCfg vimtex)
+      coc-vimtex
+      coc-css
+      coc-html
+      coc-eslint
+      coc-tslint
+      coc-json
+      coc-prettier
+      coc-tsserver
+      coc-yaml
+      coc-snippets
+      coc-pairs
+      coc-git
+      coc-pyright
+      coc-java
 
-    # theming
-    awesome-vim-colorschemes
-  ];
+      # new neovim stuff
+      (pluginWithLua nvim-treesitter)
+      (pluginWithLua nvim-treesitter-textobjects)
+
+      # theming
+      awesome-vim-colorschemes
+    ];
 in {
   programs.neovim = {
     enable = true;
+    package = pkgs.neovim-nightly;
     viAlias = true;
     vimAlias = true;
     vimdiffAlias = true;
@@ -51,7 +74,6 @@ in {
     withRuby = true;
     withPython = true;
     withPython3 = true;
-    extraPython3Packages = (ps: with ps; [ black jedi pylint ]);
 
     # share vim plugins since nothing is specific to nvim
     plugins = vimPlugins;
@@ -59,4 +81,45 @@ in {
       ${readVimSection "settings"}
     '';
   };
+
+  # Treesitter grammars
+  # shamelessly stolen from @i077
+  # https://github.com/i077/system/blob/master/modules/editors/neovim/default.nix
+  # currently broken on macOS big sur
+  # xdg.configFile = let
+  #   # The languages for which I want to use tree-sitter
+  #   languages = [
+  #     "bash"
+  #     "c"
+  #     "cpp"
+  #     "rust"
+  #     "css"
+  #     "go"
+  #     "haskell"
+  #     "html"
+  #     "java"
+  #     "javascript"
+  #     "json"
+  #     "lua"
+  #     "nix"
+  #     "python"
+  #   ];
+  #   # Map each language to its respective tree-sitter package
+  #   grammarPkg = l:
+  #     (pkgs.tree-sitter.builtGrammars.${"tree-sitter-" + l}.overrideAttrs
+  #       (oldAttrs: rec {
+  #         postPatch = ''
+  #           for f in *.cc; do
+  #             substituteInPlace $f --replace gcc cc
+  #           done
+  #         '';
+  #       }));
+  #   # Map each language to a name-value pair for xdg.configFile
+  #   langToFile = lang:
+  #     lib.nameValuePair "nvim/parser/${lang}.so" {
+  #       source = "${grammarPkg lang}/parser";
+  #     };
+  #   # The final collection of name-value pairs
+  #   files = map langToFile languages;
+  # in builtins.listToAttrs files;
 }
