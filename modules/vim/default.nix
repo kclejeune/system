@@ -34,16 +34,14 @@ let
       direnv-vim
       ranger-vim
       (pluginWithCfg fzf-vim)
-      vim-nix
 
       # IDE-esque utilities
       (pluginWithCfg coc-nvim)
       (pluginWithCfg vimtex)
-      coc-vimtex
       coc-css
       coc-html
       coc-eslint
-      coc-tslint
+      # coc-tslint
       coc-json
       coc-prettier
       coc-tsserver
@@ -51,12 +49,18 @@ let
       coc-snippets
       coc-pairs
       coc-git
-      coc-pyright
+      # coc-pyright
       coc-java
 
       # new neovim stuff
       (pluginWithLua nvim-treesitter)
       (pluginWithLua nvim-treesitter-textobjects)
+
+      (pluginWithLua nvim-lspconfig) # Config for neovim's built-in LSP client
+      (pluginWithLua lspsaga-nvim)
+      (pluginWithCfg completion-nvim) # Autocompletion
+      completion-buffers
+      completion-treesitter
 
       # theming
       awesome-vim-colorschemes
@@ -77,8 +81,20 @@ in {
 
     # share vim plugins since nothing is specific to nvim
     plugins = vimPlugins;
+    extraPackages = with pkgs; [
+      texlab # latex
+      rnix-lsp # nix
+      nodePackages.pyright # python
+      nodePackages.vim-language-server # vim
+      # sumneko-lua-language-server # lua
+      nodePackages.yaml-language-server # yaml
+    ];
+
     extraConfig = ''
       ${readVimSection "settings"}
+      ${wrapLuaConfig "require'lspconfig'.texlab.setup{}"}
+      ${wrapLuaConfig "require'lspconfig'.rnix.setup{}"}
+      ${wrapLuaConfig "require'lspconfig'.pyright.setup{}"}
     '';
   };
 

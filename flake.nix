@@ -104,7 +104,6 @@
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             nixFlakes
-            rnix-lsp
             (python.withPackages
               (ps: with ps; [ black pylint typer colorama shellingham ]))
           ];
