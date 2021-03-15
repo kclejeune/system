@@ -2,7 +2,10 @@
   imports = [
     ./bash
     ./completion-nvim
+    ./css
     ./fzf
+    ./html
+    ./json
     ./latex
     ./lspsga-nvim
     # ./lua-lsp

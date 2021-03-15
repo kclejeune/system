@@ -20,9 +20,10 @@ let
   };
 in {
   programs.neovim = {
-    plugins = with pkgs.vimPlugins; [ vim-nix ];
     # LSP config
-    extraPackages = with pkgs; with nodePackages; [ rnix-lsp ];
+    extraPackages = with pkgs;
+      with nodePackages;
+      [ vscode-css-languageserver-bin ];
     extraConfig = ''
       ${readLuaSection "lsp"}
     '';

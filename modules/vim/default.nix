@@ -42,24 +42,13 @@ in {
       vim-commentary
       vim-sneak
       vim-closetag
-      vim-nix
       vim-polyglot
       kotlin-vim
 
       # vim addon utilities
       direnv-vim
       ranger-vim
-
-      # theming
     ];
-    extraPackages = with pkgs;
-      with nodePackages; [
-        vim-language-server # vim
-        # lua
-        yaml-language-server # yaml
-        vscode-css-languageserver-bin
-      ];
-
     extraConfig = ''
       ${readVimSection "settings"}
     '';
