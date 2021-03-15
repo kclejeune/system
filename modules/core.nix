@@ -3,28 +3,7 @@
 
   # install extra common packages
   home.packages = with pkgs; [
-    # add flake support to nix command
-    (pkgs.symlinkJoin {
-      name = "nix";
-      paths = [ pkgs.nixFlakes ];
-      buildInputs = [ pkgs.makeWrapper ];
-      postBuild = ''
-        wrapProgram $out/bin/nix \
-          --add-flags "--experimental-features \"nix-command flakes\""
-      '';
-    })
-    cachix
-    fd
-    ripgrep
-    htop
-    curl
-    wget
-    mosh
-    openssh
-    neofetch
-    gawk
-    coreutils-full
-  ];
+     ];
 
   programs = {
     home-manager = {

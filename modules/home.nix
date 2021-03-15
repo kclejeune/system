@@ -37,49 +37,52 @@ in {
 
     # define package definitions for current user environment
     packages = with pkgs; [
-      # nix stuff
-      nixpkgs-fmt
-      nixfmt
-      niv
-      sysdo
+      # add flake support to nix command
+      (pkgs.symlinkJoin {
+        name = "nix";
+        paths = [ pkgs.nixFlakes ];
+        buildInputs = [ pkgs.makeWrapper ];
+        postBuild = ''
+          wrapProgram $out/bin/nix \
+            --add-flags "--experimental-features \"nix-command flakes\""
+        '';
+      })
 
-      # scripting
       (python3.withPackages
         (ps: with ps; [ bpython black pylint mypy numpy scipy networkx ]))
-
-      # gnu stuff
-      # encryption and signing utilities
-      gnupg
+      curl
       gawk
-      gnused
+      git
       gnugrep
-
-      # dev garbage
-      nodejs
-      yarn
-      pre-commit
+      gnupg
+      gnused
+      httpie
       jq
       kotlin
-
-      # command line utilities
-      git
-      curl
-      wget
-      ranger
-      rsync
-      httpie
+      niv
+      nixfmt
+      nixpkgs-fmt
+      nodejs
       pandoc
+      pre-commit
+      ranger
       ripgrep
       ripgrep-all
-
-      # other useful stuff
-      youtube-dl
+      rsync
       speedtest-cli
-
-      # typesetting
-      # (texlive.combine { inherit (texlive) scheme-basic latexindent latexmk; })
-      texlive.combined.scheme-full
+      sysdo
       tectonic
+      texlive.combined.scheme-full
+      youtube-dl
+      cachix
+      coreutils-full
+      curl
+      fd
+      gawk
+      htop
+      neofetch
+      openssh
+      ripgrep
     ];
   };
 }
