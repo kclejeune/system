@@ -19,7 +19,11 @@ let
     config = readVimSection plugin.pname;
   };
 in {
+  # link coc-settings to the right location
+  xdg.configFile."nvim/coc-settings.json".source = ./coc-settings.json;
+
   programs.neovim = {
+    extraPackages = with pkgs; with nodePackages; [ rnix-lsp ];
     plugins = with pkgs.vimPlugins; [
       (pluginWithCfg coc-nvim)
       coc-css

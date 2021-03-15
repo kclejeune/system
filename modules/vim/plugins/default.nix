@@ -12,7 +12,7 @@
     # # ./lua-lsp
     ./nvim-lspconfig
     # ./pyright-lsp
-    ./rnix-lsp
+    # ./rnix-lsp
     ./svelte-lsp
     ./theme
     ./treesitter
