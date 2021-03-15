@@ -4,12 +4,13 @@
     ./coc
     ./completion-nvim
     # ./css
-    # ./fzf
+    ./fzf
     # ./html
     # ./json
     # ./latex
     # ./lspsga-nvim
     # # ./lua-lsp
+    ./nerdtree
     ./nvim-lspconfig
     # ./pyright-lsp
     # ./rnix-lsp

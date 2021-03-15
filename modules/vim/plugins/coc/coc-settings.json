@@ -4,5 +4,6 @@
       "command": "rnix-lsp",
       "filetypes": ["nix"]
     }
-  }
+  },
+  "python.formatting.blackPath": "black"
 }

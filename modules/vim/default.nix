@@ -44,6 +44,7 @@ in {
       vim-closetag
       vim-polyglot
       kotlin-vim
+      nerdtree
 
       # vim addon utilities
       direnv-vim
