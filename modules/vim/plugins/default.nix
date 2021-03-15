@@ -1,24 +1,24 @@
 { ... }: {
   imports = [
     ./bash
+    ./coc
     ./completion-nvim
-    ./css
-    ./fzf
-    ./html
-    ./json
-    ./latex
-    ./lspsga-nvim
-    # ./lua-lsp
-    # ./nvim-compe
+    # ./css
+    # ./fzf
+    # ./html
+    # ./json
+    # ./latex
+    # ./lspsga-nvim
+    # # ./lua-lsp
     ./nvim-lspconfig
-    ./pyright-lsp
+    # ./pyright-lsp
     ./rnix-lsp
     ./svelte-lsp
     ./theme
     ./treesitter
-    ./typescript-lsp
-    ./vimscript-lsp
-    ./vue-lsp
-    ./yaml-lsp
+    # ./typescript-lsp
+    # ./vimscript-lsp
+    # ./vue-lsp
+    # ./yaml-lsp
   ];
 }
