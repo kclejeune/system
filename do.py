@@ -243,13 +243,13 @@ def update(
     flags = "--commit-lock-file" if commit else ""
     if not flake:
         typer.secho("updating all flake inputs")
-        cmd = f"nix flake update --recreate-lock-file {flags}"
+        cmd = f"nix flake update {flags}"
         run_cmd(cmd)
     else:
-        for input in flake:
-            typer.secho(f"updating {input}")
-            cmd = f"nix flake update --update-input {input} {flags}"
-            run_cmd(cmd)
+        inputs = [f"--update-input {input}" for input in flake]
+        typer.secho(f"updating {','.join(flake)}")
+        cmd = f"nix flake lock {' '.join(inputs)} {flags}"
+        run_cmd(cmd)
 
 
 @app.command(help="cache the output environment of flake.nix")
@@ -260,3 +260,4 @@ def cache(cache_name: str = "kclejeune"):
 
 if __name__ == "__main__":
     app()
+
