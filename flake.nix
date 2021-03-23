@@ -26,7 +26,8 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, darwin, home-manager, nixos-hardware, dev-shell, ... }:
+  outputs = inputs@{ self, nixpkgs, darwin, home-manager, nixos-hardware
+    , dev-shell, ... }:
     let
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
       mkDarwinConfig = { hostname, baseModules ? [
@@ -100,17 +101,22 @@
     inputs.flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        python = pkgs.python3;
+        pyEnv = (pkgs.python3.withPackages
+          (ps: with ps; [ black pylint typer colorama shellingham ]));
         nixBin = pkgs.writeShellScriptBin "nix" ''
           ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
         '';
+        sysdo = pkgs.writeShellScriptBin "sysdo" ''
+          ${pyEnv}/bin/python3 do.py $@
+        '';
       in {
         devShell = dev-shell.legacyPackages.${system}.mkShell {
-          packages = with pkgs; [
-            nixBin
-            (python.withPackages
-              (ps: with ps; [ black pylint typer colorama shellingham ]))
-          ];
+          packages = with pkgs; [ nixBin pyEnv sysdo ];
+          commands = [{
+            name = "sysdo";
+            package = sysdo;
+            help = "perform actions on this repository";
+          }];
         };
       });
 }

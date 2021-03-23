@@ -1,18 +1,12 @@
 # Generated via dconf2nix: https://github.com/gvolpe/dconf2nix
 { lib, ... }:
 
-let
-  mkTuple = lib.hm.gvariant.mkTuple;
-in
-{
+let mkTuple = lib.hm.gvariant.mkTuple;
+in {
   dconf.settings = {
-    "org/gnome/control-center" = {
-      last-panel = "notifications";
-    };
+    "org/gnome/control-center" = { last-panel = "notifications"; };
 
-    "org/gnome/desktop/datetime" = {
-      automatic-timezone = true;
-    };
+    "org/gnome/desktop/datetime" = { automatic-timezone = true; };
 
     "org/gnome/desktop/input-sources" = {
       current = "uint32 0";
@@ -55,13 +49,9 @@ in
       report-technical-problems = true;
     };
 
-    "org/gnome/desktop/sound" = {
-      theme-name = "freedesktop";
-    };
+    "org/gnome/desktop/sound" = { theme-name = "freedesktop"; };
 
-    "org/gnome/desktop/wm/keybindings" = {
-      close = [ "<Alt>w" ];
-    };
+    "org/gnome/desktop/wm/keybindings" = { close = [ "<Alt>w" ]; };
 
     "org/gnome/epiphany/state" = {
       is-maximized = false;
@@ -87,17 +77,11 @@ in
       hinting = "slight";
     };
 
-    "org/gnome/shell/world-clocks" = {
-      locations = "@av []";
-    };
+    "org/gnome/shell/world-clocks" = { locations = "@av []"; };
 
-    "org/gnome/system/location" = {
-      enabled = true;
-    };
+    "org/gnome/system/location" = { enabled = true; };
 
-    "org/gtk/settings/file-chooser" = {
-      clock-format = "12h";
-    };
+    "org/gtk/settings/file-chooser" = { clock-format = "12h"; };
 
   };
 }
