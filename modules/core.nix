@@ -2,8 +2,7 @@
   imports = [ ./vim ./zsh ./kitty ./dotfiles ./git.nix ];
 
   # install extra common packages
-  home.packages = with pkgs; [
-     ];
+  home.packages = with pkgs; [ ];
 
   programs = {
     home-manager = {

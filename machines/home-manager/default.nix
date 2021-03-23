@@ -1,3 +1,4 @@
 { inputs, config, pkgs, ... }: {
-  imports = [ ../../modules/core.nix ../../modules/dotfiles ../../modules/home.nix ];
+  imports =
+    [ ../../modules/core.nix ../../modules/dotfiles ../../modules/home.nix ];
 }

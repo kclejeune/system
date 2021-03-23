@@ -20,9 +20,7 @@ let
   };
 in {
   programs.neovim = {
-    plugins = with pkgs.vimPlugins; [
-      (pluginWithCfg nerdtree)
-    ];
+    plugins = with pkgs.vimPlugins; [ (pluginWithCfg nerdtree) ];
   };
 
 }
