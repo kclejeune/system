@@ -5,6 +5,11 @@
       target = ".keras";
       recursive = true;
     };
+    raycast = {
+      source = ./raycast;
+      target = ".local/bin/raycast";
+      recursive = true;
+    };
   };
 
   xdg.enable = true;

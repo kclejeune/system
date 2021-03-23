@@ -21,6 +21,21 @@
         "type": "github"
       }
     },
+    "dev-shell": {
+      "locked": {
+        "lastModified": 1616093728,
+        "narHash": "sha256-5A3CABXiKPIzU4uETKStQvBtAoZNL1H1B/LAOk4FguU=",
+        "owner": "numtide",
+        "repo": "devshell",
+        "rev": "3663a7dffb94b412cee4cc0c9644fe5f95911101",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "devshell",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -64,7 +79,6 @@
       },
       "original": {
         "owner": "numtide",
-        "ref": "master",
         "repo": "flake-utils",
         "type": "github"
       }
@@ -212,6 +226,7 @@
     "root": {
       "inputs": {
         "darwin": "darwin",
+        "dev-shell": "dev-shell",
         "flake-compat": "flake-compat",
         "flake-utils": "flake-utils",
         "home-manager": "home-manager",

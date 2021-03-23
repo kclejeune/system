@@ -4,7 +4,8 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     stable.url = "github:nixos/nixpkgs/nixos-20.09";
-    flake-utils.url = "github:numtide/flake-utils/master";
+    flake-utils.url = "github:numtide/flake-utils";
+    dev-shell.url = "github:numtide/devshell";
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
     flake-compat = {
@@ -25,7 +26,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, darwin, home-manager, nixos-hardware, ... }:
+  outputs = inputs@{ self, nixpkgs, darwin, home-manager, nixos-hardware, dev-shell, ... }:
     let
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
       mkDarwinConfig = { hostname, baseModules ? [
@@ -100,10 +101,13 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         python = pkgs.python3;
+        nixBin = pkgs.writeShellScriptBin "nix" ''
+          ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
+        '';
       in {
-        devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            nixFlakes
+        devShell = dev-shell.legacyPackages.${system}.mkShell {
+          packages = with pkgs; [
+            nixBin
             (python.withPackages
               (ps: with ps; [ black pylint typer colorama shellingham ]))
           ];
