@@ -107,7 +107,7 @@
           ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
         '';
         sysdo = pkgs.writeShellScriptBin "sysdo" ''
-          ${pyEnv}/bin/python3 do.py $@
+          cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 do.py $@
         '';
       in {
         devShell = dev-shell.legacyPackages.${system}.mkShell {
