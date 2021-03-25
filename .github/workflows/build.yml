@@ -32,6 +32,10 @@ jobs:
           name: kclejeune
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Build Configuration
-        run: nix build -v .#${{ matrix.host }}
+        run: |
+          # build the configuration
+          nix build -v .#${{ matrix.host }}
+          # cache the devShell environment
+          nix flake archive --json | jq -r '.path,(.inputs|to_entries[].value.path)' | cachix push kclejeune
         timeout-minutes: 120
 
