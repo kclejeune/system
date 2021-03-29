@@ -1,5 +1,5 @@
 { inputs, config, lib, pkgs, ... }: {
-  imports = [ ../modules/primary.nix ../modules/nixpkgs.nix ];
+  imports = [ ./primary.nix ./nixpkgs.nix ];
 
   programs.zsh.enable = true;
 
@@ -12,7 +12,7 @@
   };
 
   # bootstrap home manager using system config
-  hm = import ./home.nix;
+  hm = import ./home-manager/home.nix;
 
   # let nix manage home-manager profiles and use global nixpkgs
   home-manager = {

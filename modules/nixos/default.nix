@@ -15,6 +15,6 @@
 
   environment.systemPackages = with pkgs; [ vscode firefox ];
 
-  hm = { pkgs, ... }: { imports = [ ../gnome ]; };
+  hm = { pkgs, ... }: { imports = [ ../home-manager/gnome ]; };
 }
 

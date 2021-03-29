@@ -11,7 +11,7 @@ let
     (${sysDoNixos}) || (${sysDoDarwin})
   '');
 in {
-  imports = [ ../modules/core.nix ];
+  imports = [ ./core.nix ];
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.

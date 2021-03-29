@@ -18,7 +18,7 @@
     };
   };
 
-  hm = { pkgs, ... }: { imports = [ ../../modules/gnome ]; };
+  hm = { pkgs, ... }: { imports = [ ../../modules/home-manager/gnome ]; };
 
   networking.hostName = "Phil"; # Define your hostname.
   networking.networkmanager.enable = true;
