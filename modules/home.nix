@@ -1,13 +1,12 @@
 { inputs, config, pkgs, ... }:
 let
   homeDir = config.home.homeDirectory;
-  nixFlakes = "${pkgs.nixFlakes}/bin/nix";
   pyEnv = (pkgs.python3.withPackages
     (ps: with ps; [ black pylint typer colorama shellingham ]));
   sysDoNixos =
-    "[[ -d /etc/nixos ]] && cd /etc/nixos && ${pyEnv}/bin/python do.py $@";
+    "[[ -d /etc/nixos ]] && cd /etc/nixos && ${pyEnv}/bin/python bin/do.py $@";
   sysDoDarwin =
-    "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${pyEnv}/bin/python do.py $@";
+    "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${pyEnv}/bin/python bin/do.py $@";
   sysdo = (pkgs.writeShellScriptBin "sysdo" ''
     (${sysDoNixos}) || (${sysDoDarwin})
   '');

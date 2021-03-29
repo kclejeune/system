@@ -67,16 +67,16 @@
     in {
       darwinConfigurations = mkDarwinConfig {
         hostname = "randall";
-        extraModules = [ ./modules/profiles/personal.nix ];
+        extraModules = [ ./profiles/personal.nix ];
       } // mkDarwinConfig {
         hostname = "work";
-        extraModules = [ ./modules/profiles/work.nix ];
+        extraModules = [ ./profiles/work.nix ];
       };
       nixosConfigurations = mkNixosConfig {
         hostname = "phil";
         extraModules = [
           ./machines/nixos/phil
-          ./modules/profiles/personal.nix
+          ./profiles/personal.nix
           nixos-hardware.nixosModules.lenovo-thinkpad-t460s
         ];
       };
@@ -86,15 +86,15 @@
       homeManagerConfigurations = mkHomeManagerConfig {
         hostname = "server";
         username = "kclejeune";
-        extraModules = [ ./modules/profiles/home-manager/personal.nix ];
+        extraModules = [ ./profiles/home-manager/personal.nix ];
       } // mkHomeManagerConfig {
         hostname = "workServer";
         username = "lejeukc1";
-        extraModules = [ ./modules/profiles/home-manager/work.nix ];
+        extraModules = [ ./profiles/home-manager/work.nix ];
       } // mkHomeManagerConfig {
         hostname = "multipass";
         username = "ubuntu";
-        extraModules = [ ./modules/profiles/home-manager/personal.nix ];
+        extraModules = [ ./profiles/home-manager/personal.nix ];
       };
     } //
     # add a devShell to this flake
@@ -107,7 +107,7 @@
           ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
         '';
         sysdo = pkgs.writeShellScriptBin "sysdo" ''
-          cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 do.py $@
+          cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
         '';
       in {
         devShell = dev-shell.legacyPackages.${system}.mkShell {
