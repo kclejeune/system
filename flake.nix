@@ -26,10 +26,12 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, darwin, home-manager, nixos-hardware
-    , dev-shell, ... }:
+  outputs = inputs@{ self, nixpkgs, darwin, nixos-hardware, dev-shell, ... }:
     let
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
+
+      # generate a base darwin configuration with the
+      # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig = { hostname, baseModules ? [
         inputs.home-manager.darwinModules.home-manager
         ./machines/darwin
@@ -41,6 +43,9 @@
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
+
+      # generate a base nixos configuration with the
+      # specified hostname, overlays, and any extraModules applied
       mkNixosConfig = { hostname, system ? "x86_64-linux", baseModules ? [
         inputs.home-manager.nixosModules.home-manager
         ./machines/nixos
@@ -52,6 +57,9 @@
           specialArgs = { inherit inputs nixpkgs; };
         };
       };
+
+      # generate a home-manager configuration usable on any unix system
+      # with overlays and any extraModules applied
       mkHomeManagerConfig =
         { hostname, username, system ? "x86_64-linux", extraModules ? [ ] }: {
           "${hostname}" = inputs.home-manager.lib.homeManagerConfiguration rec {
