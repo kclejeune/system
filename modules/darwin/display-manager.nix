@@ -37,6 +37,6 @@
   services.skhd = {
     enable = true;
     package = pkgs.skhd;
-    skhdConfig = builtins.readFile ../dotfiles/skhd/skhdrc;
+    skhdConfig = builtins.readFile ../home-manager/dotfiles/skhd/skhdrc;
   };
 }
