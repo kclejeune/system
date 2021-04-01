@@ -20,6 +20,7 @@ let
   };
 in {
   imports = [ ./plugins ];
+  home.packages = [ pkgs.tree-sitter ];
   programs.neovim = {
     enable = true;
     package = pkgs.neovim-nightly;

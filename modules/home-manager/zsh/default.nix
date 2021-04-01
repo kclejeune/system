@@ -30,6 +30,7 @@ in {
     shellAliases = aliases;
     initExtra = ''
       ${functions}
+      unset RPS1
     '';
     plugins = [{
       name = "zsh-syntax-highlighting";
