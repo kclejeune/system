@@ -13,6 +13,14 @@
     '';
   };
 
+  services.syncthing = {
+    enable = true;
+    user = config.user.name;
+    group = "users";
+    openDefaultPorts = true;
+    dataDir = config.user.home;
+  };
+
   environment.systemPackages = with pkgs; [ vscode firefox ];
 
   hm = { pkgs, ... }: { imports = [ ../home-manager/gnome ]; };
