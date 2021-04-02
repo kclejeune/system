@@ -20,9 +20,6 @@ let
   };
 in {
   programs.neovim = {
-    plugins = with pkgs.vimPlugins; [ (pluginWithLua nvim-compe) ];
-    extraConfig = ''
-      ${readLuaSection "mappings"}
-    '';
+    plugins = with pkgs.vimPlugins; [ (pluginWithLua nvim-autopairs) ];
   };
 }
