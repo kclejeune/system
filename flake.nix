@@ -97,7 +97,7 @@
             homeDirectory = "/home/${username}";
             extraSpecialArgs = { inherit inputs nixpkgs; };
             configuration = {
-              imports = [ ./machines/home-manager ] ++ extraModules
+              imports = baseModules ++ extraModules
                 ++ [{ nixpkgs.overlays = overlays; }];
             };
           };

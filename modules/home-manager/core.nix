@@ -7,7 +7,7 @@
   programs = {
     home-manager = {
       enable = true;
-      path = "../machines/home.nix";
+      path = "./home.nix";
     };
     direnv = {
       enable = true;
@@ -29,7 +29,7 @@
       changeDirWidgetCommand = "fd --type d";
       changeDirWidgetOptions = [ "--preview 'tree -C {} | head -200'" ];
       fileWidgetCommand = "fd --type f";
-      fileWidgetOptions = [ "--preview 'bat --color=always --plain {}'" ];
+      fileWidgetOptions = [ "--preview '${pkgs.bat}/bin/bat --color=always --plain {}'" ];
     };
     bat = {
       enable = true;

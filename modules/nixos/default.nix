@@ -21,7 +21,11 @@
     dataDir = config.user.home;
   };
 
-  environment.systemPackages = with pkgs; [ vscode firefox ];
+  environment.systemPackages = with pkgs; [
+    vscode
+    firefox
+    gnome3.gnome-tweaks
+  ];
 
   hm = { pkgs, ... }: { imports = [ ../home-manager/gnome ]; };
 
@@ -73,15 +77,6 @@
   # time.timeZone = "EST";
   services.geoclue2.enable = true;
   services.localtime.enable = true;
-
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
-  environment.systemPackages = with pkgs; [
-    firefox
-    gnome3.gnome-tweaks
-    wireshark-cli
-    wireshark
-  ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
