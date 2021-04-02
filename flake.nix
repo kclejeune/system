@@ -48,7 +48,7 @@
         { hostname
         , baseModules ? [
             home-manager.darwinModules.home-manager
-            ./machines/darwin
+            ./modules/darwin
           ]
         , extraModules ? [ ]
         }: {
@@ -67,7 +67,7 @@
         , system ? "x86_64-linux"
         , baseModules ? [
             home-manager.nixosModules.home-manager
-            ./machines/nixos
+            ./modules/nixos
           ]
         , extraModules ? [ ]
         }: {
@@ -82,7 +82,16 @@
       # generate a home-manager configuration usable on any unix system
       # with overlays and any extraModules applied
       mkHomeManagerConfig =
-        { hostname, username, system ? "x86_64-linux", extraModules ? [ ] }: {
+        { hostname
+        , username
+        , system ? "x86_64-linux"
+        , baseModules ? [
+            ./modules/home-manager/core.nix
+            ./modules/home-manager/dotfiles
+            ./modules/home-manager/home.nix
+          ]
+        , extraModules ? [ ]
+        }: {
           "${hostname}" = home-manager.lib.homeManagerConfiguration rec {
             inherit system username;
             homeDirectory = "/home/${username}";
@@ -106,7 +115,7 @@
       nixosConfigurations = mkNixosConfig {
         hostname = "phil";
         extraModules = [
-          ./machines/nixos/phil
+          ./modules/hardware/phil.nix
           ./profiles/personal.nix
           nixos-hardware.nixosModules.lenovo-thinkpad-t460s
         ];
@@ -145,7 +154,9 @@
         cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
       '';
       fmt = pkgs.writeShellScriptBin "treefmt" ''
-        cd $DEVSHELL_ROOT && ${treefmt.defaultPackage.${system}}/bin/treefmt -q $@
+        cd $DEVSHELL_ROOT && ${
+          treefmt.defaultPackage.${system}
+        }/bin/treefmt -q $@
       '';
     in
     {
@@ -161,7 +172,7 @@
           {
             help = "Format the entire code tree";
             name = "treefmt";
-            category = "formatters";
+            category = "utilities";
             package = fmt;
           }
         ];
