@@ -144,6 +144,9 @@
       sysdo = pkgs.writeShellScriptBin "sysdo" ''
         cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
       '';
+      fmt = pkgs.writeShellScriptBin "treefmt" ''
+        cd $DEVSHELL_ROOT && ${treefmt.defaultPackage.${system}}/bin/treefmt -q $@
+      '';
     in
     {
       devShell = pkgs.devshell.mkShell {
@@ -157,8 +160,9 @@
           }
           {
             help = "Format the entire code tree";
+            name = "treefmt";
             category = "formatters";
-            package = treefmt.defaultPackage.${system};
+            package = fmt;
           }
         ];
       };
