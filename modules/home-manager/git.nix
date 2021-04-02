@@ -9,6 +9,9 @@
     aliases = {
       fix = "commit --amend --no-edit";
       oops = "reset HEAD~1";
+      commit = "commit --verbose";
+      pull = "pull --verbose";
+      push = "push --verbose";
     };
     delta.enable = true;
   };
