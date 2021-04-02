@@ -34,12 +34,21 @@ in {
     '';
     plugins = [
       {
+        name = "zsh-z";
+        src = pkgs.fetchFromGitHub {
+          owner = "agkozak";
+          repo = "zsh-z";
+          rev = "595c883abec4682929ffe05eb2d088dd18e97557";
+          sha256 = "sha256-HnwUWqzwavh/Qox+siOe5lwTp7PBdiYx+9M0NMNFx00=";
+        };
+      }
+      {
         name = "zsh-syntax-highlighting";
         src = pkgs.fetchFromGitHub {
           owner = "zsh-users";
           repo = "zsh-syntax-highlighting";
           rev = "0.7.1";
-          sha256 = "03r6hpb5fy4yaakqm3lbf4xcvd408r44jgpv4lnzl9asp4sb9qc0";
+          sha256 = "sha256-gOG0NLlaJfotJfs+SUhGgLTNOnGLjoqnUp54V9aFJg8=";
         };
       }
       {

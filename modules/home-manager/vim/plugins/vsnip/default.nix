@@ -20,13 +20,8 @@ let
   };
 in {
   programs.neovim = {
-    plugins = with pkgs.vimPlugins; [
-      (pluginWithLua nvim-compe)
-      vim-vsnip
-      vim-vsnip-integ
-    ];
+    plugins = with pkgs.vimPlugins; [ vim-vsnip vim-vsnip-integ ];
     extraConfig = ''
-      ${readLuaSection "mappings"}
     '';
   };
 }
