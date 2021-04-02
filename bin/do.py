@@ -260,4 +260,3 @@ def cache(cache_name: str = "kclejeune"):
 
 if __name__ == "__main__":
     app()
-
