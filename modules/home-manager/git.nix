@@ -10,14 +10,11 @@
           "cache --timeout=1000000000";
       http.sslVerify = true;
       pull.rebase = false;
+      commit.verbose = true;
     };
     aliases = {
-      commit = "commit --verbose";
-      fetch = "fetch --verbose";
       fix = "commit --amend --no-edit";
       oops = "reset HEAD~1";
-      pull = "pull --verbose";
-      push = "push --verbose";
     };
     delta.enable = true;
   };
