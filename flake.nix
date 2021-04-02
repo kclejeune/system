@@ -5,8 +5,9 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     stable.url = "github:nixos/nixpkgs/nixos-20.09";
     flake-utils.url = "github:numtide/flake-utils";
-    dev-shell.url = "github:numtide/devshell";
+    devshell.url = "github:numtide/devshell";
     nixos-hardware.url = "github:nixos/nixos-hardware";
+    treefmt.url = "github:numtide/treefmt";
 
     flake-compat = {
       url = "github:edolstra/flake-compat";
@@ -26,7 +27,18 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, darwin, nixos-hardware, dev-shell, ... }:
+  outputs =
+    inputs@{ self
+    , nixpkgs
+    , stable
+    , darwin
+    , home-manager
+    , nixos-hardware
+    , devshell
+    , treefmt
+    , flake-utils
+    , ...
+    }:
     let
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
 
@@ -35,7 +47,7 @@
       mkDarwinConfig =
         { hostname
         , baseModules ? [
-            inputs.home-manager.darwinModules.home-manager
+            home-manager.darwinModules.home-manager
             ./machines/darwin
           ]
         , extraModules ? [ ]
@@ -54,7 +66,7 @@
         { hostname
         , system ? "x86_64-linux"
         , baseModules ? [
-            inputs.home-manager.nixosModules.home-manager
+            home-manager.nixosModules.home-manager
             ./machines/nixos
           ]
         , extraModules ? [ ]
@@ -71,7 +83,7 @@
       # with overlays and any extraModules applied
       mkHomeManagerConfig =
         { hostname, username, system ? "x86_64-linux", extraModules ? [ ] }: {
-          "${hostname}" = inputs.home-manager.lib.homeManagerConfiguration rec {
+          "${hostname}" = home-manager.lib.homeManagerConfiguration rec {
             inherit system username;
             homeDirectory = "/home/${username}";
             extraSpecialArgs = { inherit inputs nixpkgs; };
@@ -118,26 +130,37 @@
       };
     } //
     # add a devShell to this flake
-    inputs.flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        pyEnv = (pkgs.python3.withPackages
-          (ps: with ps; [ black pylint typer colorama shellingham ]));
-        nixBin = pkgs.writeShellScriptBin "nix" ''
-          ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
-        '';
-        sysdo = pkgs.writeShellScriptBin "sysdo" ''
-          cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
-        '';
-      in
-      {
-        devShell = dev-shell.legacyPackages.${system}.mkShell {
-          packages = with pkgs; [ nixBin pyEnv sysdo ];
-          commands = [{
+    flake-utils.lib.eachDefaultSystem (system:
+    let
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [ devshell.overlay ];
+      };
+      pyEnv = (pkgs.python3.withPackages
+        (ps: with ps; [ black pylint typer colorama shellingham ]));
+      nixBin = pkgs.writeShellScriptBin "nix" ''
+        ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
+      '';
+      sysdo = pkgs.writeShellScriptBin "sysdo" ''
+        cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
+      '';
+    in
+    {
+      devShell = pkgs.devshell.mkShell {
+        packages = with pkgs; [ nixBin pyEnv sysdo ];
+        commands = [
+          {
             name = "sysdo";
             package = sysdo;
+            category = "utilities";
             help = "perform actions on this repository";
-          }];
-        };
-      });
+          }
+          {
+            help = "Format the entire code tree";
+            category = "formatters";
+            package = treefmt.defaultPackage.${system};
+          }
+        ];
+      };
+    });
 }
