@@ -154,9 +154,7 @@
         cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
       '';
       fmt = pkgs.writeShellScriptBin "treefmt" ''
-        cd $DEVSHELL_ROOT && ${
-          treefmt.defaultPackage.${system}
-        }/bin/treefmt -q $@
+        ${treefmt.defaultPackage.${system}}/bin/treefmt -q $@
       '';
     in
     {
