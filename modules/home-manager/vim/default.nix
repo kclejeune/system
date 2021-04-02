@@ -18,7 +18,8 @@ let
     inherit plugin;
     config = readVimSection plugin.pname;
   };
-in {
+in
+{
   imports = [ ./plugins ];
   home.packages = [ pkgs.tree-sitter pkgs.luajit ];
   programs.neovim = {

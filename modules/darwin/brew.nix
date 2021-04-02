@@ -32,12 +32,7 @@ in
       "koekeishiya/formulae"
     ];
 
-    brews = [
-      "beeftornado/rmtree/brew-rmtree"
-      "mas"
-      "skhd"
-      "yabai"
-    ];
+    brews = [ "beeftornado/rmtree/brew-rmtree" "mas" "skhd" "yabai" ];
 
     casks = [
       "1password"

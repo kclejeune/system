@@ -18,7 +18,8 @@ let
     inherit plugin;
     config = readVimSection plugin.pname;
   };
-in {
+in
+{
   programs.neovim = {
     # vimtex config
     plugins = with pkgs.vimPlugins; [ (pluginWithLua lspsaga-nvim) ];

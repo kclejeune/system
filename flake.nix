@@ -32,31 +32,40 @@
 
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
-      mkDarwinConfig = { hostname, baseModules ? [
-        inputs.home-manager.darwinModules.home-manager
-        ./machines/darwin
-      ], extraModules ? [ ] }: {
-        "${hostname}" = darwin.lib.darwinSystem {
-          # system = "x86_64-darwin";
-          modules = baseModules ++ extraModules
-            ++ [{ nixpkgs.overlays = overlays; }];
-          specialArgs = { inherit inputs nixpkgs; };
+      mkDarwinConfig =
+        { hostname
+        , baseModules ? [
+            inputs.home-manager.darwinModules.home-manager
+            ./machines/darwin
+          ]
+        , extraModules ? [ ]
+        }: {
+          "${hostname}" = darwin.lib.darwinSystem {
+            # system = "x86_64-darwin";
+            modules = baseModules ++ extraModules
+              ++ [{ nixpkgs.overlays = overlays; }];
+            specialArgs = { inherit inputs nixpkgs; };
+          };
         };
-      };
 
       # generate a base nixos configuration with the
       # specified hostname, overlays, and any extraModules applied
-      mkNixosConfig = { hostname, system ? "x86_64-linux", baseModules ? [
-        inputs.home-manager.nixosModules.home-manager
-        ./machines/nixos
-      ], extraModules ? [ ] }: {
-        "${hostname}" = nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = baseModules ++ extraModules
-            ++ [{ nixpkgs.overlays = overlays; }];
-          specialArgs = { inherit inputs nixpkgs; };
+      mkNixosConfig =
+        { hostname
+        , system ? "x86_64-linux"
+        , baseModules ? [
+            inputs.home-manager.nixosModules.home-manager
+            ./machines/nixos
+          ]
+        , extraModules ? [ ]
+        }: {
+          "${hostname}" = nixpkgs.lib.nixosSystem {
+            inherit system;
+            modules = baseModules ++ extraModules
+              ++ [{ nixpkgs.overlays = overlays; }];
+            specialArgs = { inherit inputs nixpkgs; };
+          };
         };
-      };
 
       # generate a home-manager configuration usable on any unix system
       # with overlays and any extraModules applied
@@ -72,11 +81,13 @@
             };
           };
         };
-    in {
-      darwinConfigurations = mkDarwinConfig {
-        hostname = "randall";
-        extraModules = [ ./profiles/personal.nix ];
-      } // mkDarwinConfig {
+    in
+    {
+      darwinConfigurations = mkDarwinConfig
+        {
+          hostname = "randall";
+          extraModules = [ ./profiles/personal.nix ];
+        } // mkDarwinConfig {
         hostname = "work";
         extraModules = [ ./profiles/work.nix ];
       };
@@ -91,11 +102,12 @@
       # Build and activate with
       # `nix build .#server.activationPackage; ./result/activate`
       # courtesy of @malob - https://github.com/malob/nixpkgs/
-      homeManagerConfigurations = mkHomeManagerConfig {
-        hostname = "server";
-        username = "kclejeune";
-        extraModules = [ ./profiles/home-manager/personal.nix ];
-      } // mkHomeManagerConfig {
+      homeManagerConfigurations = mkHomeManagerConfig
+        {
+          hostname = "server";
+          username = "kclejeune";
+          extraModules = [ ./profiles/home-manager/personal.nix ];
+        } // mkHomeManagerConfig {
         hostname = "workServer";
         username = "lejeukc1";
         extraModules = [ ./profiles/home-manager/work.nix ];
@@ -117,7 +129,8 @@
         sysdo = pkgs.writeShellScriptBin "sysdo" ''
           cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
         '';
-      in {
+      in
+      {
         devShell = dev-shell.legacyPackages.${system}.mkShell {
           packages = with pkgs; [ nixBin pyEnv sysdo ];
           commands = [{

@@ -10,7 +10,8 @@ let
   sysdo = (pkgs.writeShellScriptBin "sysdo" ''
     (${sysDoNixos}) || (${sysDoDarwin})
   '');
-in {
+in
+{
   imports = [ ./core.nix ];
 
   # Home Manager needs a bit of information about you and the

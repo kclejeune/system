@@ -3,7 +3,8 @@
 with lib;
 
 let cfg = config.services.syncthing;
-in {
+in
+{
   options = {
     services.syncthing = {
       enable = mkOption {

@@ -6,7 +6,8 @@ let
     la = "${pkgs.exa}/bin/exa -la";
     lt = "${pkgs.exa}/bin/exa --tree";
   };
-in {
+in
+{
   home.packages = with pkgs; [ fzf exa tree ];
 
   programs.bash = {

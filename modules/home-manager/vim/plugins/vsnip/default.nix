@@ -18,10 +18,10 @@ let
     inherit plugin;
     config = readVimSection plugin.pname;
   };
-in {
+in
+{
   programs.neovim = {
     plugins = with pkgs.vimPlugins; [ vim-vsnip vim-vsnip-integ ];
-    extraConfig = ''
-    '';
+    extraConfig = "";
   };
 }

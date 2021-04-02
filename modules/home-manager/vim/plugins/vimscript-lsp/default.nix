@@ -18,7 +18,8 @@ let
     inherit plugin;
     config = readVimSection plugin.pname;
   };
-in {
+in
+{
   programs.neovim = {
     # LSP config
     extraPackages = with pkgs; with nodePackages; [ vim-language-server ];
