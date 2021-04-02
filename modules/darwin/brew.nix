@@ -3,7 +3,8 @@ let
   checkBrew = "command -v brew > /dev/null";
   installBrew = ''
     ${pkgs.bash}/bin/bash -c "$(${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'';
-in {
+in
+{
   environment = {
     extraInit = ''
       # install homebrew
@@ -32,24 +33,20 @@ in {
     ];
 
     brews = [
-      "dark-mode"
-      "git"
-      "mas"
       "beeftornado/rmtree/brew-rmtree"
-      "yabai"
+      "mas"
       "skhd"
+      "yabai"
     ];
 
     casks = [
       "1password"
       "adobe-acrobat-pro"
-      "alfred"
       "appcleaner"
       "displaperture"
       "eul"
       "firefox"
       "fork"
-      "google-chrome"
       "gpg-suite"
       "gswitch"
       "iina"
@@ -59,7 +56,9 @@ in {
       "keybase"
       "kitty"
       "maccy"
+      "raycast"
       "skim"
+      "syncthing"
       "visual-studio-code"
       "zoom"
     ];
