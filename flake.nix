@@ -2,11 +2,11 @@
   description = "nix system configurations";
 
   inputs = {
+    devshell.url = "github:numtide/devshell";
+    flake-utils.url = "github:numtide/flake-utils";
+    nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     stable.url = "github:nixos/nixpkgs/nixos-20.09";
-    flake-utils.url = "github:numtide/flake-utils";
-    devshell.url = "github:numtide/devshell";
-    nixos-hardware.url = "github:nixos/nixos-hardware";
     treefmt.url = "github:numtide/treefmt";
 
     flake-compat = {
@@ -64,6 +64,7 @@
       # specified hostname, overlays, and any extraModules applied
       mkNixosConfig =
         { hostname
+        , hardwareModules
         , system ? "x86_64-linux"
         , baseModules ? [
             home-manager.nixosModules.home-manager
@@ -73,8 +74,11 @@
         }: {
           "${hostname}" = nixpkgs.lib.nixosSystem {
             inherit system;
-            modules = baseModules ++ extraModules
-              ++ [{ nixpkgs.overlays = overlays; }];
+            modules =
+              baseModules ++
+              hardwareModules ++
+              extraModules ++
+              [{ nixpkgs.overlays = overlays; }];
             specialArgs = { inherit inputs nixpkgs; };
           };
         };
@@ -97,46 +101,57 @@
             homeDirectory = "/home/${username}";
             extraSpecialArgs = { inherit inputs nixpkgs; };
             configuration = {
-              imports = baseModules ++ extraModules
-                ++ [{ nixpkgs.overlays = overlays; }];
+              imports =
+                baseModules ++
+                extraModules ++
+                [{ nixpkgs.overlays = overlays; }];
             };
           };
         };
     in
     {
-      darwinConfigurations = mkDarwinConfig
-        {
-          hostname = "randall";
-          extraModules = [ ./profiles/personal.nix ];
-        } // mkDarwinConfig {
-        hostname = "work";
-        extraModules = [ ./profiles/work.nix ];
-      };
-      nixosConfigurations = mkNixosConfig {
-        hostname = "phil";
-        extraModules = [
-          ./modules/hardware/phil.nix
-          ./profiles/personal.nix
-          nixos-hardware.nixosModules.lenovo-thinkpad-t460s
-        ];
-      };
-      # Build and activate with
-      # `nix build .#server.activationPackage; ./result/activate`
-      # courtesy of @malob - https://github.com/malob/nixpkgs/
-      homeManagerConfigurations = mkHomeManagerConfig
-        {
-          hostname = "server";
-          username = "kclejeune";
-          extraModules = [ ./profiles/home-manager/personal.nix ];
-        } // mkHomeManagerConfig {
-        hostname = "workServer";
-        username = "lejeukc1";
-        extraModules = [ ./profiles/home-manager/work.nix ];
-      } // mkHomeManagerConfig {
-        hostname = "multipass";
-        username = "ubuntu";
-        extraModules = [ ./profiles/home-manager/personal.nix ];
-      };
+      darwinConfigurations =
+        mkDarwinConfig
+          {
+            hostname = "randall";
+            extraModules = [ ./profiles/personal.nix ];
+          } //
+        mkDarwinConfig
+          {
+            hostname = "work";
+            extraModules = [ ./profiles/work.nix ];
+          };
+
+      nixosConfigurations =
+        mkNixosConfig
+          {
+            hostname = "phil";
+            hardwareModules = [ ./modules/hardware/phil.nix ];
+            extraModules = [
+              ./profiles/personal.nix
+              nixos-hardware.nixosModules.lenovo-thinkpad-t460s
+            ];
+          };
+
+      homeManagerConfigurations =
+        mkHomeManagerConfig
+          {
+            hostname = "server";
+            username = "kclejeune";
+            extraModules = [ ./profiles/home-manager/personal.nix ];
+          } //
+        mkHomeManagerConfig
+          {
+            hostname = "workServer";
+            username = "lejeukc1";
+            extraModules = [ ./profiles/home-manager/work.nix ];
+          } //
+        mkHomeManagerConfig
+          {
+            hostname = "multipass";
+            username = "ubuntu";
+            extraModules = [ ./profiles/home-manager/personal.nix ];
+          };
     } //
     # add a devShell to this flake
     flake-utils.lib.eachDefaultSystem (system:
@@ -159,7 +174,7 @@
     in
     {
       devShell = pkgs.devshell.mkShell {
-        packages = with pkgs; [ nixBin pyEnv sysdo ];
+        packages = with pkgs; [ nixBin pyEnv ];
         commands = [
           {
             name = "sysdo";
