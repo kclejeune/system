@@ -1,7 +1,6 @@
 { ... }: {
   imports = [
     # ./coc
-    # ./completion-nvim
     # ./lua-lsp # build failure
     ./bash
     ./css
@@ -9,8 +8,8 @@
     ./html
     ./json
     ./latex
-    ./lspsga-nvim
-    ./nerdtree
+    ./lspsaga-nvim
+    ./lualine-nvim
     ./nvim-autopairs
     ./nvim-compe
     ./nvim-lspconfig

@@ -1,1 +1,1 @@
-require'lspconfig'.vimls.setup{}
+require('lspconfig').vimls.setup{}

@@ -1,4 +1,4 @@
-require'lspconfig'.jsonls.setup {
+require('lspconfig').jsonls.setup {
     commands = {
       Format = {
         function()

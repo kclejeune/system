@@ -21,13 +21,6 @@ let
 in
 {
   programs.neovim = {
-    # vimtex config
-    plugins = with pkgs.vimPlugins; [
-      # completion nvim
-      (pluginWithCfg completion-nvim)
-      # extra completion sources
-      completion-buffers
-      completion-treesitter
-    ];
+    plugins = with pkgs.vimPlugins; [ (pluginWithLua lualine-nvim) ];
   };
 }

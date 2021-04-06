@@ -1,1 +1,1 @@
-require'lspconfig'.bashls.setup{}
+require('lspconfig').bashls.setup{}

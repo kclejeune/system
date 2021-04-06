@@ -1,1 +1,1 @@
-require'lspconfig'.rnix.setup{}
+require('lspconfig').rnix.setup{}
