@@ -11,11 +11,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        host: [nixosConfigurations.phil.config.system.build.toplevel, homeManagerConfigurations.server.activationPackage]
+        os:
+          - ubuntu-latest
+        host:
+          - nixosConfigurations.phil.config.system.build.toplevel
+          - homeManagerConfigurations.server.activationPackage
+          - devShell.x86_64-linux
         include:
           - os: macos-latest
             host: darwinConfigurations.randall.config.system.build.toplevel
+          - os: macos-latest
+            host: devShell.x86_64-darwin
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
