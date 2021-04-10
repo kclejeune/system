@@ -15,7 +15,7 @@ jobs:
           - ubuntu-latest
         host:
           - nixosConfigurations.phil.config.system.build.toplevel
-          - homeManagerConfigurations.server.activationPackage
+          - homeConfigurations.server.activationPackage
           - devShell.x86_64-linux
         include:
           - os: macos-latest

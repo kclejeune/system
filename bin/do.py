@@ -12,7 +12,7 @@ app = typer.Typer()
 class FlakeOutputs(Enum):
     NIXOS = "nixosConfigurations"
     DARWIN = "darwinConfigurations"
-    HOME_MANAGER = "homeManagerConfigurations"
+    HOME_MANAGER = "homeConfigurations"
 
 
 class Colors(Enum):

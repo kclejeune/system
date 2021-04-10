@@ -1,6 +1,19 @@
 {
   description = "nix system configurations";
 
+  nixConfig = {
+    substituters = [
+      "https://kclejeune.cachix.org"
+      "https://nix-community.cachix.org/"
+      "https://cache.nixos.org"
+    ];
+    trusted-public-keys = [
+      "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+    ];
+  };
+
   inputs = {
     devshell.url = "github:numtide/devshell";
     flake-utils.url = "github:numtide/flake-utils";
@@ -133,7 +146,7 @@
             ];
           };
 
-      homeManagerConfigurations =
+      homeConfigurations =
         mkHomeManagerConfig
           {
             hostname = "server";
