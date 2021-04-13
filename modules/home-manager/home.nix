@@ -14,8 +14,6 @@ in
 {
   imports = [ ./core.nix ];
 
-  # Home Manager needs a bit of information about you and the
-  # paths it should manage.
   home = {
     # This value determines the Home Manager release that your
     # configuration is compatible with. This helps avoid breakage
@@ -40,19 +38,26 @@ in
       # python with default packages
       (python3.withPackages
         (ps: with ps; [ bpython black pylint mypy numpy scipy networkx ]))
+      cachix
+      coreutils-full
       curl
+      fd
       gawk
+      ghc
       git
       gnugrep
       gnupg
       gnused
+      htop
       httpie
       jq
       kotlin
+      neofetch
       niv
       nixfmt
       nixpkgs-fmt
       nodejs
+      openssh
       pandoc
       pre-commit
       ranger
@@ -64,15 +69,6 @@ in
       tectonic
       texlive.combined.scheme-full
       youtube-dl
-      cachix
-      coreutils-full
-      curl
-      fd
-      gawk
-      htop
-      neofetch
-      openssh
-      ripgrep
     ];
   };
 }

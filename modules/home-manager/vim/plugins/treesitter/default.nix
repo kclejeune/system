@@ -32,40 +32,46 @@ in
   # shamelessly stolen from @i077
   # https://github.com/i077/system/blob/master/modules/editors/neovim/default.nix
   # currently broken on macOS big sur
-  # xdg.configFile = let
-  #   # The languages for which I want to use tree-sitter
-  #   languages = [
-  #     "bash"
-  #     "c"
-  #     "cpp"
-  #     "rust"
-  #     "css"
-  #     "go"
-  #     "haskell"
-  #     "html"
-  #     "java"
-  #     "javascript"
-  #     "json"
-  #     "lua"
-  #     "nix"
-  #     "python"
-  #   ];
-  #   # Map each language to its respective tree-sitter package
-  #   grammarPkg = l:
-  #     (pkgs.tree-sitter.builtGrammars.${"tree-sitter-" + l}.overrideAttrs
-  #       (oldAttrs: rec {
-  #         postPatch = ''
-  #           for f in *.cc; do
-  #             substituteInPlace $f --replace gcc cc
-  #           done
-  #         '';
-  #       }));
-  #   # Map each language to a name-value pair for xdg.configFile
-  #   langToFile = lang:
-  #     lib.nameValuePair "nvim/parser/${lang}.so" {
-  #       source = "${grammarPkg lang}/parser";
-  #     };
-  #   # The final collection of name-value pairs
-  #   files = map langToFile languages;
-  # in builtins.listToAttrs files;
+  xdg.configFile = let
+    # The languages for which I want to use tree-sitter
+    languages = [
+      "bash"
+      "c"
+      "cpp"
+      "css"
+      "go"
+      "haskell"
+      "html"
+      "java"
+      "javascript"
+      "json"
+      "julia"
+      # "lua" # currently broken
+      "markdown"
+      # "nix" # currently broken
+      "python"
+      "regex"
+      "rust"
+      "svelte"
+      "typescript"
+      "yaml"
+    ];
+    # Map each language to its respective tree-sitter package
+    grammarPkg = l:
+      (pkgs.tree-sitter.builtGrammars.${"tree-sitter-" + l}.overrideAttrs
+        (oldAttrs: rec {
+          postPatch = ''
+            for f in *.cc; do
+              substituteInPlace $f --replace gcc cc
+            done
+          '';
+        }));
+    # Map each language to a name-value pair for xdg.configFile
+    langToFile = lang:
+      lib.nameValuePair "nvim/parser/${lang}.so" {
+        source = "${grammarPkg lang}/parser";
+      };
+    # The final collection of name-value pairs
+    files = map langToFile languages;
+  in builtins.listToAttrs files;
 }
