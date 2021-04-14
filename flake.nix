@@ -55,52 +55,53 @@
     let
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
 
+      inherit (darwin.lib) darwinSystem;
+      inherit (nixpkgs.lib) nixosSystem;
+      inherit (home-manager.lib) homeManagerConfiguration;
+      inherit (flake-utils.lib) eachDefaultSystem;
+
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig =
-        { hostname
+        { system ? "x86_64-darwin"
         , baseModules ? [
             home-manager.darwinModules.home-manager
             ./modules/darwin
           ]
         , extraModules ? [ ]
-        }: {
-          "${hostname}" = darwin.lib.darwinSystem {
-            # system = "x86_64-darwin";
-            modules = baseModules ++ extraModules
-              ++ [{ nixpkgs.overlays = overlays; }];
-            specialArgs = { inherit inputs nixpkgs; };
-          };
+        }: darwinSystem {
+          # system = "x86_64-darwin";
+          modules =
+            baseModules ++
+            extraModules ++
+            [{ nixpkgs.overlays = overlays; }];
+          specialArgs = { inherit inputs nixpkgs; };
         };
 
       # generate a base nixos configuration with the
-      # specified hostname, overlays, and any extraModules applied
+      # specified overlays, hardware modules, and any extraModules applied
       mkNixosConfig =
-        { hostname
+        { system ? "x86_64-linux"
         , hardwareModules
-        , system ? "x86_64-linux"
         , baseModules ? [
             home-manager.nixosModules.home-manager
             ./modules/nixos
           ]
         , extraModules ? [ ]
-        }: {
-          "${hostname}" = nixpkgs.lib.nixosSystem {
-            inherit system;
-            modules =
-              baseModules ++
-              hardwareModules ++
-              extraModules ++
-              [{ nixpkgs.overlays = overlays; }];
-            specialArgs = { inherit inputs nixpkgs; };
-          };
+        }: nixosSystem {
+          inherit system;
+          modules =
+            baseModules ++
+            hardwareModules ++
+            extraModules ++
+            [{ nixpkgs.overlays = overlays; }];
+          specialArgs = { inherit inputs nixpkgs; };
         };
 
       # generate a home-manager configuration usable on any unix system
       # with overlays and any extraModules applied
-      mkHomeManagerConfig =
-        { hostname
-        , username
+      mkHomeConfig =
+        { username
         , system ? "x86_64-linux"
         , baseModules ? [
             ./modules/home-manager/core.nix
@@ -108,66 +109,55 @@
             ./modules/home-manager/home.nix
           ]
         , extraModules ? [ ]
-        }: {
-          "${hostname}" = home-manager.lib.homeManagerConfiguration rec {
-            inherit system username;
-            homeDirectory = "/home/${username}";
-            extraSpecialArgs = { inherit inputs nixpkgs; };
-            configuration = {
-              imports =
-                baseModules ++
-                extraModules ++
-                [{ nixpkgs.overlays = overlays; }];
-            };
+        }: homeManagerConfiguration rec {
+          inherit system username;
+          homeDirectory = "/home/${username}";
+          extraSpecialArgs = { inherit inputs nixpkgs; };
+          configuration = {
+            imports =
+              baseModules ++
+              extraModules ++
+              [{ nixpkgs.overlays = overlays; }];
           };
         };
     in
     {
-      darwinConfigurations =
-        mkDarwinConfig
-          {
-            hostname = "randall";
-            extraModules = [ ./profiles/personal.nix ];
-          } //
-        mkDarwinConfig
-          {
-            hostname = "work";
-            extraModules = [ ./profiles/work.nix ];
-          };
+      darwinConfigurations = {
+        randall = mkDarwinConfig {
+          extraModules = [ ./profiles/personal.nix ];
+        };
+        work = mkDarwinConfig {
+          extraModules = [ ./profiles/work.nix ];
+        };
+      };
 
-      nixosConfigurations =
-        mkNixosConfig
-          {
-            hostname = "phil";
-            hardwareModules = [
-              ./modules/hardware/phil.nix
-              nixos-hardware.nixosModules.lenovo-thinkpad-t460s
-            ];
-            extraModules = [ ./profiles/personal.nix ];
-          };
+      nixosConfigurations = {
+        phil = mkNixosConfig {
+          hardwareModules = [
+            ./modules/hardware/phil.nix
+            nixos-hardware.nixosModules.lenovo-thinkpad-t460s
+          ];
+          extraModules = [ ./profiles/personal.nix ];
+        };
+      };
 
-      homeConfigurations =
-        mkHomeManagerConfig
-          {
-            hostname = "server";
-            username = "kclejeune";
-            extraModules = [ ./profiles/home-manager/personal.nix ];
-          } //
-        mkHomeManagerConfig
-          {
-            hostname = "workServer";
-            username = "lejeukc1";
-            extraModules = [ ./profiles/home-manager/work.nix ];
-          } //
-        mkHomeManagerConfig
-          {
-            hostname = "multipass";
-            username = "ubuntu";
-            extraModules = [ ./profiles/home-manager/personal.nix ];
-          };
+      homeConfigurations = {
+        server = mkHomeConfig {
+          username = "kclejeune";
+          extraModules = [ ./profiles/home-manager/personal.nix ];
+        };
+        workServer = mkHomeConfig {
+          username = "lejeukc1";
+          extraModules = [ ./profiles/home-manager/work.nix ];
+        };
+        multipass = mkHomeConfig {
+          username = "ubuntu";
+          extraModules = [ ./profiles/home-manager/personal.nix ];
+        };
+      };
     } //
     # add a devShell to this flake
-    flake-utils.lib.eachDefaultSystem (system:
+    eachDefaultSystem (system:
     let
       pkgs = import nixpkgs {
         inherit system;
