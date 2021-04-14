@@ -7,24 +7,39 @@ macOS, nixOS, and linux machines.
 
 ## Structure
 
-### Configurations
+This repository is a [flake](https://nixos.wiki/wiki/Flakes). All system configurations are defined
+in [flake.nix](./flake.nix). Platorm specific configurations are found defined in the flake outputs
+`darwinConfigurations`, `nixosConfigurations` for macOS and NixOS respectively. 
 
-This repository is a flake, so configurations are specified
-in [flake.nix](./flake.nix). Platform specific base configurations are found
-in [./machines](./machines); these configurations share as much functionality as
-possible in [./modules/common.nix](./modules/common.nix).
+### Overlapping Nix-Darwin and NixOS
 
-Additionally, for systems that aren't running nixOS or nix-darwin,
-[./modules/home.nix](./modules/home.nix) defines a usable configuration
-for any linux system running nix.
+Nix-Darwin and NixOS configurations share as much overlap as possible in the common module, [./modules/common.nix](./modules/common.nix).
+Platform specific modules add onto the common module in [./modules/darwin/default.nix](./modules/darwin/default.nix) and [./modules/nixos/default.nix](./modules/nixos/default.nix) for macOS and NixOS respectively.
+
+### Decoupled Home Manager Configuration 
+
+My home-manager configuration is entirely decoupled from NixOS and nix-darwin configurations. 
+This means that all of its modules are found in [./modules/home-manager](./modules/home-manager).
+These modules are imported into all other configurations in the common module similarly to this:
+
+```nix
+{ config, pkgs, ... }: {
+  home-manager.users.kclejeune = import ./home-manager/home.nix;
+}
+```
+
+This means that [home.nix](./modules/home-manager/home.nix) is fully compatible as a standalone configuration, managed with the `home-manager` CLI. 
+This allows close replication of any user config for any linux system running nix. These configurations are defined in the `homeConfigurations` output.
 
 ### User Customization
 
-User "profiles" are specified in [./modules/profiles](./modules/profiles); these modules configure
-contextual, identity-specific settings such as SSL certificates or work vs. personal email addresses.
+User "profiles" are specified in [./profiles](./profiles); these modules configure
+contextual, identity-specific settings such as SSL certificates or work vs. personal email addresses. 
+When possible, home-manager functionality is extracted into [./profiles/home-manager](./profiles/home-manager), as mentioned previously
 
-## Prerequisites
-### Installing Nix Package Manager
+## Installing a Configuration
+
+### Non-NixOS Prerequisite: Install Nix Package Manager
 
 Run the installer script to perform a multi-user installation
 on darwin or any other type of linux. This script can optionally accept an argument with the URL to a nix installer, but will use the nixFlakes installer by default:
@@ -64,181 +79,9 @@ or a home-manager configuration using
 ```bash
 nix develop -c sysdo build --home-manager [host] && ./result/activate
 ```
-## CLI Documentation: `sysdo`
 
-**Usage**:
+## `sysdo` CLI
 
-```console
-$ sysdo [OPTIONS] COMMAND [ARGS]...
-```
-
-**Options**:
-
-* `--install-completion`: Install completion for the current shell.
-* `--show-completion`: Show completion for the current shell, to copy it or customize the installation.
-* `--help`: Show this message and exit.
-
-**Commands**:
-
-* `bootstrap`: builds an initial configuration
-* `build`: builds the specified flake output; infers...
-* `cache`: cache the output environment of flake.nix
-* `clean`: remove previously built configurations and...
-* `disksetup`: configure disk setup for nix-darwin
-* `fmt`: run formatter on all nix files
-* `gc`: run garbage collection on unused nix store...
-* `switch`: builds and activates the specified flake...
-* `update`: update all flake inputs or optionally...
-
-## `sysdo bootstrap`
-
-builds an initial configuration
-
-**Usage**:
-
-```console
-$ sysdo bootstrap [OPTIONS] [HOST]
-```
-
-**Arguments**:
-
-* `[HOST]`: the hostname of the configuration to build
-
-**Options**:
-
-* `--nixos / --no-nixos`: [default: False]
-* `--darwin / --no-darwin`: [default: False]
-* `--home-manager / --no-home-manager`: [default: False]
-* `--help`: Show this message and exit.
-
-## `sysdo build`
-
-builds the specified flake output; infers correct platform to use if not specified
-
-**Usage**:
-
-```console
-$ sysdo build [OPTIONS] [HOST]
-```
-
-**Arguments**:
-
-* `[HOST]`: the hostname of the configuration to build
-
-**Options**:
-
-* `--nixos / --no-nixos`: [default: False]
-* `--darwin / --no-darwin`: [default: False]
-* `--home-manager / --no-home-manager`: [default: False]
-* `--help`: Show this message and exit.
-
-## `sysdo cache`
-
-cache the output environment of flake.nix
-
-**Usage**:
-
-```console
-$ sysdo cache [OPTIONS]
-```
-
-**Options**:
-
-* `--cache-name TEXT`: [default: kclejeune]
-* `--help`: Show this message and exit.
-
-## `sysdo clean`
-
-remove previously built configurations and symlinks from the current directory
-
-**Usage**:
-
-```console
-$ sysdo clean [OPTIONS]
-```
-
-**Options**:
-
-* `--help`: Show this message and exit.
-
-## `sysdo disksetup`
-
-configure disk setup for nix-darwin
-
-**Usage**:
-
-```console
-$ sysdo disksetup [OPTIONS]
-```
-
-**Options**:
-
-* `--help`: Show this message and exit.
-
-## `sysdo fmt`
-
-run formatter on all nix files
-
-**Usage**:
-
-```console
-$ sysdo fmt [OPTIONS]
-```
-
-**Options**:
-
-* `--help`: Show this message and exit.
-
-## `sysdo gc`
-
-run garbage collection on unused nix store paths
-
-**Usage**:
-
-```console
-$ sysdo gc [OPTIONS]
-```
-
-**Options**:
-
-* `-d, --delete-older-than [AGE]`: specify minimum age for deleting store paths
-* `--dry-run / --no-dry-run`: test the result of garbage collection  [default: False]
-* `--help`: Show this message and exit.
-
-## `sysdo switch`
-
-builds and activates the specified flake output; infers correct platform to use if not specified
-
-**Usage**:
-
-```console
-$ sysdo switch [OPTIONS] [HOST]
-```
-
-**Arguments**:
-
-* `[HOST]`: the hostname of the configuration to build
-
-**Options**:
-
-* `--nixos / --no-nixos`: [default: False]
-* `--darwin / --no-darwin`: [default: False]
-* `--home-manager / --no-home-manager`: [default: False]
-* `--help`: Show this message and exit.
-
-## `sysdo update`
-
-update all flake inputs or optionally specific flakes
-
-**Usage**:
-
-```console
-$ sysdo update [OPTIONS]
-```
-
-**Options**:
-
-* `-f, --flake [FLAKE]`: specify an individual flake to be updated
-* `--commit / --no-commit`: commit the updated lockfile  [default: False]
-* `--help`: Show this message and exit.
-
+The `sysdo` utility is a python script that wraps `nix`, `darwin-rebuild`, `nixos-rebuild`, 
+and `home-manager` commands to provide a consistent interface across multiple platforms. It has some dependencies which are defined in the `devShell`
+flake output. Documentation for this tool is found in [sysdo_docs.md](./sysdo_docs.md).
