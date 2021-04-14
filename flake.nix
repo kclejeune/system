@@ -139,11 +139,11 @@
         mkNixosConfig
           {
             hostname = "phil";
-            hardwareModules = [ ./modules/hardware/phil.nix ];
-            extraModules = [
-              ./profiles/personal.nix
+            hardwareModules = [
+              ./modules/hardware/phil.nix
               nixos-hardware.nixosModules.lenovo-thinkpad-t460s
             ];
+            extraModules = [ ./profiles/personal.nix ];
           };
 
       homeConfigurations =
