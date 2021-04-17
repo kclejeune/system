@@ -6,5 +6,3 @@ let g:vimtex_view_method = 'skim'
 let g:vimtex_quickfix_enabled = 0
 "" compile on filesave
 autocmd! BufWritePost *.tex normal ,ll
-
-

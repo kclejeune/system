@@ -9,4 +9,3 @@
 # @raycast.icon 🤖
 
 brew services restart yabai && brew services restart skhd
-

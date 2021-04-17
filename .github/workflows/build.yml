@@ -42,4 +42,3 @@ jobs:
           # build the configuration
           nix build -v .#${{ matrix.host }}
         timeout-minutes: 120
-

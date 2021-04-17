@@ -4,4 +4,3 @@
   "backend": "plaidml.keras.backend",
   "image_data_format": "channels_last"
 }
-

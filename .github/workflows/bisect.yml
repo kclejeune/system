@@ -72,4 +72,3 @@ jobs:
         git -C nixpkgs bisect bad $BAD_REF
         # Automate git bisect with nix build command
         git -C nixpkgs bisect run nix build $GITHUB_WORKSPACE/system#.${{ matrix.configuration }} --override-input nixpkgs $GITHUB_WORKSPACE/nixpkgs
-
