@@ -48,6 +48,7 @@ in
       gnugrep
       gnupg
       gnused
+      go
       htop
       httpie
       jq
