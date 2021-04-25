@@ -5,6 +5,7 @@
     ./bash
     ./css
     ./fzf
+    ./go-lsp
     ./html
     ./json
     ./latex
