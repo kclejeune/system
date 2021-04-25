@@ -11,8 +11,14 @@ let
     (${sysDoNixos}) || (${sysDoDarwin})
   '');
 in
+
 {
-  imports = [ ./core.nix ];
+  imports = [ ./vim ./cli ./kitty ./dotfiles ./git.nix ];
+
+  programs.home-manager = {
+    enable = true;
+    path = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager";
+  };
 
   home = {
     # This value determines the Home Manager release that your

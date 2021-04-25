@@ -104,9 +104,7 @@
         { username
         , system ? "x86_64-linux"
         , baseModules ? [
-            ./modules/home-manager/core.nix
-            ./modules/home-manager/dotfiles
-            ./modules/home-manager/home.nix
+            ./modules/home-manager
           ]
         , extraModules ? [ ]
         }: homeManagerConfiguration rec {
