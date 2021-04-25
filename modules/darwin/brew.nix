@@ -15,7 +15,6 @@ in
   homebrew = {
     enable = true;
     autoUpdate = true;
-    # cleanup = "zap";
     global = {
       brewfile = true;
       noLock = true;
@@ -29,35 +28,8 @@ in
       "homebrew/cask-versions"
       "homebrew/core"
       "homebrew/services"
-      "koekeishiya/formulae"
     ];
 
-    brews = [ "beeftornado/rmtree/brew-rmtree" "mas" "skhd" "yabai" ];
-
-    casks = [
-      "1password"
-      "adobe-acrobat-pro"
-      "appcleaner"
-      "displaperture"
-      "eul"
-      "firefox"
-      "fork"
-      "gpg-suite"
-      "gswitch"
-      "iina"
-      "intellij-idea"
-      "karabiner-elements"
-      "keepingyouawake"
-      "keybase"
-      "kitty"
-      "maccy"
-      "raycast"
-      "skim"
-      "syncthing"
-      "visual-studio-code"
-      "zoom"
-    ];
-
-    masApps = { "Unsplash Wallpapers" = 1284863847; };
+    brews = [ "beeftornado/rmtree/brew-rmtree" "mas" ];
   };
 }
