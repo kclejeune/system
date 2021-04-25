@@ -55,12 +55,3 @@ function service() {
         launchctl $1 $service
     fi
 }
-
-function rebuildFlake() {
-    command -v darwin-rebuild > /dev/null && darwin-rebuild switch --flake "$HOME/.nixpkgs/#$1" || true
-    command -v nixos-rebuild > /dev/null && sudo nixos-rebuild switch --flake "/etc/nixos/#$1" || true
-}
-
-function gi() {
-    curl -sL "https://www.toptal.com/developers/gitignore/api/$@";
-}
