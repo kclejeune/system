@@ -1,5 +1,5 @@
 { config, lib, pkgs, ... }: {
-  programs.homebrew = {
+  homebrew = {
     casks = [
       "1password"
       "adobe-acrobat-pro"
