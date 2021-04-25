@@ -16,11 +16,7 @@ function mkvenv() {
     fi
 
     # make a new virtual environment with the desired directory name
-    if type virtualenv > /dev/null; then
-        virtualenv ./$DIR
-    else
-        python3 -m venv ./$DIR
-    fi
+    python3 -m venv ./$DIR
 
     # create .envrc if it isn't already there
     touch .envrc
@@ -39,7 +35,7 @@ function weather() {
 
 function config() {
     # navigate to the config file for a specific app
-    cd "$XDG_CONFIG_HOME/$1"
+    cd "$XDG_CONFIG_HOME/$1" || echo "$1 is not a valid config directory."
 }
 
 function service() {
@@ -52,7 +48,7 @@ function service() {
         return 1
     fi
 
-    service=$(launchctl list | grep $2 | awk '{print $NF}')
+    service=$(launchctl list | awk "/$2/ {print $NF}")
     if [[ "$1" == "restart" ]]; then
         launchctl stop $service && launchctl start $service
     else

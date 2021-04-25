@@ -7,7 +7,7 @@
   programs = {
     home-manager = {
       enable = true;
-      path = "./home.nix";
+      path = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager";
     };
     direnv = {
       enable = true;
@@ -46,5 +46,6 @@
           "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
       };
     };
+    go.enable = true;
   };
 }

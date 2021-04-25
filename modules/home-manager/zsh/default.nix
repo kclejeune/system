@@ -2,17 +2,22 @@
 let
   functions = builtins.readFile ./functions.sh;
   aliases = {
-    ls = "${pkgs.exa}/bin/exa";
-    la = "${pkgs.exa}/bin/exa -la";
-    lt = "${pkgs.exa}/bin/exa --tree";
+    ls = "exa";
+    la = "exa -la";
+    lt = "exa --tree";
   };
 in
 {
-  home.packages = with pkgs; [ fzf exa tree ];
+  home.packages = with pkgs; [ fzf exa tree zoxide ];
 
   programs.bash = {
     enable = true;
     shellAliases = aliases;
+    initExtra = ''
+      ${functions}
+      eval "$(zoxide init bash)"
+      unset RPS1
+    '';
   };
 
   programs.zsh = {
@@ -31,18 +36,10 @@ in
     shellAliases = aliases;
     initExtra = ''
       ${functions}
+      eval "$(zoxide init zsh)"
       unset RPS1
     '';
     plugins = [
-      {
-        name = "zsh-z";
-        src = pkgs.fetchFromGitHub {
-          owner = "agkozak";
-          repo = "zsh-z";
-          rev = "595c883abec4682929ffe05eb2d088dd18e97557";
-          sha256 = "sha256-HnwUWqzwavh/Qox+siOe5lwTp7PBdiYx+9M0NMNFx00=";
-        };
-      }
       {
         name = "zsh-syntax-highlighting";
         src = pkgs.fetchFromGitHub {
@@ -64,8 +61,7 @@ in
     ];
     oh-my-zsh = {
       enable = true;
-      # theme = "agnoster";
-      plugins = [ "git" "sudo" "common-aliases" "z" ];
+      plugins = [ "git" "sudo" "common-aliases" ];
     };
   };
 
