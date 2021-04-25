@@ -47,9 +47,9 @@ in
         "javascript"
         "json"
         "julia"
-        # "lua" # currently broken
+        "lua"
         "markdown"
-        # "nix" # currently broken
+        # "nix"
         "python"
         "regex"
         "rust"
