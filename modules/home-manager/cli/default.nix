@@ -7,9 +7,12 @@ let
     changeDirWidgetCommand = "${pkgs.fd}/bin/fd --type d";
     fileWidgetCommand = "${pkgs.fd}/bin/fd --type f";
   };
+  aliases = {
+    cat = "bat";
+  };
 in
 {
-  home.packages = [ pkgs.tree ];
+  home.packages = with pkgs; [ tree bat ];
   programs = {
     direnv = {
       enable = true;
@@ -62,7 +65,7 @@ in
     };
     bash = {
       enable = true;
-      shellAliases = { };
+      shellAliases = aliases;
       initExtra = ''
         ${functions}
         unset RPS1
@@ -82,7 +85,7 @@ in
         CLICOLOR = 1;
         LS_COLORS = "ExFxBxDxCxegedabagacad";
       };
-      shellAliases = { };
+      shellAliases = aliases;
       initExtra = ''
         ${functions}
         unset RPS1

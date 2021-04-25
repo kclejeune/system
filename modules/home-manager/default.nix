@@ -47,6 +47,7 @@ in
       cachix
       coreutils-full
       curl
+      # dust
       fd
       gawk
       ghc
@@ -56,6 +57,8 @@ in
       gnused
       htop
       httpie
+      curlie
+      hyperfine
       jq
       kotlin
       neofetch
@@ -73,6 +76,7 @@ in
       speedtest-cli
       sysdo
       tectonic
+      tealdeer
       texlive.combined.scheme-full
       youtube-dl
     ];
