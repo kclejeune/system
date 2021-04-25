@@ -1,14 +1,15 @@
 { config, pkgs, lib, ... }:
 let
   functions = builtins.readFile ./functions.sh;
-  useFzf = false;
   useSkim = true;
+  useFzf = !useSkim;
   fuzzyCommands = {
     changeDirWidgetCommand = "${pkgs.fd}/bin/fd --type d";
     fileWidgetCommand = "${pkgs.fd}/bin/fd --type f";
   };
 in
 {
+  home.packages = [ pkgs.tree ];
   programs = {
     direnv = {
       enable = true;
@@ -31,7 +32,7 @@ in
       enableFishIntegration = useSkim;
     } // fuzzyCommands;
     fzf = {
-      enable = false;
+      enable = true;
       enableBashIntegration = useFzf;
       enableZshIntegration = useFzf;
       enableFishIntegration = useFzf;
