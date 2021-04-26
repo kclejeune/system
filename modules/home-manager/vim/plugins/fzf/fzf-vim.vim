@@ -25,11 +25,7 @@ let g:fzf_history_dir = '~/.local/share/fzf-history'
 "" fzf.vim
 " set proper keybinding
 nnoremap <silent> <C-p> :call fzf#vim#files('.', {'options': '--prompt ""'})<CR>
-nnoremap <silent> <leader>b :Buffers<CR>
+" nnoremap <silent> <leader>b :Buffers<CR>
 
-set wildmode=list:longest,list:full
-set wildignore+=*.o,*.obj,.git,*.rbc,*.pyc,__pycache__
-
-let g:preview_width = float2nr(&columns * 0.5)
-let $FZF_DEFAULT_COMMAND =  "find * -path '*/\.*' -prune -o -path 'node_modules/**' -prune -o -path 'target/**' -prune -o -path 'dist/**' -prune -o  -type f -print -o -type l -print 2> /dev/null"
-let $FZF_DEFAULT_OPTS="--layout=reverse  --margin=1,4 --preview 'if file -i {}|grep -q binary; then file -b {}; else bat --style=changes --color always --line-range :40 {}; fi' --preview-window right:" . g:preview_width
+let $FZF_DEFAULT_COMMAND =  "fd --type f"
+let $FZF_DEFAULT_OPTS="--layout=reverse --preview 'bat --style=changes {}' --preview-window right:50%"

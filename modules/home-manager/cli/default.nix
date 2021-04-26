@@ -3,11 +3,13 @@ let
   functions = builtins.readFile ./functions.sh;
   useSkim = false;
   useFzf = !useSkim;
-  fuzzyCommands = {
+  fuzz = {
     changeDirWidgetCommand = "${pkgs.fd}/bin/fd --type d";
     fileWidgetCommand = "${pkgs.fd}/bin/fd --type f";
-    fileWidgetOptions = [ "--preview '${pkgs.bat}/bin/bat --color=always --plain {}'" ];
+    fileWidgetOptions = [ "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'" ];
     changeDirWidgetOptions = [ "--preview 'tree -C {} | head -200'" ];
+    defaultCommand = "${pkgs.fd}/bin/fd -HI --type f";
+    defaultOptions = [ "--height 50%" "--border" ];
   };
   aliases = {
     cat = "bat";
@@ -35,17 +37,19 @@ in
       enableBashIntegration = useSkim;
       enableZshIntegration = useSkim;
       enableFishIntegration = useSkim;
-    } // fuzzyCommands;
+    } // fuzz;
     fzf = {
       enable = true;
       enableBashIntegration = useFzf;
       enableZshIntegration = useFzf;
       enableFishIntegration = useFzf;
-      defaultOptions = [ "--height 60%" "--border" ];
-    } // fuzzyCommands;
+    } // fuzz;
     bat = {
       enable = true;
-      config = { theme = "TwoDark"; };
+      config = {
+        theme = "TwoDark";
+        color = "always";
+      };
     };
     jq.enable = true;
     htop.enable = true;
