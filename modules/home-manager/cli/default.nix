@@ -72,7 +72,7 @@ in
     };
     zsh =
       let
-        mkZshPlugin = { pkg, file ? "${pkg.pname}.zsh" }: rec {
+        mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
           name = pkg.pname;
           src = pkg.src;
           inherit file;
@@ -95,11 +95,8 @@ in
           ${functions}
         '';
         plugins = with pkgs; [
-          (mkZshPlugin { pkg = zsh-autopair; file = "autopair.zsh"; })
-          (mkZshPlugin {
-            pkg = zsh-completions;
-            file = "zsh-completions.plugin.zsh";
-          })
+          (mkZshPlugin { pkg = zsh-autopair; })
+          (mkZshPlugin { pkg = zsh-completions; })
           (mkZshPlugin {
             pkg = zsh-fzf-tab;
             file = "fzf-tab.plugin.zsh";
@@ -113,7 +110,7 @@ in
         ];
         oh-my-zsh = {
           enable = true;
-          plugins = [ "git" "sudo" "common-aliases" ];
+          plugins = [ "git" "sudo" ];
         };
       };
     zoxide.enable = true;
