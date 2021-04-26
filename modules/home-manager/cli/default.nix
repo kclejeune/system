@@ -66,9 +66,6 @@ in
     bash = {
       enable = true;
       shellAliases = aliases;
-      initExtra = ''
-        ${functions}
-      '';
     };
     zsh =
       let
