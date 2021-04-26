@@ -11,7 +11,6 @@ let
   };
   aliases = {
     cat = "bat";
-    cd = "z";
   };
 in
 {
