@@ -1,18 +1,21 @@
 { config, pkgs, lib, ... }:
 let
   functions = builtins.readFile ./functions.sh;
-  useSkim = true;
+  useSkim = false;
   useFzf = !useSkim;
   fuzzyCommands = {
     changeDirWidgetCommand = "${pkgs.fd}/bin/fd --type d";
     fileWidgetCommand = "${pkgs.fd}/bin/fd --type f";
+    fileWidgetOptions = [ "--preview '${pkgs.bat}/bin/bat --color=always --plain {}'" ];
+    changeDirWidgetOptions = [ "--preview 'tree -C {} | head -200'" ];
   };
   aliases = {
     cat = "bat";
+    cd = "z";
   };
 in
 {
-  home.packages = with pkgs; [ tree bat ];
+  home.packages = with pkgs; [ tree ];
   programs = {
     direnv = {
       enable = true;
@@ -39,9 +42,7 @@ in
       enableBashIntegration = useFzf;
       enableZshIntegration = useFzf;
       enableFishIntegration = useFzf;
-      changeDirWidgetOptions = [ "--preview 'tree -C {} | head -200'" ];
-      defaultOptions = [ "--height 40%" "--border" ];
-      fileWidgetOptions = [ "--preview '${pkgs.bat}/bin/bat --color=always --plain {}'" ];
+      defaultOptions = [ "--height 60%" "--border" ];
     } // fuzzyCommands;
     bat = {
       enable = true;
@@ -68,53 +69,54 @@ in
       shellAliases = aliases;
       initExtra = ''
         ${functions}
-        unset RPS1
       '';
     };
-
-    zsh = {
-      enable = true;
-      enableCompletion = true;
-      enableAutosuggestions = true;
-      autocd = true;
-      dotDir = ".config/zsh";
-      localVariables = {
-        LANG = "en_US.UTF-8";
-        GPG_TTY = "/dev/ttys000";
-        DEFAULT_USER = "${config.home.username}";
-        CLICOLOR = 1;
-        LS_COLORS = "ExFxBxDxCxegedabagacad";
-      };
-      shellAliases = aliases;
-      initExtra = ''
-        ${functions}
-        unset RPS1
-      '';
-      plugins = [
-        {
-          name = "zsh-syntax-highlighting";
-          src = pkgs.fetchFromGitHub {
-            owner = "zsh-users";
-            repo = "zsh-syntax-highlighting";
-            rev = "0.7.1";
-            sha256 = "sha256-gOG0NLlaJfotJfs+SUhGgLTNOnGLjoqnUp54V9aFJg8=";
-          };
-        }
-        {
-          name = "zsh-history-substring-search";
-          src = pkgs.fetchFromGitHub {
-            owner = "zsh-users";
-            repo = "zsh-history-substring-search";
-            rev = "v1.0.2";
-            sha256 = "sha256-Ptxik1r6anlP7QTqsN1S2Tli5lyRibkgGlVlwWZRG3k=";
-          };
-        }
-      ];
-      oh-my-zsh = {
+    zsh =
+      let
+        mkZshPlugin = { pkg, file ? "${pkg.pname}.zsh" }: rec {
+          name = pkg.pname;
+          src = pkg.src;
+          inherit file;
+        };
+      in
+      {
         enable = true;
-        plugins = [ "git" "sudo" "common-aliases" ];
+        enableCompletion = true;
+        autocd = true;
+        dotDir = ".config/zsh";
+        localVariables = {
+          LANG = "en_US.UTF-8";
+          GPG_TTY = "/dev/ttys000";
+          DEFAULT_USER = "${config.home.username}";
+          CLICOLOR = 1;
+          LS_COLORS = "ExFxBxDxCxegedabagacad";
+        };
+        shellAliases = aliases;
+        initExtra = ''
+          ${functions}
+        '';
+        plugins = with pkgs; [
+          (mkZshPlugin { pkg = zsh-autopair; file = "autopair.zsh"; })
+          (mkZshPlugin {
+            pkg = zsh-completions;
+            file = "zsh-completions.plugin.zsh";
+          })
+          (mkZshPlugin {
+            pkg = zsh-fzf-tab;
+            file = "fzf-tab.plugin.zsh";
+          })
+          (mkZshPlugin { pkg = zsh-autosuggestions; })
+          (mkZshPlugin {
+            pkg = zsh-fast-syntax-highlighting;
+            file = "fast-syntax-highlighting.plugin.zsh";
+          })
+          (mkZshPlugin { pkg = zsh-history-substring-search; })
+        ];
+        oh-my-zsh = {
+          enable = true;
+          plugins = [ "git" "sudo" "common-aliases" ];
+        };
       };
-    };
     zoxide.enable = true;
     starship.enable = true;
   };
