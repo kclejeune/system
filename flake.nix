@@ -175,13 +175,11 @@
       sysdo = pkgs.writeShellScriptBin "sysdo" ''
         cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
       '';
-      fmt = pkgs.writeShellScriptBin "treefmt" ''
-        ${treefmt.defaultPackage.${system}}/bin/treefmt -q $@
-      '';
+      fmt = treefmt.defaultPackage.${system};
     in
     {
       devShell = pkgs.devshell.mkShell {
-        packages = with pkgs; [ nixBin pyEnv ];
+        packages = with pkgs; [ nixBin pyEnv fmt ];
         commands = [
           {
             name = "sysdo";
@@ -191,9 +189,9 @@
           }
           {
             help = "Format the entire code tree";
-            name = "treefmt";
+            name = "fmt";
+            command = "treefmt -q";
             category = "utilities";
-            package = fmt;
           }
         ];
       };

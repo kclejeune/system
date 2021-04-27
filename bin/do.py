@@ -171,7 +171,7 @@ def diskSetup():
 
 @app.command(help="run formatter on all files")
 def fmt():
-    run_cmd("treefmt")
+    run_cmd("fmt")
 
 
 @app.command(
