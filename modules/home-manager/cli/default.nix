@@ -3,14 +3,15 @@ let
   functions = builtins.readFile ./functions.sh;
   useSkim = false;
   useFzf = !useSkim;
-  fuzz = let fd = "${pkgs.fd}/bin/fd"; in rec {
-    defaultCommand = "${fd} -H --type f";
-    defaultOptions = [ "--height 50%" "--border" ];
-    fileWidgetCommand = "${defaultCommand}";
-    fileWidgetOptions = [ "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'" ];
-    changeDirWidgetCommand = "${fd} --type d";
-    changeDirWidgetOptions = [ "--preview 'tree -C {} | head -200'" ];
-  };
+  fuzz = let fd = "${pkgs.fd}/bin/fd"; in
+    rec {
+      defaultCommand = "${fd} -H --type f";
+      defaultOptions = [ "--height 50%" "--border" ];
+      fileWidgetCommand = "${defaultCommand}";
+      fileWidgetOptions = [ "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'" ];
+      changeDirWidgetCommand = "${fd} --type d";
+      changeDirWidgetOptions = [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
+    };
   aliases = {
     cat = "bat";
   };
