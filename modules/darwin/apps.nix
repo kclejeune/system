@@ -6,7 +6,7 @@
       "appcleaner"
       "displaperture"
       "eul"
-      "firefox"
+      "firefox-beta"
       "fork"
       "gpg-suite"
       "gswitch"
