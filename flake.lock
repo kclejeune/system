@@ -7,16 +7,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1616508756,
+        "lastModified": 1620001643,
         "narHash": "sha256-B5O0QTyu4d4BoeLgIIJvoKVRxw89+lUquQuFTOBKGwM=",
         "owner": "kclejeune",
         "repo": "nix-darwin",
-        "rev": "005bc4a6d0cd55513bc53cbfbad351fe11cccf54",
+        "rev": "93e32ebcae757370d973baa720add37bce5e2842",
         "type": "github"
       },
       "original": {
         "owner": "kclejeune",
-        "ref": "fix-broken-cmd",
+        "ref": "backup-etc",
         "repo": "nix-darwin",
         "type": "github"
       }

@@ -27,7 +27,7 @@
       flake = false;
     };
     darwin = {
-      url = "github:kclejeune/nix-darwin/fix-broken-cmd";
+      url = "github:kclejeune/nix-darwin/backup-etc";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
