@@ -250,6 +250,18 @@ def update(
         run_cmd(cmd)
 
 
+@app.command(help="pull changes from remote repo")
+def pull():
+    cmd = f"git stash && git pull && git stash apply"
+    run_cmd(cmd)
+
+
+@app.command(help="update remote repo with current changes")
+def push():
+    cmd = f"git push"
+    run_cmd(cmd)
+
+
 @app.command(help="cache the output environment of flake.nix")
 def cache(cache_name: str = "kclejeune"):
     cmd = f"nix flake archive --json | jq -r '.path,(.inputs|to_entries[].value.path)' | cachix push {cache_name}"
