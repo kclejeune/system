@@ -3,23 +3,20 @@ let
   functions = builtins.readFile ./functions.sh;
   useSkim = false;
   useFzf = !useSkim;
-  fuzz =
-    let fd = "${pkgs.fd}/bin/fd";
-    in
-    rec {
-      defaultCommand = "${fd} -H --type f";
-      defaultOptions = [ "--height 50%" "--border" ];
-      fileWidgetCommand = "${defaultCommand}";
-      fileWidgetOptions = [
-        "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
-      ];
-      changeDirWidgetCommand = "${fd} --type d";
-      changeDirWidgetOptions =
-        [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
-    };
+  fuzz = let fd = "${pkgs.fd}/bin/fd";
+  in rec {
+    defaultCommand = "${fd} -H --type f";
+    defaultOptions = [ "--height 50%" "--border" ];
+    fileWidgetCommand = "${defaultCommand}";
+    fileWidgetOptions = [
+      "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
+    ];
+    changeDirWidgetCommand = "${fd} --type d";
+    changeDirWidgetOptions =
+      [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
+  };
   aliases = { cat = "bat"; };
-in
-{
+in {
   home.packages = with pkgs; [ tree ];
   programs = {
     direnv = {
@@ -75,50 +72,48 @@ in
       enable = true;
       shellAliases = aliases;
     };
-    zsh =
-      let
-        mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
-          name = pkg.pname;
-          src = pkg.src;
-          inherit file;
-        };
-      in
-      {
-        enable = true;
-        enableCompletion = true;
-        autocd = true;
-        dotDir = ".config/zsh";
-        localVariables = {
-          LANG = "en_US.UTF-8";
-          GPG_TTY = "/dev/ttys000";
-          DEFAULT_USER = "${config.home.username}";
-          CLICOLOR = 1;
-          LS_COLORS = "ExFxBxDxCxegedabagacad";
-        };
-        shellAliases = aliases;
-        initExtra = ''
-          ${functions}
-          unset RPS1
-        '';
-        plugins = with pkgs; [
-          (mkZshPlugin { pkg = zsh-autopair; })
-          (mkZshPlugin { pkg = zsh-completions; })
-          (mkZshPlugin {
-            pkg = zsh-fzf-tab;
-            file = "fzf-tab.plugin.zsh";
-          })
-          (mkZshPlugin { pkg = zsh-autosuggestions; })
-          (mkZshPlugin {
-            pkg = zsh-fast-syntax-highlighting;
-            file = "fast-syntax-highlighting.plugin.zsh";
-          })
-          (mkZshPlugin { pkg = zsh-history-substring-search; })
-        ];
-        oh-my-zsh = {
-          enable = true;
-          plugins = [ "git" "sudo" ];
-        };
+    zsh = let
+      mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
+        name = pkg.pname;
+        src = pkg.src;
+        inherit file;
       };
+    in {
+      enable = true;
+      enableCompletion = true;
+      autocd = true;
+      dotDir = ".config/zsh";
+      localVariables = {
+        LANG = "en_US.UTF-8";
+        GPG_TTY = "/dev/ttys000";
+        DEFAULT_USER = "${config.home.username}";
+        CLICOLOR = 1;
+        LS_COLORS = "ExFxBxDxCxegedabagacad";
+      };
+      shellAliases = aliases;
+      initExtra = ''
+        ${functions}
+        unset RPS1
+      '';
+      plugins = with pkgs; [
+        (mkZshPlugin { pkg = zsh-autopair; })
+        (mkZshPlugin { pkg = zsh-completions; })
+        (mkZshPlugin {
+          pkg = zsh-fzf-tab;
+          file = "fzf-tab.plugin.zsh";
+        })
+        (mkZshPlugin { pkg = zsh-autosuggestions; })
+        (mkZshPlugin {
+          pkg = zsh-fast-syntax-highlighting;
+          file = "fast-syntax-highlighting.plugin.zsh";
+        })
+        (mkZshPlugin { pkg = zsh-history-substring-search; })
+      ];
+      oh-my-zsh = {
+        enable = true;
+        plugins = [ "git" "sudo" ];
+      };
+    };
     zoxide.enable = true;
     starship.enable = true;
   };

@@ -20,9 +20,7 @@
 
   # let nix manage home-manager profiles and use global nixpkgs
   home-manager = {
-    extraSpecialArgs = {
-      inherit inputs lib;
-    };
+    extraSpecialArgs = { inherit inputs lib; };
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";
