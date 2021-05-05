@@ -76,7 +76,7 @@ in {
       sysdo
       tectonic
       tealdeer
-      texlive.combined.scheme-full
+      # texlive.combined.scheme-full
       youtube-dl
     ];
   };
