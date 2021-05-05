@@ -10,9 +10,8 @@ let
   sysdo = (pkgs.writeShellScriptBin "sysdo" ''
     (${sysDoNixos}) || (${sysDoDarwin})
   '');
-in
 
-{
+in {
   imports = [ ./vim ./cli ./kitty ./dotfiles ./git.nix ];
 
   programs.home-manager = {
@@ -77,7 +76,7 @@ in
       sysdo
       tectonic
       tealdeer
-      texlive.combined.scheme-full
+      # texlive.combined.scheme-full
       youtube-dl
     ];
   };

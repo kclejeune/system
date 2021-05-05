@@ -1,28 +1,8 @@
-{ config, pkgs, lib, ... }:
-let
-  readFile = file: ext: builtins.readFile (./. + "/${file}.${ext}");
-  readVimSection = file: (readFile file "vim");
-  readLuaSection = file: wrapLuaConfig (readFile file "lua");
-
-  # For plugins configured with lua
-  wrapLuaConfig = luaConfig: ''
-    lua<<EOF
-    ${luaConfig}
-    EOF
-  '';
-  pluginWithLua = plugin: {
-    inherit plugin;
-    config = readLuaSection plugin.pname;
-  };
-  pluginWithCfg = plugin: {
-    inherit plugin;
-    config = readVimSection plugin.pname;
-  };
-in
-{
+{ config, pkgs, lib, ... }: {
   imports = [ ./plugins ];
   home.packages = [ pkgs.tree-sitter pkgs.luajit ];
-  programs.neovim = {
+  programs.neovim = let inherit (lib.vimUtils ./.) readVimSection;
+  in {
     enable = true;
     package = pkgs.neovim-nightly;
     viAlias = true;
@@ -32,7 +12,6 @@ in
     # nvim plugin providers
     withNodeJs = true;
     withRuby = true;
-    withPython = true;
     withPython3 = true;
 
     # share vim plugins since nothing is specific to nvim
