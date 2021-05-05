@@ -1,6 +1,6 @@
 { config, pkgs, lib, ... }: {
   programs.neovim =
-    let inherit (lib.vimUtils) readLuaSection pluginWithLua;
+    let inherit (lib.vimUtils ./.) readLuaSection pluginWithLua;
     in
     {
       plugins = with pkgs.vimPlugins; [

@@ -1,5 +1,6 @@
-lib: rec {
-  readFile = file: ext: builtins.readFile (./. + "/${file}.${ext}");
+lib: basePath: rec {
+
+  readFile = file: ext: builtins.readFile (basePath + "/${file}.${ext}");
   readVimSection = file: (readFile file "vim");
   readLuaSection = file: wrapLuaConfig (readFile file "lua");
 

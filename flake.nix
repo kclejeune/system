@@ -54,7 +54,7 @@
     }:
     let
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
-      lib = nixpkgs.lib.extend (final: prev: import ./lib final);
+      lib = nixpkgs.lib.extend (final: prev: (import ./lib final) // home-manager.lib);
 
       inherit (darwin.lib) darwinSystem;
       inherit (nixpkgs.lib) nixosSystem;

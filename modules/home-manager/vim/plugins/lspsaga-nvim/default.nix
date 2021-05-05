@@ -1,6 +1,6 @@
 { config, pkgs, lib, ... }: {
   programs.neovim =
-    let inherit (lib.vimUtils) pluginWithLua;
+    let inherit (lib.vimUtils ./.) pluginWithLua;
     in
     {
       # vimtex config

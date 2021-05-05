@@ -1,9 +1,9 @@
-{ ... }: {
+{ lib, ... }: {
   imports = [
     # ./coc
     # ./lua-lsp # build failure
     ./bash
-    ./css
+    # ./css
     ./fzf
     ./go-lsp
     ./html

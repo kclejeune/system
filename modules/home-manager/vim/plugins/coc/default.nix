@@ -3,7 +3,7 @@
   xdg.configFile."nvim/coc-settings.json".source = ./coc-settings.json;
 
   programs.neovim =
-    let inherit (lib.vimUtils) pluginWithCfg;
+    let inherit (lib.vimUtils ./.) pluginWithCfg;
     in
     {
       extraPackages = with pkgs; with nodePackages; [ rnix-lsp ];

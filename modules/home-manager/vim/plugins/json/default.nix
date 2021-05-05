@@ -1,6 +1,6 @@
 { config, pkgs, lib, ... }: {
   programs.neovim =
-    let inherit (lib.vimUtils) readLuaSection;
+    let inherit (lib.vimUtils ./.) readLuaSection;
     in
     {
       # LSP config

@@ -1,3 +1,1 @@
-lib: {
-  vimUtils = import ./vimUtils.nix lib;
-}
+lib: { vimUtils = import ./vimUtils.nix lib; }
