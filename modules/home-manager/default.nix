@@ -10,8 +10,8 @@ let
   sysdo = (pkgs.writeShellScriptBin "sysdo" ''
     (${sysDoNixos}) || (${sysDoDarwin})
   '');
-in
 
+in
 {
   imports = [ ./vim ./cli ./kitty ./dotfiles ./git.nix ];
 

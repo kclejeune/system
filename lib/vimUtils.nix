@@ -1,5 +1,4 @@
-{ config, pkgs, lib, ... }:
-let
+lib: rec {
   readFile = file: ext: builtins.readFile (./. + "/${file}.${ext}");
   readVimSection = file: (readFile file "vim");
   readLuaSection = file: wrapLuaConfig (readFile file "lua");
@@ -17,15 +16,5 @@ let
   pluginWithCfg = plugin: {
     inherit plugin;
     config = readVimSection plugin.pname;
-  };
-in
-{
-  programs.neovim = {
-    plugins = with pkgs.vimPlugins; [
-      # new neovim stuff
-      (pluginWithLua
-        (nvim-treesitter.withPlugins (_: pkgs.tree-sitter.allGrammars)))
-      (pluginWithLua nvim-treesitter-textobjects)
-    ];
   };
 }

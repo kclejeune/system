@@ -3,18 +3,21 @@ let
   functions = builtins.readFile ./functions.sh;
   useSkim = false;
   useFzf = !useSkim;
-  fuzz = let fd = "${pkgs.fd}/bin/fd"; in
+  fuzz =
+    let fd = "${pkgs.fd}/bin/fd";
+    in
     rec {
       defaultCommand = "${fd} -H --type f";
       defaultOptions = [ "--height 50%" "--border" ];
       fileWidgetCommand = "${defaultCommand}";
-      fileWidgetOptions = [ "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'" ];
+      fileWidgetOptions = [
+        "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
+      ];
       changeDirWidgetCommand = "${fd} --type d";
-      changeDirWidgetOptions = [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
+      changeDirWidgetOptions =
+        [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
     };
-  aliases = {
-    cat = "bat";
-  };
+  aliases = { cat = "bat"; };
 in
 {
   home.packages = with pkgs; [ tree ];
@@ -95,6 +98,7 @@ in
         shellAliases = aliases;
         initExtra = ''
           ${functions}
+          unset RPS1
         '';
         plugins = with pkgs; [
           (mkZshPlugin { pkg = zsh-autopair; })

@@ -54,6 +54,7 @@
     }:
     let
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
+      lib = nixpkgs.lib.extend (final: prev: import ./lib final);
 
       inherit (darwin.lib) darwinSystem;
       inherit (nixpkgs.lib) nixosSystem;
@@ -69,13 +70,12 @@
             ./modules/darwin
           ]
         , extraModules ? [ ]
-        }: darwinSystem {
+        }:
+        darwinSystem {
           # system = "x86_64-darwin";
-          modules =
-            baseModules ++
-            extraModules ++
-            [{ nixpkgs.overlays = overlays; }];
-          specialArgs = { inherit inputs nixpkgs; };
+          modules = baseModules ++ extraModules
+            ++ [{ nixpkgs.overlays = overlays; }];
+          specialArgs = { inherit inputs lib; };
         };
 
       # generate a base nixos configuration with the
@@ -88,14 +88,12 @@
             ./modules/nixos
           ]
         , extraModules ? [ ]
-        }: nixosSystem {
+        }:
+        nixosSystem {
           inherit system;
-          modules =
-            baseModules ++
-            hardwareModules ++
-            extraModules ++
-            [{ nixpkgs.overlays = overlays; }];
-          specialArgs = { inherit inputs nixpkgs; };
+          modules = baseModules ++ hardwareModules ++ extraModules
+            ++ [{ nixpkgs.overlays = overlays; }];
+          specialArgs = { inherit inputs lib; };
         };
 
       # generate a home-manager configuration usable on any unix system
@@ -103,35 +101,27 @@
       mkHomeConfig =
         { username
         , system ? "x86_64-linux"
-        , baseModules ? [
-            ./modules/home-manager
-          ]
+        , baseModules ? [ ./modules/home-manager ]
         , extraModules ? [ ]
-        }: homeManagerConfiguration rec {
+        }:
+        homeManagerConfiguration rec {
           inherit system username;
           homeDirectory = "/home/${username}";
-          extraSpecialArgs = { inherit inputs nixpkgs; };
+          extraSpecialArgs = { inherit inputs lib; };
           configuration = {
-            imports =
-              baseModules ++
-              extraModules ++
-              [{ nixpkgs.overlays = overlays; }];
+            imports = baseModules ++ extraModules
+              ++ [{ nixpkgs.overlays = overlays; }];
           };
         };
     in
     {
       darwinConfigurations = {
         randall = mkDarwinConfig {
-          extraModules = [
-            ./profiles/personal.nix
-            ./modules/darwin/apps.nix
-          ];
+          extraModules = [ ./profiles/personal.nix ./modules/darwin/apps.nix ];
         };
         work = mkDarwinConfig {
-          extraModules = [
-            ./profiles/work.nix
-            ./modules/darwin/apps-minimal.nix
-          ];
+          extraModules =
+            [ ./profiles/work.nix ./modules/darwin/apps-minimal.nix ];
         };
       };
 
