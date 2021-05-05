@@ -41,8 +41,8 @@ in {
     # define package definitions for current user environment
     packages = with pkgs; [
       # python with default packages
-      (python3.withPackages
-        (ps: with ps; [ bpython black pylint mypy numpy scipy networkx ]))
+      (python3.withPackages (ps: with ps; [ numpy scipy networkx ]))
+      python3Packages.black
       cachix
       coreutils-full
       curl
