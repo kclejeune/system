@@ -95,25 +95,16 @@ in {
         ${functions}
         unset RPS1
       '';
-      plugins = with pkgs;
-        (if pkgs.stdenvNoCC.isDarwin then
-          [
-            (mkZshPlugin {
-              pkg = zsh-fzf-tab;
-              file = "fzf-tab.plugin.zsh";
-            })
-          ]
-        else
-          [ ]) ++ [
-            (mkZshPlugin { pkg = zsh-autopair; })
-            (mkZshPlugin { pkg = zsh-completions; })
-            (mkZshPlugin { pkg = zsh-autosuggestions; })
-            (mkZshPlugin {
-              pkg = zsh-fast-syntax-highlighting;
-              file = "fast-syntax-highlighting.plugin.zsh";
-            })
-            (mkZshPlugin { pkg = zsh-history-substring-search; })
-          ];
+      plugins = with pkgs; [
+        (mkZshPlugin { pkg = zsh-autopair; })
+        (mkZshPlugin { pkg = zsh-completions; })
+        (mkZshPlugin { pkg = zsh-autosuggestions; })
+        (mkZshPlugin {
+          pkg = zsh-fast-syntax-highlighting;
+          file = "fast-syntax-highlighting.plugin.zsh";
+        })
+        (mkZshPlugin { pkg = zsh-history-substring-search; })
+      ];
       oh-my-zsh = {
         enable = true;
         plugins = [ "git" "sudo" ];
