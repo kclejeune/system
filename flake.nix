@@ -52,6 +52,7 @@
       inherit (nixpkgs.lib) nixosSystem;
       inherit (home-manager.lib) homeManagerConfiguration;
       inherit (flake-utils.lib) eachDefaultSystem eachSystem;
+      inherit (builtins) listToAttrs map;
 
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -94,9 +95,9 @@
           };
         };
     in {
-      checks = builtins.listToAttrs (
+      checks = listToAttrs (
         # darwin checks
-        (builtins.map (system: {
+        (map (system: {
           name = system;
           value = {
             darwin =
@@ -104,14 +105,13 @@
           };
         }) lib.platforms.darwin) ++
         # linux checks
-        (builtins.map (system: {
+        (map (system: {
           name = system;
           value = {
             nixos = self.nixosConfigurations.phil.config.system.build.toplevel;
             server = self.homeConfigurations.server.activationPackage;
           };
-        }) lib.platforms.linux)
-      );
+        }) lib.platforms.linux));
 
       darwinConfigurations = {
         randall = mkDarwinConfig {
