@@ -13,15 +13,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-        host:
-          - nixosConfigurations.phil.config.system.build.toplevel
-          - homeConfigurations.server.activationPackage
-          - devShell.x86_64-linux
-        include:
-          - os: macos-latest
-            host: darwinConfigurations.randall.config.system.build.toplevel
-          - os: macos-latest
-            host: devShell.x86_64-darwin
+          - macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -37,8 +29,7 @@ jobs:
         with:
           name: kclejeune
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Build Configuration
+      - name: Run Flake Checks
         run: |
-          # build the configuration
-          nix build -v .#${{ matrix.host }}
+          nix flake check -v --show-trace
         timeout-minutes: 120

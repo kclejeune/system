@@ -43,6 +43,7 @@
   outputs = inputs@{ self, nixpkgs, stable, darwin, home-manager, nixos-hardware
     , devshell, treefmt, flake-utils, ... }:
     let
+      supportedSystems = [ "x86_64-darwin" "x86_64-linux" ];
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
       lib = nixpkgs.lib.extend
         (final: prev: (import ./lib final) // home-manager.lib);
@@ -50,7 +51,7 @@
       inherit (darwin.lib) darwinSystem;
       inherit (nixpkgs.lib) nixosSystem;
       inherit (home-manager.lib) homeManagerConfiguration;
-      inherit (flake-utils.lib) eachDefaultSystem;
+      inherit (flake-utils.lib) eachDefaultSystem eachSystem;
 
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -93,6 +94,25 @@
           };
         };
     in {
+      checks = builtins.listToAttrs (
+        # darwin checks
+        (builtins.map (system: {
+          name = system;
+          value = {
+            darwin =
+              self.darwinConfigurations.randall.config.system.build.toplevel;
+          };
+        }) lib.platforms.darwin) ++
+        # linux checks
+        (builtins.map (system: {
+          name = system;
+          value = {
+            nixos = self.nixosConfigurations.phil.config.system.build.toplevel;
+            server = self.homeConfigurations.server.activationPackage;
+          };
+        }) lib.platforms.linux)
+      );
+
       darwinConfigurations = {
         randall = mkDarwinConfig {
           extraModules = [ ./profiles/personal.nix ./modules/darwin/apps.nix ];
@@ -129,7 +149,7 @@
       };
     } //
     # add a devShell to this flake
-    eachDefaultSystem (system:
+    eachSystem supportedSystems (system:
       let
         pkgs = import nixpkgs {
           inherit system;
