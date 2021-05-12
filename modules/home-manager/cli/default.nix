@@ -79,7 +79,7 @@ in {
         inherit file;
       };
     in {
-      enable = true;
+      enable = false;
       enableCompletion = true;
       autocd = true;
       dotDir = ".config/zsh";
