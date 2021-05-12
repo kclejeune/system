@@ -15,7 +15,7 @@ jobs:
       # - uses: styfle/cancel-workflow-action@0.7.0
       #   with:
       #     access_token: ${{ github.token }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
         with:
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
           fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
