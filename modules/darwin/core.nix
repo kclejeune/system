@@ -14,6 +14,7 @@ in {
     # systemPackages = [ ];
   };
 
+  fonts.enableFontDir = true;
   nix.nixPath = [ "darwin=/etc/${config.environment.etc.darwin.target}" ];
 
   # auto manage nixbld users with nix darwin

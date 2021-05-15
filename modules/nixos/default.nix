@@ -13,6 +13,10 @@
     '';
   };
 
+  fonts = {
+    fontDir.enable = true;
+  };
+
   services.syncthing = {
     enable = true;
     user = config.user.name;
