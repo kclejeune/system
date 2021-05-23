@@ -13,6 +13,10 @@
     '';
   };
 
+  # manually disable this to resolve https://github.com/NixOS/nixos-hardware/issues/260
+  # TODO: resolve this later
+  services.power-profiles-daemon.enable = false;
+
   fonts = {
     fontDir.enable = true;
   };
