@@ -2,7 +2,8 @@
 { lib, ... }:
 
 let mkTuple = lib.hm.gvariant.mkTuple;
-in {
+in
+{
   dconf.settings = {
     "org/gnome/control-center" = { last-panel = "notifications"; };
 
