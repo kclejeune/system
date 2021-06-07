@@ -22,17 +22,5 @@
         };
       in
       { inherit (nixpkgs-63586) tree-sitter; })
-
-    (final: prev: {
-      # Patch ranger to run with PyPy instead of CPython.
-      # This offers about a 2-3x speedup when working with directories with lots of entries,
-      # e.g. the nix store.
-      # stolen from @i077
-      ranger = prev.ranger.overrideAttrs (oa: {
-        postFixup = oa.postFixup + ''
-          sed -i "s_#!/nix/store/.*_#!${pkgs.pypy3}/bin/pypy3_" $out/bin/.ranger-wrapped
-        '';
-      });
-    })
   ];
 }
