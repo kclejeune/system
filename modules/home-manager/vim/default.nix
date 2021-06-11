@@ -1,6 +1,5 @@
 { config, pkgs, lib, ... }: {
   imports = [ ./plugins ];
-  home.packages = [ pkgs.tree-sitter pkgs.luajit ];
   programs.neovim =
     let inherit (lib.vimUtils ./.) readVimSection;
     in
@@ -21,11 +20,8 @@
         # basics
         vim-sensible
         vim-fugitive
-        vim-surround
+        vim-sandwich
         vim-commentary
-        vim-sneak
-        vim-closetag
-        kotlin-vim
 
         # vim addon utilities
         direnv-vim

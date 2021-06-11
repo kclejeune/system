@@ -1,4 +1,5 @@
 { config, pkgs, lib, ... }: {
+  home.packages = [ pkgs.tree-sitter ];
   programs.neovim =
     let inherit (lib.vimUtils ./.) pluginWithLua;
     in
