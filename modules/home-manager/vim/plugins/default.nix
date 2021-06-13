@@ -3,7 +3,7 @@
     # ./coc
     # ./lua-lsp # build failure
     ./bash
-    # ./css
+    ./css
     ./fzf
     ./go-lsp
     ./html
@@ -21,6 +21,7 @@
     ./theme
     ./treesitter
     ./typescript-lsp
+    ./vim-closetag
     ./vimscript-lsp
     ./vsnip
     ./vue-lsp
