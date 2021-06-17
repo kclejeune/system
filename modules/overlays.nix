@@ -21,6 +21,6 @@
           sha256 = "sha256:1323d6i478q9f2jbgijra7nhgkihyg7x4iyiirwjmxcr9wmzi7rs";
         };
       in
-      { inherit (nixpkgs-63586) tree-sitter; })
+      { })
   ];
 }

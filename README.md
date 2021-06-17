@@ -84,4 +84,4 @@ nix develop -c sysdo build --home-manager [host] && ./result/activate
 
 The `sysdo` utility is a python script that wraps `nix`, `darwin-rebuild`, `nixos-rebuild`,
 and `home-manager` commands to provide a consistent interface across multiple platforms. It has some dependencies which are defined in the `devShell`
-flake output. Documentation for this tool is found in [sysdo_docs.md](./sysdo_docs.md).
+flake output. Documentation for this tool is found in [sysdo.md](./docs/sysdo.md).
