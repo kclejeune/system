@@ -21,8 +21,10 @@ jobs:
           # Shallow clones won't work
           fetch-depth: 0
       - uses: cachix/install-nix-action@v13
+        env:
+          NIX_VERSION: nix-2.4pre20210604_8e6ee1b
         with:
-          install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20210126_f15f0b8/install
+          install_url: https://github.com/numtide/nix-unstable-installer/releases/download/${{ env.NIX_VERSION }}/install
           extra_nix_config: |
             experimental-features = nix-command flakes
       - uses: cachix/cachix-action@v10
