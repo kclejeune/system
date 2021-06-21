@@ -47,12 +47,11 @@ in
       # define package definitions for current user environment
       packages = with pkgs; [
         # python with default packages
-        (python3.withPackages (ps: with ps; [ numpy scipy networkx ]))
-        python3Packages.black
+        (python3.withPackages (ps: with ps; [ black numpy scipy networkx ]))
         cachix
         coreutils-full
         curl
-        # dust
+        curlie
         fd
         gawk
         ghc
@@ -62,7 +61,6 @@ in
         gnused
         htop
         httpie
-        curlie
         hyperfine
         java
         jq
@@ -79,10 +77,9 @@ in
         ripgrep
         ripgrep-all
         rsync
-        speedtest-cli
         sysdo
-        tectonic
         tealdeer
+        tectonic
         # texlive.combined.scheme-full
         youtube-dl
       ];
