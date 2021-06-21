@@ -17,7 +17,7 @@ let
       changeDirWidgetOptions =
         [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
     };
-  aliases = { cat = "bat"; };
+  aliases = { };
 in
 {
   home.packages = with pkgs; [ tree ];

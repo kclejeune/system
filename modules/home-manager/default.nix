@@ -67,6 +67,7 @@ in
         kotlin
         neofetch
         niv
+        nixUnstable
         nixfmt
         nixpkgs-fmt
         nodejs
