@@ -47,6 +47,9 @@
     , ...
     }:
     let
+      isDarwin = system: (builtins.elem system lib.platforms.darwin);
+      homePrefix = system: if isDarwin system then "/Users" else "/home";
+
       supportedSystems = [ "x86_64-darwin" "x86_64-linux" ];
       overlays = [ inputs.neovim-nightly-overlay.overlay ];
       lib = nixpkgs.lib.extend
@@ -103,7 +106,7 @@
         }:
         homeManagerConfiguration rec {
           inherit system username;
-          homeDirectory = "/home/${username}";
+          homeDirectory = "/${homePrefix system}/${username}";
           extraSpecialArgs = { inherit inputs lib; };
           configuration = {
             imports = baseModules ++ extraModules
