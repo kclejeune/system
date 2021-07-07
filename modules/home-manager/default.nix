@@ -70,9 +70,10 @@ in
         nixUnstable
         nixfmt
         nixpkgs-fmt
-        nodejs
+        nodejs_latest
         openssh
         pandoc
+        poetry
         pre-commit
         ranger
         ripgrep

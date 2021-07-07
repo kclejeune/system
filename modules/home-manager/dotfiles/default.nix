@@ -10,6 +10,11 @@
       target = ".local/bin/raycast";
       recursive = true;
     };
+    zfunc = {
+      source = ./zfunc;
+      target = ".zfunc";
+      recursive = true;
+    };
   };
 
   xdg.enable = true;
