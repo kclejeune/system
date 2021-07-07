@@ -82,6 +82,7 @@ in
         sysdo
         tealdeer
         tectonic
+        yarn
         # texlive.combined.scheme-full
         youtube-dl
       ];
