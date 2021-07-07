@@ -1,7 +1,7 @@
 { inputs, config, pkgs, ... }:
 let
   homeDir = config.home.homeDirectory;
-  pyEnv = (pkgs.python3.withPackages
+  pyEnv = (pkgs.python39.withPackages
     (ps: with ps; [ black pylint typer colorama shellingham ]));
   sysDoNixos =
     "[[ -d /etc/nixos ]] && cd /etc/nixos && ${pyEnv}/bin/python bin/do.py $@";
@@ -47,7 +47,7 @@ in
       # define package definitions for current user environment
       packages = with pkgs; [
         # python with default packages
-        (python3.withPackages (ps: with ps; [ black numpy scipy networkx ]))
+        (python39.withPackages (ps: with ps; [ poetry black numpy scipy networkx ]))
         cachix
         coreutils-full
         curl
@@ -73,7 +73,6 @@ in
         nodejs_latest
         openssh
         pandoc
-        poetry
         pre-commit
         ranger
         ripgrep
