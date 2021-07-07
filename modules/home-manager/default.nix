@@ -47,7 +47,7 @@ in
       # define package definitions for current user environment
       packages = with pkgs; [
         # python with default packages
-        (python39.withPackages (ps: with ps; [ poetry black numpy scipy networkx ]))
+        (python39.withPackages (ps: with ps; [ black numpy scipy networkx ]))
         cachix
         coreutils-full
         curl
@@ -74,6 +74,7 @@ in
         openssh
         pandoc
         pre-commit
+        python3Packages.poetry
         ranger
         ripgrep
         ripgrep-all
