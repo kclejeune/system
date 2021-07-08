@@ -93,11 +93,12 @@ def bootstrap(
         diskSetup()
         flake = f".#{cfg.value}.{host}.config.system.build.toplevel {flags}"
         run_cmd(f"nix build {flake} {flags}")
-        run_cmd("./result/activate-user && ./result/activate")
+        run_cmd(f"./result/sw/bin/darwin-rebuild switch --flake .#{host}")
     elif cfg == FlakeOutputs.HOME_MANAGER:
-        flake = f".#{FlakeOutputs.HOME_MANAGER.value}.{host}.activationPackage"
-        run_cmd(f"nix build {flake} {flags}")
-        run_cmd("./result/activate")
+        flake = f".#{host}"
+        run_cmd(
+            f"nix run github:nix-community/home-manager {flags} --no-write-lock-file -- switch --flake {flake} -b backup"
+        )
     else:
         typer.secho("could not infer system type.", fg=Colors.ERROR.value)
         raise typer.Abort()
