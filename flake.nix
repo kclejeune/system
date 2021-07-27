@@ -200,7 +200,7 @@
     eachSystem supportedSystems (system:
     let
       pkgs = import nixpkgs { inherit system overlays; };
-      pyEnv = (pkgs.python3.withPackages
+      pyEnv = (pkgs.stable.python3.withPackages
         (ps: with ps; [ black pylint typer colorama shellingham ]));
       nixBin = pkgs.writeShellScriptBin "nix" ''
         ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
