@@ -72,10 +72,11 @@
             system = prev.system;
           };
           # install comma from shopify repo
-          comma = import inputs.comma {
+          comma = import inputs.comma rec {
             pkgs = import nixpkgs {
               system = prev.system;
             };
+            nix = pkgs.nixUnstable;
           };
         })
       ];
