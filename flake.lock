@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "comma": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1588170489,
+        "narHash": "sha256-IT7zlcM1Oh4sWeCJ1m4NkteuajPxTnNo1tbitG0eqlg=",
+        "owner": "Shopify",
+        "repo": "comma",
+        "rev": "4a62ec17e20ce0e738a8e5126b4298a73903b468",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Shopify",
+        "repo": "comma",
+        "type": "github"
+      }
+    },
     "darwin": {
       "inputs": {
         "nixpkgs": [
@@ -261,6 +277,7 @@
     },
     "root": {
       "inputs": {
+        "comma": "comma",
         "darwin": "darwin",
         "devshell": "devshell",
         "flake-compat": "flake-compat",
@@ -275,16 +292,16 @@
     },
     "stable": {
       "locked": {
-        "lastModified": 1624879119,
-        "narHash": "sha256-9eHpsXzw0Gwku8Ked7sWZozE4xJtUfJYnrRjUqrEPz4=",
+        "lastModified": 1627284088,
+        "narHash": "sha256-w0YVOW6MKl/wlvuAPCh04vOp+nfUn3e1pQCTfETkt8I=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "1b42ce6bead608458d8a9edc45c3f5f242e620f3",
+        "rev": "91903ceb294dbe63a696759bfba3d23ee667f2dc",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-20.09",
+        "ref": "nixos-21.05",
         "repo": "nixpkgs",
         "type": "github"
       }

@@ -22,6 +22,7 @@
         vim-fugitive
         vim-sandwich
         vim-commentary
+        vim-nix
 
         # vim addon utilities
         direnv-vim

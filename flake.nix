@@ -2,10 +2,8 @@
   description = "nix system configurations";
 
   nixConfig = {
-    substituters = [
-      "https://kclejeune.cachix.org"
-      "https://nix-community.cachix.org/"
-    ];
+    substituters =
+      [ "https://kclejeune.cachix.org" "https://nix-community.cachix.org/" ];
 
     trusted-public-keys = [
       "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
@@ -18,8 +16,12 @@
     flake-utils.url = "github:numtide/flake-utils";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    stable.url = "github:nixos/nixpkgs/nixos-20.09";
+    stable.url = "github:nixos/nixpkgs/nixos-21.05";
     treefmt.url = "github:numtide/treefmt";
+    comma = {
+      url = "github:Shopify/comma";
+      flake = false;
+    };
 
     flake-compat = {
       url = "github:edolstra/flake-compat";
@@ -52,19 +54,35 @@
     , ...
     }:
     let
-      isDarwin = system: (builtins.elem system lib.platforms.darwin);
-      homePrefix = system: if isDarwin system then "/Users" else "/home";
-
-      supportedSystems = [ "x86_64-darwin" "x86_64-linux" ];
-      overlays = [ inputs.neovim-nightly-overlay.overlay ];
-      lib = nixpkgs.lib.extend
-        (final: prev: (import ./lib final) // home-manager.lib);
-
       inherit (darwin.lib) darwinSystem;
       inherit (nixpkgs.lib) nixosSystem;
       inherit (home-manager.lib) homeManagerConfiguration;
       inherit (flake-utils.lib) eachDefaultSystem eachSystem;
       inherit (builtins) listToAttrs map;
+
+      lib = nixpkgs.lib.extend
+        (final: prev: (import ./lib final) // home-manager.lib);
+
+      overlays = [
+        inputs.neovim-nightly-overlay.overlay
+        devshell.overlay
+        (final: prev: {
+          # expose stable packages via pkgs.stable
+          stable = import stable {
+            system = prev.system;
+          };
+          # install comma from shopify repo
+          comma = import inputs.comma {
+            pkgs = import nixpkgs {
+              system = prev.system;
+            };
+          };
+        })
+      ];
+
+      isDarwin = system: (builtins.elem system lib.platforms.darwin);
+      homePrefix = system: if isDarwin system then "/Users" else "/home";
+      supportedSystems = [ "x86_64-darwin" "x86_64-linux" ];
 
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -181,10 +199,7 @@
     # add a devShell to this flake
     eachSystem supportedSystems (system:
     let
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = [ devshell.overlay ];
-      };
+      pkgs = import nixpkgs { inherit system overlays; };
       pyEnv = (pkgs.python3.withPackages
         (ps: with ps; [ black pylint typer colorama shellingham ]));
       nixBin = pkgs.writeShellScriptBin "nix" ''

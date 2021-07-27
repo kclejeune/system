@@ -1,30 +1,31 @@
 { lib, ... }: {
   imports = [
-    # ./coc
+    # ./bash
+    # ./css
+    # ./go-lsp
+    # ./html
+    # ./json
+    # ./latex
+    # ./lspsaga-nvim
     # ./lua-lsp # build failure
-    ./bash
-    ./css
-    ./fzf
-    ./go-lsp
-    ./html
-    ./json
-    ./latex
-    ./lspsaga-nvim
-    ./lualine-nvim
-    ./nvim-autopairs
-    ./nvim-compe
-    ./nvim-lspconfig
-    ./pyright-lsp
-    ./rnix-lsp
+    # ./lualine-nvim
+    # ./nvim-autopairs
+    # ./nvim-compe
+    # ./nvim-lspconfig
+    # ./pyright-lsp
+    # ./rnix-lsp
+    # ./svelte-lsp
+    # ./typescript-lsp
+    # ./vimscript-lsp
+    # ./vsnip
+    # ./vue-lsp
+    # ./yaml-lsp
     # ./skim
-    ./svelte-lsp
+
+    ./coc
     ./theme
     ./treesitter
-    ./typescript-lsp
     ./vim-closetag
-    ./vimscript-lsp
-    ./vsnip
-    ./vue-lsp
-    ./yaml-lsp
+    ./fzf
   ];
 }

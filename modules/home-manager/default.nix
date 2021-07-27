@@ -1,7 +1,7 @@
 { inputs, config, pkgs, ... }:
 let
   homeDir = config.home.homeDirectory;
-  pyEnv = (pkgs.python3.withPackages
+  pyEnv = (pkgs.stable.python3.withPackages
     (ps: with ps; [ black pylint typer colorama shellingham ]));
   sysDoNixos =
     "[[ -d /etc/nixos ]] && cd /etc/nixos && ${pyEnv}/bin/python bin/do.py $@";
@@ -49,6 +49,7 @@ in
         # python with default packages
         (python39.withPackages (ps: with ps; [ black numpy scipy networkx ]))
         cachix
+        comma
         coreutils-full
         curl
         curlie
