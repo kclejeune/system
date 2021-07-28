@@ -68,6 +68,7 @@ in
         kotlin
         neofetch
         niv
+        nix-index
         nixUnstable
         nixfmt
         nixpkgs-fmt

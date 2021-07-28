@@ -91,6 +91,9 @@ in
     bash = {
       enable = true;
       shellAliases = aliases;
+      initExtra = ''
+        source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
+      '';
     };
     zsh =
       let
@@ -113,6 +116,7 @@ in
         };
         shellAliases = aliases;
         initExtraBeforeCompInit = ''
+          source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
           fpath+=~/.zfunc
         '';
         initExtra = ''
