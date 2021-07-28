@@ -76,7 +76,6 @@
             pkgs = import nixpkgs {
               system = prev.system;
             };
-            nix = pkgs.nixUnstable;
           };
         })
       ];
