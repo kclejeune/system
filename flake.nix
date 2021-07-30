@@ -35,10 +35,6 @@
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    neovim-nightly-overlay = {
-      url = "github:nix-community/neovim-nightly-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -64,7 +60,6 @@
         (final: prev: (import ./lib final) // home-manager.lib);
 
       overlays = [
-        inputs.neovim-nightly-overlay.overlay
         devshell.overlay
         (final: prev: {
           # expose stable packages via pkgs.stable

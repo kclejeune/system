@@ -1,14 +1,17 @@
 { config, pkgs, lib, ... }:
 let
   functions = builtins.readFile ./functions.sh;
-  useSkim = false;
+  useSkim = true;
   useFzf = !useSkim;
   fuzz =
     let fd = "${pkgs.fd}/bin/fd";
     in
     rec {
       defaultCommand = "${fd} -H --type f";
-      defaultOptions = [ "--height 50%" "--border" ];
+      defaultOptions = [
+        "--height 50%"
+        "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
+      ];
       fileWidgetCommand = "${defaultCommand}";
       fileWidgetOptions = [
         "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
