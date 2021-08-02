@@ -10,7 +10,6 @@ let
       defaultCommand = "${fd} -H --type f";
       defaultOptions = [
         "--height 50%"
-        "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
       ];
       fileWidgetCommand = "${defaultCommand}";
       fileWidgetOptions = [
@@ -19,6 +18,7 @@ let
       changeDirWidgetCommand = "${fd} --type d";
       changeDirWidgetOptions =
         [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
+      historyWidgetOptions = [];
     };
   aliases = { };
 in
@@ -57,13 +57,13 @@ in
       '';
     };
     skim = {
-      enable = true;
+      enable = useSkim;
       enableBashIntegration = useSkim;
       enableZshIntegration = useSkim;
       enableFishIntegration = useSkim;
     } // fuzz;
     fzf = {
-      enable = true;
+      enable = useFzf;
       enableBashIntegration = useFzf;
       enableZshIntegration = useFzf;
       enableFishIntegration = useFzf;
