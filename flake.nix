@@ -124,7 +124,7 @@
         }:
         homeManagerConfiguration rec {
           inherit system username;
-          homeDirectory = "/${homePrefix system}/${username}";
+          homeDirectory = "${homePrefix system}/${username}";
           extraSpecialArgs = { inherit inputs lib; };
           configuration = {
             imports = baseModules ++ extraModules
