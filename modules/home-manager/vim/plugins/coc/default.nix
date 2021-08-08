@@ -15,9 +15,9 @@
         coc-git
         coc-go
         coc-html
+        coc-java
         coc-json
         coc-lua
-        coc-metals
         coc-pairs
         coc-prettier
         coc-pyright # python

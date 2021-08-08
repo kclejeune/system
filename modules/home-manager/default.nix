@@ -72,7 +72,7 @@ in
         nixUnstable
         nixfmt
         nixpkgs-fmt
-        nodejs_latest
+        stable.nodejs_latest
         openssh
         pandoc
         pre-commit
