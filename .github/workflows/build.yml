@@ -34,4 +34,4 @@ jobs:
       - name: Run Flake Checks
         run: |
           nix flake check -v --show-trace
-        timeout-minutes: 120
+        timeout-minutes: 240
