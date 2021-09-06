@@ -25,7 +25,7 @@
     ./theme
     ./treesitter
     ./vim-closetag
-    ./fzf
+    # ./fzf
     # ./skim
   ];
 }
