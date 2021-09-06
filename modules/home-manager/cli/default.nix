@@ -1,7 +1,7 @@
 { config, pkgs, lib, ... }:
 let
   functions = builtins.readFile ./functions.sh;
-  useSkim = true;
+  useSkim = false;
   useFzf = !useSkim;
   fuzz =
     let fd = "${pkgs.fd}/bin/fd";
@@ -18,7 +18,7 @@ let
       changeDirWidgetCommand = "${fd} --type d";
       changeDirWidgetOptions =
         [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
-      historyWidgetOptions = [];
+      historyWidgetOptions = [ ];
     };
   aliases = { };
 in

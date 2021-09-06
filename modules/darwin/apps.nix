@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }: {
   homebrew = {
     casks = [
-      "1password"
+      "1password-beta"
       "adobe-acrobat-pro"
       "appcleaner"
       "displaperture"
