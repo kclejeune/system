@@ -90,7 +90,7 @@
         , extraModules ? [ ]
         }:
         darwinSystem {
-          # system = "x86_64-darwin";
+          system = "x86_64-darwin";
           modules = baseModules ++ extraModules
             ++ [{ nixpkgs.overlays = overlays; }];
           specialArgs = { inherit inputs lib; };
