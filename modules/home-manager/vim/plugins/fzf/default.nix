@@ -20,10 +20,14 @@ in
       };
     in
     {
-      plugins = with pkgs.vimPlugins; [
-        (pluginWithCfg fzf-vim)
-        (pluginWithLua nvim-fzf)
-      ];
+      plugins = with pkgs.vimPlugins;
+        [
+          (pluginWithCfg {
+            plugin = fzf-vim;
+            file = "fzf-vim";
+          })
+          # (pluginWithLua nvim-fzf)
+        ];
       extraPackages = [ pkgs.fzf ];
     };
 }

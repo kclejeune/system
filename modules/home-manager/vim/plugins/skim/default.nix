@@ -3,7 +3,13 @@
     let inherit (lib.vimUtils ./.) pluginWithCfg;
     in
     {
-      plugins = with pkgs.vimPlugins; [ skim (pluginWithCfg skim-vim) ];
+      plugins = with pkgs.vimPlugins; [
+        skim
+        (pluginWithCfg {
+          plugin = skim-vim;
+          file = "skim-vim";
+        })
+      ];
       extraPackages = [ pkgs.skim ];
     };
 }

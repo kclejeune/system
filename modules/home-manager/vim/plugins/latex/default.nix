@@ -4,7 +4,13 @@
     in
     {
       # vimtex config
-      plugins = with pkgs.vimPlugins; [ (pluginWithCfg vimtex) ];
+      plugins = with pkgs.vimPlugins;
+        [
+          (pluginWithCfg {
+            plugin = vimtex;
+            file = "vimtex";
+          })
+        ];
 
       # LSP config
       extraPackages = with pkgs; with nodePackages; [ texlab ];

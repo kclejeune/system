@@ -4,6 +4,12 @@
     in
     {
       # vimtex config
-      plugins = with pkgs.vimPlugins; [ (pluginWithLua lspsaga-nvim) ];
+      plugins = with pkgs.vimPlugins;
+        [
+          (pluginWithLua {
+            plugin = lspsaga-nvim;
+            file = "lspsaga-nvim";
+          })
+        ];
     };
 }

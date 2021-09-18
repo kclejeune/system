@@ -6,9 +6,15 @@
     {
       plugins = with pkgs.vimPlugins; [
         # new neovim stuff
-        (pluginWithLua
-          (nvim-treesitter.withPlugins (_: pkgs.tree-sitter.allGrammars)))
-        (pluginWithLua nvim-treesitter-textobjects)
+        (pluginWithLua {
+          plugin =
+            (nvim-treesitter.withPlugins (_: pkgs.tree-sitter.allGrammars));
+          file = "nvim-treesitter";
+        })
+        (pluginWithLua {
+          plugin = nvim-treesitter-textobjects;
+          file = "nvim-treesitter-textobjects";
+        })
       ];
     };
 }
