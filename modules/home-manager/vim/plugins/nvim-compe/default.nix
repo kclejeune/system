@@ -4,7 +4,10 @@
     in
     {
       plugins = with pkgs.vimPlugins; [
-        (pluginWithLua nvim-compe)
+        (pluginWithLua {
+          plugin = nvim-compe;
+          file = "nvim-compe";
+        })
         vim-vsnip
         vim-vsnip-integ
       ];

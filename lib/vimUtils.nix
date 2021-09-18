@@ -10,12 +10,12 @@ lib: basePath: rec {
     ${luaConfig}
     EOF
   '';
-  pluginWithLua = plugin: {
+  pluginWithLua = { plugin, file ? plugin.pname }: {
     inherit plugin;
-    config = readLuaSection plugin.pname;
+    config = readLuaSection file;
   };
-  pluginWithCfg = plugin: {
+  pluginWithCfg = { plugin, file ? plugin.pname }: {
     inherit plugin;
-    config = readVimSection plugin.pname;
+    config = readVimSection file;
   };
 }

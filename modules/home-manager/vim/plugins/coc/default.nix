@@ -8,7 +8,10 @@
     {
       extraPackages = with pkgs; with nodePackages; [ rnix-lsp ];
       plugins = with pkgs.vimPlugins; [
-        (pluginWithCfg coc-nvim)
+        (pluginWithCfg {
+          plugin = coc-nvim;
+          file = "coc-nvim";
+        })
         coc-css
         coc-eslint
         coc-fzf

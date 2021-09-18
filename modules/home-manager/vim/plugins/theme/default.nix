@@ -4,6 +4,11 @@
     in
     {
       plugins = with pkgs.vimPlugins;
-        [ (pluginWithCfg awesome-vim-colorschemes) ];
+        [
+          (pluginWithCfg {
+            plugin = awesome-vim-colorschemes;
+            file = "awesome-vim-colorschemes";
+          })
+        ];
     };
 }

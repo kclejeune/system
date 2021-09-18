@@ -7,7 +7,10 @@
       plugins = with pkgs.vimPlugins;
         [
           # completion nvim
-          (pluginWithLua nvim-lspconfig)
+          (pluginWithLua {
+            plugin = nvim-lspconfig;
+            file = "nvim-lspconfig";
+          })
         ];
     };
 }
