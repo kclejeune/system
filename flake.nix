@@ -18,7 +18,6 @@
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixos-stable.url = "github:nixos/nixpkgs/nixos-21.05";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     treefmt.url = "github:numtide/treefmt";
     comma = {
@@ -31,20 +30,17 @@
     };
     darwin = {
       url = "github:kclejeune/nix-darwin/backup-etc";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
       url = "github:nix-community/home-manager/master";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
   outputs =
     inputs@{ self
-    , nixpkgs-unstable
-    , nixos-unstable
-    , nixos-stable
-    , darwin-stable
+    , nixpkgs
     , darwin
     , home-manager
     , nixos-hardware
@@ -55,7 +51,7 @@
     }:
     let
       inherit (darwin.lib) darwinSystem;
-      inherit (nixpkgs-unstable.lib) nixosSystem;
+      inherit (nixpkgs.lib) nixosSystem;
       inherit (home-manager.lib) homeManagerConfiguration;
       inherit (flake-utils.lib) eachDefaultSystem eachSystem;
       inherit (builtins) listToAttrs map;
@@ -64,7 +60,7 @@
         nixpkgs.lib.extend
           (final: prev: (import ./lib final) // home-manager.lib);
 
-      lib = (mkLib nixos-stable);
+      lib = (mkLib nixpkgs);
 
       isDarwin = system: (builtins.elem system lib.platforms.darwin);
       homePrefix = system: if isDarwin system then "/Users" else "/home";
@@ -74,8 +70,8 @@
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig =
         { system ? "x86_64-darwin"
-        , nixpkgs ? nixpkgs-unstable
-        , stable ? darwin-stable
+        , nixpkgs ? inputs.nixpkgs
+        , stable ? inputs.darwin-stable
         , lib ? (mkLib nixpkgs)
         , baseModules ? [
             home-manager.darwinModules.home-manager
@@ -93,8 +89,8 @@
       # specified overlays, hardware modules, and any extraModules applied
       mkNixosConfig =
         { system ? "x86_64-linux"
-        , nixpkgs ? nixos-unstable
-        , stable ? nixos-stable
+        , nixpkgs ? inputs.nixos-unstable
+        , stable ? inputs.nixos-stable
         , lib ? (mkLib nixpkgs)
         , hardwareModules
         , baseModules ? [
@@ -114,8 +110,8 @@
       mkHomeConfig =
         { username
         , system ? "x86_64-linux"
-        , nixpkgs ? nixpkgs-unstable
-        , stable ? nixos-stable
+        , nixpkgs ? inputs.nixpkgs
+        , stable ? inputs.nixos-stable
         , lib ? (mkLib nixpkgs)
         , baseModules ? [ ./modules/home-manager ]
         , extraModules ? [ ]
@@ -202,7 +198,7 @@
     # add a devShell to this flake
     eachSystem supportedSystems (system:
     let
-      pkgs = import nixos-stable {
+      pkgs = import inputs.nixos-stable {
         inherit system;
         overlays = [ devshell.overlay ];
       };
