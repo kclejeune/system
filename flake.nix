@@ -114,19 +114,16 @@
         , baseModules ? [ ./modules/home-manager ]
         , extraModules ? [ ]
         }:
-        homeManagerConfiguration
-          rec {
-            inherit system username;
-            homeDirectory = "${homePrefix system}/${username}";
-            extraSpecialArgs = { inherit inputs lib nixpkgs stable; };
-            configuration = {
-              imports = baseModules ++ extraModules ++ [
-                (import ./modules/overlays.nix {
-                  inherit inputs nixpkgs stable;
-                })
-              ];
-            };
+        homeManagerConfiguration rec {
+          inherit system username;
+          homeDirectory = "${homePrefix system}/${username}";
+          extraSpecialArgs = { inherit inputs lib nixpkgs stable; };
+          configuration = {
+            imports = baseModules ++ extraModules ++ [
+              (import ./modules/overlays.nix { inherit inputs nixpkgs stable; })
+            ];
           };
+        };
     in
     {
       checks = listToAttrs (
@@ -137,7 +134,8 @@
             value = {
               darwin =
                 self.darwinConfigurations.randall.config.system.build.toplevel;
-              darwinServer = self.homeConfigurations.darwinServer.activationPackage;
+              darwinServer =
+                self.homeConfigurations.darwinServer.activationPackage;
             };
           })
           lib.platforms.darwin) ++
@@ -214,18 +212,19 @@
       sysdo = pkgs.writeShellScriptBin "sysdo" ''
         cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
       '';
+      fmt = pkgs.writeShellScriptBin "fmt" ''
+        ${pkgs.nixfmt}/bin/nixfmt $@ && ${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt $@
+      '';
     in
     {
       devShell = pkgs.devshell.mkShell {
-        packages = [ nixBin pyEnv pkgs.treefmt ];
-        commands = [
-          {
-            name = "sysdo";
-            package = sysdo;
-            category = "utilities";
-            help = "perform actions on this repository";
-          }
-        ];
+        packages = [ nixBin pyEnv pkgs.treefmt fmt ];
+        commands = [{
+          name = "sysdo";
+          package = sysdo;
+          category = "utilities";
+          help = "perform actions on this repository";
+        }];
       };
     });
 }

@@ -8,9 +8,7 @@
       kitty = prev.stable.kitty;
       # install comma from shopify repo
       comma = import inputs.comma rec {
-        pkgs = import nixpkgs {
-          system = prev.system;
-        };
+        pkgs = import nixpkgs { system = prev.system; };
       };
     })
   ];

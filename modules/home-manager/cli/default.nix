@@ -8,9 +8,7 @@ let
     in
     rec {
       defaultCommand = "${fd} -H --type f";
-      defaultOptions = [
-        "--height 50%"
-      ];
+      defaultOptions = [ "--height 50%" ];
       fileWidgetCommand = "${defaultCommand}";
       fileWidgetOptions = [
         "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
