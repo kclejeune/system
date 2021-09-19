@@ -19,7 +19,6 @@
     nixos-stable.url = "github:nixos/nixpkgs/nixos-21.05";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    treefmt.url = "github:numtide/treefmt";
     comma = {
       url = "github:Shopify/comma";
       flake = false;
@@ -45,7 +44,6 @@
     , home-manager
     , nixos-hardware
     , devshell
-    , treefmt
     , flake-utils
     , ...
     }:
@@ -198,11 +196,17 @@
     # add a devShell to this flake
     eachSystem supportedSystems (system:
     let
-      pkgs = import inputs.nixos-stable {
+      pkgs = import nixpkgs {
         inherit system;
-        overlays = [ devshell.overlay ];
+        overlays = [
+          devshell.overlay
+          (final: prev: {
+            # expose stable packages via pkgs.stable
+            stable = import inputs.nixos-stable { system = prev.system; };
+          })
+        ];
       };
-      pyEnv = (pkgs.python3.withPackages
+      pyEnv = (pkgs.stable.python3.withPackages
         (ps: with ps; [ black pylint typer colorama shellingham ]));
       nixBin = pkgs.writeShellScriptBin "nix" ''
         ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
@@ -210,23 +214,16 @@
       sysdo = pkgs.writeShellScriptBin "sysdo" ''
         cd $DEVSHELL_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
       '';
-      fmt = treefmt.defaultPackage.${system};
     in
     {
       devShell = pkgs.devshell.mkShell {
-        packages = with pkgs; [ nixBin pyEnv fmt ];
+        packages = [ nixBin pyEnv pkgs.treefmt ];
         commands = [
           {
             name = "sysdo";
             package = sysdo;
             category = "utilities";
             help = "perform actions on this repository";
-          }
-          {
-            help = "Format the entire code tree";
-            name = "fmt";
-            command = "treefmt -q";
-            category = "utilities";
           }
         ];
       };

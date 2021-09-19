@@ -22,11 +22,12 @@ jobs:
           fetch-depth: 0
       - uses: cachix/install-nix-action@v14
         env:
-          NIX_VERSION: nix-2.4pre20210604_8e6ee1b
+          NIX_VERSION: nix-2.4pre20210823_af94b54
         with:
           install_url: https://github.com/numtide/nix-unstable-installer/releases/download/${{ env.NIX_VERSION }}/install
           extra_nix_config: |
             experimental-features = nix-command flakes
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
       - uses: cachix/cachix-action@v10
         with:
           name: kclejeune
