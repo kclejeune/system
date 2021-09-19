@@ -60,14 +60,11 @@
       inherit (flake-utils.lib) eachDefaultSystem eachSystem;
       inherit (builtins) listToAttrs map;
 
-      mkLib = nixpkgs: nixpkgs.lib.extend
-        (final: prev: (import ./lib final) // home-manager.lib);
+      mkLib = nixpkgs:
+        nixpkgs.lib.extend
+          (final: prev: (import ./lib final) // home-manager.lib);
 
       lib = (mkLib nixos-stable);
-
-      overlays = [
-        devshell.overlay
-      ];
 
       isDarwin = system: (builtins.elem system lib.platforms.darwin);
       homePrefix = system: if isDarwin system then "/Users" else "/home";
@@ -88,11 +85,8 @@
         }:
         darwinSystem {
           inherit system;
-          modules = baseModules ++ extraModules
-            ++ [{ nixpkgs.overlays = overlays; }];
-          specialArgs = {
-            inherit inputs lib nixpkgs stable;
-          };
+          modules = baseModules ++ extraModules;
+          specialArgs = { inherit inputs lib nixpkgs stable; };
         };
 
       # generate a base nixos configuration with the
@@ -111,11 +105,8 @@
         }:
         nixosSystem {
           inherit system;
-          modules = baseModules ++ hardwareModules ++ extraModules
-            ++ [{ nixpkgs.overlays = overlays; }];
-          specialArgs = {
-            inherit inputs lib nixpkgs stable;
-          };
+          modules = baseModules ++ hardwareModules ++ extraModules;
+          specialArgs = { inherit inputs lib nixpkgs stable; };
         };
 
       # generate a home-manager configuration usable on any unix system
@@ -129,17 +120,19 @@
         , baseModules ? [ ./modules/home-manager ]
         , extraModules ? [ ]
         }:
-        homeManagerConfiguration rec {
-          inherit system username;
-          homeDirectory = "${homePrefix system}/${username}";
-          extraSpecialArgs = {
-            inherit inputs lib nixpkgs stable;
+        homeManagerConfiguration
+          rec {
+            inherit system username;
+            homeDirectory = "${homePrefix system}/${username}";
+            extraSpecialArgs = { inherit inputs lib nixpkgs stable; };
+            configuration = {
+              imports = baseModules ++ extraModules ++ [
+                (import ./modules/overlays.nix {
+                  inherit inputs nixpkgs stable;
+                })
+              ];
+            };
           };
-          configuration = {
-            imports = baseModules ++ extraModules
-              ++ [{ nixpkgs.overlays = overlays; }];
-          };
-        };
     in
     {
       checks = listToAttrs (
@@ -150,6 +143,7 @@
             value = {
               darwin =
                 self.darwinConfigurations.randall.config.system.build.toplevel;
+              darwinServer = self.homeConfigurations.darwinServer.activationPackage;
             };
           })
           lib.platforms.darwin) ++
@@ -190,6 +184,11 @@
           username = "kclejeune";
           extraModules = [ ./profiles/home-manager/personal.nix ];
         };
+        darwinServer = mkHomeConfig {
+          username = "kclejeune";
+          system = "x86_64-darwin";
+          extraModules = [ ./profiles/home-manager/personal.nix ];
+        };
         workServer = mkHomeConfig {
           username = "lejeukc1";
           extraModules = [ ./profiles/home-manager/work.nix ];
@@ -203,7 +202,10 @@
     # add a devShell to this flake
     eachSystem supportedSystems (system:
     let
-      pkgs = import nixos-stable { inherit system overlays; };
+      pkgs = import nixos-stable {
+        inherit system;
+        overlays = [ devshell.overlay ];
+      };
       pyEnv = (pkgs.python3.withPackages
         (ps: with ps; [ black pylint typer colorama shellingham ]));
       nixBin = pkgs.writeShellScriptBin "nix" ''
