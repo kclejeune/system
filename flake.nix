@@ -11,7 +11,7 @@
     ];
   };
 
-  inputs = rec {
+  inputs = {
     darwin-stable.url = "github:nixos/nixpkgs/nixpkgs-21.05-darwin";
     devshell.url = "github:numtide/devshell";
     flake-utils.url = "github:numtide/flake-utils";
