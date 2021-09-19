@@ -45,7 +45,7 @@ in
       # python with default packages
       (python39.withPackages (ps: with ps; [ black numpy scipy networkx ]))
       adoptopenjdk-bin
-      awscli2
+      stable.awscli2
       cachix
       comma
       coreutils-full
