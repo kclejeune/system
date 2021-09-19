@@ -43,7 +43,7 @@ in
     # define package definitions for current user environment
     packages = with pkgs; [
       # python with default packages
-      (python39.withPackages (ps: with ps; [ black numpy scipy networkx ]))
+      (python3.withPackages (ps: with ps; [ black numpy scipy networkx matplotlib ]))
       cachix
       comma
       coreutils-full
