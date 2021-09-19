@@ -19,7 +19,7 @@
     nixos-stable.url = "github:nixos/nixpkgs/nixos-21.05";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    nixpkgs = nixpkgs-unstable;
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     treefmt.url = "github:numtide/treefmt";
     comma = {
       url = "github:Shopify/comma";
