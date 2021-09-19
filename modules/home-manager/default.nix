@@ -37,15 +37,13 @@ in
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
-      JAVA_HOME = "${pkgs.adoptopenjdk-bin.home}";
+      JAVA_HOME = "${pkgs.openjdk.home}";
     };
 
     # define package definitions for current user environment
     packages = with pkgs; [
       # python with default packages
       (python39.withPackages (ps: with ps; [ black numpy scipy networkx ]))
-      adoptopenjdk-bin
-      stable.awscli2
       cachix
       comma
       coreutils-full
@@ -66,6 +64,7 @@ in
       nixUnstable
       nixfmt
       nixpkgs-fmt
+      openjdk
       openssh
       pandoc
       pre-commit
@@ -74,10 +73,12 @@ in
       ripgrep
       ripgrep-all
       rsync
+      stable.awscli2
       stable.nodejs
       sysdo
       tealdeer
       tectonic
+      treefmt
       yarn
       youtube-dl
     ];
