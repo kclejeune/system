@@ -1,4 +1,4 @@
-{ inputs, config, lib, pkgs, ... }: {
+{ inputs, config, lib, pkgs, nixpkgs, stable, ... }: {
   nixpkgs = {
     config = import ./config.nix;
     overlays = [ ];
@@ -40,7 +40,7 @@
           id = "nixpkgs";
           type = "indirect";
         };
-        flake = inputs.nixpkgs;
+        flake = nixpkgs;
       };
 
       stable = {
@@ -48,7 +48,7 @@
           id = "stable";
           type = "indirect";
         };
-        flake = inputs.stable;
+        flake = stable;
       };
     };
   };
