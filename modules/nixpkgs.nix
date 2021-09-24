@@ -25,9 +25,6 @@
       "home-manager=/etc/${config.environment.etc.home-manager.target}"
     ];
 
-    useSandbox = true;
-    sandboxPaths = [ ];
-
     binaryCaches =
       [ "https://kclejeune.cachix.org" "https://nix-community.cachix.org/" ];
     binaryCachePublicKeys = [
