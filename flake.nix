@@ -212,13 +212,10 @@
       sysdo = pkgs.writeShellScriptBin "sysdo" ''
         cd $PRJ_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
       '';
-      fmt = pkgs.writeShellScriptBin "fmt" ''
-        ${pkgs.nixfmt}/bin/nixfmt $@ && ${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt $@
-      '';
     in
     {
       devShell = pkgs.devshell.mkShell {
-        packages = [ nixBin pyEnv pkgs.treefmt fmt ];
+        packages = [ nixBin pyEnv pkgs.treefmt ];
         commands = [{
           name = "sysdo";
           package = sysdo;
