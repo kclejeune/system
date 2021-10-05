@@ -93,6 +93,7 @@ in {
         source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
       '';
     };
+    nix-index.enable = true;
     zsh = let
       mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
         name = pkg.pname;
@@ -112,7 +113,6 @@ in {
       };
       shellAliases = aliases;
       initExtraBeforeCompInit = ''
-        source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
         fpath+=~/.zfunc
       '';
       initExtra = ''

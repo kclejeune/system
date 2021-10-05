@@ -60,7 +60,6 @@ in {
       httpie
       jq
       neofetch
-      nix-index
       nixUnstable
       nixfmt
       nixpkgs-fmt
