@@ -1,7 +1,6 @@
 { inputs, config, pkgs, ... }:
 let prefix = "/run/current-system/sw/bin";
-in
-{
+in {
   # environment setup
   environment = {
     loginShell = pkgs.zsh;

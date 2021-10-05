@@ -3,24 +3,21 @@ let
   functions = builtins.readFile ./functions.sh;
   useSkim = false;
   useFzf = !useSkim;
-  fuzz =
-    let fd = "${pkgs.fd}/bin/fd";
-    in
-    rec {
-      defaultCommand = "${fd} -H --type f";
-      defaultOptions = [ "--height 50%" ];
-      fileWidgetCommand = "${defaultCommand}";
-      fileWidgetOptions = [
-        "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
-      ];
-      changeDirWidgetCommand = "${fd} --type d";
-      changeDirWidgetOptions =
-        [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
-      historyWidgetOptions = [ ];
-    };
+  fuzz = let fd = "${pkgs.fd}/bin/fd";
+  in rec {
+    defaultCommand = "${fd} -H --type f";
+    defaultOptions = [ "--height 50%" ];
+    fileWidgetCommand = "${defaultCommand}";
+    fileWidgetOptions = [
+      "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
+    ];
+    changeDirWidgetCommand = "${fd} --type d";
+    changeDirWidgetOptions =
+      [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
+    historyWidgetOptions = [ ];
+  };
   aliases = { };
-in
-{
+in {
   home.packages = with pkgs; [ tree ];
   programs = {
     direnv = {
@@ -96,49 +93,47 @@ in
         source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
       '';
     };
-    zsh =
-      let
-        mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
-          name = pkg.pname;
-          src = pkg.src;
-          inherit file;
-        };
-      in
-      {
-        enable = true;
-        autocd = true;
-        dotDir = ".config/zsh";
-        localVariables = {
-          LANG = "en_US.UTF-8";
-          GPG_TTY = "/dev/ttys000";
-          DEFAULT_USER = "${config.home.username}";
-          CLICOLOR = 1;
-          LS_COLORS = "ExFxBxDxCxegedabagacad";
-        };
-        shellAliases = aliases;
-        initExtraBeforeCompInit = ''
-          source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
-          fpath+=~/.zfunc
-        '';
-        initExtra = ''
-          ${functions}
-          unset RPS1
-        '';
-        plugins = with pkgs; [
-          (mkZshPlugin { pkg = zsh-autopair; })
-          (mkZshPlugin { pkg = zsh-completions; })
-          (mkZshPlugin { pkg = zsh-autosuggestions; })
-          (mkZshPlugin {
-            pkg = zsh-fast-syntax-highlighting;
-            file = "fast-syntax-highlighting.plugin.zsh";
-          })
-          (mkZshPlugin { pkg = zsh-history-substring-search; })
-        ];
-        oh-my-zsh = {
-          enable = true;
-          plugins = [ "git" "sudo" ];
-        };
+    zsh = let
+      mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
+        name = pkg.pname;
+        src = pkg.src;
+        inherit file;
       };
+    in {
+      enable = true;
+      autocd = true;
+      dotDir = ".config/zsh";
+      localVariables = {
+        LANG = "en_US.UTF-8";
+        GPG_TTY = "/dev/ttys000";
+        DEFAULT_USER = "${config.home.username}";
+        CLICOLOR = 1;
+        LS_COLORS = "ExFxBxDxCxegedabagacad";
+      };
+      shellAliases = aliases;
+      initExtraBeforeCompInit = ''
+        source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
+        fpath+=~/.zfunc
+      '';
+      initExtra = ''
+        ${functions}
+        unset RPS1
+      '';
+      plugins = with pkgs; [
+        (mkZshPlugin { pkg = zsh-autopair; })
+        (mkZshPlugin { pkg = zsh-completions; })
+        (mkZshPlugin { pkg = zsh-autosuggestions; })
+        (mkZshPlugin {
+          pkg = zsh-fast-syntax-highlighting;
+          file = "fast-syntax-highlighting.plugin.zsh";
+        })
+        (mkZshPlugin { pkg = zsh-history-substring-search; })
+      ];
+      oh-my-zsh = {
+        enable = true;
+        plugins = [ "git" "sudo" ];
+      };
+    };
     zoxide.enable = true;
     starship.enable = true;
   };

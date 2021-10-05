@@ -37,16 +37,8 @@
     };
   };
 
-  outputs =
-    inputs@{ self
-    , nixpkgs
-    , darwin
-    , home-manager
-    , nixos-hardware
-    , devshell
-    , flake-utils
-    , ...
-    }:
+  outputs = inputs@{ self, nixpkgs, darwin, home-manager, nixos-hardware
+    , devshell, flake-utils, ... }:
     let
       inherit (darwin.lib) darwinSystem;
       inherit (nixpkgs.lib) nixosSystem;
@@ -56,7 +48,7 @@
 
       mkLib = nixpkgs:
         nixpkgs.lib.extend
-          (final: prev: (import ./lib final) // home-manager.lib);
+        (final: prev: (import ./lib final) // home-manager.lib);
 
       lib = (mkLib nixpkgs);
 
@@ -66,17 +58,11 @@
 
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
-      mkDarwinConfig =
-        { system ? "x86_64-darwin"
-        , nixpkgs ? inputs.nixpkgs
-        , stable ? inputs.darwin-stable
-        , lib ? (mkLib nixpkgs)
-        , baseModules ? [
-            home-manager.darwinModules.home-manager
-            ./modules/darwin
-          ]
-        , extraModules ? [ ]
-        }:
+      mkDarwinConfig = { system ? "x86_64-darwin", nixpkgs ? inputs.nixpkgs
+        , stable ? inputs.darwin-stable, lib ? (mkLib nixpkgs), baseModules ? [
+          home-manager.darwinModules.home-manager
+          ./modules/darwin
+        ], extraModules ? [ ] }:
         darwinSystem {
           inherit system;
           modules = baseModules ++ extraModules;
@@ -85,18 +71,12 @@
 
       # generate a base nixos configuration with the
       # specified overlays, hardware modules, and any extraModules applied
-      mkNixosConfig =
-        { system ? "x86_64-linux"
-        , nixpkgs ? inputs.nixos-unstable
-        , stable ? inputs.nixos-stable
-        , lib ? (mkLib nixpkgs)
-        , hardwareModules
+      mkNixosConfig = { system ? "x86_64-linux", nixpkgs ? inputs.nixos-unstable
+        , stable ? inputs.nixos-stable, lib ? (mkLib nixpkgs), hardwareModules
         , baseModules ? [
-            home-manager.nixosModules.home-manager
-            ./modules/nixos
-          ]
-        , extraModules ? [ ]
-        }:
+          home-manager.nixosModules.home-manager
+          ./modules/nixos
+        ], extraModules ? [ ] }:
         nixosSystem {
           inherit system;
           modules = baseModules ++ hardwareModules ++ extraModules;
@@ -105,15 +85,10 @@
 
       # generate a home-manager configuration usable on any unix system
       # with overlays and any extraModules applied
-      mkHomeConfig =
-        { username
-        , system ? "x86_64-linux"
-        , nixpkgs ? inputs.nixpkgs
-        , stable ? inputs.nixos-stable
-        , lib ? (mkLib nixpkgs)
-        , baseModules ? [ ./modules/home-manager ]
-        , extraModules ? [ ]
-        }:
+      mkHomeConfig = { username, system ? "x86_64-linux"
+        , nixpkgs ? inputs.nixpkgs, stable ? inputs.nixos-stable
+        , lib ? (mkLib nixpkgs), baseModules ? [ ./modules/home-manager ]
+        , extraModules ? [ ] }:
         homeManagerConfiguration rec {
           inherit system username;
           homeDirectory = "${homePrefix system}/${username}";
@@ -124,32 +99,26 @@
             ];
           };
         };
-    in
-    {
+    in {
       checks = listToAttrs (
         # darwin checks
-        (map
-          (system: {
-            name = system;
-            value = {
-              darwin =
-                self.darwinConfigurations.randall.config.system.build.toplevel;
-              darwinServer =
-                self.homeConfigurations.darwinServer.activationPackage;
-            };
-          })
-          lib.platforms.darwin) ++
+        (map (system: {
+          name = system;
+          value = {
+            darwin =
+              self.darwinConfigurations.randall.config.system.build.toplevel;
+            darwinServer =
+              self.homeConfigurations.darwinServer.activationPackage;
+          };
+        }) lib.platforms.darwin) ++
         # linux checks
-        (map
-          (system: {
-            name = system;
-            value = {
-              nixos = self.nixosConfigurations.phil.config.system.build.toplevel;
-              server = self.homeConfigurations.server.activationPackage;
-            };
-          })
-          lib.platforms.linux)
-      );
+        (map (system: {
+          name = system;
+          value = {
+            nixos = self.nixosConfigurations.phil.config.system.build.toplevel;
+            server = self.homeConfigurations.server.activationPackage;
+          };
+        }) lib.platforms.linux));
 
       darwinConfigurations = {
         randall = mkDarwinConfig {
@@ -193,35 +162,34 @@
     } //
     # add a devShell to this flake
     eachSystem supportedSystems (system:
-    let
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = [
-          devshell.overlay
-          (final: prev: {
-            # expose stable packages via pkgs.stable
-            stable = import inputs.nixos-stable { system = prev.system; };
-          })
-        ];
-      };
-      pyEnv = (pkgs.stable.python3.withPackages
-        (ps: with ps; [ black pylint typer colorama shellingham ]));
-      nixBin = pkgs.writeShellScriptBin "nix" ''
-        ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
-      '';
-      sysdo = pkgs.writeShellScriptBin "sysdo" ''
-        cd $PRJ_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
-      '';
-    in
-    {
-      devShell = pkgs.devshell.mkShell {
-        packages = [ nixBin pyEnv pkgs.treefmt ];
-        commands = [{
-          name = "sysdo";
-          package = sysdo;
-          category = "utilities";
-          help = "perform actions on this repository";
-        }];
-      };
-    });
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [
+            devshell.overlay
+            (final: prev: {
+              # expose stable packages via pkgs.stable
+              stable = import inputs.nixos-stable { system = prev.system; };
+            })
+          ];
+        };
+        pyEnv = (pkgs.stable.python3.withPackages
+          (ps: with ps; [ black pylint typer colorama shellingham ]));
+        nixBin = pkgs.writeShellScriptBin "nix" ''
+          ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" "$@"
+        '';
+        sysdo = pkgs.writeShellScriptBin "sysdo" ''
+          cd $PRJ_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
+        '';
+      in {
+        devShell = pkgs.devshell.mkShell {
+          packages = [ nixBin pyEnv pkgs.treefmt ];
+          commands = [{
+            name = "sysdo";
+            package = sysdo;
+            category = "utilities";
+            help = "perform actions on this repository";
+          }];
+        };
+      });
 }

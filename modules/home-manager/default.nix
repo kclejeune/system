@@ -11,8 +11,7 @@ let
     (${sysDoNixos}) || (${sysDoDarwin})
   '');
 
-in
-{
+in {
   imports = [ ./vim ./cli ./kitty ./dotfiles ./git.nix ];
 
   programs.home-manager = {
