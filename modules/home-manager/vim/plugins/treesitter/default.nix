@@ -8,7 +8,7 @@
         # new neovim stuff
         (pluginWithLua {
           plugin = nvim-treesitter;
-            # (nvim-treesitter.withPlugins (_: pkgs.tree-sitter.allGrammars));
+          # (nvim-treesitter.withPlugins (_: pkgs.tree-sitter.allGrammars));
           file = "nvim-treesitter";
         })
         (pluginWithLua {

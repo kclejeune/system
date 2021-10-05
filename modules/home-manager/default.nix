@@ -43,7 +43,8 @@ in
     # define package definitions for current user environment
     packages = with pkgs; [
       # python with default packages
-      (python3.withPackages (ps: with ps; [ black numpy scipy networkx matplotlib ]))
+      (python3.withPackages
+        (ps: with ps; [ black numpy scipy networkx matplotlib ]))
       cachix
       comma
       coreutils-full
@@ -73,8 +74,8 @@ in
       ripgrep
       ripgrep-all
       rsync
-      stable.awscli2
-      stable.nodejs
+      awscli2
+      nodejs
       sysdo
       tealdeer
       tectonic
