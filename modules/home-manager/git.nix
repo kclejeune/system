@@ -10,11 +10,13 @@
       http.sslVerify = true;
       pull.rebase = false;
       commit.verbose = true;
+      init.defaultBranch = "main";
     };
     aliases = {
       fix = "commit --amend --no-edit";
       oops = "reset HEAD~1";
     };
     delta.enable = true;
+    lfs.enable = true;
   };
 }
