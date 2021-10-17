@@ -10,7 +10,7 @@
     # ./lua-lsp # build failure
     ./lualine-nvim
     # ./nvim-autopairs
-    # ./nvim-compe
+    # ./nvim-cmp
     # ./nvim-lspconfig
     # ./pyright-lsp
     # ./rnix-lsp

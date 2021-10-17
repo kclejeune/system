@@ -19,7 +19,8 @@ in {
     path = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager";
   };
 
-  home = {
+  home = let NODE_GLOBAL = "~/.node-packages";
+  in {
     # This value determines the Home Manager release that your
     # configuration is compatible with. This helps avoid breakage
     # when a new Home Manager release introduces backwards
@@ -37,7 +38,9 @@ in {
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       JAVA_HOME = "${pkgs.openjdk.home}";
+      NODE_PATH = "${NODE_GLOBAL}/lib";
     };
+    sessionPath = [ "${NODE_GLOBAL}/bin" ];
 
     # define package definitions for current user environment
     packages = with pkgs; [
