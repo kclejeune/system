@@ -183,7 +183,7 @@
         '';
       in {
         devShell = pkgs.devshell.mkShell {
-          packages = [ nixBin pyEnv pkgs.treefmt ];
+          packages = [ nixBin pyEnv pkgs.treefmt pkgs.nixfmt pkgs.stylua ];
           commands = [{
             name = "sysdo";
             package = sysdo;

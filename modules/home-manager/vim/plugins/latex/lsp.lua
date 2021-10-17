@@ -1,1 +1,1 @@
-require('lspconfig').texlab.setup{}
+require("lspconfig").texlab.setup({})
