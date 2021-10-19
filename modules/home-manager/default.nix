@@ -19,7 +19,7 @@ in {
     path = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager";
   };
 
-  home = let NODE_GLOBAL = "~/.node-packages";
+  home = let NODE_GLOBAL = "${config.home.homeDirectory}/.node-packages";
   in {
     # This value determines the Home Manager release that your
     # configuration is compatible with. This helps avoid breakage
