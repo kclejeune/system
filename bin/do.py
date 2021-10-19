@@ -70,7 +70,8 @@ def select(nixos: bool, darwin: bool, home_manager: bool):
 
 
 @app.command(
-    help="builds an initial configuration", hidden=PLATFORM == FlakeOutputs.NIXOS
+    help="builds an initial configuration",
+    hidden=PLATFORM == FlakeOutputs.NIXOS,
 )
 def bootstrap(
     host: str = typer.Argument(None, help="the hostname of the configuration to build"),
@@ -143,7 +144,8 @@ def clean():
 
 
 @app.command(
-    help="configure disk setup for nix-darwin", hidden=PLATFORM != FlakeOutputs.DARWIN
+    help="configure disk setup for nix-darwin",
+    hidden=PLATFORM != FlakeOutputs.DARWIN,
 )
 def diskSetup():
     if PLATFORM != FlakeOutputs.DARWIN:
@@ -176,7 +178,8 @@ def fmt():
 
 
 @app.command(
-    help="run garbage collection on unused nix store paths", no_args_is_help=True
+    help="run garbage collection on unused nix store paths",
+    no_args_is_help=True,
 )
 def gc(
     delete_older_than: str = typer.Option(
@@ -190,40 +193,6 @@ def gc(
 ):
     cmd = f"nix-collect-garbage --delete-older-than {delete_older_than} {'--dry-run' if dry_run else ''}"
     run_cmd(cmd)
-
-
-@app.command(
-    help="builds and activates the specified flake output; infers correct platform to use if not specified",
-    no_args_is_help=True,
-)
-def switch(
-    host: str = typer.Argument(
-        default=None, help="the hostname of the configuration to build"
-    ),
-    nixos: bool = False,
-    darwin: bool = False,
-    home_manager: bool = False,
-):
-    if not host:
-        typer.secho("Error: host configuration not specified.", fg=Colors.ERROR.value)
-        raise typer.Abort()
-    else:
-        cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
-        if cfg is None:
-            return
-        elif cfg == FlakeOutputs.NIXOS:
-            cmd = f"sudo nixos-rebuild switch --flake"
-        elif cfg == FlakeOutputs.DARWIN:
-            cmd = f"darwin-rebuild switch --flake"
-        elif cfg == FlakeOutputs.HOME_MANAGER:
-            cmd = f"home-manager switch --flake"
-        else:
-            typer.secho("could not infer system type.", fg=Colors.ERROR.value)
-            raise typer.Abort()
-
-        flake = f".#{host}"
-        flags = " ".join(["--show-trace"])
-        run_cmd(f"{cmd} {flake} {flags}")
 
 
 @app.command(
@@ -252,15 +221,55 @@ def update(
 
 
 @app.command(help="pull changes from remote repo")
-def pull():
+def git_pull():
     cmd = f"git stash && git pull && git stash apply"
     run_cmd(cmd)
 
 
 @app.command(help="update remote repo with current changes")
-def push():
+def git_push():
     cmd = f"git push"
     run_cmd(cmd)
+
+
+@app.command(
+    help="builds and activates the specified flake output; infers correct platform to use if not specified",
+    no_args_is_help=True,
+)
+def switch(
+    host: str = typer.Argument(
+        default=None,
+        help="the hostname of the configuration to build",
+    ),
+    pull: bool = typer.Option(
+        default=False, help="whether to fetch current changes from the remote"
+    ),
+    nixos: bool = False,
+    darwin: bool = False,
+    home_manager: bool = False,
+):
+    if not host:
+        typer.secho("Error: host configuration not specified.", fg=Colors.ERROR.value)
+        raise typer.Abort()
+
+    cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
+    if cfg is None:
+        return
+    elif cfg == FlakeOutputs.NIXOS:
+        cmd = f"sudo nixos-rebuild switch --flake"
+    elif cfg == FlakeOutputs.DARWIN:
+        cmd = f"darwin-rebuild switch --flake"
+    elif cfg == FlakeOutputs.HOME_MANAGER:
+        cmd = f"home-manager switch --flake"
+    else:
+        typer.secho("could not infer system type.", fg=Colors.ERROR.value)
+        raise typer.Abort()
+
+    if pull:
+        git_pull()
+    flake = f".#{host}"
+    flags = " ".join(["--show-trace"])
+    run_cmd(f"{cmd} {flake} {flags}")
 
 
 @app.command(help="cache the output environment of flake.nix")
