@@ -39,7 +39,7 @@ function config() {
 }
 
 function service() {
-    if [[ -z "$1" ]] then
+    if [[ -z "$1" ]]; then
         echo "no command provided from [stop, start, restart]"
         return 1
     fi
@@ -55,3 +55,14 @@ function service() {
         launchctl $1 $service
     fi
 }
+
+_dopy_completion() {
+    local IFS=$'
+'
+    COMPREPLY=( $( env COMP_WORDS="${COMP_WORDS[*]}" \
+                   COMP_CWORD=$COMP_CWORD \
+                   _DO.PY_COMPLETE=complete_bash $1 ) )
+    return 0
+}
+
+complete -o default -F _dopy_completion sysdo

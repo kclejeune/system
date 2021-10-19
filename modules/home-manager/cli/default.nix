@@ -90,7 +90,7 @@ in {
       enable = true;
       shellAliases = aliases;
       initExtra = ''
-        source ${pkgs.nix-index}/etc/profile.d/command-not-found.sh
+        ${functions}
       '';
     };
     nix-index.enable = true;

@@ -20,7 +20,7 @@ jobs:
         with:
           # Shallow clones won't work
           fetch-depth: 0
-      - uses: cachix/install-nix-action@v14
+      - uses: cachix/install-nix-action@v14.1
         env:
           NIX_VERSION: nix-2.4pre20210823_af94b54
         with:
