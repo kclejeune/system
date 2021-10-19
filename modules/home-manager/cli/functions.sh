@@ -39,7 +39,7 @@ function config() {
 }
 
 function service() {
-    if [[ -z "$1" ]] then
+    if [[ -z "$1" ]]; then
         echo "no command provided from [stop, start, restart]"
         return 1
     fi
