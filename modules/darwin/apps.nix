@@ -23,6 +23,6 @@
       "visual-studio-code"
       "zoom"
     ];
-    masApps = { "Unsplash Wallpapers" = 1284863847; };
+    masApps = { };
   };
 }
