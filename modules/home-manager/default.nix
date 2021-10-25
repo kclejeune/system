@@ -47,6 +47,7 @@ in {
       # python with default packages
       (python3.withPackages
         (ps: with ps; [ black numpy scipy networkx matplotlib ]))
+      awscli2
       cachix
       comma
       coreutils-full
@@ -66,6 +67,7 @@ in {
       nixUnstable
       nixfmt
       nixpkgs-fmt
+      nodejs
       openjdk
       openssh
       pandoc
@@ -75,12 +77,11 @@ in {
       ripgrep
       ripgrep-all
       rsync
-      awscli2
-      nodejs
       sysdo
       tealdeer
       tectonic
       treefmt
+      vagrant
       yarn
       youtube-dl
     ];
