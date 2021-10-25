@@ -154,8 +154,8 @@
           username = "lejeukc1";
           extraModules = [ ./profiles/home-manager/work.nix ];
         };
-        multipass = mkHomeConfig {
-          username = "ubuntu";
+        vagrant = mkHomeConfig {
+          username = "vagrant";
           extraModules = [ ./profiles/home-manager/personal.nix ];
         };
       };
