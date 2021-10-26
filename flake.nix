@@ -54,7 +54,6 @@
 
       isDarwin = system: (builtins.elem system lib.platforms.darwin);
       homePrefix = system: if isDarwin system then "/Users" else "/home";
-      supportedSystems = [ "x86_64-darwin" "x86_64-linux" ];
 
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -161,7 +160,7 @@
       };
     } //
     # add a devShell to this flake
-    eachSystem supportedSystems (system:
+    eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
