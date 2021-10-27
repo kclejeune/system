@@ -2,6 +2,7 @@
   homebrew = {
     casks = [
       "1password-beta"
+      "bartender"
       "firefox-beta"
       "karabiner-elements"
       "keepingyouawake"

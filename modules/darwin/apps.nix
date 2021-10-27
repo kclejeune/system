@@ -3,6 +3,7 @@
     casks = [
       "1password-beta"
       "appcleaner"
+      "bartender"
       "displaperture"
       "eul"
       "firefox-beta"
