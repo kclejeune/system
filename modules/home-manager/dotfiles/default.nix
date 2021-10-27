@@ -30,6 +30,10 @@
       source = ./karabiner;
       recursive = true;
     };
+    kitty = {
+      source = ./kitty;
+      recursive = true;
+    };
     skhd = {
       source = ./skhd;
       recursive = true;

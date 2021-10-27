@@ -99,7 +99,7 @@ in {
         ${functions}
       '';
     };
-    nix-index.enable = true;
+    # nix-index.enable = false;
     zsh = let
       mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
         name = pkg.pname;
@@ -116,6 +116,7 @@ in {
         DEFAULT_USER = "${config.home.username}";
         CLICOLOR = 1;
         LS_COLORS = "ExFxBxDxCxegedabagacad";
+        TERM = "xterm-256color";
       };
       shellAliases = aliases;
       initExtraBeforeCompInit = ''
