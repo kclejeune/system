@@ -105,9 +105,7 @@
           name = system;
           value = {
             darwin =
-              self.darwinConfigurations.randall.config.system.build.toplevel;
-            darwin_x86 =
-              self.darwinConfigurations.randall_x86.config.system.build.toplevel;
+              self.darwinConfigurations.randall-intel.config.system.build.toplevel;
             darwinServer =
               self.homeConfigurations.darwinServer.activationPackage;
           };
