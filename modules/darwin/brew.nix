@@ -1,5 +1,4 @@
-{ inputs, config, pkgs, ... }:
-{
+{ inputs, config, pkgs, ... }: {
   homebrew = {
     enable = true;
     autoUpdate = false;
@@ -19,6 +18,6 @@
       "teamookla/speedtest"
     ];
 
-    brews = [];
+    brews = [ ];
   };
 }
