@@ -130,7 +130,7 @@
             { homebrew.brewPrefix = "/opt/homebrew/bin"; }
           ];
         };
-        randall_x86 = mkDarwinConfig {
+        randall-intel = mkDarwinConfig {
           system = "x86_64-darwin";
           extraModules = [
             ./profiles/personal.nix
