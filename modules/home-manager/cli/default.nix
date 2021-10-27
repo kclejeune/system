@@ -21,6 +21,7 @@ let
   else {
     # platform specific aliases
     ibrew = "arch -x86_64 brew";
+    abrew = "arch -arm64 brew";
   });
 in {
   home.packages = with pkgs; [ tree ];
