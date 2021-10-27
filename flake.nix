@@ -106,6 +106,8 @@
           value = {
             darwin =
               self.darwinConfigurations.randall.config.system.build.toplevel;
+            darwin_x86 =
+              self.darwinConfigurations.randall_x86.config.system.build.toplevel;
             darwinServer =
               self.homeConfigurations.darwinServer.activationPackage;
           };
@@ -122,6 +124,14 @@
       darwinConfigurations = {
         randall = mkDarwinConfig {
           system = "aarch64-darwin";
+          extraModules = [
+            ./profiles/personal.nix
+            ./modules/darwin/apps.nix
+            { homebrew.brewPrefix = "/opt/homebrew/bin"; }
+          ];
+        };
+        randall_x86 = mkDarwinConfig {
+          system = "x86_64-darwin";
           extraModules = [
             ./profiles/personal.nix
             ./modules/darwin/apps.nix
