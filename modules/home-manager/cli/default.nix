@@ -16,7 +16,12 @@ let
       [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
     historyWidgetOptions = [ ];
   };
-  aliases = { };
+  aliases = { } // (if !pkgs.stdenvNoCC.isDarwin then
+    { }
+  else {
+    # platform specific aliases
+    ibrew = "arch -x86_64 brew";
+  });
 in {
   home.packages = with pkgs; [ tree ];
   programs = {
@@ -117,6 +122,7 @@ in {
       '';
       initExtra = ''
         ${functions}
+        [[ -d /opt/homebrew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
         unset RPS1
       '';
       plugins = with pkgs; [

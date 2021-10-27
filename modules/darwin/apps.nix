@@ -2,7 +2,6 @@
   homebrew = {
     casks = [
       "1password-beta"
-      "adobe-acrobat-pro"
       "appcleaner"
       "displaperture"
       "eul"

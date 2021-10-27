@@ -39,7 +39,6 @@ in {
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       JAVA_HOME = "${pkgs.openjdk.home}";
       NODE_PATH = "${NODE_GLOBAL}/lib";
-      HOMEBREW_NO_AUTO_UPDATE = 1;
     };
     sessionPath = [ "${NODE_GLOBAL}/bin" ];
 
