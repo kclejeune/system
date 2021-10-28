@@ -105,7 +105,7 @@
           name = system;
           value = {
             darwin =
-              self.darwinConfigurations.randall.config.system.build.toplevel;
+              self.darwinConfigurations.randall-intel.config.system.build.toplevel;
             darwinServer =
               self.homeConfigurations.darwinServer.activationPackage;
           };
@@ -121,6 +121,15 @@
 
       darwinConfigurations = {
         randall = mkDarwinConfig {
+          system = "aarch64-darwin";
+          extraModules = [
+            ./profiles/personal.nix
+            ./modules/darwin/apps.nix
+            { homebrew.brewPrefix = "/opt/homebrew/bin"; }
+          ];
+        };
+        randall-intel = mkDarwinConfig {
+          system = "x86_64-darwin";
           extraModules = [
             ./profiles/personal.nix
             ./modules/darwin/apps.nix
