@@ -8,6 +8,7 @@
       "keepingyouawake"
       "kitty"
       "raycast"
+      "stats"
       "visual-studio-code"
     ];
   };

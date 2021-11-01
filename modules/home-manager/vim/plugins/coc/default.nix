@@ -4,7 +4,12 @@
 
   programs.neovim = let inherit (lib.vimUtils ./.) pluginWithCfg;
   in {
-    extraPackages = with pkgs; with nodePackages; [ rnix-lsp ];
+    extraPackages = with pkgs; [
+      rubyPackages.solargraph
+      nodePackages.pyright
+      rnix-lsp
+      fzf
+    ];
     plugins = with pkgs.vimPlugins; [
       (pluginWithCfg {
         plugin = coc-nvim;
