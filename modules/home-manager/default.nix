@@ -75,6 +75,7 @@ in {
       pre-commit
       python3Packages.poetry
       ranger
+      (ruby.withPackages (ps: with ps; [ rufo solargraph ]))
       ripgrep
       ripgrep-all
       rsync
