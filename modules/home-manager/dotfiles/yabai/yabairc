@@ -32,4 +32,10 @@ yabai -m config left_padding                 5
 yabai -m config right_padding                5
 yabai -m config window_gap                   5
 
+# Do not manage windows with certain titles eg. Copying files or moving to bin
+yabai -m rule --add title="(Copy|Bin|About This Mac|Info)" manage=off
+
+# Do not manage some apps which are not resizable
+yabai -m rule --add app="^(Calculator|System Preferences|[sS]tats)$" manage=off
+
 echo "yabai configuration loaded.."
