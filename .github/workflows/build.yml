@@ -16,7 +16,7 @@ jobs:
           - macos-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2.3.5
+      - uses: actions/checkout@v2.4.0
         with:
           # Shallow clones won't work
           fetch-depth: 0
