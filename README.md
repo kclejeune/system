@@ -71,13 +71,13 @@ git clone https://github.com/kclejeune/system ~/.nixpkgs
 You can bootstrap a new nix-darwin system using
 
 ```bash
-nix develop -c sysdo disksetup && sysdo build --darwin [host] && ./result/activate-user && ./result/activate
+nix --extra-experimental-features "nix-command flakes" develop -c sysdo bootstrap --darwin randall
 ```
 
 or a home-manager configuration using
 
 ```bash
-nix develop -c sysdo build --home-manager [host] && ./result/activate
+nix --extra-experimental-features "nix-command flakes" develop -c sysdo bootstrap --home-manager [host]
 ```
 
 ## `sysdo` CLI
@@ -85,3 +85,4 @@ nix develop -c sysdo build --home-manager [host] && ./result/activate
 The `sysdo` utility is a python script that wraps `nix`, `darwin-rebuild`, `nixos-rebuild`,
 and `home-manager` commands to provide a consistent interface across multiple platforms. It has some dependencies which are defined in the `devShell`
 flake output. Documentation for this tool is found in [sysdo.md](./docs/sysdo.md).
+

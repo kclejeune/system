@@ -26,7 +26,7 @@ if os.system("command -v nixos-rebuild > /dev/null") == 0:
     PLATFORM = FlakeOutputs.NIXOS
 elif (
     os.system("command -v darwin-rebuild > /dev/null") == 0
-    or platform.uname().system.lower() == "darwin".lower()
+    or platform.uname().system.lower().strip() == "darwin".lower().strip()
 ):
     # if we're on darwin, we might have darwin-rebuild or the distro id will be 'darwin'
     PLATFORM = FlakeOutputs.DARWIN
