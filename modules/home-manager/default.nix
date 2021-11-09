@@ -73,7 +73,7 @@ in {
       openssh
       pandoc
       pre-commit
-      python3Packages.poetry
+      poetry
       ranger
       (ruby.withPackages (ps: with ps; [ rufo solargraph ]))
       ripgrep
