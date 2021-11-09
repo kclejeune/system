@@ -111,6 +111,9 @@ def bootstrap(
 )
 def build(
     host: str = typer.Argument(None, help="the hostname of the configuration to build"),
+    pull: bool = typer.Option(
+        default=False, help="whether to fetch current changes from the remote"
+    ),
     nixos: bool = False,
     darwin: bool = False,
     home_manager: bool = False,
@@ -131,6 +134,8 @@ def build(
         typer.secho("could not infer system type.", fg=Colors.ERROR.value)
         raise typer.Abort()
 
+    if pull:
+        git_pull()
     flake = f".#{host}"
     flags = " ".join(["--show-trace"])
     run_cmd(f"{cmd} {flake} {flags}")
