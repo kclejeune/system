@@ -19,7 +19,7 @@ let
   aliases = { } // (if !pkgs.stdenvNoCC.isDarwin then
     { }
   else {
-    # platform specific aliases
+    # darwin specific aliases
     ibrew = "arch -x86_64 brew";
     abrew = "arch -arm64 brew";
   });
@@ -28,10 +28,7 @@ in {
   programs = {
     direnv = {
       enable = true;
-      nix-direnv = {
-        enable = true;
-        enableFlakes = true;
-      };
+      nix-direnv.enable = true;
       stdlib = ''
         # stolen from @i077; store .direnv in cache instead of project dir
         declare -A direnv_layout_dirs
