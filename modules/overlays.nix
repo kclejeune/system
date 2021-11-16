@@ -10,7 +10,6 @@
     # patches for broken packages
     (final: prev: rec {
       nix-zsh-completions = prev.trunk.nix-zsh-completions;
-      tree = prev.trunk.tree;
       nix-direnv = prev.trunk.nix-direnv;
     })
 
