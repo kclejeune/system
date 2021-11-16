@@ -13,7 +13,7 @@ let
     ];
     changeDirWidgetCommand = "${fd} --type d";
     changeDirWidgetOptions =
-      [ "--preview '${tree}/bin/tree -C {} | head -200'" ];
+      [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
     historyWidgetOptions = [ ];
   };
   aliases = { } // (if !pkgs.stdenvNoCC.isDarwin then
@@ -23,9 +23,8 @@ let
     ibrew = "arch -x86_64 brew";
     abrew = "arch -arm64 brew";
   });
-  tree = pkgs.trunk.tree;
 in {
-  home.packages = [ tree ];
+  home.packages = [ pkgs.tree ];
   programs = {
     direnv = {
       enable = true;
