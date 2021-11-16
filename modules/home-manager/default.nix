@@ -50,7 +50,7 @@ in {
         (ps: with ps; [ black numpy scipy networkx matplotlib ]))
       awscli2
       cachix
-      # comma
+      comma
       coreutils-full
       curl
       fd

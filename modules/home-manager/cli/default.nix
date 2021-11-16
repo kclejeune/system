@@ -96,7 +96,7 @@ in {
         ${functions}
       '';
     };
-    # nix-index.enable = false;
+    nix-index.enable = true;
     zsh = let
       mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
         name = pkg.pname;
