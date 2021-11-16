@@ -60,5 +60,7 @@
         inherit nix-index;
       };
     })
+
+    inputs.neovim-nightly-overlay.overlay
   ];
 }
