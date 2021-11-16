@@ -12,13 +12,16 @@
   };
 
   inputs = {
-    darwin-stable.url = "github:nixos/nixpkgs/nixpkgs-21.05-darwin";
     devshell.url = "github:numtide/devshell";
     flake-utils.url = "github:numtide/flake-utils";
     nixos-hardware.url = "github:nixos/nixos-hardware";
+
+    darwin-stable.url = "github:nixos/nixpkgs/nixpkgs-21.05-darwin";
     nixos-stable.url = "github:nixos/nixpkgs/nixos-21.05";
-    nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    small.url = "github:nixos/nixpkgs/nixos-unstable-small";
+    trunk.url = "github:nixos/nixpkgs/master";
+
     comma = {
       url = "github:Shopify/comma";
       flake = false;
@@ -70,7 +73,7 @@
 
       # generate a base nixos configuration with the
       # specified overlays, hardware modules, and any extraModules applied
-      mkNixosConfig = { system ? "x86_64-linux", nixpkgs ? inputs.nixos-unstable
+      mkNixosConfig = { system ? "x86_64-linux", nixpkgs ? inputs.nixpkgs
         , stable ? inputs.nixos-stable, lib ? (mkLib nixpkgs), hardwareModules
         , baseModules ? [
           home-manager.nixosModules.home-manager
@@ -93,9 +96,7 @@
           homeDirectory = "${homePrefix system}/${username}";
           extraSpecialArgs = { inherit inputs lib nixpkgs stable; };
           configuration = {
-            imports = baseModules ++ extraModules ++ [
-              (import ./modules/overlays.nix { inherit inputs nixpkgs stable; })
-            ];
+            imports = baseModules ++ extraModules ++ [ ./modules/overlays.nix ];
           };
         };
     in {
@@ -160,6 +161,11 @@
         darwinServer = mkHomeConfig {
           username = "kclejeune";
           system = "x86_64-darwin";
+          extraModules = [ ./profiles/home-manager/personal.nix ];
+        };
+        darwinServerM1 = mkHomeConfig {
+          username = "kclejeune";
+          system = "aarch64-darwin";
           extraModules = [ ./profiles/home-manager/personal.nix ];
         };
         workServer = mkHomeConfig {
