@@ -20,10 +20,14 @@
     buildCores = 8;
     maxJobs = 8;
     readOnlyStore = true;
-    nixPath = [
-      "nixpkgs=/etc/${config.environment.etc.nixpkgs.target}"
-      "home-manager=/etc/${config.environment.etc.home-manager.target}"
-    ];
+    nixPath = builtins.map
+      (source: "${source}=/etc/${config.environment.etc.${source}.target}") [
+        "home-manager"
+        "nixpkgs"
+        "small"
+        "stable"
+        "trunk"
+      ];
 
     binaryCaches =
       [ "https://kclejeune.cachix.org" "https://nix-community.cachix.org/" ];
@@ -47,6 +51,22 @@
           type = "indirect";
         };
         flake = stable;
+      };
+
+      trunk = {
+        from = {
+          id = "trunk";
+          type = "indirect";
+        };
+        flake = inputs.trunk;
+      };
+
+      small = {
+        from = {
+          id = "small";
+          type = "indirect";
+        };
+        flake = inputs.small;
       };
     };
   };
