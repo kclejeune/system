@@ -21,16 +21,6 @@
       '';
       target = ".npmrc";
     };
-    zprofile = {
-      target = ".zprofile";
-      text = ''
-        if [[ -d /etc/profile.d ]]; then
-            for i in /etc/profile.d/*; do
-              source $i
-            done
-        fi
-      '';
-    };
   };
 
   xdg.enable = true;

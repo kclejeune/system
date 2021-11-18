@@ -124,6 +124,9 @@ in {
         [[ -d /opt/homebrew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
         unset RPS1
       '';
+      profileExtra = ''
+        [[ -e /etc/profile ]] && source /etc/profile
+      '';
       plugins = with pkgs; [
         (mkZshPlugin { pkg = zsh-autopair; })
         (mkZshPlugin { pkg = zsh-completions; })
