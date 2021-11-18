@@ -1,4 +1,4 @@
-{ config, pkgs, ... }: {
+{ config, pkgs, lib, ... }: {
   home.file = {
     keras = {
       source = ./keras;
@@ -20,6 +20,16 @@
         prefix = ${config.home.sessionVariables.NODE_PATH};
       '';
       target = ".npmrc";
+    };
+    zprofile = {
+      target = ".zprofile";
+      text = ''
+        if [[ -d /etc/profile.d ]]; then
+            for i in /etc/profile.d/*; do
+              source $i
+            done
+        fi
+      '';
     };
   };
 

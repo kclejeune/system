@@ -90,8 +90,15 @@
       # with overlays and any extraModules applied
       mkHomeConfig = { username, system ? "x86_64-linux"
         , nixpkgs ? inputs.nixpkgs, stable ? inputs.nixos-stable
-        , lib ? (mkLib nixpkgs), baseModules ? [ ./modules/home-manager ]
-        , extraModules ? [ ] }:
+        , lib ? (mkLib nixpkgs), baseModules ? [
+          ./modules/home-manager
+          {
+            home.sessionVariables = {
+              NIX_PATH =
+                "nixpkgs=${nixpkgs}:stable=${stable}:trunk=${inputs.trunk}\${NIX_PATH:+:}$NIX_PATH";
+            };
+          }
+        ], extraModules ? [ ] }:
         homeManagerConfiguration rec {
           inherit system username;
           homeDirectory = "${homePrefix system}/${username}";
