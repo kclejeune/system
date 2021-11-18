@@ -24,5 +24,3 @@ fi
 if [[ ! -f $NIX_CONF_PATH/nix.conf ]] || ! grep "experimental-features" < $NIX_CONF_PATH; then
     echo "experimental-features = nix-command flakes" | tee -a $NIX_CONF_PATH/nix.conf
 fi
-
-
