@@ -121,11 +121,17 @@ in {
       '';
       initExtra = ''
         ${functions}
-        [[ -d /opt/homebrew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+        ${if pkgs.stdenvNoCC.isDarwin then ''
+          [[ -d /opt/homebrew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+        '' else
+          ""}
         unset RPS1
       '';
       profileExtra = ''
-        [[ -e /etc/profile ]] && source /etc/profile
+        ${if pkgs.stdenvNoCC.isLinux then
+          "[[ -e /etc/profile ]] && source /etc/profile"
+        else
+          ""}
       '';
       plugins = with pkgs; [
         (mkZshPlugin { pkg = zsh-autopair; })
