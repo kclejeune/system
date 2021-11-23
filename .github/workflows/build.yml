@@ -25,6 +25,7 @@ jobs:
           NIX_VERSION: nix-2.4pre20210823_af94b54
         with:
           install_url: https://github.com/numtide/nix-unstable-installer/releases/download/${{ env.NIX_VERSION }}/install
+          skip_adding_nixpkgs_channel: true
           extra_nix_config: |
             experimental-features = nix-command flakes
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
@@ -32,6 +33,7 @@ jobs:
         with:
           name: kclejeune
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          extraPullNames: nix-community
       - name: Run Flake Checks
         run: |
           nix flake check -v --show-trace
