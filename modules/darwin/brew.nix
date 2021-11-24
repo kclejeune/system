@@ -18,6 +18,6 @@
       "teamookla/speedtest"
     ];
 
-    brews = [ "yabai" "skhd" ];
+    # brews = [ "yabai" "skhd" ];
   };
 }
