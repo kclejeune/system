@@ -33,4 +33,12 @@ jobs:
       - name: Run Flake Checks
         run: |
           nix flake check -v --show-trace
+      - name: Run Darwin Installer Checks
+        if: matrix.os == 'macos-latest'
+        run: |
+          nix develop -c sysdo bootstrap --darwin darwinTest
+      - name: Run Linux Installer Checks
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          nix develop -c sysdo bootstrap --home-manager serverTest
         timeout-minutes: 240

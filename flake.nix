@@ -143,13 +143,21 @@
           extraModules = [
             ./profiles/personal.nix
             ./modules/darwin/apps.nix
-            { homebrew.brewPrefix = "/opt/homebrew/bin"; }
+            { homebrew.brewPrefix = "/usr/local/bin"; }
           ];
         };
         work = mkDarwinConfig {
           system = "x86_64-darwin";
           extraModules =
             [ ./profiles/work.nix ./modules/darwin/apps-minimal.nix ];
+        };
+        darwinTest = mkDarwinConfig {
+          system = "x86_64-darwin";
+          extraModules = [
+            ./profiles/runner.nix
+            ./modules/darwin/apps.nix
+            { homebrew.brewPrefix = "/usr/local/bin"; }
+          ];
         };
       };
 
@@ -185,6 +193,9 @@
         vagrant = mkHomeConfig {
           username = "vagrant";
           extraModules = [ ./profiles/home-manager/personal.nix ];
+        };
+        serverTest = mkHomeConfig {
+          username = "runner";
         };
       };
     } //
