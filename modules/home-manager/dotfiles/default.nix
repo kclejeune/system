@@ -34,13 +34,13 @@
       source = ./kitty;
       recursive = true;
     };
-    skhd = {
-      source = ./skhd;
-      recursive = true;
-    };
-    yabai = {
-      source = ./yabai;
-      recursive = true;
-    };
+    # skhd = {
+    #   source = ./skhd;
+    #   recursive = true;
+    # };
+    # yabai = {
+    #   source = ./yabai;
+    #   recursive = true;
+    # };
   };
 }
