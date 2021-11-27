@@ -24,7 +24,7 @@
     trunk.url = "github:nixos/nixpkgs/master";
 
     comma = {
-      url = "github:Shopify/comma";
+      url = "github:nix-community/comma";
       flake = false;
     };
     flake-compat = {

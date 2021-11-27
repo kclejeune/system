@@ -5,13 +5,13 @@
       "locked": {
         "lastModified": 1588170489,
         "narHash": "sha256-IT7zlcM1Oh4sWeCJ1m4NkteuajPxTnNo1tbitG0eqlg=",
-        "owner": "Shopify",
+        "owner": "nix-community",
         "repo": "comma",
         "rev": "4a62ec17e20ce0e738a8e5126b4298a73903b468",
         "type": "github"
       },
       "original": {
-        "owner": "Shopify",
+        "owner": "nix-community",
         "repo": "comma",
         "type": "github"
       }
