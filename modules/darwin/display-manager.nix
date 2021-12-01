@@ -36,7 +36,7 @@
       # Do not manage windows with certain titles eg. Copying files or moving to bin
       yabai -m rule --add title="(Copy|Bin|About This Mac|Info)" manage=off
       # Do not manage some apps which are not resizable
-      yabai -m rule --add app="^(Calculator|System Preferences|[sS]tats)$" manage=off
+      yabai -m rule --add app="^(Calculator|System Preferences|[sS]tats|[Jj]et[Bb]rains [Tt]ool[Bb]ox)$" manage=off
     '';
   };
 
