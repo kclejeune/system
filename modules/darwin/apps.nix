@@ -10,7 +10,7 @@
       "gpg-suite"
       "gswitch"
       "iina"
-      "intellij-idea"
+      "jetbrains-toolbox"
       "karabiner-elements"
       "keepingyouawake"
       "keybase"
