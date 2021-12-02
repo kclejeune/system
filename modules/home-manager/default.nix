@@ -66,7 +66,7 @@ in {
       httpie
       jq
       neofetch
-      nixUnstable
+      nix
       nixfmt
       nixpkgs-fmt
       nodejs
