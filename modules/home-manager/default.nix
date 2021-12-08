@@ -80,6 +80,7 @@ in {
       ripgrep
       ripgrep-all
       rsync
+      shellcheck
       sysdo
       tealdeer
       tectonic
