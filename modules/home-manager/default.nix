@@ -73,8 +73,9 @@ in {
       openjdk
       openssh
       pandoc
-      pre-commit
+      parallel
       poetry
+      pre-commit
       ranger
       (ruby.withPackages (ps: with ps; [ rufo solargraph ]))
       ripgrep
