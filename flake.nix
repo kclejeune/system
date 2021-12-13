@@ -15,7 +15,7 @@
     devshell.url = "github:numtide/devshell";
     flake-utils.url = "github:numtide/flake-utils";
     nixos-hardware.url = "github:nixos/nixos-hardware";
-    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
+    # neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
 
     darwin-stable.url = "github:nixos/nixpkgs/nixpkgs-21.05-darwin";
     nixos-stable.url = "github:nixos/nixpkgs/nixos-21.05";
