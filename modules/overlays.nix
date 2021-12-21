@@ -1,4 +1,4 @@
-{ inputs, nixpkgs, stable, ... }: {
+{ inputs, nixpkgs, stable, lib, ... }: {
   nixpkgs.overlays = [
     # channels
     (final: prev: {
@@ -26,8 +26,8 @@
         src = prev.fetchFromGitHub {
           owner = "koekeishiya";
           repo = "yabai";
-          rev = "5317b16d06e916f0e3844d3fe33d190e86c96ba9";
-          sha256 = "sha256-yl5a6ESA8X4dTapXGd0D0db1rhwhuOWrjFAT1NDuygo=";
+          rev = "f403e609e32b4100494c5afb089d0010e7e4ef91";
+          sha256 = "sha256-Lzim9h9aZopS7BjLzGghZQpgHx183psTLHCM9ndJCXo=";
         };
         buildInputs = with prev.darwin.apple_sdk.frameworks; [
           Carbon
