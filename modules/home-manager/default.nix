@@ -65,6 +65,7 @@ in {
       htop
       httpie
       jq
+      mmv
       neofetch
       nix
       nixfmt
