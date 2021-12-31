@@ -5,14 +5,12 @@
       # expose other channels via overlays
       stable = import stable { system = prev.system; };
       trunk = import inputs.trunk { system = prev.system; };
-      small = import inputs.small { system = prev.system; };
-    })
-    # patches for broken packages
-    (final: prev: rec {
-      nix-zsh-completions = prev.trunk.nix-zsh-completions;
-      nix-direnv = prev.trunk.nix-direnv;
     })
 
+    (final: prev: {
+      # expose other channels via overlays
+      ripgrep-all = prev.stable.ripgrep-all;
+    })
     # hacks to install comma and nix-index on aarch64-darwin
     (final: prev: rec {
       # fix yabai for monterey
