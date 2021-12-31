@@ -48,20 +48,17 @@ in {
       # python with default packages
       (python3.withPackages
         (ps: with ps; [ black numpy scipy networkx matplotlib ]))
-      awscli2
       cachix
       comma
       coreutils-full
       curl
       fd
-      ffmpeg
       gawk
       ghc
       git
       gnugrep
       gnupg
       gnused
-      google-cloud-sdk
       htop
       httpie
       jq
@@ -80,7 +77,6 @@ in {
       ranger
       (ruby.withPackages (ps: with ps; [ rufo solargraph ]))
       ripgrep
-      ripgrep-all
       rsync
       shellcheck
       sysdo
@@ -90,7 +86,6 @@ in {
       treefmt
       vagrant
       yarn
-      youtube-dl
     ];
   };
 
