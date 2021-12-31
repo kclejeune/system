@@ -70,7 +70,7 @@ in {
       nix
       nixfmt
       nixpkgs-fmt
-      nodejs
+      nodejs_latest
       openjdk
       openssh
       pandoc
