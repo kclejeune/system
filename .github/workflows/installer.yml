@@ -21,14 +21,20 @@ jobs:
       - name: clone
         run: git clone $GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git ~/.nixpkgs
       - name: install nix
-        run: cd ~/.nixpkgs && ./bin/install-nix.sh
+        run: |
+          cd ~/.nixpkgs
+          ./bin/install-nix.sh
+          echo "/nix/var/nix/profiles/per-user/$USER/profile/bin" >> "$GITHUB_PATH"
+          echo "/nix/var/nix/profiles/default/bin" >> "$GITHUB_PATH"
       - name: test nix-darwin disk setup and initial config
         if: matrix.os == 'macos-latest'
         run: |
+          cd ~/.nixpkgs
           nix --extra-experimental-features 'nix-command flakes' develop -c sysdo bootstrap --darwin darwinTest
           sysdo switch darwinTest
       - name: test home-manager installer and initial config
         if: matrix.os == 'ubuntu-latest'
         run: |
+          cd ~/.nixpkgs
           nix --extra-experimental-features 'nix-command flakes' develop -c sysdo bootstrap --home-manager serverTest
           sysdo switch serverTest
