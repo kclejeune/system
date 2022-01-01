@@ -31,18 +31,21 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           extraPullNames: nix-community
       - name: Run Flake Checks
-        run: |
-          nix flake check -v --show-trace
+        run: nix flake check -v --show-trace
         timeout-minutes: 240
       - name: test nix-darwin disk setup and initial config
         if: matrix.os == 'macos-latest'
-        run: nix develop -c sysdo bootstrap --darwin darwinTest
+        run: |
+          nix --extra-experimental-features "nix-command flakes" develop -c sysdo bootstrap --darwin darwinTest
+          mv $(pwd) ~/.nixpkgs
       - name: test switching nix-darwin configuration
         if: matrix.os == 'macos-latest'
         run: sysdo switch darwinTest
       - name: test home-manager installer and iniital config
         if: matrix.os == 'ubuntu-latest'
-        run: nix develop -c sysdo bootstrap --home-manager serverTest
+        run: |
+          nix --extra-experimental-features "nix-command flakes" develop -c sysdo bootstrap --home-manager serverTest
+          mv $(pwd) ~/.nixpkgs
       - name: test switching home-manager configuration
         if: matrix.os == 'ubuntu-latest'
         run: sysdo switch serverTest

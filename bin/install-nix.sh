@@ -1,7 +1,6 @@
 #! /usr/bin/env bash
 
-RELEASE="nix-2.5pre20211019_4a2b7cc"
-URL="https://github.com/numtide/nix-unstable-installer/releases/download/$RELEASE/install"
+URL="https://nixos.org/nix/install"
 
 # install using workaround for darwin systems
 if [[ $(uname -s) = "Darwin" ]]; then

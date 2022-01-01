@@ -80,7 +80,7 @@ def bootstrap(
     home_manager: bool = False,
 ):
     cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
-    flags = "-v --experimental-features 'nix-command flakes'"
+    flags = "-v --extra-experimental-features 'nix-command flakes'"
 
     if cfg is None:
         return
