@@ -92,7 +92,7 @@ def bootstrap(
         raise typer.Abort()
     elif cfg == FlakeOutputs.DARWIN:
         diskSetup()
-        flake = f".#{cfg.value}.{host}.config.system.build.toplevel {flags}"
+        flake = f".#{cfg.value}.{host}.config.system.build.toplevel"
         run_cmd(f"nix build {flake} {flags}")
         run_cmd(f"./result/sw/bin/darwin-rebuild switch --flake .#{host}")
     elif cfg == FlakeOutputs.HOME_MANAGER:
