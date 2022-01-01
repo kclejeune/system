@@ -53,6 +53,7 @@ in {
       coreutils-full
       curl
       fd
+      ffmpeg
       gawk
       ghc
       git
