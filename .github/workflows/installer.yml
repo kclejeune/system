@@ -1,0 +1,34 @@
+name: 'system install test'
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: clone
+        run: git clone $GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git ~/.nixpkgs
+      - name: install nix
+        run: cd ~/.nixpkgs && ./bin/install-nix.sh
+      - name: test nix-darwin disk setup and initial config
+        if: matrix.os == 'macos-latest'
+        run: |
+          nix --extra-experimental-features 'nix-command flakes' develop -c sysdo bootstrap --darwin darwinTest
+          sysdo switch darwinTest
+      - name: test home-manager installer and initial config
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          nix --extra-experimental-features 'nix-command flakes' develop -c sysdo bootstrap --home-manager serverTest
+          sysdo switch serverTest
