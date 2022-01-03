@@ -12,7 +12,7 @@ fi
 if command -v nix >/dev/null; then
     echo "nix is already installed on this system."
 else
-    bash <(curl -L $URL) --daemon $FLAG
+    bash <(curl -L "$URL") --daemon $FLAG
 fi
 
 NIX_CONF_PATH=$HOME/.config/nix
