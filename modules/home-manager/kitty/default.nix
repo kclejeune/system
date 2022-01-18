@@ -18,6 +18,7 @@ in {
       macos_titlebar_color = "background";
       macos_option_as_alt = "yes";
       scrollback_lines = 10000;
+      shell_integration = "no-cursor";
     };
     extraConfig = ''
       ${theme}
