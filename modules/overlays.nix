@@ -7,10 +7,6 @@
       trunk = import inputs.trunk { system = prev.system; };
     })
 
-    (final: prev: {
-      # expose other channels via overlays
-      ripgrep-all = prev.stable.ripgrep-all;
-    })
     (final: prev:
       let
         kittyPatch = (prev.fetchFromGitHub {
@@ -21,7 +17,10 @@
         });
       in rec {
         # fix kitty for arm64
-        inherit (import kittyPatch { system = prev.system; }) kitty;
+        kittyPatch = if prev.system == "aarch64-darwin" then
+          (import kittyPatch { system = prev.system; }).kitty
+        else
+          prev.kitty;
 
         # fix yabai for monterey
         # thanks to https://github.com/DieracDelta/flakes/blob/flakes/flake.nix#L382
