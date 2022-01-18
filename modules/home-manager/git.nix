@@ -7,10 +7,12 @@
         "osxkeychain"
       else
         "cache --timeout=1000000000";
-      http.sslVerify = true;
-      pull.rebase = false;
       commit.verbose = true;
+      fetch.prune = true;
+      http.sslVerify = true;
       init.defaultBranch = "main";
+      pull.rebase = true;
+      push.followTags = true;
     };
     aliases = {
       fix = "commit --amend --no-edit";
