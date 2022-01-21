@@ -7,20 +7,9 @@
       trunk = import inputs.trunk { system = prev.system; };
     })
 
-    (final: prev:
-      let
-        kittyPatch = (prev.fetchFromGitHub {
-          owner = "Luflosi";
-          repo = "nixpkgs";
-          rev = "5025d2fcf91f4b513892587a7ca8ff15935b15b3";
-          sha256 = "sha256-Tf8vyEqrBSCHU3HKbwPyJVV8hBBzCtrGJIpL3u8Y9Xk=";
-        });
-      in rec {
+    (final: prev: rec {
         # fix kitty for arm64
-        kittyPatch = if prev.system == "aarch64-darwin" then
-          (import kittyPatch { system = prev.system; }).kitty
-        else
-          prev.kitty;
+        kitty = prev.trunk.kitty;
 
         # fix yabai for monterey
         # thanks to https://github.com/DieracDelta/flakes/blob/flakes/flake.nix#L382
