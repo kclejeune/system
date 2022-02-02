@@ -1,5 +1,5 @@
 { config, lib, pkgs, ... }: {
-  home.packages = [ pkgs.cacert ];
+  home.packages = [ pkgs.cacert pkgs.vault-bin ];
   home.sessionVariables = rec {
     NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
     SSL_CERT_FILE = NIX_SSL_CERT_FILE;
@@ -14,6 +14,9 @@
     package = pkgs.git;
     userEmail = "kennan.lejeune@jhuapl.edu";
     userName = "Kennan LeJeune";
-    extraConfig = { http.sslVerify = true; };
+    extraConfig = {
+      http.sslVerify = true;
+      http.sslCAInfo = "/etc/ssl/certs/ca-certificates.crt";
+    };
   };
 }

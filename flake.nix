@@ -2,12 +2,16 @@
   description = "nix system configurations";
 
   nixConfig = {
-    substituters =
-      [ "https://kclejeune.cachix.org" "https://nix-community.cachix.org/" ];
+    substituters = [
+      "https://kclejeune.cachix.org"
+      "https://nix-community.cachix.org"
+      "https://cache.nixos.org"
+    ];
 
     trusted-public-keys = [
       "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
     ];
   };
 
@@ -72,8 +76,8 @@
       # generate a base nixos configuration with the
       # specified overlays, hardware modules, and any extraModules applied
       mkNixosConfig = { system ? "x86_64-linux", nixpkgs ? inputs.nixos-unstable
-        , stable ? inputs.stable, lib ? (mkLib inputs.nixos-unstable), hardwareModules
-        , baseModules ? [
+        , stable ? inputs.stable, lib ? (mkLib inputs.nixos-unstable)
+        , hardwareModules, baseModules ? [
           home-manager.nixosModules.home-manager
           ./modules/nixos
         ], extraModules ? [ ] }:
