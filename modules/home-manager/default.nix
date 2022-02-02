@@ -1,7 +1,7 @@
 { inputs, config, pkgs, ... }:
 let
   homeDir = config.home.homeDirectory;
-  pyEnv = (pkgs.stable.python3.withPackages
+  pyEnv = (pkgs.python3.withPackages
     (ps: with ps; [ typer colorama shellingham ]));
   sysDoNixos =
     "[[ -d /etc/nixos ]] && cd /etc/nixos && ${pyEnv}/bin/python bin/do.py $@";
@@ -46,7 +46,7 @@ in {
     # define package definitions for current user environment
     packages = with pkgs; [
       # python with default packages
-      (pkgs.stable.python3.withPackages
+      (pkgs.python3.withPackages
         (ps: with ps; [ black numpy scipy networkx matplotlib ]))
       cachix
       # comma
@@ -71,11 +71,11 @@ in {
       openssh
       pandoc
       parallel
-      pkgs.stable.coreutils-full
+      pkgs.coreutils-full
       poetry
       pre-commit
       ranger
-      (pkgs.stable.ruby.withPackages (ps: with ps; [ rufo solargraph ]))
+      (pkgs.ruby.withPackages (ps: with ps; [ rufo solargraph ]))
       ripgrep
       rsync
       shellcheck

@@ -59,7 +59,7 @@
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig = { system, nixpkgs ? inputs.nixpkgs
-        , stable ? inputs.stable, lib ? (mkLib nixpkgs), baseModules ? [
+        , stable ? inputs.stable, lib ? (mkLib inputs.nixpkgs), baseModules ? [
           home-manager.darwinModules.home-manager
           ./modules/darwin
         ], extraModules ? [ ] }:
@@ -72,7 +72,7 @@
       # generate a base nixos configuration with the
       # specified overlays, hardware modules, and any extraModules applied
       mkNixosConfig = { system ? "x86_64-linux", nixpkgs ? inputs.nixos-unstable
-        , stable ? inputs.stable, lib ? (mkLib nixpkgs), hardwareModules
+        , stable ? inputs.stable, lib ? (mkLib inputs.nixos-unstable), hardwareModules
         , baseModules ? [
           home-manager.nixosModules.home-manager
           ./modules/nixos
@@ -87,7 +87,7 @@
       # with overlays and any extraModules applied
       mkHomeConfig = { username, system ? "x86_64-linux"
         , nixpkgs ? inputs.nixpkgs, stable ? inputs.stable
-        , lib ? (mkLib nixpkgs), baseModules ? [
+        , lib ? (mkLib inputs.nixpkgs), baseModules ? [
           ./modules/home-manager
           {
             home.sessionVariables = {
