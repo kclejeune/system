@@ -1,9 +1,9 @@
-{ inputs, nixpkgs, stable, lib, ... }: {
+{ inputs, lib, ... }: {
   nixpkgs.overlays = [
     # channels
     (final: prev: {
       # expose other channels via overlays
-      stable = import stable { system = prev.system; };
+      stable = import inputs.stable { system = prev.system; };
       trunk = import inputs.trunk { system = prev.system; };
     })
 

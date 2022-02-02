@@ -1,4 +1,4 @@
-{ inputs, config, lib, pkgs, nixpkgs, stable, ... }: {
+{ inputs, config, lib, pkgs, ... }: {
   nixpkgs = { config = import ./config.nix; };
 
   nix = {
@@ -36,7 +36,7 @@
           id = "nixpkgs";
           type = "indirect";
         };
-        flake = nixpkgs;
+        flake = inputs.nixpkgs;
       };
 
       stable = {
@@ -44,7 +44,7 @@
           id = "stable";
           type = "indirect";
         };
-        flake = stable;
+        flake = inputs.stable;
       };
 
       trunk = {

@@ -50,7 +50,7 @@
     ];
     etc = {
       home-manager.source = "${inputs.home-manager}";
-      nixpkgs.source = "${pkgs}";
+      nixpkgs.source = "${pkgs.path}";
       stable.source = "${inputs.stable}";
       trunk.source = "${inputs.trunk}";
     };
