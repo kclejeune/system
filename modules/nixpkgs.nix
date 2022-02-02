@@ -1,4 +1,4 @@
-{ inputs, config, lib, pkgs, nixpkgs, stable, ... }: {
+{ inputs, config, lib, pkgs, ... }: {
   nixpkgs = { config = import ./config.nix; };
 
   nix = {
@@ -13,7 +13,6 @@
       automatic = true;
       options = "--delete-older-than 14d";
     };
-    buildCores = 8;
     maxJobs = 8;
     readOnlyStore = true;
     nixPath = builtins.map
@@ -37,7 +36,7 @@
           id = "nixpkgs";
           type = "indirect";
         };
-        flake = nixpkgs;
+        flake = inputs.nixpkgs;
       };
 
       stable = {
@@ -45,7 +44,7 @@
           id = "stable";
           type = "indirect";
         };
-        flake = stable;
+        flake = inputs.stable;
       };
 
       trunk = {

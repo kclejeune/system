@@ -2,12 +2,16 @@
   description = "nix system configurations";
 
   nixConfig = {
-    substituters =
-      [ "https://kclejeune.cachix.org" "https://nix-community.cachix.org/" ];
+    substituters = [
+      "https://kclejeune.cachix.org"
+      "https://nix-community.cachix.org"
+      "https://cache.nixos.org"
+    ];
 
     trusted-public-keys = [
       "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
     ];
   };
 
@@ -16,8 +20,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
-    nixos-stable.url = "github:nixos/nixpkgs/nixos-21.11";
-    darwin-stable.url = "github:nixos/nixpkgs/nixpkgs-21.11-darwin";
+    stable.url = "github:nixos/nixpkgs/nixos-21.11";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     trunk.url = "github:nixos/nixpkgs/master";
@@ -60,7 +63,7 @@
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig = { system, nixpkgs ? inputs.nixpkgs
-        , stable ? inputs.darwin-stable, lib ? (mkLib nixpkgs), baseModules ? [
+        , stable ? inputs.stable, lib ? (mkLib inputs.nixpkgs), baseModules ? [
           home-manager.darwinModules.home-manager
           ./modules/darwin
         ], extraModules ? [ ] }:
@@ -73,8 +76,8 @@
       # generate a base nixos configuration with the
       # specified overlays, hardware modules, and any extraModules applied
       mkNixosConfig = { system ? "x86_64-linux", nixpkgs ? inputs.nixos-unstable
-        , stable ? inputs.nixos-stable, lib ? (mkLib nixpkgs), hardwareModules
-        , baseModules ? [
+        , stable ? inputs.stable, lib ? (mkLib inputs.nixos-unstable)
+        , hardwareModules, baseModules ? [
           home-manager.nixosModules.home-manager
           ./modules/nixos
         ], extraModules ? [ ] }:
@@ -87,8 +90,8 @@
       # generate a home-manager configuration usable on any unix system
       # with overlays and any extraModules applied
       mkHomeConfig = { username, system ? "x86_64-linux"
-        , nixpkgs ? inputs.nixpkgs, stable ? inputs.nixos-stable
-        , lib ? (mkLib nixpkgs), baseModules ? [
+        , nixpkgs ? inputs.nixpkgs, stable ? inputs.stable
+        , lib ? (mkLib inputs.nixpkgs), baseModules ? [
           ./modules/home-manager
           {
             home.sessionVariables = {
@@ -188,27 +191,18 @@
     # add a devShell to this flake
     eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs {
+        pkgs = import inputs.stable {
           inherit system;
-          overlays = [
-            inputs.devshell.overlay
-            (final: prev: {
-              # expose stable packages via pkgs.stable
-              stable = import inputs.stable { system = prev.system; };
-            })
-          ];
+          overlays = [ inputs.devshell.overlay ];
         };
         pyEnv = (pkgs.python3.withPackages
           (ps: with ps; [ black pylint typer colorama shellingham ]));
-        nixBin = pkgs.writeShellScriptBin "nix" ''
-          ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" $@
-        '';
         sysdo = pkgs.writeShellScriptBin "sysdo" ''
           cd $PRJ_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
         '';
       in {
         devShell = pkgs.devshell.mkShell {
-          packages = [ nixBin pyEnv pkgs.treefmt pkgs.nixfmt pkgs.stylua ];
+          packages = [ pyEnv pkgs.treefmt pkgs.nixfmt pkgs.stylua ];
           commands = [{
             name = "sysdo";
             package = sysdo;

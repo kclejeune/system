@@ -85,10 +85,6 @@ in {
       };
     };
     go.enable = true;
-    exa = {
-      enable = true;
-      enableAliases = true;
-    };
     bash = {
       enable = true;
       shellAliases = aliases;
@@ -96,7 +92,6 @@ in {
         ${functions}
       '';
     };
-    nix-index.enable = true;
     zsh = let
       mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
         name = pkg.pname;
