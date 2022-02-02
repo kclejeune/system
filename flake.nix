@@ -72,7 +72,7 @@
       # generate a base nixos configuration with the
       # specified overlays, hardware modules, and any extraModules applied
       mkNixosConfig = { system ? "x86_64-linux", nixpkgs ? inputs.nixos-unstable
-        , stable ? inputs.nixos-stable, lib ? (mkLib nixpkgs), hardwareModules
+        , stable ? inputs.stable, lib ? (mkLib nixpkgs), hardwareModules
         , baseModules ? [
           home-manager.nixosModules.home-manager
           ./modules/nixos
@@ -86,7 +86,7 @@
       # generate a home-manager configuration usable on any unix system
       # with overlays and any extraModules applied
       mkHomeConfig = { username, system ? "x86_64-linux"
-        , nixpkgs ? inputs.nixpkgs, stable ? inputs.nixos-stable
+        , nixpkgs ? inputs.nixpkgs, stable ? inputs.stable
         , lib ? (mkLib nixpkgs), baseModules ? [
           ./modules/home-manager
           {
