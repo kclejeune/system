@@ -16,8 +16,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
-    nixos-stable.url = "github:nixos/nixpkgs/nixos-21.11";
-    darwin-stable.url = "github:nixos/nixpkgs/nixpkgs-21.11-darwin";
+    stable.url = "github:nixos/nixpkgs/nixos-21.11";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     trunk.url = "github:nixos/nixpkgs/master";
@@ -60,7 +59,7 @@
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig = { system, nixpkgs ? inputs.nixpkgs
-        , stable ? inputs.darwin-stable, lib ? (mkLib nixpkgs), baseModules ? [
+        , stable ? inputs.stable, lib ? (mkLib nixpkgs), baseModules ? [
           home-manager.darwinModules.home-manager
           ./modules/darwin
         ], extraModules ? [ ] }:
@@ -188,27 +187,18 @@
     # add a devShell to this flake
     eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs {
+        pkgs = import inputs.stable {
           inherit system;
-          overlays = [
-            inputs.devshell.overlay
-            (final: prev: {
-              # expose stable packages via pkgs.stable
-              stable = import inputs.stable { system = prev.system; };
-            })
-          ];
+          overlays = [ inputs.devshell.overlay ];
         };
         pyEnv = (pkgs.python3.withPackages
           (ps: with ps; [ black pylint typer colorama shellingham ]));
-        nixBin = pkgs.writeShellScriptBin "nix" ''
-          ${pkgs.nixFlakes}/bin/nix --option experimental-features "nix-command flakes" $@
-        '';
         sysdo = pkgs.writeShellScriptBin "sysdo" ''
           cd $PRJ_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
         '';
       in {
         devShell = pkgs.devshell.mkShell {
-          packages = [ nixBin pyEnv pkgs.treefmt pkgs.nixfmt pkgs.stylua ];
+          packages = [ pyEnv pkgs.treefmt pkgs.nixfmt pkgs.stylua ];
           commands = [{
             name = "sysdo";
             package = sysdo;

@@ -28,12 +28,12 @@
 
   # environment setup
   environment = {
-    systemPackages = with pkgs; [
+    systemPackages = with pkgs.stable; [
       # editors
-      neovim
+      pkgs.neovim
 
       # standard toolset
-      coreutils
+      coreutils-full
       curl
       wget
       git

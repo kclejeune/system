@@ -1,8 +1,8 @@
 { inputs, config, pkgs, ... }:
 let
   homeDir = config.home.homeDirectory;
-  pyEnv = (pkgs.python3.withPackages
-    (ps: with ps; [ black pylint typer colorama shellingham ]));
+  pyEnv = (pkgs.stable.python3.withPackages
+    (ps: with ps; [ typer colorama shellingham ]));
   sysDoNixos =
     "[[ -d /etc/nixos ]] && cd /etc/nixos && ${pyEnv}/bin/python bin/do.py $@";
   sysDoDarwin =
@@ -46,11 +46,10 @@ in {
     # define package definitions for current user environment
     packages = with pkgs; [
       # python with default packages
-      (python3.withPackages
+      (pkgs.stable.python3.withPackages
         (ps: with ps; [ black numpy scipy networkx matplotlib ]))
       cachix
       # comma
-      coreutils-full
       curl
       fd
       ffmpeg
@@ -73,16 +72,17 @@ in {
       openssh
       pandoc
       parallel
+      pkgs.stable.coreutils-full
       poetry
       pre-commit
       ranger
-      (ruby.withPackages (ps: with ps; [ rufo solargraph ]))
+      (pkgs.stable.ruby.withPackages (ps: with ps; [ rufo solargraph ]))
       ripgrep
       rsync
       shellcheck
+      stylua
       sysdo
       tealdeer
-      tectonic
       terraform
       treefmt
       vagrant
@@ -90,9 +90,9 @@ in {
     ];
   };
 
-  manual = {
-    html.enable = false;
-    json.enable = false;
-    manpages.enable = false;
-  };
+  # manual = {
+  #   html.enable = false;
+  #   json.enable = false;
+  #   manpages.enable = false;
+  # };
 }

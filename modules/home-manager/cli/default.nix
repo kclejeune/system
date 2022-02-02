@@ -85,10 +85,6 @@ in {
       };
     };
     go.enable = true;
-    exa = {
-      enable = true;
-      enableAliases = true;
-    };
     bash = {
       enable = true;
       shellAliases = aliases;
