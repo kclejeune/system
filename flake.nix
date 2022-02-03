@@ -191,7 +191,7 @@
     # add a devShell to this flake
     eachDefaultSystem (system:
       let
-        pkgs = import inputs.stable {
+        pkgs = import nixpkgs {
           inherit system;
           overlays = [ inputs.devshell.overlay ];
         };
