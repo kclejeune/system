@@ -52,7 +52,6 @@
       home-manager.source = "${inputs.home-manager}";
       nixpkgs.source = "${pkgs.path}";
       stable.source = "${inputs.stable}";
-      trunk.source = "${inputs.trunk}";
     };
     # list of acceptable shells in /etc/shells
     shells = with pkgs; [ bash zsh fish ];

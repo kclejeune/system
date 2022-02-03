@@ -8,9 +8,6 @@
     })
 
     (final: prev: rec {
-      # fix kitty for arm64
-      kitty = prev.trunk.kitty;
-
       # fix yabai for monterey
       # thanks to https://github.com/DieracDelta/flakes/blob/flakes/flake.nix#L382
       yabai = let
@@ -22,8 +19,8 @@
         src = prev.fetchFromGitHub {
           owner = "koekeishiya";
           repo = "yabai";
-          rev = "b884717b2d5731f5b4ac164e7c0260076698b08c";
-          sha256 = "sha256-kMPf+g+7nMZyu2bkazhjuaZJVUiEoJrgxmxXhL/jC8M=";
+          rev = "916d9133f9d13fb38678baa3d0adf3cfb9dff003";
+          sha256 = "sha256-RFEuVIMP9+HXnkSPRobCATzg9fsu48zoAFq7AqodLaQ=";
         };
         buildInputs = with prev.darwin.apple_sdk.frameworks; [
           Carbon

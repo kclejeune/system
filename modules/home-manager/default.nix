@@ -60,6 +60,7 @@ in {
       gnupg
       gnused
       htop
+      httpie
       jq
       mmv
       neofetch

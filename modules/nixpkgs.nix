@@ -20,7 +20,6 @@
         "home-manager"
         "nixpkgs"
         "stable"
-        "trunk"
       ];
 
     binaryCaches =
@@ -45,14 +44,6 @@
           type = "indirect";
         };
         flake = inputs.stable;
-      };
-
-      trunk = {
-        from = {
-          id = "trunk";
-          type = "indirect";
-        };
-        flake = inputs.trunk;
       };
     };
   };
