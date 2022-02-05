@@ -31,10 +31,19 @@ jobs:
         run: |
           cd ~/.nixpkgs
           nix --extra-experimental-features 'nix-command flakes' develop -c sysdo bootstrap --darwin darwinTest
-          sysdo switch darwinTest
+      - name: test nix-darwin sysdo
+        if: matrix.os == 'macos-latest'
+        run: |
+          source ~/.bashrc
+          sysdo build darwinTest
+
       - name: test home-manager installer and initial config
         if: matrix.os == 'ubuntu-latest'
         run: |
           cd ~/.nixpkgs
           nix --extra-experimental-features 'nix-command flakes' develop -c sysdo bootstrap --home-manager serverTest
-          sysdo switch serverTest
+      - name: test home-manager sysdo
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          source ~/.bashrc
+          sysdo build serverTest
