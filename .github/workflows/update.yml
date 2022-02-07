@@ -29,7 +29,7 @@ jobs:
           git config --local user.name "flakebot"
           git checkout -B flakebot
       - name: Update and commit lockfile
-        run: nix flake update --recreate-lock-file --commit-lock-file
+        run: nix flake update --commit-lock-file
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
