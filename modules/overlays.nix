@@ -4,7 +4,6 @@
     (final: prev: {
       # expose other channels via overlays
       stable = import inputs.stable { system = prev.system; };
-      trunk = import inputs.trunk { system = prev.system; };
     })
 
     (final: prev: rec {

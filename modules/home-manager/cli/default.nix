@@ -18,9 +18,7 @@ let
         [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
       historyWidgetOptions = [ ];
     };
-  aliases = { } // (if !pkgs.stdenvNoCC.isDarwin then
-    { }
-  else {
+  aliases = (lib.optionalAttrs pkgs.stdenvNoCC.isDarwin {
     # darwin specific aliases
     ibrew = "arch -x86_64 brew";
     abrew = "arch -arm64 brew";
@@ -126,17 +124,15 @@ in
         '';
         initExtra = ''
           ${functions}
-          ${if pkgs.stdenvNoCC.isDarwin then ''
-            [[ -d /opt/homebrew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
-          '' else
-            ""}
+          ${lib.optionalString pkgs.stdenvNoCC.isDarwin ''
+            if [[ -d /opt/homebrew ]]; then
+              eval "$(/opt/homebrew/bin/brew shellenv)"
+            fi
+          ''}
           unset RPS1
         '';
         profileExtra = ''
-          ${if pkgs.stdenvNoCC.isLinux then
-            "[[ -e /etc/profile ]] && source /etc/profile"
-          else
-            ""}
+          ${lib.optionalString pkgs.stdenvNoCC.isLinux "[[ -e /etc/profile ]] && source /etc/profile"}
         '';
         plugins = with pkgs; [
           (mkZshPlugin { pkg = zsh-autopair; })
