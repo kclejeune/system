@@ -53,7 +53,7 @@
 
       mkLib = nixpkgs:
         nixpkgs.lib.extend
-        (final: prev: (import ./lib final) // home-manager.lib);
+          (final: prev: (import ./lib final) // home-manager.lib);
 
       lib = (mkLib nixpkgs);
 
@@ -62,11 +62,17 @@
 
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
-      mkDarwinConfig = { system, nixpkgs ? inputs.nixpkgs
-        , stable ? inputs.stable, lib ? (mkLib inputs.nixpkgs), baseModules ? [
-          home-manager.darwinModules.home-manager
-          ./modules/darwin
-        ], extraModules ? [ ] }:
+      mkDarwinConfig =
+        { system
+        , nixpkgs ? inputs.nixpkgs
+        , stable ? inputs.stable
+        , lib ? (mkLib inputs.nixpkgs)
+        , baseModules ? [
+            home-manager.darwinModules.home-manager
+            ./modules/darwin
+          ]
+        , extraModules ? [ ]
+        }:
         darwinSystem {
           inherit system;
           modules = baseModules ++ extraModules;
@@ -75,12 +81,18 @@
 
       # generate a base nixos configuration with the
       # specified overlays, hardware modules, and any extraModules applied
-      mkNixosConfig = { system ? "x86_64-linux", nixpkgs ? inputs.nixos-unstable
-        , stable ? inputs.stable, lib ? (mkLib inputs.nixos-unstable)
-        , hardwareModules, baseModules ? [
-          home-manager.nixosModules.home-manager
-          ./modules/nixos
-        ], extraModules ? [ ] }:
+      mkNixosConfig =
+        { system ? "x86_64-linux"
+        , nixpkgs ? inputs.nixos-unstable
+        , stable ? inputs.stable
+        , lib ? (mkLib inputs.nixos-unstable)
+        , hardwareModules
+        , baseModules ? [
+            home-manager.nixosModules.home-manager
+            ./modules/nixos
+          ]
+        , extraModules ? [ ]
+        }:
         nixosSystem {
           inherit system;
           modules = baseModules ++ hardwareModules ++ extraModules;
@@ -89,17 +101,23 @@
 
       # generate a home-manager configuration usable on any unix system
       # with overlays and any extraModules applied
-      mkHomeConfig = { username, system ? "x86_64-linux"
-        , nixpkgs ? inputs.nixpkgs, stable ? inputs.stable
-        , lib ? (mkLib inputs.nixpkgs), baseModules ? [
-          ./modules/home-manager
-          {
-            home.sessionVariables = {
-              NIX_PATH =
-                "nixpkgs=${nixpkgs}:stable=${stable}\${NIX_PATH:+:}$NIX_PATH";
-            };
-          }
-        ], extraModules ? [ ] }:
+      mkHomeConfig =
+        { username
+        , system ? "x86_64-linux"
+        , nixpkgs ? inputs.nixpkgs
+        , stable ? inputs.stable
+        , lib ? (mkLib inputs.nixpkgs)
+        , baseModules ? [
+            ./modules/home-manager
+            {
+              home.sessionVariables = {
+                NIX_PATH =
+                  "nixpkgs=${nixpkgs}:stable=${stable}\${NIX_PATH:+:}$NIX_PATH";
+              };
+            }
+          ]
+        , extraModules ? [ ]
+        }:
         homeManagerConfiguration rec {
           inherit system username;
           homeDirectory = "${homePrefix system}/${username}";
@@ -108,26 +126,32 @@
             imports = baseModules ++ extraModules ++ [ ./modules/overlays.nix ];
           };
         };
-    in {
+    in
+    {
       checks = listToAttrs (
         # darwin checks
-        (map (system: {
-          name = system;
-          value = {
-            darwin =
-              self.darwinConfigurations.randall-intel.config.system.build.toplevel;
-            darwinServer =
-              self.homeConfigurations.darwinServer.activationPackage;
-          };
-        }) lib.platforms.darwin) ++
+        (map
+          (system: {
+            name = system;
+            value = {
+              darwin =
+                self.darwinConfigurations.randall-intel.config.system.build.toplevel;
+              darwinServer =
+                self.homeConfigurations.darwinServer.activationPackage;
+            };
+          })
+          lib.platforms.darwin) ++
         # linux checks
-        (map (system: {
-          name = system;
-          value = {
-            nixos = self.nixosConfigurations.phil.config.system.build.toplevel;
-            server = self.homeConfigurations.server.activationPackage;
-          };
-        }) lib.platforms.linux));
+        (map
+          (system: {
+            name = system;
+            value = {
+              nixos = self.nixosConfigurations.phil.config.system.build.toplevel;
+              server = self.homeConfigurations.server.activationPackage;
+            };
+          })
+          lib.platforms.linux)
+      );
 
       darwinConfigurations = {
         randall = mkDarwinConfig {
@@ -200,7 +224,8 @@
         sysdo = pkgs.writeShellScriptBin "sysdo" ''
           cd $PRJ_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
         '';
-      in {
+      in
+      {
         devShell = pkgs.devshell.mkShell {
           packages = with pkgs; [ nixfmt pyEnv rnix-lsp stylua treefmt ];
           commands = [{

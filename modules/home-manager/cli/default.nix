@@ -3,19 +3,21 @@ let
   functions = builtins.readFile ./functions.sh;
   useSkim = false;
   useFzf = !useSkim;
-  fuzz = let fd = "${pkgs.fd}/bin/fd";
-  in rec {
-    defaultCommand = "${fd} -H --type f";
-    defaultOptions = [ "--height 50%" ];
-    fileWidgetCommand = "${defaultCommand}";
-    fileWidgetOptions = [
-      "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
-    ];
-    changeDirWidgetCommand = "${fd} --type d";
-    changeDirWidgetOptions =
-      [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
-    historyWidgetOptions = [ ];
-  };
+  fuzz =
+    let fd = "${pkgs.fd}/bin/fd";
+    in
+    rec {
+      defaultCommand = "${fd} -H --type f";
+      defaultOptions = [ "--height 50%" ];
+      fileWidgetCommand = "${defaultCommand}";
+      fileWidgetOptions = [
+        "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
+      ];
+      changeDirWidgetCommand = "${fd} --type d";
+      changeDirWidgetOptions =
+        [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
+      historyWidgetOptions = [ ];
+    };
   aliases = { } // (if !pkgs.stdenvNoCC.isDarwin then
     { }
   else {
@@ -23,7 +25,8 @@ let
     ibrew = "arch -x86_64 brew";
     abrew = "arch -arm64 brew";
   });
-in {
+in
+{
   home.packages = [ pkgs.tree ];
   programs = {
     direnv = {
@@ -97,57 +100,59 @@ in {
       '';
     };
     nix-index.enable = false;
-    zsh = let
-      mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
-        name = pkg.pname;
-        src = pkg.src;
-        inherit file;
-      };
-    in {
-      enable = true;
-      autocd = true;
-      dotDir = ".config/zsh";
-      localVariables = {
-        LANG = "en_US.UTF-8";
-        GPG_TTY = "/dev/ttys000";
-        DEFAULT_USER = "${config.home.username}";
-        CLICOLOR = 1;
-        LS_COLORS = "ExFxBxDxCxegedabagacad";
-        TERM = "xterm-256color";
-      };
-      shellAliases = aliases;
-      initExtraBeforeCompInit = ''
-        fpath+=~/.zfunc
-      '';
-      initExtra = ''
-        ${functions}
-        ${if pkgs.stdenvNoCC.isDarwin then ''
-          [[ -d /opt/homebrew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
-        '' else
-          ""}
-        unset RPS1
-      '';
-      profileExtra = ''
-        ${if pkgs.stdenvNoCC.isLinux then
-          "[[ -e /etc/profile ]] && source /etc/profile"
-        else
-          ""}
-      '';
-      plugins = with pkgs; [
-        (mkZshPlugin { pkg = zsh-autopair; })
-        (mkZshPlugin { pkg = zsh-completions; })
-        (mkZshPlugin { pkg = zsh-autosuggestions; })
-        (mkZshPlugin {
-          pkg = zsh-fast-syntax-highlighting;
-          file = "fast-syntax-highlighting.plugin.zsh";
-        })
-        (mkZshPlugin { pkg = zsh-history-substring-search; })
-      ];
-      oh-my-zsh = {
+    zsh =
+      let
+        mkZshPlugin = { pkg, file ? "${pkg.pname}.plugin.zsh" }: rec {
+          name = pkg.pname;
+          src = pkg.src;
+          inherit file;
+        };
+      in
+      {
         enable = true;
-        plugins = [ "git" "sudo" ];
+        autocd = true;
+        dotDir = ".config/zsh";
+        localVariables = {
+          LANG = "en_US.UTF-8";
+          GPG_TTY = "/dev/ttys000";
+          DEFAULT_USER = "${config.home.username}";
+          CLICOLOR = 1;
+          LS_COLORS = "ExFxBxDxCxegedabagacad";
+          TERM = "xterm-256color";
+        };
+        shellAliases = aliases;
+        initExtraBeforeCompInit = ''
+          fpath+=~/.zfunc
+        '';
+        initExtra = ''
+          ${functions}
+          ${if pkgs.stdenvNoCC.isDarwin then ''
+            [[ -d /opt/homebrew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+          '' else
+            ""}
+          unset RPS1
+        '';
+        profileExtra = ''
+          ${if pkgs.stdenvNoCC.isLinux then
+            "[[ -e /etc/profile ]] && source /etc/profile"
+          else
+            ""}
+        '';
+        plugins = with pkgs; [
+          (mkZshPlugin { pkg = zsh-autopair; })
+          (mkZshPlugin { pkg = zsh-completions; })
+          (mkZshPlugin { pkg = zsh-autosuggestions; })
+          (mkZshPlugin {
+            pkg = zsh-fast-syntax-highlighting;
+            file = "fast-syntax-highlighting.plugin.zsh";
+          })
+          (mkZshPlugin { pkg = zsh-history-substring-search; })
+        ];
+        oh-my-zsh = {
+          enable = true;
+          plugins = [ "git" "sudo" ];
+        };
       };
-    };
     zoxide.enable = true;
     starship = {
       enable = true;

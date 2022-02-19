@@ -1,6 +1,7 @@
 { config, pkgs, ... }:
 let theme = builtins.readFile ./theme.conf;
-in {
+in
+{
   programs.kitty = {
     enable = true;
     font = {
