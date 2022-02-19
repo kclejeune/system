@@ -202,7 +202,7 @@
         '';
       in {
         devShell = pkgs.devshell.mkShell {
-          packages = [ pyEnv pkgs.treefmt pkgs.nixfmt pkgs.stylua ];
+          packages = with pkgs; [ nixfmt pyEnv rnix-lsp stylua treefmt ];
           commands = [{
             name = "sysdo";
             package = sysdo;

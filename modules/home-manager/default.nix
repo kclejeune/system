@@ -46,7 +46,7 @@ in {
     # define package definitions for current user environment
     packages = with pkgs; [
       # python with default packages
-      (pkgs.python3.withPackages
+      (pkgs.python310.withPackages
         (ps: with ps; [ black numpy scipy networkx matplotlib ]))
       cachix
       # comma
@@ -90,9 +90,4 @@ in {
     ];
   };
 
-  # manual = {
-  #   html.enable = false;
-  #   json.enable = false;
-  #   manpages.enable = false;
-  # };
 }
