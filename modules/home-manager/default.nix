@@ -49,7 +49,7 @@ in
       # define package definitions for current user environment
       packages = with pkgs; [
         # python with default packages
-        (pkgs.python310.withPackages
+        (pkgs.python3.withPackages
           (ps: with ps; [ black numpy scipy networkx matplotlib ]))
         cachix
         # comma
