@@ -5,11 +5,11 @@
       target = ".keras";
       recursive = true;
     };
-    raycast = {
-      source = ./raycast;
-      target = ".local/bin/raycast";
-      recursive = true;
-    };
+    # raycast = {
+    #   source = ./raycast;
+    #   target = ".local/bin/raycast";
+    #   recursive = true;
+    # };
     zfunc = {
       source = ./zfunc;
       target = ".zfunc";
