@@ -1,26 +1,16 @@
 { config, lib, pkgs, ... }: {
+  imports = [ ./apps-minimal.nix ];
   homebrew = {
     casks = [
-      "1password-beta"
-      "appcleaner"
-      "bartender"
       "displaperture"
-      "firefox-beta"
       "fork"
       "gpg-suite"
-      "gswitch"
       "iina"
       "jetbrains-toolbox"
-      "karabiner-elements"
-      "keepingyouawake"
       "keybase"
-      "kitty"
-      "maccy"
-      "raycast"
+      "rectangle"
       "skim"
-      "stats"
       "syncthing"
-      "visual-studio-code"
       "zoom"
     ];
     masApps = { };
