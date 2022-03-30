@@ -1,5 +1,12 @@
 { config, lib, pkgs, ... }: {
-  home.packages = [ pkgs.cacert pkgs.vault-bin ];
+  home.packages = with pkgs; [
+    cacert
+    vault-bin
+    helmfile
+    awscli2
+    kubectl
+    kubernetes-helm
+  ];
   home.sessionVariables = rec {
     NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
     SSL_CERT_FILE = NIX_SSL_CERT_FILE;
