@@ -1,4 +1,8 @@
+-- This module is adapted from https://gist.github.com/arbelt/b91e1f38a0880afb316dd5b5732759f1
+-- Many thanks to @arbelt!
+
 -- Sends "escape" if "caps lock" is held for less than .2 seconds, and no other keys are pressed.
+-- note: this requires caps lock to be mapped to ctrl, either by macOS settings, or another tool such as Karabiner
 local sendEscape = false
 local lastMods = {}
 
