@@ -5,6 +5,11 @@
       target = ".keras";
       recursive = true;
     };
+    hammerspoon = {
+      source = ./hammerspoon;
+      target = ".hammerspoon";
+      recursive = true;
+    };
     # raycast = {
     #   source = ./raycast;
     #   target = ".local/bin/raycast";
@@ -34,13 +39,9 @@
     #   source = ./kitty;
     #   recursive = true;
     # };
-    # skhd = {
-    #   source = ./skhd;
-    #   recursive = true;
-    # };
-    # yabai = {
-    #   source = ./yabai;
-    #   recursive = true;
-    # };
+    yabai = {
+      source = ./yabai;
+      recursive = true;
+    };
   };
 }

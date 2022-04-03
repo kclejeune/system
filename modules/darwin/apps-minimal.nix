@@ -4,6 +4,7 @@
       "1password-beta"
       "bartender"
       "firefox-beta"
+      "hammerspoon"
       "jetbrains-toolbox"
       "karabiner-elements"
       "keepingyouawake"

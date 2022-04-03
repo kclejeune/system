@@ -1,7 +1,6 @@
 { config, pkgs, ... }: {
   services.yabai = {
     enable = false;
-    package = pkgs.yabai;
     config = {
       mouse_follows_focus = "off";
       focus_follows_mouse = "off";
@@ -38,11 +37,5 @@
       # Do not manage some apps which are not resizable
       yabai -m rule --add app="^(Calculator|System Preferences|[sS]tats|[Jj]et[Bb]rains [Tt]ool[Bb]ox)$" manage=off
     '';
-  };
-
-  services.skhd = {
-    enable = false;
-    package = pkgs.skhd;
-    skhdConfig = builtins.readFile ../home-manager/dotfiles/skhd/skhdrc;
   };
 }
