@@ -5,9 +5,6 @@ require("hs.ipc")
 local ipc = hs.ipc.cliInstall(brewPrefix)
 print(string.format("ipc: %s", ipc))
 
--- import keybindings for yabai
-require("yabai")
-
 -- Make all our animations really fast
 hs.window.animationDuration = 0
 
@@ -29,3 +26,7 @@ Install:andUse("ReloadConfiguration", {
         reloadConfiguration = {{"cmd", "ctrl", "shift"}, "r"}
     }
 })
+
+-- import keybindings for yabai
+require("yabai")
+require("caps2esc")

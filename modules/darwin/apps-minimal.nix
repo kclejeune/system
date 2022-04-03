@@ -5,7 +5,6 @@
       "bartender"
       "firefox-beta"
       "jetbrains-toolbox"
-      "karabiner-elements"
       "keepingyouawake"
       "kitty"
       "raycast"

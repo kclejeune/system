@@ -2,7 +2,6 @@
   imports = [ ./apps-minimal.nix ];
   homebrew = {
     casks = [
-      "displaperture"
       "fork"
       "gpg-suite"
       "iina"
