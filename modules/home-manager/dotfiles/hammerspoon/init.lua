@@ -9,9 +9,6 @@ print(string.format("ipc: %s", ipc))
 
 -- Make all our animations really fast
 hs.window.animationDuration = 0.1
-hs.hotkey.bind({"cmd", "ctrl", "shift"}, "r", function()
-    hs.reload()
-end)
 
 -- Load SpoonInstall, so we can easily load our other Spoons
 hs.loadSpoon("SpoonInstall")
@@ -24,4 +21,10 @@ Install:andUse("RoundedCorners", {
     config = {
         radius = 12
     }
+})
+Install:andUse("ReloadConfiguration", {
+    start = true
+})
+spoon.ReloadConfiguration:bindHotkeys({
+    reloadConfiguration = {{"cmd", "ctrl", "shift"}, "r"}
 })
