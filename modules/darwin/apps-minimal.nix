@@ -4,8 +4,6 @@
       "1password-beta"
       "bartender"
       "firefox-beta"
-      "jetbrains-toolbox"
-      "keepingyouawake"
       "kitty"
       "raycast"
       "rectangle"

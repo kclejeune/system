@@ -26,6 +26,9 @@ Install:andUse("ReloadConfiguration", {
         reloadConfiguration = {{"cmd", "ctrl", "shift"}, "r"}
     }
 })
+Install:andUse("Caffeine", {
+    start = true
+})
 
 -- import keybindings for yabai
 require("yabai")
