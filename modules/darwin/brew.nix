@@ -17,7 +17,9 @@
       "koekeishiya/formulae"
       "teamookla/speedtest"
     ];
-
-    # brews = [ "yabai" "skhd" ];
+    extraConfig = ''
+      brew "yabai", restart_service: true
+    '';
+    casks = [ "hammerspoon" ];
   };
 }
