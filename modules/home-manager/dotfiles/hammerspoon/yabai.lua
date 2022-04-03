@@ -3,7 +3,7 @@ local yabai = string.gsub(yabaiOutput, "%s+", '')
 
 local function execYabai(args)
     local command = string.format("%s %s", yabai, args)
-    print(command)
+    print(string.format("yabai: %s", command))
     os.execute(command)
 end
 
