@@ -106,3 +106,8 @@ for i = 1, 5 do
 		execYabai(string.format("-m display --focus %s", i))
 	end)
 end
+
+return {
+	yabai = yabai,
+	execYabai = execYabai,
+}

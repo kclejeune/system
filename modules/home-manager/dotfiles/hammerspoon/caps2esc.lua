@@ -2,16 +2,16 @@
 -- Many thanks to @arbelt!
 -- Sends "escape" if "caps lock" is held for a short interval, and no other keys are pressed.
 -- note: this requires caps lock to be mapped to ctrl, either by macOS settings, or another tool such as Karabiner
-sendEscape = false
-lastMods = {}
+local sendEscape = false
+local lastMods = {}
 
-local controlKeyHandler = function()
+local function controlKeyHandler()
 	sendEscape = false
 end
 
-controlKeyTimer = hs.timer.delayed.new(0.1, controlKeyHandler)
+local controlKeyTimer = hs.timer.delayed.new(0.1, controlKeyHandler)
 
-controlHandler = function(evt)
+local function controlHandler(evt)
 	local newMods = evt:getFlags()
 	if lastMods["ctrl"] == newMods["ctrl"] then
 		return false
@@ -34,5 +34,11 @@ controlHandler = function(evt)
 	return false
 end
 
-controlTap = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged }, controlHandler)
+local controlTap = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged }, controlHandler)
 controlTap:start()
+
+return {
+	controlKeyTimer = controlKeyTimer,
+	controlHandler = controlHandler,
+	controlTap = controlTap,
+}

@@ -31,5 +31,5 @@ Install:andUse("Caffeine", {
 })
 
 -- import keybindings for yabai
-local yabai = require("yabai")
-local caps2esc = require("caps2esc")
+yabai = require("yabai")
+caps2esc = require("caps2esc")
