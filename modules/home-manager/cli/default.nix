@@ -18,11 +18,11 @@ let
         [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
       historyWidgetOptions = [ ];
     };
-  aliases = (lib.optionalAttrs pkgs.stdenvNoCC.isDarwin {
+  aliases = lib.mkIf pkgs.stdenvNoCC.isDarwin {
     # darwin specific aliases
     ibrew = "arch -x86_64 brew";
     abrew = "arch -arm64 brew";
-  });
+  };
 in
 {
   home.packages = [ pkgs.tree ];
