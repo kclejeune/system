@@ -18,7 +18,7 @@
       "teamookla/speedtest"
     ];
     extraConfig = ''
-      brew "yabai", restart_service: true
+      brew "yabai", restart_service: "changed"
     '';
     casks = [ "hammerspoon" ];
   };

@@ -18,8 +18,15 @@
     aliases = {
       fix = "commit --amend --no-edit";
       oops = "reset HEAD~1";
+      sub = "submodule update --init --recursive";
     };
-    delta.enable = true;
+    delta = {
+      enable = true;
+      options = {
+        side-by-side = true;
+        line-numbers = true;
+      };
+    };
     lfs.enable = true;
   };
 }
