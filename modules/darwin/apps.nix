@@ -7,7 +7,6 @@
       "iina"
       "jetbrains-toolbox"
       "keybase"
-      "rectangle"
       "skim"
       "syncthing"
       "zoom"

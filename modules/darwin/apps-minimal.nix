@@ -6,7 +6,6 @@
       "firefox-beta"
       "kitty"
       "raycast"
-      "rectangle"
       "stats"
       "visual-studio-code"
     ];
