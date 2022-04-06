@@ -65,7 +65,7 @@ in
         htop
         httpie
         jq
-        lua
+        luajit
         mmv
         neofetch
         nix

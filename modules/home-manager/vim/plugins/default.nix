@@ -1,31 +1,10 @@
 { lib, ... }: {
   imports = [
-    # ./bash
-    # ./css
-    # ./go-lsp
-    # ./html
-    # ./json
-    # ./latex
-    # ./lspsaga-nvim
-    # ./lua-lsp # build failure
-    ./lualine-nvim
-    # ./nvim-autopairs
-    # ./nvim-cmp
-    # ./nvim-lspconfig
-    # ./pyright-lsp
-    # ./rnix-lsp
-    # ./svelte-lsp
-    # ./typescript-lsp
-    # ./vimscript-lsp
-    # ./vsnip
-    # ./vue-lsp
-    # ./yaml-lsp
     ./coc
-
+    ./fzf
+    ./lualine-nvim
     ./theme
     ./treesitter
     ./vim-closetag
-    ./fzf
-    # ./skim
   ];
 }

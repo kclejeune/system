@@ -1,11 +1,11 @@
 { config, pkgs, lib, ... }: {
   programs.neovim =
-    let inherit (lib.vimUtils ./.) pluginWithCfg;
+    let inherit (lib.vimUtils ./.) pluginWithLua;
     in
     {
       plugins = with pkgs.vimPlugins;
         [
-          (pluginWithCfg {
+          (pluginWithLua {
             plugin = awesome-vim-colorschemes;
             file = "awesome-vim-colorschemes";
           })

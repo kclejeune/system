@@ -3,7 +3,7 @@
   xdg.configFile."nvim/coc-settings.json".source = ./coc-settings.json;
 
   programs.neovim =
-    let inherit (lib.vimUtils ./.) pluginWithCfg;
+    let inherit (lib.vimUtils ./.) pluginWithLua pluginWithCfg;
     in
     {
       extraPackages = with pkgs; [
@@ -28,17 +28,17 @@
         coc-lua
         coc-pairs
         coc-prettier
-        coc-pyright # python
+        coc-pyright
         coc-r-lsp
         coc-rls
         coc-smartf
         coc-snippets
         coc-solargraph
         coc-tslint
-        coc-tsserver # js/ts
-        coc-vetur # vuejs
-        coc-vimlsp # vimL
-        coc-vimtex # latex
+        coc-tsserver
+        coc-vetur
+        coc-vimlsp
+        coc-vimtex
         coc-yaml
       ];
     };
