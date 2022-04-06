@@ -24,7 +24,7 @@ excludes = []
 # Formatter to run
 command = "stylua"
 # Command-line arguments for the command
-options = []
+options = ["--indent-type=Spaces"]
 # Glob pattern of files to include
 includes = [ "*.lua" ]
 # Glob patterns of files to exclude

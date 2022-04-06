@@ -15,19 +15,19 @@ Install = spoon.SpoonInstall
 
 -- Draw pretty rounded corners on all screens
 Install:andUse("RoundedCorners", {
-	start = true,
-	config = {
-		radius = 12,
-	},
+    start = true,
+    config = {
+        radius = 12,
+    },
 })
 Install:andUse("ReloadConfiguration", {
-	start = true,
-	hotKeys = {
-		reloadConfiguration = { { "cmd", "ctrl", "shift" }, "r" },
-	},
+    start = true,
+    hotKeys = {
+        reloadConfiguration = { { "cmd", "ctrl", "shift" }, "r" },
+    },
 })
 Install:andUse("Caffeine", {
-	start = true,
+    start = true,
 })
 
 -- import keybindings for yabai

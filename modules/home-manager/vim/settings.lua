@@ -22,16 +22,15 @@ vim.opt.hlsearch = true
 vim.api.nvim_set_keymap("n", "j", "gj", {})
 vim.api.nvim_set_keymap("n", "k", "gk", {})
 
+vim.fn.stripTrailingWhitespace = function()
+    local l = vim.fn.line(".")
+    local c = vim.fn.col(".")
+    vim.cmd("%s/\\s\\+$//e")
+    vim.fn.cursor(l, c)
+end
+
 -- TODO: how to convert this?
 vim.cmd([[
-"" Auto Strip Trailing Spaces
-fun! StripTrailingWhitespaces()
-    let l = line(".")
-    let c = col(".")
-    %s/\s\+$//e
-    call cursor(l, c)
-endfun
-
 " Apply to only certain files by default
 " autocmd FileType c,cpp,java,php,ruby,python autocmd BufWritePre <buffer> :call <SID>StripTrailingWhitespaces()
 
