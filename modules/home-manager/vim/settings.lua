@@ -23,17 +23,11 @@ vim.api.nvim_set_keymap("n", "j", "gj", {})
 vim.api.nvim_set_keymap("n", "k", "gk", {})
 
 vim.fn.stripTrailingWhitespace = function()
-    local l = vim.fn.line(".")
-    local c = vim.fn.col(".")
-    vim.cmd("%s/\\s\\+$//e")
-    vim.fn.cursor(l, c)
+	local l = vim.fn.line(".")
+	local c = vim.fn.col(".")
+	vim.cmd("%s/\\s\\+$//e")
+	vim.fn.cursor(l, c)
 end
 
--- TODO: how to convert this?
-vim.cmd([[
-" Apply to only certain files by default
-" autocmd FileType c,cpp,java,php,ruby,python autocmd BufWritePre <buffer> :call <SID>StripTrailingWhitespaces()
-
-" Apply to all files by default
-autocmd BufWritePre * :call StripTrailingWhitespaces()
-]])
+-- strip all files by default
+vim.cmd("autocmd BufWritePre * :lua vim.fn.stripTrailingWhitespace()")
