@@ -52,7 +52,7 @@ in
         (pkgs.python3.withPackages
           (ps: with ps; [ black numpy scipy networkx matplotlib ]))
         cachix
-        # comma
+        comma
         curl
         fd
         ffmpeg
