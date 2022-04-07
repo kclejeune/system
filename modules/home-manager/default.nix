@@ -13,7 +13,7 @@ let
 
 in
 {
-  imports = [ ./vim ./cli ./kitty ./dotfiles ./git.nix ];
+  imports = [ ./nvim ./cli ./kitty ./dotfiles ./git.nix ];
 
   programs.home-manager = {
     enable = true;
