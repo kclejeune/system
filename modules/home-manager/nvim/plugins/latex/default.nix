@@ -1,18 +1,15 @@
 { config, pkgs, lib, ... }: {
-  programs.neovim =
-    let inherit (lib.vimUtils ./.) readLuaSection pluginWithLua;
-    in
-    {
-      # vimtex config
-      plugins = with pkgs.vimPlugins;
-        [
-          (pluginWithLua {
-            plugin = vimtex;
-            file = "vimtex";
-          })
-        ];
+  programs.neovim = {
+    # vimtex config
+    plugins = with pkgs.vimPlugins;
+      [
+        (lib.vimUtils.pluginWithCfg {
+          plugin = vimtex;
+          file = ./vimtex.lua;
+        })
+      ];
 
-      # LSP config
-      extraPackages = with pkgs; with nodePackages; [ texlab ];
-    };
+    # LSP config
+    extraPackages = with pkgs; with nodePackages; [ texlab ];
+  };
 }

@@ -1,19 +1,17 @@
 { config, pkgs, lib, ... }: {
   home.packages = [ pkgs.tree-sitter ];
-  programs.neovim =
-    let inherit (lib.vimUtils ./.) pluginWithLua;
-    in
-    {
-      plugins = with pkgs.vimPlugins; [
-        # new neovim stuff
-        (pluginWithLua {
-          plugin = (nvim-treesitter.withPlugins (_: pkgs.tree-sitter.allGrammars));
-          file = "nvim-treesitter";
-        })
-        (pluginWithLua {
-          plugin = nvim-treesitter-textobjects;
-          file = "nvim-treesitter-textobjects";
-        })
-      ];
-    };
+  programs.neovim = {
+    plugins = with pkgs.vimPlugins; [
+      # new neovim stuff
+      (lib.vimUtils.pluginWithCfg {
+        plugin =
+          (nvim-treesitter.withPlugins (_: pkgs.tree-sitter.allGrammars));
+        file = ./nvim-treesitter.lua;
+      })
+      (lib.vimUtils.pluginWithCfg {
+        plugin = nvim-treesitter-textobjects;
+        file = ./nvim-treesitter-textobjects.lua;
+      })
+    ];
+  };
 }

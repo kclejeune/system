@@ -1,14 +1,11 @@
 { config, pkgs, lib, ... }: {
-  programs.neovim =
-    let inherit (lib.vimUtils ./.) pluginWithLua;
-    in
-    {
-      plugins = with pkgs.vimPlugins;
-        [
-          (pluginWithLua {
-            plugin = vim-closetag;
-            file = "vim-closetag";
-          })
-        ];
-    };
+  programs.neovim = {
+    plugins = with pkgs.vimPlugins;
+      [
+        (lib.vimUtils.pluginWithCfg {
+          plugin = vim-closetag;
+          file = ./vim-closetag.lua;
+        })
+      ];
+  };
 }

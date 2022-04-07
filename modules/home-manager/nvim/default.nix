@@ -1,8 +1,7 @@
 { config, pkgs, lib, ... }: {
   imports = [ ./plugins ];
   programs.neovim =
-    let inherit (lib.vimUtils ./.) readLuaSection;
-    in
+
     {
       enable = true;
       viAlias = true;
@@ -28,7 +27,7 @@
         ranger-vim
       ];
       extraConfig = ''
-        ${readLuaSection "settings"}
+        ${lib.vimUtils.readVimConfig ./settings.lua}
       '';
     };
 

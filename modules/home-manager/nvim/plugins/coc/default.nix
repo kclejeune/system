@@ -3,8 +3,7 @@
   xdg.configFile."nvim/coc-settings.json".source = ./coc-settings.json;
 
   programs.neovim =
-    let inherit (lib.vimUtils ./.) pluginWithLua pluginWithCfg;
-    in
+
     {
       extraPackages = with pkgs; [
         rubyPackages.solargraph
@@ -13,9 +12,9 @@
         fzf
       ];
       plugins = with pkgs.vimPlugins; [
-        (pluginWithCfg {
+        (lib.vimUtils.pluginWithCfg {
           plugin = coc-nvim;
-          file = "coc-nvim";
+          file = ./coc-nvim.vim;
         })
         coc-css
         coc-eslint
