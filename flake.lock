@@ -197,7 +197,24 @@
         "nixos-hardware": "nixos-hardware",
         "nixos-unstable": "nixos-unstable",
         "nixpkgs": "nixpkgs_2",
+        "small": "small",
         "stable": "stable"
+      }
+    },
+    "small": {
+      "locked": {
+        "lastModified": 1649549506,
+        "narHash": "sha256-flgjQ/ZTxobJJS3QWmecyfkYO5j+/WC0IKzyWvK/fs0=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "665bb90fc3f6c39cfb290ecc100b3433082e5d64",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable-small",
+        "repo": "nixpkgs",
+        "type": "github"
       }
     },
     "stable": {
