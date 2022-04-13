@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }: {
   home.packages = with pkgs; [
     cacert
+    earthly
     vault-bin
     helmfile
     awscli2

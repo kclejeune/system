@@ -15,6 +15,10 @@ in
 {
   imports = [ ./nvim ./cli ./kitty ./dotfiles ./git.nix ];
 
+  nixpkgs.config = {
+    allowUnfree = true;
+  };
+
   programs.home-manager = {
     enable = true;
     path = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager";
