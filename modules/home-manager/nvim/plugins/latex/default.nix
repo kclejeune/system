@@ -3,7 +3,7 @@
     # vimtex config
     plugins = with pkgs.vimPlugins;
       [
-        (lib.vimUtils.pluginWithCfg {
+        (config.lib.vimUtils.pluginWithCfg {
           plugin = vimtex;
           file = ./vimtex.lua;
         })

@@ -13,7 +13,14 @@ let
 
 in
 {
-  imports = [ ./nvim ./cli ./kitty ./dotfiles ./git.nix ];
+  imports = [
+    ./nvim
+    ./cli
+    ./kitty
+    ./dotfiles
+    ./git.nix
+    # ./1password.nix
+  ];
 
   nixpkgs.config = {
     allowUnfree = true;

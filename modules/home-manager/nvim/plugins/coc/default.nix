@@ -12,7 +12,7 @@
         fzf
       ];
       plugins = with pkgs.vimPlugins; [
-        (lib.vimUtils.pluginWithCfg {
+        (config.lib.vimUtils.pluginWithCfg {
           plugin = coc-nvim;
           file = ./coc-nvim.vim;
         })

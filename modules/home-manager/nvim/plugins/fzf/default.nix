@@ -7,7 +7,7 @@ in
   programs.neovim = {
     plugins = with pkgs.vimPlugins;
       [
-        (lib.vimUtils.pluginWithCfg {
+        (config.lib.vimUtils.pluginWithCfg {
           plugin = fzf-vim;
           file = ./fzf-vim.lua;
         })
