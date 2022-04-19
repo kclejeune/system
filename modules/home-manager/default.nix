@@ -19,7 +19,7 @@ in
     ./kitty
     ./dotfiles
     ./git.nix
-    # ./1password.nix
+    ./1password
   ];
 
   nixpkgs.config = {
