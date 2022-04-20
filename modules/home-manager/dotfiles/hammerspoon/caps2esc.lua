@@ -9,7 +9,7 @@ local function controlKeyHandler()
     sendEscape = false
 end
 
-local controlKeyTimer = hs.timer.delayed.new(0.15, controlKeyHandler)
+local controlKeyTimer = hs.timer.delayed.new(0.1, controlKeyHandler)
 
 local function controlHandler(evt)
     local newMods = evt:getFlags()
