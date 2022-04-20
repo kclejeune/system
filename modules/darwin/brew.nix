@@ -22,8 +22,6 @@
       "koekeishiya/formulae"
       "teamookla/speedtest"
     ];
-    extraConfig = ''
-    '';
     casks = [
       "hammerspoon"
       "1password-cli"
