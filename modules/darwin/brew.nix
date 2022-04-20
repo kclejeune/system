@@ -6,8 +6,13 @@
       brewfile = true;
       noLock = true;
     };
+    brews = [
+    ];
 
     taps = [
+      "1password/tap"
+      "beeftornado/rmtree"
+      "cloudflare/cloudflare"
       "homebrew/bundle"
       "homebrew/cask"
       "homebrew/cask-fonts"
@@ -18,8 +23,10 @@
       "teamookla/speedtest"
     ];
     extraConfig = ''
-      brew "yabai", restart_service: "changed"
     '';
-    casks = [ "hammerspoon" ];
+    casks = [
+      "hammerspoon"
+      "1password-cli"
+    ];
   };
 }

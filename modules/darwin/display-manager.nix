@@ -1,4 +1,7 @@
 { config, pkgs, ... }: {
+  homebrew.extraConfig = ''
+    brew "yabai", restart_service: "changed"
+  '';
   services.yabai = {
     enable = false;
     config = {
