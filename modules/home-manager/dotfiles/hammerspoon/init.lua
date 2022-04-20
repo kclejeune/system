@@ -20,12 +20,19 @@ Install:andUse("RoundedCorners", {
         radius = 12,
     },
 })
-Install:andUse("ReloadConfiguration", {
-    start = true,
-    hotKeys = {
-        reloadConfiguration = { { "cmd", "ctrl", "shift" }, "r" },
-    },
-})
+
+-- use as a replacement for ReloadConfiguration for now
+hs.hotkey.bind({ "cmd", "ctrl", "shift" }, "r", function()
+    hs.reload()
+end)
+-- TODO: why is this infinitely reloading?
+-- Install:andUse("ReloadConfiguration", {
+--     start = true,
+--     hotKeys = {
+--         reloadConfiguration = { { "cmd", "ctrl", "shift" }, "r" },
+--     },
+-- })
+
 Install:andUse("Caffeine", {
     start = true,
 })
