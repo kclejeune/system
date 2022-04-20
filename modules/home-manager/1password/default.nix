@@ -23,7 +23,6 @@ in
   '';
   programs.ssh = {
     enable = true;
-    includes = [ "config.d/*" ];
     extraConfig = ''
       IdentityAgent "${sockPath}"
     '';

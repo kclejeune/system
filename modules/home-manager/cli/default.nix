@@ -27,6 +27,12 @@ in
 {
   home.packages = [ pkgs.tree ];
   programs = {
+    ssh = {
+      enable = true;
+      includes = [ "config.d/*" ];
+      forwardAgent = true;
+    };
+
     direnv = {
       enable = true;
       nix-direnv.enable = true;
