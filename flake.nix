@@ -57,7 +57,7 @@
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig =
-        { system
+        { system ? "aarch64-darwin"
         , nixpkgs ? inputs.nixpkgs
         , stable ? inputs.stable
         , baseModules ? [
@@ -146,15 +146,6 @@
 
       darwinConfigurations = {
         randall = mkDarwinConfig {
-          system = "aarch64-darwin";
-          extraModules = [
-            ./profiles/personal.nix
-            ./modules/darwin/apps.nix
-            { homebrew.brewPrefix = "/opt/homebrew/bin"; }
-          ];
-        };
-        randall-intel = mkDarwinConfig {
-          system = "x86_64-darwin";
           extraModules = [
             ./profiles/personal.nix
             ./modules/darwin/apps.nix
@@ -163,8 +154,25 @@
         };
         work = mkDarwinConfig {
           system = "x86_64-darwin";
-          extraModules =
-            [ ./profiles/work.nix ./modules/darwin/apps-minimal.nix ];
+          extraModules = [
+            ./profiles/work.nix
+            ./modules/darwin/apps-minimal.nix
+            { homebrew.brewPrefix = "/opt/homebrew/bin"; }
+          ];
+        };
+        randall-intel = mkDarwinConfig {
+          system = "x86_64-darwin";
+          extraModules = [
+            ./profiles/personal.nix
+            ./modules/darwin/apps.nix
+          ];
+        };
+        work-intel = mkDarwinConfig {
+          system = "x86_64-darwin";
+          extraModules = [
+            ./profiles/work.nix
+            ./modules/darwin/apps-minimal.nix
+          ];
         };
       };
 
