@@ -51,11 +51,14 @@ in
         CLICOLOR = 1;
         LSCOLORS = "ExFxBxDxCxegedabagacad";
         KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
-        JAVA_HOME = "${pkgs.openjdk.home}";
+        JAVA_HOME = "${pkgs.openjdk11.home}";
         NODE_PATH = "${NODE_GLOBAL}/lib";
         # HOMEBREW_NO_AUTO_UPDATE = 1;
       };
-      sessionPath = [ "${NODE_GLOBAL}/bin" ];
+      sessionPath = [
+        "${NODE_GLOBAL}/bin"
+        "${config.home.homeDirectory}/.rd/bin"
+      ];
 
       # define package definitions for current user environment
       packages = with pkgs; [
@@ -83,7 +86,7 @@ in
         nixfmt
         nixpkgs-fmt
         nodejs_latest
-        openjdk
+        openjdk11
         openssh
         pandoc
         parallel

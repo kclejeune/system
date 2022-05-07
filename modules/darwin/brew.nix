@@ -25,6 +25,7 @@
     casks = [
       "hammerspoon"
       "1password-cli"
+      "1password"
     ];
   };
 }

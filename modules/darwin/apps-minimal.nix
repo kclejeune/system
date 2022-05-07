@@ -2,10 +2,10 @@
   homebrew = {
     casks = [
       "alt-tab"
-      "1password-beta"
       "bartender"
       "firefox-beta"
       "kitty"
+      "rancher"
       "raycast"
       "stats"
       "visual-studio-code"
