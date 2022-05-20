@@ -13,6 +13,6 @@
             (lib.attrsets.filterAttrs (isValidCertFile validExtensions)
               (builtins.readDir path))));
     in
-    [ "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" "/etc/ssl/certs/apl.pem" ]
+    [ "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" ]
     ++ (builtins.concatMap (getCertFiles [ "cer" "crt" "pem" ]) [ "/etc/ssl/certs" ]);
 }

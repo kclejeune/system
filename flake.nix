@@ -149,7 +149,6 @@
           ];
         };
         work = mkDarwinConfig {
-          system = "x86_64-darwin";
           extraModules = [
             ./profiles/work.nix
             ./modules/darwin/apps-minimal.nix
@@ -214,14 +213,14 @@
             overlays = [ inputs.devshell.overlay ];
           };
           pyEnv = (pkgs.python3.withPackages
-            (ps: with ps; [ black pylint typer colorama shellingham ]));
+            (ps: with ps; [ typer colorama shellingham ]));
           sysdo = pkgs.writeShellScriptBin "sysdo" ''
             cd $PRJ_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
           '';
         in
         {
           default = pkgs.devshell.mkShell {
-            packages = with pkgs; [ nixfmt pyEnv rnix-lsp stylua treefmt ];
+            packages = with pkgs; [ nixfmt pyEnv black rnix-lsp stylua treefmt ];
             commands = [{
               name = "sysdo";
               package = sysdo;
