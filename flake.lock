@@ -1,21 +1,5 @@
 {
   "nodes": {
-    "comma": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1648069236,
-        "narHash": "sha256-ZRfyv46N3oQbpDwobXMPp9PDnAyceN+9GoOeHj4oWWk=",
-        "owner": "nix-community",
-        "repo": "comma",
-        "rev": "67f26046b946f1eceb7e4df36875fef91cf39a04",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "comma",
-        "type": "github"
-      }
-    },
     "darwin": {
       "inputs": {
         "nixpkgs": [
@@ -23,16 +7,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1648941796,
-        "narHash": "sha256-qIxBR/rd2DvzfSWcFUnnf+xDj5r/Fm+sW8Ni5NMKcSE=",
+        "lastModified": 1650472527,
+        "narHash": "sha256-70hI6j0moI5n4wsVCDd27qcGePDfBcjlK4mtGLYB+lk=",
         "owner": "kclejeune",
         "repo": "nix-darwin",
-        "rev": "9657b51cc36b864d1e1617008810738862b9d4a8",
+        "rev": "fff582f3244f31e7455d0c5d93f2e3aa7554da90",
         "type": "github"
       },
       "original": {
         "owner": "kclejeune",
-        "ref": "backup-etc",
         "repo": "nix-darwin",
         "type": "github"
       }
@@ -109,15 +92,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1647821523,
-        "narHash": "sha256-NAIY357pAOcxK6bAt83kKEJ2LxZhLCiPIlmQ2iTQbk4=",
-        "owner": "nix-community",
+        "lastModified": 1653017375,
+        "narHash": "sha256-EqXh4RdgPFy7Bp562xKsErUmMHjHLO5VOGbK2nA9aJY=",
+        "owner": "kclejeune",
         "repo": "home-manager",
-        "rev": "835797f3a4a59459a316ae8d4ab91fa59faf61a4",
+        "rev": "75dae68f18123b300e4fb560045ce25f5e15753b",
         "type": "github"
       },
       "original": {
-        "owner": "nix-community",
+        "owner": "kclejeune",
         "repo": "home-manager",
         "type": "github"
       }
@@ -187,7 +170,6 @@
     },
     "root": {
       "inputs": {
-        "comma": "comma",
         "darwin": "darwin",
         "devshell": "devshell",
         "flake-compat": "flake-compat",

@@ -25,20 +25,16 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     small.url = "github:nixos/nixpkgs/nixos-unstable-small";
 
-    comma = {
-      url = "github:nix-community/comma";
-      flake = false;
-    };
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
     };
     darwin = {
-      url = "github:kclejeune/nix-darwin/backup-etc";
+      url = "github:kclejeune/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:kclejeune/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
