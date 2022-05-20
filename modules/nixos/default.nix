@@ -17,8 +17,6 @@
   # TODO: resolve this later
   services.power-profiles-daemon.enable = false;
 
-  fonts = { fontDir.enable = true; };
-
   services.syncthing = {
     enable = true;
     user = config.user.name;
