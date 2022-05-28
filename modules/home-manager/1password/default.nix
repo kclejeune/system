@@ -4,6 +4,11 @@ let
   darwinSockPath =
     "${home}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
   sockPath = "${home}/.1password/agent.sock";
+  mkCompletion = shell: ''
+    if command -v op > /dev/null; then
+      eval "$(op completion ${shell})"; compdef _op op
+    fi
+  '';
 in
 {
   home.sessionVariables.SSH_AUTH_SOCK = sockPath;
@@ -11,16 +16,8 @@ in
     source = config.lib.file.mkOutOfStoreSymlink darwinSockPath;
     target = ".1password/agent.sock";
   };
-  programs.bash.initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin ''
-    if command -v op > /dev/null 2&>1; then
-      source <(op completion bash)
-    fi
-  '';
-  programs.zsh.initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin ''
-    if command -v op > /dev/null 2&>1; then
-      eval "$(op completion zsh)"; compdef _op op
-    fi
-  '';
+  programs.bash.initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin (mkCompletion "bash");
+  programs.zsh.initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin (mkCompletion "zsh");
   programs.ssh = {
     enable = true;
     extraConfig = ''
