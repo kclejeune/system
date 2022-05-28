@@ -1,5 +1,5 @@
 { config, lib, pkgs, ... }: {
-  home.packages = [ pkgs.github-cli ];
+  home.packages = [ pkgs.github-cli pkgs.git-crypt ];
   programs.git = {
     userName = "Kennan LeJeune";
     extraConfig = {
