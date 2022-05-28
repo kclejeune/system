@@ -62,6 +62,7 @@ in
 
       # define package definitions for current user environment
       packages = with pkgs; [
+        age
         # python with default packages
         (pkgs.python3.withPackages
           (ps: with ps; [ black numpy scipy networkx matplotlib ]))
