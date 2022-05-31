@@ -65,7 +65,7 @@ in
         age
         # python with default packages
         (pkgs.python3.withPackages
-          (ps: with ps; [ black numpy scipy networkx matplotlib ]))
+          (ps: with ps; [ numpy scipy networkx matplotlib ]))
         cachix
         comma
         curl
@@ -78,7 +78,7 @@ in
         gnupg
         gnused
         htop
-        httpie
+        # httpie
         jq
         luajit
         mmv

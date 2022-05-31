@@ -220,7 +220,13 @@
         in
         {
           default = pkgs.devshell.mkShell {
-            packages = with pkgs; [ nixfmt pyEnv black rnix-lsp stylua treefmt ];
+            packages = with pkgs; [
+              nixfmt
+              pyEnv
+              rnix-lsp
+              stylua
+              treefmt
+            ];
             commands = [{
               name = "sysdo";
               package = sysdo;
