@@ -14,5 +14,5 @@
               (builtins.readDir path))));
     in
     [ "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" ]
-    ++ (builtins.concatMap (getCertFiles [ "cer" "crt" "pem" ]) [ "/etc/ssl/certs" ]);
+    ++ (builtins.concatMap (getCertFiles [ "cer" "crt" "pem" ]) [ "/etc/certs.d" ]);
 }
