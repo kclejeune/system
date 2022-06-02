@@ -4,7 +4,7 @@ in
 {
   programs.kitty = {
     enable = true;
-    package = pkgs.small.kitty;
+    package = pkgs.kitty;
     font = {
       package = pkgs.jetbrains-mono;
       name = "JetBrains Mono";
