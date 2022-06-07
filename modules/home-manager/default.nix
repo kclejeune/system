@@ -63,6 +63,7 @@ in
       # define package definitions for current user environment
       packages = with pkgs; [
         age
+        awscli2
         # python with default packages
         (pkgs.python3.withPackages
           (ps: with ps; [ numpy scipy networkx matplotlib ]))
@@ -77,8 +78,9 @@ in
         gnugrep
         gnupg
         gnused
+        google-cloud-sdk
+        helmfile
         htop
-        # httpie
         jq
         luajit
         mmv
