@@ -211,7 +211,7 @@
 
       devShells = eachSystemMap defaultSystems (system:
         let
-          pkgs = import nixpkgs {
+          pkgs = import inputs.stable {
             inherit system;
             overlays = [ inputs.devshell.overlay ];
           };
