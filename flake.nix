@@ -108,7 +108,7 @@
         homeManagerConfiguration rec {
           inherit system username;
           pkgs = import nixpkgs {
-              inherit system;
+            inherit system;
           };
           homeDirectory = "${homePrefix system}/${username}";
           extraSpecialArgs = { inherit inputs nixpkgs stable; };
