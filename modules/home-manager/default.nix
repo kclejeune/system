@@ -63,7 +63,7 @@ in
       # define package definitions for current user environment
       packages = with pkgs; [
         age
-        awscli2
+        # awscli2
         # python with default packages
         (pkgs.python3.withPackages
           (ps: with ps; [ numpy scipy networkx matplotlib ]))

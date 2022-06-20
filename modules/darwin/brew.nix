@@ -7,6 +7,7 @@
       noLock = true;
     };
     brews = [
+      "awscli"
     ];
 
     taps = [
