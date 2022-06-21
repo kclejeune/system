@@ -3,7 +3,7 @@
     casks = [
       "alt-tab"
       "bartender"
-      "firefox-beta"
+      "firefox-developer-edition"
       "kitty"
       "raycast"
       "stats"
