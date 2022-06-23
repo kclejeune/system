@@ -49,7 +49,8 @@
       ranger-vim
     ];
     extraConfig = ''
-      ${config.lib.vimUtils.readVimConfigRaw ./settings.lua}
+      ${config.lib.vimUtils.readVimConfig ./settings.lua}
+      ${config.lib.vimUtils.readVimConfigRaw ./keybindings.lua}
     '';
   };
 

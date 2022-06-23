@@ -19,9 +19,6 @@ vim.opt.smartindent = true
 vim.opt.incsearch = true
 vim.opt.hlsearch = true
 
-vim.api.nvim_set_keymap("n", "j", "gj", {})
-vim.api.nvim_set_keymap("n", "k", "gk", {})
-
 function vim.fn.stripTrailingWhitespace()
     local l = vim.fn.line(".")
     local c = vim.fn.col(".")
