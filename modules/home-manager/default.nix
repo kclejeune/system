@@ -43,7 +43,7 @@ in
       # You can update Home Manager without changing this value. See
       # the Home Manager release notes for a list of state version
       # changes in each release.
-      stateVersion = "20.09";
+      stateVersion = "22.05";
       sessionVariables = {
         GPG_TTY = "/dev/ttys000";
         EDITOR = "nvim";
@@ -87,7 +87,7 @@ in
         jq
         luajit
         mmv
-        neofetch
+        stable.neofetch
         nix
         nixfmt
         nixpkgs-fmt
@@ -99,7 +99,7 @@ in
         pkgs.coreutils-full
         poetry
         pre-commit
-        ranger
+        stable.ranger
         (pkgs.ruby.withPackages (ps: with ps; [ rufo solargraph ]))
         ripgrep
         rsync
