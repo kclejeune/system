@@ -1,22 +1,7 @@
 { config, pkgs, lib, ... }:
 let
   functions = builtins.readFile ./functions.sh;
-  useSkim = false;
-  useFzf = !useSkim;
-  fuzz =
-    let fd = "${pkgs.fd}/bin/fd";
-    in
-    rec {
-      defaultCommand = "${fd} -H --type f";
-      defaultOptions = [ "--height 50%" ];
-      fileWidgetCommand = "${defaultCommand}";
-      fileWidgetOptions = [
-        "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
-      ];
-      changeDirWidgetCommand = "${fd} --type d";
-      changeDirWidgetOptions =
-        [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
-      historyWidgetOptions = [ ];
+  fuzz = rec {
     };
   aliases = lib.mkIf pkgs.stdenvNoCC.isDarwin {
     # darwin specific aliases
@@ -61,18 +46,19 @@ in
         }
       '';
     };
-    skim = {
-      enable = useSkim;
-      enableBashIntegration = useSkim;
-      enableZshIntegration = useSkim;
-      enableFishIntegration = useSkim;
-    } // fuzz;
-    fzf = {
-      enable = useFzf;
-      enableBashIntegration = useFzf;
-      enableZshIntegration = useFzf;
-      enableFishIntegration = useFzf;
-    } // fuzz;
+    fzf = rec {
+      enable = true;
+      defaultCommand = "${pkgs.fd}/bin/fd --type f";
+      defaultOptions = [ "--height 50%" ];
+      fileWidgetCommand = "${defaultCommand}";
+      fileWidgetOptions = [
+        "--preview '${pkgs.bat}/bin/bat --color=always --plain --line-range=:200 {}'"
+      ];
+      changeDirWidgetCommand = "${pkgs.fd}/bin/fd --type d";
+      changeDirWidgetOptions =
+        [ "--preview '${pkgs.tree}/bin/tree -C {} | head -200'" ];
+      historyWidgetOptions = [ ];
+    };
     bat = {
       enable = true;
       config = {
@@ -158,7 +144,7 @@ in
     zoxide.enable = true;
     starship = {
       enable = true;
-      package = pkgs.stable.starship;
+      package = pkgs.starship;
     };
   };
 }
