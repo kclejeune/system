@@ -148,14 +148,12 @@
           extraModules = [
             ./profiles/personal.nix
             ./modules/darwin/apps.nix
-            { homebrew.brewPrefix = "/opt/homebrew/bin"; }
           ];
         };
         work = mkDarwinConfig {
           extraModules = [
             ./profiles/work.nix
             ./modules/darwin/apps-minimal.nix
-            { homebrew.brewPrefix = "/opt/homebrew/bin"; }
           ];
         };
         randall-intel = mkDarwinConfig {
