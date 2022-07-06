@@ -97,24 +97,24 @@
         , baseModules ? [
             ./modules/home-manager
             {
-              home.sessionVariables = {
-                NIX_PATH =
-                  "nixpkgs=${nixpkgs}:stable=${stable}\${NIX_PATH:+:}$NIX_PATH";
+              home = {
+                inherit username;
+                homeDirectory = "${homePrefix system}/${username}";
+                sessionVariables = {
+                  NIX_PATH =
+                    "nixpkgs=${nixpkgs}:stable=${stable}\${NIX_PATH:+:}$NIX_PATH";
+                };
               };
             }
           ]
         , extraModules ? [ ]
         }:
         homeManagerConfiguration rec {
-          inherit system username;
           pkgs = import nixpkgs {
             inherit system;
           };
-          homeDirectory = "${homePrefix system}/${username}";
           extraSpecialArgs = { inherit inputs nixpkgs stable; };
-          configuration = {
-            imports = baseModules ++ extraModules ++ [ ./modules/overlays.nix ];
-          };
+          modules = baseModules ++ extraModules ++ [ ./modules/overlays.nix ];
         };
     in
     {
