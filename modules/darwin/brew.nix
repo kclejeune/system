@@ -24,9 +24,28 @@
       "teamookla/speedtest"
     ];
     casks = [
-      "hammerspoon"
-      "1password-cli"
       "1password"
+      "1password-cli"
+      "alt-tab"
+      "appcleaner"
+      "bartender"
+      "docker"
+      "firefox-developer-edition"
+      "fork"
+      "google-chrome"
+      "gpg-suite"
+      "hammerspoon"
+      "hot"
+      "iina"
+      "intellij-idea"
+      "jetbrains-toolbox"
+      "kitty"
+      "obsidian"
+      "raycast"
+      "stats"
+      "utm"
+      "visual-studio-code"
+      "zotero"
     ];
   };
 }

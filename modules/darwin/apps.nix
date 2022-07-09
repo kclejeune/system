@@ -1,15 +1,14 @@
 { config, lib, pkgs, ... }: {
-  imports = [ ./apps-minimal.nix ];
   homebrew = {
     casks = [
-      "fork"
-      "gpg-suite"
-      "iina"
-      "jetbrains-toolbox"
+      "discord"
+      "dropbox"
+      "google-drive"
       "keybase"
-      "skim"
-      "syncthing"
-      "zoom"
+      "messenger"
+      "notion"
+      "signal"
+      "slack"
     ];
     masApps = { };
   };

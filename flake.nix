@@ -153,7 +153,6 @@
         work = mkDarwinConfig {
           extraModules = [
             ./profiles/work.nix
-            ./modules/darwin/apps-minimal.nix
           ];
         };
         randall-intel = mkDarwinConfig {
@@ -167,7 +166,6 @@
           system = "x86_64-darwin";
           extraModules = [
             ./profiles/work.nix
-            ./modules/darwin/apps-minimal.nix
           ];
         };
       };

@@ -111,6 +111,7 @@ in
         treefmt
         vagrant
         yarn
+        yq-go
       ];
     };
 
