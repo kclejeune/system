@@ -1,8 +1,6 @@
 { config, pkgs, lib, ... }:
 let
   functions = builtins.readFile ./functions.sh;
-  fuzz = rec {
-    };
   aliases = lib.mkIf pkgs.stdenvNoCC.isDarwin {
     # darwin specific aliases
     ibrew = "arch -x86_64 brew";

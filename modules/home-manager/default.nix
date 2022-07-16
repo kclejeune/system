@@ -85,9 +85,10 @@ in
         helmfile
         htop
         jq
+        kubectl
+        kubernetes-helm
         luajit
         mmv
-        stable.neofetch
         nix
         nixfmt
         nixpkgs-fmt
@@ -99,6 +100,7 @@ in
         pkgs.coreutils-full
         poetry
         pre-commit
+        stable.neofetch
         stable.ranger
         (pkgs.ruby.withPackages (ps: with ps; [ rufo solargraph ]))
         ripgrep
