@@ -14,6 +14,7 @@
       init.defaultBranch = "main";
       pull.rebase = true;
       push.followTags = true;
+      push.autoSetupRemote = true;
     };
     aliases = {
       fix = "commit --amend --no-edit";
