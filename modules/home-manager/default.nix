@@ -2,7 +2,7 @@
 let
   homeDir = config.home.homeDirectory;
   pyEnv =
-    (pkgs.stable.python3.withPackages (ps: with ps; [ typer colorama shellingham ]));
+    (pkgs.stable.python3.withPackages (ps: with ps; [ black typer colorama shellingham ]));
   sysDoNixos =
     "[[ -d /etc/nixos ]] && cd /etc/nixos && ${pyEnv}/bin/python bin/do.py $@";
   sysDoDarwin =
@@ -84,6 +84,7 @@ in
         google-cloud-sdk
         helmfile
         htop
+        httpie
         jq
         kubectl
         kubernetes-helm
@@ -100,8 +101,8 @@ in
         pkgs.coreutils-full
         poetry
         pre-commit
-        stable.neofetch
-        stable.ranger
+        neofetch
+        ranger
         (pkgs.ruby.withPackages (ps: with ps; [ rufo solargraph ]))
         ripgrep
         rsync
