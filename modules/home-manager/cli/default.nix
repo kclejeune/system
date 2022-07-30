@@ -1,10 +1,14 @@
 { config, pkgs, lib, ... }:
 let
   functions = builtins.readFile ./functions.sh;
-  aliases = lib.mkIf pkgs.stdenvNoCC.isDarwin {
+  aliases = lib.mkIf pkgs.stdenvNoCC.isDarwin rec {
     # darwin specific aliases
     ibrew = "arch -x86_64 brew";
     abrew = "arch -arm64 brew";
+    ls = "${pkgs.coreutils}/bin/ls --color=auto -h";
+    la = "${ls} -a";
+    ll = "${ls} -la";
+    lt = "${ls} -lat";
   };
 in
 {
@@ -76,10 +80,6 @@ in
       };
     };
     go.enable = true;
-    exa = {
-      enable = true;
-      enableAliases = true;
-    };
     bash = {
       enable = true;
       shellAliases = aliases;
