@@ -103,6 +103,7 @@ in
         pre-commit
         neofetch
         ranger
+        rclone
         (pkgs.ruby.withPackages (ps: with ps; [ rufo solargraph ]))
         ripgrep
         rsync
