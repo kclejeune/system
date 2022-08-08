@@ -1,14 +1,15 @@
 { config, pkgs, lib, ... }:
 let
   functions = builtins.readFile ./functions.sh;
-  aliases = lib.mkIf pkgs.stdenvNoCC.isDarwin rec {
-    # darwin specific aliases
-    ibrew = "arch -x86_64 brew";
-    abrew = "arch -arm64 brew";
+  aliases = rec {
     ls = "${pkgs.coreutils}/bin/ls --color=auto -h";
     la = "${ls} -a";
     ll = "${ls} -la";
     lt = "${ls} -lat";
+  } // lib.optionalAttrs pkgs.stdenvNoCC.isDarwin rec {
+    # darwin specific aliases
+    ibrew = "arch -x86_64 brew";
+    abrew = "arch -arm64 brew";
   };
 in
 {
