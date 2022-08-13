@@ -113,6 +113,7 @@ in
         tealdeer
         terraform
         treefmt
+        trivy
         vagrant
         yarn
         yq-go
