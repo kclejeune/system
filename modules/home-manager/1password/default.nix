@@ -5,7 +5,7 @@ let
     "${home}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
   sockPath = "${home}/.1password/agent.sock";
   mkCompletion = shell: ''
-    if command -v op > /dev/null; then
+    if command -v op >/dev/null && command -v compdef >/dev/null; then
       eval "$(op completion ${shell})"; compdef _op op
     fi
   '';
