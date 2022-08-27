@@ -99,7 +99,7 @@ in
         rsync
         shellcheck
         stylua
-        self.packages.${pkgs.system}.sysdo
+        sysdo
         tealdeer
         terraform
         treefmt

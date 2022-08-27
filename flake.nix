@@ -44,10 +44,11 @@
 
   outputs = inputs@{ self, nixpkgs, darwin, home-manager, flake-utils, ... }:
     let
-      inherit (flake-utils.lib) eachSystemMap defaultSystems;
+      inherit (flake-utils.lib) eachSystemMap;
 
       isDarwin = system: (builtins.elem system nixpkgs.lib.platforms.darwin);
       homePrefix = system: if isDarwin system then "/Users" else "/home";
+      defaultSystems = [ "aarch64-linux" "aarch64-darwin" "x86_64-darwin" "x86_64-linux" ];
 
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -214,7 +215,7 @@
 
       packages = eachSystemMap defaultSystems (system:
         let
-          pkgs = import inputs.stable {
+          pkgs = import nixpkgs {
             inherit system;
             overlays = builtins.attrValues self.overlays;
           };
@@ -239,8 +240,6 @@
             overrides = (pfinal: pprev: {
               pyopenssl = pprev.pyopenssl.overrideAttrs
                 (old: { meta = old.meta // { broken = false; }; });
-              typer = pprev.pyopenssl.overrideAttrs
-                (old: { meta = old.meta // { broken = false; }; });
             });
           in
           final: prev: {
@@ -254,6 +253,10 @@
               packageOverrides = overrides;
             };
           };
+        extraPackages = final: prev: {
+            sysdo = self.packages.${prev.system}.sysdo;
+            pyEnv = self.packages.${prev.system}.pyEnv;
+        };
         devshell = inputs.devshell.overlay;
       };
     };
