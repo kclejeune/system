@@ -1,16 +1,6 @@
-{ inputs, config, pkgs, ... }:
+{ self, inputs, config, pkgs, ... }:
 let
   homeDir = config.home.homeDirectory;
-  pyEnv =
-    (pkgs.stable.python3.withPackages (ps: with ps; [ black typer colorama shellingham ]));
-  sysDoNixos =
-    "[[ -d /etc/nixos ]] && cd /etc/nixos && ${pyEnv}/bin/python bin/do.py $@";
-  sysDoDarwin =
-    "[[ -d ${homeDir}/.nixpkgs ]] && cd ${homeDir}/.nixpkgs && ${pyEnv}/bin/python bin/do.py $@";
-  sysdo = (pkgs.writeShellScriptBin "sysdo" ''
-    (${sysDoNixos}) || (${sysDoDarwin})
-  '');
-
 in
 {
   imports = [
@@ -109,7 +99,7 @@ in
         rsync
         shellcheck
         stylua
-        sysdo
+        self.packages.${pkgs.system}.sysdo
         tealdeer
         terraform
         treefmt
