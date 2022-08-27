@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 import os
 from enum import Enum
 from typing import List
@@ -144,8 +143,12 @@ def build(
 @app.command(
     help="remove previously built configurations and symlinks from the current directory",
 )
-def clean():
-    run_cmd("for i in *; do [[ -L $i ]] && rm -f $i; done")
+def clean(
+    filename: str = typer.Argument(
+        "result", help="the filename to be cleaned, or '*' for all files"
+    ),
+):
+    run_cmd(f"find . -type l -name '{filename}' | xargs rm")
 
 
 @app.command(

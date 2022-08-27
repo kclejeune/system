@@ -1,5 +1,7 @@
-{ inputs, config, lib, pkgs, ... }: {
-  imports = [ ./primary.nix ./nixpkgs.nix ./overlays.nix ];
+{ self, inputs, config, lib, pkgs, ... }: {
+  imports = [ ./primary.nix ./nixpkgs.nix ];
+
+  nixpkgs.overlays = builtins.attrValues self.overlays;
 
   programs.zsh = {
     enable = true;
@@ -20,7 +22,7 @@
 
   # let nix manage home-manager profiles and use global nixpkgs
   home-manager = {
-    extraSpecialArgs = { inherit inputs; };
+    extraSpecialArgs = { inherit self inputs; };
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";

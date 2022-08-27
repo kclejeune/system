@@ -16,19 +16,14 @@
   };
 
   inputs = {
-    devshell.url = "github:numtide/devshell";
-    flake-utils.url = "github:numtide/flake-utils";
-    nixos-hardware.url = "github:nixos/nixos-hardware";
-
-    stable.url = "github:nixos/nixpkgs/nixos-21.11";
+    # package repos
+    stable.url = "github:nixos/nixpkgs/nixos-22.05";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     small.url = "github:nixos/nixpkgs/nixos-unstable-small";
 
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
+    # system management
+    nixos-hardware.url = "github:nixos/nixos-hardware";
     darwin = {
       url = "github:kclejeune/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -37,15 +32,19 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # shell stuff
+    flake-utils.url = "github:numtide/flake-utils";
+    devshell = {
+      url = "github:numtide/devshell";
+      inputs.flake-utils.follows = "flake-utils";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs@{ self, nixpkgs, darwin, home-manager, flake-utils, ... }:
     let
-      inherit (darwin.lib) darwinSystem;
-      inherit (nixpkgs.lib) nixosSystem;
-      inherit (home-manager.lib) homeManagerConfiguration;
       inherit (flake-utils.lib) eachSystemMap defaultSystems;
-      inherit (builtins) listToAttrs map;
 
       isDarwin = system: (builtins.elem system nixpkgs.lib.platforms.darwin);
       homePrefix = system: if isDarwin system then "/Users" else "/home";
@@ -62,10 +61,10 @@
           ]
         , extraModules ? [ ]
         }:
-        darwinSystem {
+        darwin.lib.darwinSystem {
           inherit system;
           modules = baseModules ++ extraModules;
-          specialArgs = { inherit inputs nixpkgs stable; };
+          specialArgs = { inherit self inputs nixpkgs stable; };
         };
 
       # generate a base nixos configuration with the
@@ -81,10 +80,10 @@
           ]
         , extraModules ? [ ]
         }:
-        nixosSystem {
+        nixpkgs.lib.nixosSystem {
           inherit system;
           modules = baseModules ++ hardwareModules ++ extraModules;
-          specialArgs = { inherit inputs nixpkgs stable; };
+          specialArgs = { inherit self inputs nixpkgs stable; };
         };
 
       # generate a home-manager configuration usable on any unix system
@@ -109,18 +108,16 @@
           ]
         , extraModules ? [ ]
         }:
-        homeManagerConfiguration rec {
-          pkgs = import nixpkgs {
-            inherit system;
-          };
-          extraSpecialArgs = { inherit inputs nixpkgs stable; };
+        home-manager.lib.homeManagerConfiguration rec {
+          pkgs = import nixpkgs { inherit system; };
+          extraSpecialArgs = { inherit self inputs nixpkgs stable; };
           modules = baseModules ++ extraModules ++ [ ./modules/overlays.nix ];
         };
     in
     {
-      checks = listToAttrs (
+      checks = builtins.listToAttrs (
         # darwin checks
-        (map
+        (builtins.map
           (system: {
             name = system;
             value = {
@@ -132,7 +129,7 @@
           })
           nixpkgs.lib.platforms.darwin) ++
         # linux checks
-        (map
+        (builtins.map
           (system: {
             name = system;
             value = {
@@ -145,28 +142,16 @@
 
       darwinConfigurations = {
         randall = mkDarwinConfig {
-          extraModules = [
-            ./profiles/personal.nix
-            ./modules/darwin/apps.nix
-          ];
+          extraModules = [ ./profiles/personal.nix ./modules/darwin/apps.nix ];
         };
-        work = mkDarwinConfig {
-          extraModules = [
-            ./profiles/work.nix
-          ];
-        };
+        work = mkDarwinConfig { extraModules = [ ./profiles/work.nix ]; };
         randall-intel = mkDarwinConfig {
           system = "x86_64-darwin";
-          extraModules = [
-            ./profiles/personal.nix
-            ./modules/darwin/apps.nix
-          ];
+          extraModules = [ ./profiles/personal.nix ./modules/darwin/apps.nix ];
         };
         work-intel = mkDarwinConfig {
           system = "x86_64-darwin";
-          extraModules = [
-            ./profiles/work.nix
-          ];
+          extraModules = [ ./profiles/work.nix ];
         };
       };
 
@@ -199,41 +184,77 @@
           username = "lejeukc1";
           extraModules = [ ./profiles/home-manager/work.nix ];
         };
-        vagrant = mkHomeConfig {
-          username = "vagrant";
-          extraModules = [ ./profiles/home-manager/personal.nix ];
-        };
       };
 
       devShells = eachSystemMap defaultSystems (system:
         let
           pkgs = import inputs.stable {
             inherit system;
-            overlays = [ inputs.devshell.overlay ];
+            overlays = builtins.attrValues self.overlays;
           };
-          pyEnv = (pkgs.python3.withPackages
-            (ps: with ps; [ black typer colorama shellingham ]));
-          sysdo = pkgs.writeShellScriptBin "sysdo" ''
-            cd $PRJ_ROOT && ${pyEnv}/bin/python3 bin/do.py $@
-          '';
         in
         {
           default = pkgs.devshell.mkShell {
             packages = with pkgs; [
               nixfmt
-              pyEnv
+              pre-commit
               rnix-lsp
+              self.packages.${system}.pyEnv
               stylua
               treefmt
             ];
             commands = [{
               name = "sysdo";
-              package = sysdo;
+              package = self.packages.${system}.sysdo;
               category = "utilities";
               help = "perform actions on this repository";
             }];
           };
-        }
-      );
+        });
+
+      packages = eachSystemMap defaultSystems (system:
+        let
+          pkgs = import inputs.stable {
+            inherit system;
+            overlays = builtins.attrValues self.overlays;
+          };
+        in
+        rec {
+          pyEnv = pkgs.python3.withPackages
+            (ps: with ps; [ black typer colorama shellingham ]);
+          sysdo = pkgs.writeScriptBin "sysdo" ''
+            #! ${pyEnv}/bin/python3
+            ${builtins.readFile ./bin/do.py}
+          '';
+        });
+
+      overlays = {
+        channels = final: prev: {
+          # expose other channels via overlays
+          stable = import inputs.stable { system = prev.system; };
+          small = import inputs.small { system = prev.system; };
+        };
+        pyopenssl = final: prev: {
+          python3 = prev.python3.override {
+            packageOverrides = (pfinal: pprev: {
+              pyopenssl = pprev.pyopenssl.overrideAttrs
+                (old: { meta = old.meta // { broken = false; }; });
+            });
+          };
+          python39 = prev.python39.override {
+            packageOverrides = (pfinal: pprev: {
+              pyopenssl = pprev.pyopenssl.overrideAttrs
+                (old: { meta = old.meta // { broken = false; }; });
+            });
+          };
+          python310 = prev.python310.override {
+            packageOverrides = (pfinal: pprev: {
+              pyopenssl = pprev.pyopenssl.overrideAttrs
+                (old: { meta = old.meta // { broken = false; }; });
+            });
+          };
+        };
+        devshell = inputs.devshell.overlay;
+      };
     };
 }
