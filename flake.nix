@@ -234,26 +234,26 @@
           stable = import inputs.stable { system = prev.system; };
           small = import inputs.small { system = prev.system; };
         };
-        pyopenssl = final: prev: {
-          python3 = prev.python3.override {
-            packageOverrides = (pfinal: pprev: {
+        python =
+          let
+            overrides = (pfinal: pprev: {
               pyopenssl = pprev.pyopenssl.overrideAttrs
                 (old: { meta = old.meta // { broken = false; }; });
-            });
-          };
-          python39 = prev.python39.override {
-            packageOverrides = (pfinal: pprev: {
-              pyopenssl = pprev.pyopenssl.overrideAttrs
+              typer = pprev.pyopenssl.overrideAttrs
                 (old: { meta = old.meta // { broken = false; }; });
             });
+          in
+          final: prev: {
+            python3 = prev.python3.override {
+              packageOverrides = overrides;
+            };
+            python39 = prev.python39.override {
+              packageOverrides = overrides;
+            };
+            python310 = prev.python310.override {
+              packageOverrides = overrides;
+            };
           };
-          python310 = prev.python310.override {
-            packageOverrides = (pfinal: pprev: {
-              pyopenssl = pprev.pyopenssl.overrideAttrs
-                (old: { meta = old.meta // { broken = false; }; });
-            });
-          };
-        };
         devshell = inputs.devshell.overlay;
       };
     };
