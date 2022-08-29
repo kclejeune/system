@@ -186,7 +186,7 @@ def clean(
         "result", help="the filename to be cleaned, or '*' for all files"
     ),
 ):
-    run_cmd(f"find {LOCAL_FLAKE} -type l -name {filename} -exec rm {{}} +".split())
+    run_cmd(f"find . -type l -maxdepth 1 -name {filename} -exec rm {{}} +".split())
 
 
 @app.command(
