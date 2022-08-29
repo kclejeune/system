@@ -28,7 +28,6 @@ in
   };
   programs.bash.initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin (mkCompletion "bash");
   programs.zsh.initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin (mkCompletion "zsh");
-  programs.fish.initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin (mkCompletion "fish");
   programs.ssh = {
     enable = true;
     extraConfig = ''
