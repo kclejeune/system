@@ -46,9 +46,11 @@
     let
       inherit (flake-utils.lib) eachSystemMap;
 
-      isDarwin = system: (builtins.elem system inputs.nixpkgs.lib.platforms.darwin);
+      isDarwin = system:
+        (builtins.elem system inputs.nixpkgs.lib.platforms.darwin);
       homePrefix = system: if isDarwin system then "/Users" else "/home";
-      defaultSystems = [ "aarch64-linux" "aarch64-darwin" "x86_64-darwin" "x86_64-linux" ];
+      defaultSystems =
+        [ "aarch64-linux" "aarch64-darwin" "x86_64-darwin" "x86_64-linux" ];
 
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -229,6 +231,14 @@
           '';
         });
 
+      apps = eachSystemMap defaultSystems (system: rec {
+        sysdo = {
+          type = "app";
+          program = "${self.packages.${system}.sysdo}/bin/sysdo";
+        };
+        default = sysdo;
+      });
+
       overlays = {
         channels = final: prev: {
           # expose other channels via overlays
@@ -243,15 +253,9 @@
             });
           in
           final: prev: {
-            python3 = prev.python3.override {
-              packageOverrides = overrides;
-            };
-            python39 = prev.python39.override {
-              packageOverrides = overrides;
-            };
-            python310 = prev.python310.override {
-              packageOverrides = overrides;
-            };
+            python3 = prev.python3.override { packageOverrides = overrides; };
+            python39 = prev.python39.override { packageOverrides = overrides; };
+            python310 = prev.python310.override { packageOverrides = overrides; };
           };
         extraPackages = final: prev: {
           sysdo = self.packages.${prev.system}.sysdo;
