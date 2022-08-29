@@ -217,7 +217,7 @@
 
       packages = eachSystemMap defaultSystems (system:
         let
-          pkgs = import inputs.stable {
+          pkgs = import inputs.nixpkgs {
             inherit system;
             overlays = builtins.attrValues self.overlays;
           };
