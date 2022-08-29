@@ -254,8 +254,8 @@
             };
           };
         extraPackages = final: prev: {
-            sysdo = self.packages.${prev.system}.sysdo;
-            pyEnv = self.packages.${prev.system}.pyEnv;
+          sysdo = self.packages.${prev.system}.sysdo;
+          pyEnv = self.packages.${prev.system}.pyEnv;
         };
         devshell = inputs.devshell.overlay;
       };
