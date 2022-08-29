@@ -29,8 +29,8 @@ is_local = check_git.returncode == 0 and os.path.isfile(
 )
 FLAKE_PATH = LOCAL_FLAKE if is_local else REMOTE_FLAKE
 
-check_nixos = subprocess.run(["command", "-v", "nixos-rebuild"], capture_output=True)
-check_darwin = subprocess.run(["command", "-v", "darwin-rebuild"], capture_output=True)
+check_nixos = subprocess.run(["/usr/bin/env", "type", "nixos-rebuild"], capture_output=True)
+check_darwin = subprocess.run(["/usr/bin/env", "type", "darwin-rebuild"], capture_output=True)
 if check_nixos.returncode == 0:
     # if we're on nixos, this command is built in
     PLATFORM = FlakeOutputs.NIXOS
