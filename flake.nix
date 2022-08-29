@@ -42,11 +42,11 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, darwin, home-manager, flake-utils, ... }:
+  outputs = inputs@{ self, darwin, home-manager, flake-utils, ... }:
     let
       inherit (flake-utils.lib) eachSystemMap;
 
-      isDarwin = system: (builtins.elem system nixpkgs.lib.platforms.darwin);
+      isDarwin = system: (builtins.elem system inputs.nixpkgs.lib.platforms.darwin);
       homePrefix = system: if isDarwin system then "/Users" else "/home";
       defaultSystems = [ "aarch64-linux" "aarch64-darwin" "x86_64-darwin" "x86_64-linux" ];
 
@@ -62,10 +62,10 @@
           ]
         , extraModules ? [ ]
         }:
-        darwin.lib.darwinSystem {
+        inputs.darwin.lib.darwinSystem {
           inherit system;
           modules = baseModules ++ extraModules;
-          specialArgs = { inherit self inputs nixpkgs stable; };
+          specialArgs = { inherit self inputs nixpkgs; };
         };
 
       # generate a base nixos configuration with the
@@ -84,7 +84,7 @@
         nixpkgs.lib.nixosSystem {
           inherit system;
           modules = baseModules ++ hardwareModules ++ extraModules;
-          specialArgs = { inherit self inputs nixpkgs stable; };
+          specialArgs = { inherit self inputs nixpkgs; };
         };
 
       # generate a home-manager configuration usable on any unix system
@@ -109,9 +109,9 @@
           ]
         , extraModules ? [ ]
         }:
-        home-manager.lib.homeManagerConfiguration rec {
+        inputs.home-manager.lib.homeManagerConfiguration rec {
           pkgs = import nixpkgs { inherit system; };
-          extraSpecialArgs = { inherit self inputs nixpkgs stable; };
+          extraSpecialArgs = { inherit self inputs nixpkgs; };
           modules = baseModules ++ extraModules ++ [ ./modules/overlays.nix ];
         };
     in
@@ -128,7 +128,7 @@
                 self.homeConfigurations.darwinServer.activationPackage;
             };
           })
-          nixpkgs.lib.platforms.darwin) ++
+          inputs.nixpkgs.lib.platforms.darwin) ++
         # linux checks
         (builtins.map
           (system: {
@@ -138,7 +138,7 @@
               server = self.homeConfigurations.server.activationPackage;
             };
           })
-          nixpkgs.lib.platforms.linux)
+          inputs.nixpkgs.lib.platforms.linux)
       );
 
       darwinConfigurations = {
@@ -215,7 +215,7 @@
 
       packages = eachSystemMap defaultSystems (system:
         let
-          pkgs = import nixpkgs {
+          pkgs = import inputs.stable {
             inherit system;
             overlays = builtins.attrValues self.overlays;
           };
