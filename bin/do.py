@@ -22,11 +22,12 @@ class Colors(Enum):
 
 
 check_git = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True)
-is_local = check_git.returncode == 0
+LOCAL_FLAKE = os.path.realpath(check_git.stdout.decode().strip())
 REMOTE_FLAKE = "github:kclejeune/system"
-FLAKE_PATH = (
-    os.path.realpath(check_git.stdout.decode().strip()) if is_local else REMOTE_FLAKE
+is_local = check_git.returncode == 0 and os.path.isfile(
+    os.path.join(LOCAL_FLAKE, "flake.nix")
 )
+FLAKE_PATH = LOCAL_FLAKE if is_local else REMOTE_FLAKE
 
 check_nixos = subprocess.run(["command", "-v", "nixos-rebuild"], capture_output=True)
 check_darwin = subprocess.run(["command", "-v", "darwin-rebuild"], capture_output=True)
