@@ -1,4 +1,5 @@
 import os
+import subprocess
 from enum import Enum
 from typing import List
 
@@ -20,11 +21,20 @@ class Colors(Enum):
     ERROR = typer.colors.RED
 
 
-if os.system("command -v nixos-rebuild > /dev/null") == 0:
+check_git = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True)
+is_local = check_git.returncode == 0
+REMOTE_FLAKE = "github:kclejeune/system"
+FLAKE_PATH = (
+    os.path.realpath(check_git.stdout.decode().strip()) if is_local else REMOTE_FLAKE
+)
+
+check_nixos = subprocess.run(["command", "-v", "nixos-rebuild"], capture_output=True)
+check_darwin = subprocess.run(["command", "-v", "darwin-rebuild"], capture_output=True)
+if check_nixos.returncode == 0:
     # if we're on nixos, this command is built in
     PLATFORM = FlakeOutputs.NIXOS
 elif (
-    os.system("command -v darwin-rebuild > /dev/null") == 0
+    check_darwin.returncode == 0
     or platform.uname().system.lower().strip() == "darwin".lower().strip()
 ):
     # if we're on darwin, we might have darwin-rebuild or the distro id will be 'darwin'
@@ -34,17 +44,22 @@ else:
     PLATFORM = FlakeOutputs.HOME_MANAGER
 
 
-def fmt_command(cmd: str):
-    return f"> {cmd}"
+def fmt_command(cmd: List[str]):
+    cmd_str = " ".join(cmd)
+    return f"$ {cmd_str}"
 
 
-def test_cmd(cmd: str):
-    return os.system(f"{cmd} > /dev/null") == 0
+def test_cmd(cmd: List[str]):
+    return subprocess.run(cmd).returncode == 0
 
 
-def run_cmd(cmd: str):
+def run_cmd(cmd: List[str], shell=False):
     typer.secho(fmt_command(cmd), fg=Colors.INFO.value)
-    return os.system(cmd)
+    return (
+        subprocess.run(" ".join(cmd), shell=True)
+        if shell
+        else subprocess.run(cmd, shell=False)
+    )
 
 
 def select(nixos: bool, darwin: bool, home_manager: bool):
@@ -57,13 +72,10 @@ def select(nixos: bool, darwin: bool, home_manager: bool):
 
     if nixos:
         return FlakeOutputs.NIXOS
-
     elif darwin:
         return FlakeOutputs.DARWIN
-
     elif home_manager:
         return FlakeOutputs.HOME_MANAGER
-
     else:
         return PLATFORM
 
@@ -74,15 +86,25 @@ def select(nixos: bool, darwin: bool, home_manager: bool):
 )
 def bootstrap(
     host: str = typer.Argument(None, help="the hostname of the configuration to build"),
+    remote: bool = typer.Option(
+        default=False,
+        hidden=not is_local,
+        help="whether to fetch current changes from the remote",
+    ),
     nixos: bool = False,
     darwin: bool = False,
     home_manager: bool = False,
 ):
     cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
-    flags = "-v --experimental-features 'nix-command flakes'"
+    flags = ["-v", "--experimental-features", "nix-command flakes"]
+
+    bootstrap_flake = REMOTE_FLAKE if remote else FLAKE_PATH
+    if host is None:
+        typer.secho("host unspecified", fg=Colors.ERROR.value)
+        return
 
     if cfg is None:
-        return
+        typer.secho("missing configuration", fg=Colors.ERROR.value)
     elif cfg == FlakeOutputs.NIXOS:
         typer.secho(
             "boostrap does not apply to nixos systems.",
@@ -90,14 +112,27 @@ def bootstrap(
         )
         raise typer.Abort()
     elif cfg == FlakeOutputs.DARWIN:
-        diskSetup()
-        flake = f".#{cfg.value}.{host}.config.system.build.toplevel {flags}"
-        run_cmd(f"nix build {flake} {flags}")
-        run_cmd(f"./result/sw/bin/darwin-rebuild switch --flake .#{host}")
-    elif cfg == FlakeOutputs.HOME_MANAGER:
-        flake = f".#{host}"
+        disk_setup()
+        flake = f"{bootstrap_flake}#{cfg.value}.{host}.config.system.build.toplevel"
+        run_cmd(["nix", "build", flake] + flags)
         run_cmd(
-            f"nix run github:nix-community/home-manager {flags} --no-write-lock-file -- switch --flake {flake} -b backup"
+            f"./result/sw/bin/darwin-rebuild switch --flake {FLAKE_PATH}#{host}".split()
+        )
+    elif cfg == FlakeOutputs.HOME_MANAGER:
+        flake = f"{bootstrap_flake}#{host}"
+        run_cmd(
+            ["nix", "run"]
+            + flags
+            + [
+                "github:nix-community/home-manager",
+                "--no-write-lock-file",
+                "--",
+                "switch",
+                "--flake",
+                flake,
+                "-b",
+                "backup",
+            ]
         )
     else:
         typer.secho("could not infer system type.", fg=Colors.ERROR.value)
@@ -110,8 +145,10 @@ def bootstrap(
 )
 def build(
     host: str = typer.Argument(None, help="the hostname of the configuration to build"),
-    pull: bool = typer.Option(
-        default=False, help="whether to fetch current changes from the remote"
+    remote: bool = typer.Option(
+        default=False,
+        hidden=not is_local,
+        help="whether to fetch current changes from the remote",
     ),
     nixos: bool = False,
     darwin: bool = False,
@@ -121,26 +158,26 @@ def build(
     if cfg is None:
         return
     elif cfg == FlakeOutputs.NIXOS:
-        cmd = "sudo nixos-rebuild build --flake"
-        flake = f".#{host}"
+        cmd = ["sudo", "nixos-rebuild", "build", "--flake"]
     elif cfg == FlakeOutputs.DARWIN:
-        flake = f".#{host}"
-        cmd = "darwin-rebuild build --flake"
+        cmd = ["darwin-rebuild", "build", "--flake"]
     elif cfg == FlakeOutputs.HOME_MANAGER:
-        flake = f".#{host}"
-        cmd = "home-manager build --flake"
+        cmd = ["home-manager", "build", "--flake"]
     else:
         typer.secho("could not infer system type.", fg=Colors.ERROR.value)
         raise typer.Abort()
 
-    if pull:
-        git_pull()
-    flake = f".#{host}"
-    flags = " ".join(["--show-trace"])
-    run_cmd(f"{cmd} {flake} {flags}")
+    if remote:
+        flake = f"{REMOTE_FLAKE}#{host}"
+    else:
+        flake = f"{FLAKE_PATH}#{host}"
+
+    flags = ["--show-trace"]
+    run_cmd(cmd + [flake] + flags)
 
 
 @app.command(
+    hidden=not is_local,
     help="remove previously built configurations and symlinks from the current directory",
 )
 def clean(
@@ -148,36 +185,27 @@ def clean(
         "result", help="the filename to be cleaned, or '*' for all files"
     ),
 ):
-    run_cmd(f"find . -type l -name '{filename}' | xargs rm")
+    run_cmd(f"find . -type l -name '{filename}' -exec rm {{}} +".split())
 
 
 @app.command(
-    help="configure disk setup for nix-darwin",
     hidden=PLATFORM != FlakeOutputs.DARWIN,
+    help="configure disk setup for nix-darwin",
 )
-def diskSetup():
-    if PLATFORM != FlakeOutputs.DARWIN:
-        typer.secho(
-            "nix-darwin does not apply on this platform. aborting...",
-            fg=Colors.ERROR.value,
-        )
-        return
-
-    if not test_cmd("grep -q '^run\\b' /etc/synthetic.conf 2>/dev/null"):
+def disk_setup():
+    if not test_cmd("grep -q ^run\\b /etc/synthetic.conf".split()):
         APFS_UTIL = "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util"
         typer.secho("setting up /etc/synthetic.conf", fg=Colors.INFO.value)
-        run_cmd("echo 'run\tprivate/var/run' | sudo tee -a /etc/synthetic.conf")
-        run_cmd(f"{APFS_UTIL} -B || true")
-        run_cmd(f"{APFS_UTIL} -t || true")
-    if not test_cmd("test -L /run"):
+        run_cmd(
+            "echo 'run\tprivate/var/run' | sudo tee -a /etc/synthetic.conf".split(),
+            shell=True,
+        )
+        run_cmd([APFS_UTIL, "-B"])
+        run_cmd([APFS_UTIL, "-t"])
+    if not test_cmd(["test", "-L", "/run"]):
         typer.secho("linking /run directory", fg=Colors.INFO.value)
-        run_cmd("sudo ln -sfn private/var/run /run")
+        run_cmd("sudo ln -sfn private/var/run /run".split())
     typer.secho("disk setup complete", fg=Colors.SUCCESS.value)
-
-
-@app.command(help="run formatter on all files")
-def fmt():
-    run_cmd("fmt")
 
 
 @app.command(
@@ -195,10 +223,11 @@ def gc(
     dry_run: bool = typer.Option(False, help="test the result of garbage collection"),
 ):
     cmd = f"nix-collect-garbage --delete-older-than {delete_older_than} {'--dry-run' if dry_run else ''}"
-    run_cmd(cmd)
+    run_cmd(cmd.split())
 
 
 @app.command(
+    hidden=not is_local,
     help="update all flake inputs or optionally specific flakes",
 )
 def update(
@@ -211,28 +240,23 @@ def update(
     ),
     commit: bool = typer.Option(False, help="commit the updated lockfile"),
 ):
-    flags = "--commit-lock-file" if commit else ""
+    flags = ["--commit-lock-file"] if commit else []
     if not flake:
         typer.secho("updating all flake inputs")
-        cmd = f"nix flake update {flags}"
-        run_cmd(cmd)
+        run_cmd(["nix", "flake", "update"] + flags)
     else:
-        inputs = [f"--update-input {input}" for input in flake]
-        typer.secho(f"updating {','.join(flake)}")
-        cmd = f"nix flake lock {' '.join(inputs)} {flags}"
-        run_cmd(cmd)
+        inputs = []
+        for input in flake:
+            inputs.append("--update-input")
+            inputs.append(input)
+        typer.secho(f"updating {', '.join(flake)}")
+        run_cmd(["nix", "flake", "lock"] + inputs + flags)
 
 
-@app.command(help="pull changes from remote repo")
-def git_pull():
+@app.command(help="pull changes from remote repo", hidden=not is_local)
+def pull():
     cmd = f"git stash && git pull && git stash apply"
-    run_cmd(cmd)
-
-
-@app.command(help="update remote repo with current changes")
-def git_push():
-    cmd = f"git push"
-    run_cmd(cmd)
+    run_cmd(cmd.split())
 
 
 @app.command(
@@ -244,8 +268,10 @@ def switch(
         default=None,
         help="the hostname of the configuration to build",
     ),
-    pull: bool = typer.Option(
-        default=False, help="whether to fetch current changes from the remote"
+    remote: bool = typer.Option(
+        default=False,
+        hidden=not is_local,
+        help="whether to fetch current changes from the remote",
     ),
     nixos: bool = False,
     darwin: bool = False,
@@ -268,17 +294,18 @@ def switch(
         typer.secho("could not infer system type.", fg=Colors.ERROR.value)
         raise typer.Abort()
 
-    if pull:
-        git_pull()
-    flake = f".#{host}"
-    flags = " ".join(["--show-trace"])
-    run_cmd(f"{cmd} {flake} {flags}")
+    if remote:
+        flake = f"{REMOTE_FLAKE}#{host}"
+    else:
+        flake = f"{FLAKE_PATH}#{host}"
+    flags = ["--show-trace"]
+    run_cmd(cmd.split() + [flake] + flags)
 
 
-@app.command(help="cache the output environment of flake.nix")
+@app.command(hidden=not is_local, help="cache the output environment of flake.nix")
 def cache(cache_name: str = "kclejeune"):
     cmd = f"nix flake archive --json | jq -r '.path,(.inputs|to_entries[].value.path)' | cachix push {cache_name}"
-    run_cmd(cmd)
+    run_cmd(cmd.split(), shell=True)
 
 
 if __name__ == "__main__":
