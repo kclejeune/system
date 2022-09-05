@@ -8,12 +8,27 @@
       keep-derivations = true
       experimental-features = nix-command flakes
     '';
-    trustedUsers = [ "${config.user.name}" "root" "@admin" "@wheel" ];
+    settings = {
+      max-jobs = 8;
+      trusted-users = [ "${config.user.name}" "root" "@admin" "@wheel" ];
+      trusted-substituters = [
+        "https://cache.nixos.org"
+        "https://nix-community.cachix.org"
+        "https://kclejeune.cachix.org"
+      ];
+      trusted-public-keys = [
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
+      ];
+    };
     gc = {
       automatic = true;
       options = "--delete-older-than 14d";
     };
-    maxJobs = 8;
+
+    # auto manage nixbld users with nix darwin
+    configureBuildUsers = true;
     readOnlyStore = true;
     nixPath = builtins.map
       (source: "${source}=/etc/${config.environment.etc.${source}.target}") [
@@ -21,19 +36,6 @@
       "nixpkgs"
       "stable"
     ];
-
-    binaryCaches = [
-      "https://cache.nixos.org"
-      "https://nix-community.cachix.org"
-      "https://kclejeune.cachix.org"
-    ];
-
-    binaryCachePublicKeys = [
-      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
-    ];
-
     registry = {
       nixpkgs = {
         from = {
@@ -42,7 +44,6 @@
         };
         flake = inputs.nixpkgs;
       };
-
       stable = {
         from = {
           id = "stable";
