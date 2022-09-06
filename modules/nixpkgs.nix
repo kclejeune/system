@@ -27,8 +27,6 @@
       options = "--delete-older-than 14d";
     };
 
-    # auto manage nixbld users with nix darwin
-    configureBuildUsers = true;
     readOnlyStore = true;
     nixPath = builtins.map
       (source: "${source}=/etc/${config.environment.etc.${source}.target}") [
