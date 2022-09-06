@@ -112,9 +112,12 @@
         , extraModules ? [ ]
         }:
         inputs.home-manager.lib.homeManagerConfiguration rec {
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = builtins.attrValues self.overlays;
+          };
           extraSpecialArgs = { inherit self inputs nixpkgs; };
-          modules = baseModules ++ extraModules ++ [ ./modules/overlays.nix ];
+          modules = baseModules ++ extraModules;
         };
     in
     {
