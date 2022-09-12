@@ -4,7 +4,7 @@
     earthly
     vault-bin
     helmfile
-    # awscli2
+    awscli2
     kubectl
     kubernetes-helm
   ];

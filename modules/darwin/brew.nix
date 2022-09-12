@@ -6,9 +6,7 @@
       brewfile = true;
       noLock = true;
     };
-    brews = [
-      "awscli"
-    ];
+    brews = [ ];
 
     taps = [
       "1password/tap"
@@ -29,7 +27,7 @@
       "alt-tab"
       "appcleaner"
       "bartender"
-      "docker"
+      # "docker"
       "firefox-developer-edition"
       "fork"
       "google-chrome"
@@ -42,6 +40,7 @@
       "kitty"
       "obsidian"
       "raycast"
+      "rancher"
       "stats"
       "utm"
       "visual-studio-code"
