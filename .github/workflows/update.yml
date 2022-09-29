@@ -37,7 +37,7 @@ jobs:
           branch: flakebot
           force: true
       - name: pull-request-action
-        uses: vsoch/pull-request-action@1.0.20
+        uses: vsoch/pull-request-action@1.0.21
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
           PULL_REQUEST_FROM_BRANCH: 'flakebot'
