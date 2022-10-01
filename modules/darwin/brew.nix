@@ -4,7 +4,6 @@
     autoUpdate = false;
     global = {
       brewfile = true;
-      noLock = true;
     };
     brews = [ ];
 
