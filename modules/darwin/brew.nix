@@ -1,7 +1,6 @@
 { inputs, config, pkgs, ... }: {
   homebrew = {
     enable = true;
-    autoUpdate = false;
     global = {
       brewfile = true;
     };
