@@ -1,5 +1,6 @@
 { lib, ... }: {
   imports = [
+    ./coc
     ./fzf
     ./lualine-nvim
     ./telescope

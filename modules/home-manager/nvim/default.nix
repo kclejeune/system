@@ -31,9 +31,9 @@
     vimdiffAlias = true;
 
     # nvim plugin providers
-    withNodeJs = false;
-    withRuby = false;
-    withPython3 = false;
+    withNodeJs = true;
+    withRuby = true;
+    withPython3 = true;
 
     # share vim plugins since nothing is specific to nvim
     plugins = with pkgs.vimPlugins; [
