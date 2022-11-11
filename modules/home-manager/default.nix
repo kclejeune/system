@@ -41,6 +41,7 @@ in
         LSCOLORS = "ExFxBxDxCxegedabagacad";
         KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
         NODE_PATH = "${NODE_GLOBAL}/lib";
+        JAVA_HOME = "${pkgs.jdk}";
         # HOMEBREW_NO_AUTO_UPDATE = 1;
       };
       sessionPath = [
@@ -64,6 +65,7 @@ in
         google-cloud-sdk
         helmfile
         httpie
+        jdk
         kubectl
         kubernetes-helm
         luajit
@@ -73,7 +75,6 @@ in
         nixfmt
         nixpkgs-fmt
         nodejs_latest
-        pandoc
         parallel
         poetry
         pre-commit
@@ -112,11 +113,11 @@ in
     go.enable = true;
     gpg.enable = true;
     htop.enable = true;
-    java.enable = true;
     jq.enable = true;
     less.enable = true;
     man.enable = true;
     nix-index.enable = true;
+    pandoc.enable = true;
     starship.enable = true;
     yt-dlp.enable = true;
     zathura.enable = true;
