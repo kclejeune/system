@@ -1,4 +1,4 @@
-name: 'system build'
+name: "system build"
 on:
   push:
     branches:
@@ -12,8 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
-          - macos-latest
+          - ubuntu-20.04
+          - macos-12
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
