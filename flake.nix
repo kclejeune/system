@@ -121,48 +121,55 @@
         };
     in
     {
-      checks = builtins.listToAttrs (
-        # darwin checks
-        (builtins.map
-          (system: {
-            name = system;
-            value = {
-              darwin =
-                self.darwinConfigurations.randall-intel.config.system.build.toplevel;
-              darwinServer =
-                self.homeConfigurations.darwinServer.activationPackage;
-            };
-          })
-          inputs.nixpkgs.lib.platforms.darwin) ++
-        # linux checks
-        (builtins.map
-          (system: {
-            name = system;
-            value = {
-              nixos = self.nixosConfigurations.phil.config.system.build.toplevel;
-              server = self.homeConfigurations.server.activationPackage;
-            };
-          })
-          inputs.nixpkgs.lib.platforms.linux)
-      );
+      checks = {
+        aarch64-darwin = {
+          kclejeune_darwin = self.darwinConfigurations."kclejeune@aarch64-darwin".config.system.build.toplevel;
+          kclejeune_home = self.homeConfigurations."kclejeune@aarch64-darwin".activationPackage;
+        };
+        x86_64-darwin = {
+          kclejeune_darwin = self.darwinConfigurations."kclejeune@x86_64-darwin".config.system.build.toplevel;
+          kclejeune_home = self.homeConfigurations."kclejeune@x86_64-darwin".activationPackage;
+        };
+        x86_64-linux = {
+          kclejeune_nixos = self.nixosConfigurations."kclejeune@x86_64-linux".config.system.build.toplevel;
+          kclejeune_home = self.homeConfigurations."kclejeune@x86_64-linux".activationPackage;
+        };
+        aarch64-linux = {
+          kclejeune_nixos = self.nixosConfigurations."kclejeune@aarch64-linux".config.system.build.toplevel;
+          kclejeune_home = self.homeConfigurations."kclejeune@aarch64-linux".activationPackage;
+        };
+      };
 
       darwinConfigurations = {
-        randall = mkDarwinConfig {
+        "kclejeune@aarch64-darwin" = mkDarwinConfig {
+          system = "aarch64-darwin";
           extraModules = [ ./profiles/personal.nix ./modules/darwin/apps.nix ];
         };
-        work = mkDarwinConfig { extraModules = [ ./profiles/work.nix ]; };
-        randall-intel = mkDarwinConfig {
+        "kclejeune@x86_64-darwin" = mkDarwinConfig {
           system = "x86_64-darwin";
           extraModules = [ ./profiles/personal.nix ./modules/darwin/apps.nix ];
         };
-        work-intel = mkDarwinConfig {
-          system = "x86_64-darwin";
+        "lejeukc1@aarch64-darwin" = mkDarwinConfig {
+          system = "aarch64-darwin";
+          extraModules = [ ./profiles/work.nix ];
+        };
+        "lejeukc1@x86_64-darwin" = mkDarwinConfig {
+          system = "aarch64-darwin";
           extraModules = [ ./profiles/work.nix ];
         };
       };
 
       nixosConfigurations = {
-        phil = mkNixosConfig {
+        "kclejeune@x86_64-linux" = mkNixosConfig {
+          system = "aarch64-linux";
+          hardwareModules = [
+            ./modules/hardware/phil.nix
+            inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
+          ];
+          extraModules = [ ./profiles/personal.nix ];
+        };
+        "kclejeune@aarch64-linux" = mkNixosConfig {
+          system = "aarch64-linux";
           hardwareModules = [
             ./modules/hardware/phil.nix
             inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
@@ -172,22 +179,29 @@
       };
 
       homeConfigurations = {
-        server = mkHomeConfig {
+        "kclejeune@x86_64-linux" = mkHomeConfig {
           username = "kclejeune";
+          system = "x86_64-linux";
           extraModules = [ ./profiles/home-manager/personal.nix ];
         };
-        darwinServer = mkHomeConfig {
+        "kclejeune@aarch64-linux" = mkHomeConfig {
+          username = "kclejeune";
+          system = "aarch64-linux";
+          extraModules = [ ./profiles/home-manager/personal.nix ];
+        };
+        "kclejeune@x86_64-darwin" = mkHomeConfig {
           username = "kclejeune";
           system = "x86_64-darwin";
           extraModules = [ ./profiles/home-manager/personal.nix ];
         };
-        darwinServerM1 = mkHomeConfig {
+        "kclejeune@aarch64-darwin" = mkHomeConfig {
           username = "kclejeune";
           system = "aarch64-darwin";
           extraModules = [ ./profiles/home-manager/personal.nix ];
         };
-        workServer = mkHomeConfig {
+        "lejeukc1@x86_64-linux" = mkHomeConfig {
           username = "lejeukc1";
+          system = "x86_64-linux";
           extraModules = [ ./profiles/home-manager/work.nix ];
         };
       };

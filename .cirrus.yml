@@ -1,8 +1,17 @@
-# build_darwin_task:
-#   macos_instance:
-#     image: ghcr.io/cirruslabs/macos-monterey-base:latest
-#   install_nix_script: ./bin/install-nix.sh
-#   flake_check_script: nix flake check -v --show-trace
+build_darwin_arm64_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-monterey-base:latest
+  install_nix_script: ./bin/install-nix.sh
+  enable_flake_script: echo "experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
+  flake_check_script: zsh --login -c "nix flake check -v --show-trace"
+
+build_darwin_x86_64_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-monterey-base:latest
+  install_rosetta: softwareupdate --install-rosetta --agree-to-license
+  install_nix_script: arch -x86_64 ./bin/install-nix.sh
+  enable_flake_script: echo "experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
+  flake_check_script: arch -x86_64 zsh -c "nix flake check -v --show-trace"
 
 build_linux_task:
   matrix:
