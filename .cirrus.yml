@@ -1,0 +1,14 @@
+# build_darwin_task:
+#   macos_instance:
+#     image: ghcr.io/cirruslabs/macos-monterey-base:latest
+#   install_nix_script: ./bin/install-nix.sh
+#   flake_check_script: nix flake check -v --show-trace
+
+build_linux_task:
+  matrix:
+    - container:
+        image: nixos/nix:latest
+    - arm_container:
+        image: nixos/nix:latest
+  enable_flake_script: echo "experimental-features = nix-command flakes" | tee -a /etc/nix/nix.conf
+  flake_check_script: nix flake check -v --show-trace
