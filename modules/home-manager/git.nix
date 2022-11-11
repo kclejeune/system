@@ -2,6 +2,11 @@
   home.packages = [ pkgs.github-cli pkgs.git-crypt ];
   programs.git = {
     userName = "Kennan LeJeune";
+    enable = true;
+    aliases = {
+      ignore =
+        "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
+    };
     extraConfig = {
       credential.helper =
         if pkgs.stdenvNoCC.isDarwin then

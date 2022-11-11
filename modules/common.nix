@@ -1,5 +1,5 @@
 { self, inputs, config, lib, pkgs, ... }: {
-  imports = [ ./primary.nix ./nixpkgs.nix ];
+  imports = [ ./primaryUser.nix ./nixpkgs.nix ];
 
   nixpkgs.overlays = builtins.attrValues self.overlays;
 
