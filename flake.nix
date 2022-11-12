@@ -159,7 +159,7 @@
 
       nixosConfigurations = {
         "kclejeune@x86_64-linux" = mkNixosConfig {
-          system = "aarch64-linux";
+          system = "x86_64-linux";
           hardwareModules = [
             ./modules/hardware/phil.nix
             inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
