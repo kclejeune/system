@@ -13,6 +13,7 @@ build_template: &BUILD_TEMPLATE
   flake_check_script: cachix watch-exec kclejeune -- nix flake check -j auto -v --show-trace
 
 build_darwin_task:
+  only_if: $CIRRUS_BRANCH == 'master' || $CIRRUS_TAG != '' || $CIRRUS_PR != ''
   macos_instance:
     image: $DARWIN_BUILD_IMAGE
   matrix:
@@ -27,17 +28,18 @@ build_darwin_task:
   <<: *BUILD_TEMPLATE
 
 build_linux_task:
+  only_if: $CIRRUS_BRANCH == 'master' || $CIRRUS_TAG != '' || $CIRRUS_PR != ''
   matrix:
     - arm_container:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
-        memory: 8G
+        memory: 12G
       env:
         ARCH: arm64
     - container:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
-        memory: 8G
+        memory: 12G
       env:
         ARCH: x86_64
   name: build_linux_$ARCH
