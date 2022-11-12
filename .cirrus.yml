@@ -1,34 +1,39 @@
-build_darwin_arm64_task:
-  macos_instance:
-    image: ghcr.io/cirruslabs/macos-monterey-base:latest
-  env:
-    CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
-  install_nix_script: ./bin/install-nix.sh && echo "experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf && echo "trusted-users = root admin" | sudo tee -a /etc/nix/nix.conf && sudo launchctl kickstart -k system/org.nixos.nix-daemon
-  install_cachix_script: source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use kclejeune
-  flake_check_script: source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && cachix watch-exec kclejeune -- nix flake check -v --show-trace
+# global env values
+env:
+  CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
+  CIRRUS_SHELL: bash -il
+  DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-monterey-base:latest
+  LINUX_BUILD_IMAGE: nixos/nix:latest
+  SUDO: sudo
 
-build_darwin_x86_64_task:
+run_build_template: &RUN_BUILD_TEMPLATE
+  enable_flake_script: echo "experimental-features = nix-command flakes" | $SUDO tee -a /etc/nix/nix.conf
+  install_cachix_script: nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use kclejeune
+  flake_check_script: cachix watch-exec kclejeune -- nix flake check -v --show-trace
+
+build_darwin_task:
   macos_instance:
-    image: ghcr.io/cirruslabs/macos-monterey-base:latest
-  env:
-    CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
+    image: $DARWIN_BUILD_IMAGE
+  matrix:
+    - env:
+        CIRRUS_ARCH: arm64
+    - env:
+        CIRRUS_ARCH: x86_64
   install_rosetta_script: softwareupdate --install-rosetta --agree-to-license
-  install_nix_script: arch -x86_64 ./bin/install-nix.sh && echo "experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf && echo "trusted-users = root admin" | sudo tee -a /etc/nix/nix.conf && sudo launchctl kickstart -k system/org.nixos.nix-daemon
-  install_cachix_script: source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use kclejeune
-  flake_check_script: source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && cachix watch-exec kclejeune -- nix flake check -v --show-trace
+  install_nix_script: arch -$CIRRUS_ARCH ./bin/install-nix.sh
+  enable_trusted_users_script: echo "trusted-users = root admin" | $SUDO tee -a /etc/nix/nix.conf && sudo launchctl kickstart -k system/org.nixos.nix-daemon
+  <<: *RUN_BUILD_TEMPLATE
 
 build_linux_task:
   matrix:
-    - container:
-        image: nixos/nix:latest
+    - arm_container:
+        image: $LINUX_BUILD_IMAGE
         cpu: 4
         memory: 8G
-    - arm_container:
-        image: nixos/nix:latest
+    - container:
+        image: $LINUX_BUILD_IMAGE
         cpu: 4
         memory: 8G
   env:
-    CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
-  enable_flake_script: echo "experimental-features = nix-command flakes" | tee -a /etc/nix/nix.conf
-  install_cachix_script: nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use kclejeune
-  flake_check_script: cachix watch-exec kclejeune -- nix flake check -v --show-trace
+    SUDO: ""
+  <<: *RUN_BUILD_TEMPLATE
