@@ -121,18 +121,30 @@
     {
       checks = {
         aarch64-darwin = {
+          # CI user config
+          admin_darwin = self.darwinConfigurations."admin@aarch64-darwin".config.system.build.toplevel;
+          # personal config
           kclejeune_darwin = self.darwinConfigurations."kclejeune@aarch64-darwin".config.system.build.toplevel;
           kclejeune_home = self.homeConfigurations."kclejeune@aarch64-darwin".activationPackage;
         };
         x86_64-darwin = {
+          # CI user config
+          admin_darwin = self.darwinConfigurations."admin@x86_64-darwin".config.system.build.toplevel;
+          # personal config
           kclejeune_darwin = self.darwinConfigurations."kclejeune@x86_64-darwin".config.system.build.toplevel;
           kclejeune_home = self.homeConfigurations."kclejeune@x86_64-darwin".activationPackage;
         };
         x86_64-linux = {
+          # CI user config
+          root_home = self.homeConfigurations."root@x86_64-linux".activationPackage;
+          # personal config
           kclejeune_nixos = self.nixosConfigurations."kclejeune@x86_64-linux".config.system.build.toplevel;
           kclejeune_home = self.homeConfigurations."kclejeune@x86_64-linux".activationPackage;
         };
         aarch64-linux = {
+          # CI user config
+          root_home = self.homeConfigurations."root@aarch64-linux".activationPackage;
+          # personal config
           kclejeune_nixos = self.nixosConfigurations."kclejeune@aarch64-linux".config.system.build.toplevel;
           kclejeune_home = self.homeConfigurations."kclejeune@aarch64-linux".activationPackage;
         };
@@ -155,6 +167,16 @@
           system = "aarch64-darwin";
           extraModules = [ ./profiles/work.nix ];
         };
+
+        # CI Bootstrap Test Config
+        "admin@aarch64-darwin" = mkDarwinConfig {
+          system = "aarch64-darwin";
+          extraModules = [ ./profiles/admin.nix ./modules/darwin/apps.nix ];
+        };
+        "admin@x86_64-darwin" = mkDarwinConfig {
+          system = "x86_64-darwin";
+          extraModules = [ ./profiles/admin.nix ./modules/darwin/apps.nix ];
+        };
       };
 
       nixosConfigurations = {
@@ -176,6 +198,7 @@
       };
 
       homeConfigurations = {
+        # personal config
         "kclejeune@x86_64-linux" = mkHomeConfig {
           username = "kclejeune";
           system = "x86_64-linux";
@@ -200,6 +223,18 @@
           username = "lejeukc1";
           system = "x86_64-linux";
           extraModules = [ ./profiles/home-manager/work.nix ];
+        };
+
+        # CI bootstrapping test config
+        "root@x86_64-linux" = mkHomeConfig {
+          username = "root";
+          system = "x86_64-linux";
+          extraModules = [ ./profiles/home-manager/personal.nix ];
+        };
+        "root@aarch64-linux" = mkHomeConfig {
+          username = "root";
+          system = "aarch64-linux";
+          extraModules = [ ./profiles/home-manager/personal.nix ];
         };
       };
 
