@@ -13,7 +13,7 @@ build_darwin_x86_64_task:
   env:
     CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
   install_rosetta_script: softwareupdate --install-rosetta --agree-to-license
-  install_nix_script: ./bin/install-nix.sh && echo "experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf && echo "trusted-users = root admin" | sudo tee -a /etc/nix/nix.conf && sudo launchctl kickstart -k system/org.nixos.nix-daemon
+  install_nix_script: arch -x86_64 ./bin/install-nix.sh && echo "experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf && echo "trusted-users = root admin" | sudo tee -a /etc/nix/nix.conf && sudo launchctl kickstart -k system/org.nixos.nix-daemon
   install_cachix_script: source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use kclejeune
   flake_check_script: source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && cachix watch-exec kclejeune -- nix flake check -v --show-trace
 
