@@ -4,12 +4,13 @@ env:
   CIRRUS_SHELL: bash -il
   DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-monterey-base:latest
   LINUX_BUILD_IMAGE: nixos/nix:latest
+  NIX_INSTALL_URL: https://nixos.org/nix/install
   SUDO: sudo
 
 build_template: &BUILD_TEMPLATE
   enable_flake_script: echo "experimental-features = nix-command flakes" | $SUDO tee -a /etc/nix/nix.conf
   install_cachix_script: nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use kclejeune
-  flake_check_script: cachix watch-exec kclejeune -- nix flake check -v --show-trace
+  flake_check_script: cachix watch-exec kclejeune -- nix flake check -j auto -v --show-trace
 
 build_darwin_task:
   macos_instance:
@@ -19,8 +20,9 @@ build_darwin_task:
         ARCH: arm64
     - env:
         ARCH: x86_64
+  name: build_darwin_$ARCH
   install_rosetta_script: softwareupdate --install-rosetta --agree-to-license
-  install_nix_script: arch -$ARCH ./bin/install-nix.sh
+  install_nix_script: arch -$ARCH bash <(curl -L "$NIX_INSTALL_URL") --daemon
   enable_trusted_users_script: echo "trusted-users = root admin" | $SUDO tee -a /etc/nix/nix.conf && sudo launchctl kickstart -k system/org.nixos.nix-daemon
   <<: *BUILD_TEMPLATE
 
@@ -38,6 +40,7 @@ build_linux_task:
         memory: 8G
       env:
         ARCH: x86_64
+  name: build_linux_$ARCH
   env:
     SUDO: ""
   <<: *BUILD_TEMPLATE
