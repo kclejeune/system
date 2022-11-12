@@ -6,7 +6,7 @@ env:
   LINUX_BUILD_IMAGE: nixos/nix:latest
   SUDO: sudo
 
-run_build_template: &RUN_BUILD_TEMPLATE
+build_template: &BUILD_TEMPLATE
   enable_flake_script: echo "experimental-features = nix-command flakes" | $SUDO tee -a /etc/nix/nix.conf
   install_cachix_script: nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use kclejeune
   flake_check_script: cachix watch-exec kclejeune -- nix flake check -v --show-trace
@@ -22,7 +22,7 @@ build_darwin_task:
   install_rosetta_script: softwareupdate --install-rosetta --agree-to-license
   install_nix_script: arch -$CIRRUS_ARCH ./bin/install-nix.sh
   enable_trusted_users_script: echo "trusted-users = root admin" | $SUDO tee -a /etc/nix/nix.conf && sudo launchctl kickstart -k system/org.nixos.nix-daemon
-  <<: *RUN_BUILD_TEMPLATE
+  <<: *BUILD_TEMPLATE
 
 build_linux_task:
   matrix:
@@ -30,10 +30,14 @@ build_linux_task:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
         memory: 8G
+      env:
+        CIRRUS_ARCH: arm64
+        SUDO: ""
     - container:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
         memory: 8G
-  env:
-    SUDO: ""
-  <<: *RUN_BUILD_TEMPLATE
+      env:
+        CIRRUS_ARCH: x86_64
+        SUDO: ""
+  <<: *BUILD_TEMPLATE
