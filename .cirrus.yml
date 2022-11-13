@@ -8,12 +8,12 @@ env:
   SUDO: sudo
 
 build_template: &BUILD_TEMPLATE
+  only_if: $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_TAG != '' || $CIRRUS_PR != '' || $CIRRUS_BUILD_SOURCE != "github"
   enable_flake_script: echo "experimental-features = nix-command flakes" | $SUDO tee -a /etc/nix/nix.conf
   install_cachix_script: nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use kclejeune
   flake_check_script: cachix watch-exec kclejeune -- nix flake check -j auto -v --show-trace
 
 build_darwin_task:
-  only_if: $CIRRUS_BRANCH == 'master' || $CIRRUS_TAG != '' || $CIRRUS_PR != ''
   macos_instance:
     image: $DARWIN_BUILD_IMAGE
   matrix:
@@ -28,7 +28,6 @@ build_darwin_task:
   <<: *BUILD_TEMPLATE
 
 build_linux_task:
-  only_if: $CIRRUS_BRANCH == 'master' || $CIRRUS_TAG != '' || $CIRRUS_PR != ''
   matrix:
     - arm_container:
         image: $LINUX_BUILD_IMAGE
