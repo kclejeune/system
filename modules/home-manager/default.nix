@@ -53,6 +53,7 @@ in
       packages = with pkgs; [
         age
         cachix
+        cirrus-cli
         comma
         coreutils-full
         curl
