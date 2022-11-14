@@ -36,7 +36,7 @@ in
   config = mkIf cfg.enable {
     environment.systemPackages = [ pkgs.syncthing ];
     launchd.user.agents.syncthing = {
-      command = "${pkgs.syncthing}/bin/syncthing";
+      command = "${lib.getExe pkgs.syncthing}";
       serviceConfig = {
         Label = "net.syncthing.syncthing";
         KeepAlive = true;
