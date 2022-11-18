@@ -1,6 +1,8 @@
-{ config, pkgs, lib, ... }: let
-    fd = lib.getExe pkgs.fd;
-in {
+{ config, pkgs, lib, ... }:
+let
+  fd = lib.getExe pkgs.fd;
+in
+{
   programs.fzf = rec {
     enable = true;
     defaultCommand = "${fd} -H --type f";
