@@ -10,6 +10,7 @@ env:
 build_template: &BUILD_TEMPLATE
   only_if: $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_TAG != '' || $CIRRUS_PR != '' || $CIRRUS_BUILD_SOURCE == ""
   name: build_${CIRRUS_OS}_${ARCH}
+  timeout_in: 120m
   enable_flake_script: echo "experimental-features = nix-command flakes" | $SUDO tee -a /etc/nix/nix.conf
   install_cachix_script: nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use kclejeune
   flake_check_script: cachix watch-exec kclejeune -- nix flake check -j auto -v --show-trace
