@@ -117,30 +117,21 @@
           extraSpecialArgs = { inherit self inputs nixpkgs; };
           modules = baseModules ++ extraModules;
         };
-    in
-    {
-      checks = {
-        aarch64-darwin = {
-          kclejeune_darwin = self.darwinConfigurations."kclejeune@aarch64-darwin".config.system.build.toplevel;
-          kclejeune_home = self.homeConfigurations."kclejeune@aarch64-darwin".activationPackage;
-          devshell = self.devShells.aarch64-darwin.default;
-        };
-        x86_64-darwin = {
-          kclejeune_darwin = self.darwinConfigurations."kclejeune@x86_64-darwin".config.system.build.toplevel;
-          kclejeune_home = self.homeConfigurations."kclejeune@x86_64-darwin".activationPackage;
-          devshell = self.devShells.x86_64-darwin.default;
-        };
-        x86_64-linux = {
-          kclejeune_nixos = self.nixosConfigurations."kclejeune@x86_64-linux".config.system.build.toplevel;
-          kclejeune_home = self.homeConfigurations."kclejeune@x86_64-linux".activationPackage;
-          devshell = self.devShells.x86_64-linux.default;
-        };
-        aarch64-linux = {
-          kclejeune_nixos = self.nixosConfigurations."kclejeune@aarch64-linux".config.system.build.toplevel;
-          kclejeune_home = self.homeConfigurations."kclejeune@aarch64-linux".activationPackage;
-          devshell = self.devShells.aarch64-linux.default;
+
+      mkChecks = { arch, os, username ? "kclejeune" }: {
+        "${arch}-${os}" = {
+          "${username}_${os}" = (if os == "darwin" then self.darwinConfigurations else self.nixosConfigurations)."${username}@${arch}-${os}".config.system.build.toplevel;
+          "${username}_home" = self.homeConfigurations."${username}@${arch}-${os}".activationPackage;
+          devShell = self.devShells."${arch}-${os}".default;
         };
       };
+    in
+    {
+      checks = { } //
+        (mkChecks { arch = "aarch64"; os = "darwin"; }) //
+        (mkChecks { arch = "x86_64"; os = "darwin"; }) //
+        (mkChecks { arch = "aarch64"; os = "linux"; }) //
+        (mkChecks { arch = "x86_64"; os = "linux"; });
 
       darwinConfigurations = {
         "kclejeune@aarch64-darwin" = mkDarwinConfig {
@@ -263,18 +254,6 @@
           stable = import inputs.stable { system = prev.system; };
           small = import inputs.small { system = prev.system; };
         };
-        python =
-          let
-            overrides = (pfinal: pprev: {
-              pyopenssl = pprev.pyopenssl.overrideAttrs
-                (old: { meta = old.meta // { broken = false; }; });
-            });
-          in
-          final: prev: {
-            python3 = prev.python3.override { packageOverrides = overrides; };
-            python39 = prev.python39.override { packageOverrides = overrides; };
-            python310 = prev.python310.override { packageOverrides = overrides; };
-          };
         extraPackages = final: prev: {
           sysdo = self.packages.${prev.system}.sysdo;
           pyEnv = self.packages.${prev.system}.pyEnv;
