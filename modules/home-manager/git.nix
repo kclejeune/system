@@ -27,12 +27,13 @@
       sub = "submodule update --init --recursive";
     };
     delta = {
-      enable = true;
+      enable = false;
       options = {
         side-by-side = true;
         line-numbers = true;
       };
     };
+    difftastic.enable = true;
     lfs.enable = true;
   };
 }
