@@ -11,9 +11,12 @@ in
     ./fzf.nix
     ./git.nix
     ./kitty.nix
+    ./nushell.nix
     ./nvim
     ./shell.nix
     ./ssh.nix
+    ./tldr.nix
+    ./tmux.nix
   ];
 
   nixpkgs.config = {
@@ -94,7 +97,6 @@ in
         shellcheck
         stylua
         sysdo
-        tealdeer
         terraform
         tree
         treefmt
