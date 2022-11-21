@@ -33,11 +33,7 @@
 
     # shell stuff
     flake-utils.url = "github:numtide/flake-utils";
-    devshell = {
-      url = "github:numtide/devshell";
-      inputs.flake-utils.follows = "flake-utils";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    devshell.url = "github:numtide/devshell";
   };
 
   outputs = inputs@{ self, darwin, home-manager, flake-utils, ... }:
