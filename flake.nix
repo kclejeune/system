@@ -242,18 +242,7 @@
           pkgs.rnix-lsp
           self.packages.${system}.pyEnv
           pkgs.stylua
-          (treefmt-nix.lib.mkWrapper pkgs {
-            projectRootFile = "flake.lock";
-            programs = {
-              alejandra.enable = true;
-              black.enable = true;
-              gofmt.enable = true;
-              prettier.enable = true;
-              rufo.enable = true;
-              shellcheck.enable = false;
-              shfmt.enable = true;
-            };
-          })
+          (treefmt-nix.lib.mkWrapper pkgs (import ./treefmt.nix))
         ];
         commands = [
           {
