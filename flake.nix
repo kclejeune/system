@@ -35,7 +35,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     treefmt-nix = {
-      url = "github:kclejeune/treefmt-nix";
+      url = "github:kclejeune/treefmt-nix/kclejeune";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -241,7 +241,6 @@
           pkgs.pre-commit
           pkgs.rnix-lsp
           self.packages.${system}.pyEnv
-          pkgs.stylua
           (treefmt-nix.lib.mkWrapper pkgs (import ./treefmt.nix))
         ];
         commands = [

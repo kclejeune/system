@@ -57,6 +57,7 @@ in {
 
     # define package definitions for current user environment
     packages = with pkgs; [
+      alejandra
       age
       cachix
       cirrus-cli
