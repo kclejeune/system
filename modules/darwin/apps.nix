@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   homebrew = {
     casks = [
       "discord"
@@ -10,6 +15,6 @@
       "signal"
       "slack"
     ];
-    masApps = { };
+    masApps = {};
   };
 }

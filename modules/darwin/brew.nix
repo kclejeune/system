@@ -1,10 +1,15 @@
-{ inputs, config, pkgs, ... }: {
+{
+  inputs,
+  config,
+  pkgs,
+  ...
+}: {
   homebrew = {
     enable = true;
     global = {
       brewfile = true;
     };
-    brews = [ ];
+    brews = [];
 
     taps = [
       "1password/tap"

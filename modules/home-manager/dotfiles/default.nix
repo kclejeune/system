@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }: {
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   home.file = {
     hammerspoon = lib.mkIf pkgs.stdenvNoCC.isDarwin {
       source = ./hammerspoon;

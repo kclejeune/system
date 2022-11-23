@@ -1,9 +1,12 @@
-{ config, pkgs, lib, ... }:
-let
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: let
   inherit (pkgs) fetchFromGitHub;
   inherit (pkgs.vimUtils) buildVimPluginFrom2Nix;
-in
-{
+in {
   programs.neovim = {
     plugins = with pkgs.vimPlugins; [
       (config.lib.vimUtils.pluginWithCfg {
@@ -13,6 +16,6 @@ in
       telescope-fzf-native-nvim
       plenary-nvim
     ];
-    extraPackages = [ pkgs.ripgrep ];
+    extraPackages = [pkgs.ripgrep];
   };
 }

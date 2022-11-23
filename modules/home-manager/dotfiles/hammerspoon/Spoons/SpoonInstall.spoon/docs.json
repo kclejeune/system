@@ -23,9 +23,7 @@
           "   * start - if `true`, call the Spoon's `start()` method after configuring everything else.",
           "   * disable - if `true`, do nothing. Easier than commenting it out when you want to temporarily disable a spoon."
         ],
-        "returns": [
-          " * None"
-        ],
+        "returns": [" * None"],
         "signature": "SpoonInstall:andUse(name, arg)",
         "stripped_doc": "",
         "type": "Method"
@@ -75,12 +73,8 @@
         "notes": [
           " * For now, the repository data is not persisted, so you need to update it after every restart if you want to use any of the install functions."
         ],
-        "parameters": [
-          " * None"
-        ],
-        "returns": [
-          " * None"
-        ],
+        "parameters": [" * None"],
+        "returns": [" * None"],
         "signature": "SpoonInstall:asyncUpdateAllRepos()",
         "stripped_doc": "",
         "type": "Method"
@@ -127,9 +121,7 @@
         "desc": "Synchronously download a Spoon zip file and install it.",
         "doc": "Synchronously download a Spoon zip file and install it.\n\nParameters:\n * url - URL of the zip file to install.\n\nReturns:\n * `true` if the installation was successful, `nil` otherwise",
         "name": "installSpoonFromZipURL",
-        "parameters": [
-          " * url - URL of the zip file to install."
-        ],
+        "parameters": [" * url - URL of the zip file to install."],
         "returns": [
           " * `true` if the installation was successful, `nil` otherwise"
         ],
@@ -142,9 +134,7 @@
         "desc": "Return a sorted list of registered Spoon repositories",
         "doc": "Return a sorted list of registered Spoon repositories\n\nParameters:\n * None\n\nReturns:\n * Table containing a list of strings with the repository identifiers",
         "name": "repolist",
-        "parameters": [
-          " * None"
-        ],
+        "parameters": [" * None"],
         "returns": [
           " * Table containing a list of strings with the repository identifiers"
         ],
@@ -179,12 +169,8 @@
           " * This is a synchronous call, which means Hammerspoon will be blocked until it finishes.",
           " * For now, the repository data is not persisted, so you need to update it after every restart if you want to use any of the install functions."
         ],
-        "parameters": [
-          " * None"
-        ],
-        "returns": [
-          " * None"
-        ],
+        "parameters": [" * None"],
+        "returns": [" * None"],
         "signature": "SpoonInstall:updateAllRepos()",
         "stripped_doc": "",
         "type": "Method"
@@ -201,9 +187,7 @@
         "parameters": [
           " * repo - name of the repository to update. Defaults to `\"default\"`."
         ],
-        "returns": [
-          " * `true` if the update was successful, `nil` otherwise"
-        ],
+        "returns": [" * `true` if the update was successful, `nil` otherwise"],
         "signature": "SpoonInstall:updateRepo(repo)",
         "stripped_doc": "",
         "type": "Method"
@@ -257,9 +241,7 @@
           "   * start - if `true`, call the Spoon's `start()` method after configuring everything else.",
           "   * disable - if `true`, do nothing. Easier than commenting it out when you want to temporarily disable a spoon."
         ],
-        "returns": [
-          " * None"
-        ],
+        "returns": [" * None"],
         "signature": "SpoonInstall:andUse(name, arg)",
         "stripped_doc": "",
         "type": "Method"
@@ -309,12 +291,8 @@
         "notes": [
           " * For now, the repository data is not persisted, so you need to update it after every restart if you want to use any of the install functions."
         ],
-        "parameters": [
-          " * None"
-        ],
-        "returns": [
-          " * None"
-        ],
+        "parameters": [" * None"],
+        "returns": [" * None"],
         "signature": "SpoonInstall:asyncUpdateAllRepos()",
         "stripped_doc": "",
         "type": "Method"
@@ -361,9 +339,7 @@
         "desc": "Synchronously download a Spoon zip file and install it.",
         "doc": "Synchronously download a Spoon zip file and install it.\n\nParameters:\n * url - URL of the zip file to install.\n\nReturns:\n * `true` if the installation was successful, `nil` otherwise",
         "name": "installSpoonFromZipURL",
-        "parameters": [
-          " * url - URL of the zip file to install."
-        ],
+        "parameters": [" * url - URL of the zip file to install."],
         "returns": [
           " * `true` if the installation was successful, `nil` otherwise"
         ],
@@ -385,9 +361,7 @@
         "desc": "Return a sorted list of registered Spoon repositories",
         "doc": "Return a sorted list of registered Spoon repositories\n\nParameters:\n * None\n\nReturns:\n * Table containing a list of strings with the repository identifiers",
         "name": "repolist",
-        "parameters": [
-          " * None"
-        ],
+        "parameters": [" * None"],
         "returns": [
           " * Table containing a list of strings with the repository identifiers"
         ],
@@ -431,12 +405,8 @@
           " * This is a synchronous call, which means Hammerspoon will be blocked until it finishes.",
           " * For now, the repository data is not persisted, so you need to update it after every restart if you want to use any of the install functions."
         ],
-        "parameters": [
-          " * None"
-        ],
-        "returns": [
-          " * None"
-        ],
+        "parameters": [" * None"],
+        "returns": [" * None"],
         "signature": "SpoonInstall:updateAllRepos()",
         "stripped_doc": "",
         "type": "Method"
@@ -453,9 +423,7 @@
         "parameters": [
           " * repo - name of the repository to update. Defaults to `\"default\"`."
         ],
-        "returns": [
-          " * `true` if the update was successful, `nil` otherwise"
-        ],
+        "returns": [" * `true` if the update was successful, `nil` otherwise"],
         "signature": "SpoonInstall:updateRepo(repo)",
         "stripped_doc": "",
         "type": "Method"

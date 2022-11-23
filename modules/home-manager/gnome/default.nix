@@ -1,5 +1,9 @@
-{ config, pkgs, ... }: {
-  imports = [ ./dconf.nix ];
+{
+  config,
+  pkgs,
+  ...
+}: {
+  imports = [./dconf.nix];
 
   gtk = {
     enable = true;

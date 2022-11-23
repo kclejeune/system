@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{lib, ...}: {
   imports = [
     ./coc
     ./fzf

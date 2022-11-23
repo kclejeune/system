@@ -31,12 +31,12 @@
     # shell stuff
     flake-utils.url = "github:numtide/flake-utils";
     devshell = {
-        url = "github:numtide/devshell";
-        inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     treefmt-nix = {
-        url = "github:kclejeune/treefmt-nix";
-        inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:kclejeune/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 

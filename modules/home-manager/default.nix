@@ -1,8 +1,12 @@
-{ self, inputs, config, pkgs, ... }:
-let
-  homeDir = config.home.homeDirectory;
-in
 {
+  self,
+  inputs,
+  config,
+  pkgs,
+  ...
+}: let
+  homeDir = config.home.homeDirectory;
+in {
   imports = [
     ./1password.nix
     ./bat.nix
@@ -23,89 +27,89 @@ in
     allowUnfree = true;
   };
 
-  home =
-    let NODE_GLOBAL = "${config.home.homeDirectory}/.node-packages";
-    in
-    {
-      # This value determines the Home Manager release that your
-      # configuration is compatible with. This helps avoid breakage
-      # when a new Home Manager release introduces backwards
-      # incompatible changes.
-      #
-      # You can update Home Manager without changing this value. See
-      # the Home Manager release notes for a list of state version
-      # changes in each release.
-      stateVersion = "22.05";
-      sessionVariables = {
-        GPG_TTY = "/dev/ttys000";
-        EDITOR = "nvim";
-        VISUAL = "nvim";
-        CLICOLOR = 1;
-        LSCOLORS = "ExFxBxDxCxegedabagacad";
-        KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
-        NODE_PATH = "${NODE_GLOBAL}/lib";
-        JAVA_HOME = "${pkgs.jdk}";
-        # HOMEBREW_NO_AUTO_UPDATE = 1;
-      };
-      sessionPath = [
-        "${NODE_GLOBAL}/bin"
-        "${config.home.homeDirectory}/.rd/bin"
-      ];
+  home = let
+    NODE_GLOBAL = "${config.home.homeDirectory}/.node-packages";
+  in {
+    # This value determines the Home Manager release that your
+    # configuration is compatible with. This helps avoid breakage
+    # when a new Home Manager release introduces backwards
+    # incompatible changes.
+    #
+    # You can update Home Manager without changing this value. See
+    # the Home Manager release notes for a list of state version
+    # changes in each release.
+    stateVersion = "22.05";
+    sessionVariables = {
+      GPG_TTY = "/dev/ttys000";
+      EDITOR = "nvim";
+      VISUAL = "nvim";
+      CLICOLOR = 1;
+      LSCOLORS = "ExFxBxDxCxegedabagacad";
+      KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
+      NODE_PATH = "${NODE_GLOBAL}/lib";
+      JAVA_HOME = "${pkgs.jdk}";
+      # HOMEBREW_NO_AUTO_UPDATE = 1;
+    };
+    sessionPath = [
+      "${NODE_GLOBAL}/bin"
+      "${config.home.homeDirectory}/.rd/bin"
+    ];
 
-      # define package definitions for current user environment
-      packages = with pkgs; [
-        age
-        cachix
-        cirrus-cli
-        comma
-        coreutils-full
-        curl
-        fd
-        ffmpeg
-        gawk
-        gnugrep
-        gnupg
-        gnused
-        google-cloud-sdk
-        helmfile
-        httpie
-        jdk
-        kubectl
-        kubernetes-helm
-        luajit
-        mmv
-        neofetch
-        nix
-        nixfmt
-        nixpkgs-fmt
-        nodejs_latest
-        parallel
-        poetry
-        pre-commit
-        # python with default packages
-        (python3.withPackages
-          (ps: with ps; [
+    # define package definitions for current user environment
+    packages = with pkgs; [
+      age
+      cachix
+      cirrus-cli
+      comma
+      coreutils-full
+      curl
+      fd
+      ffmpeg
+      gawk
+      gnugrep
+      gnupg
+      gnused
+      google-cloud-sdk
+      helmfile
+      httpie
+      jdk
+      kubectl
+      kubernetes-helm
+      luajit
+      mmv
+      neofetch
+      nix
+      nixfmt
+      nixpkgs-fmt
+      nodejs_latest
+      parallel
+      poetry
+      pre-commit
+      # python with default packages
+      (python3.withPackages
+        (ps:
+          with ps; [
             numpy
             scipy
             networkx
           ]))
-        ranger
-        rclone
-        ripgrep
-        rsync
-        (ruby.withPackages (ps: with ps; [ rufo solargraph ]))
-        shellcheck
-        stylua
-        sysdo
-        terraform
-        tree
-        treefmt
-        trivy
-        vagrant
-        yarn
-        yq-go
-      ];
-    };
+      ranger
+      rclone
+      ripgrep
+      rsync
+      (ruby.withPackages (ps: with ps; [rufo solargraph]))
+      shellcheck
+      stylua
+      sysdo
+      terraform
+      tree
+      treefmt
+      trivy
+      vagrant
+      yarn
+      yq-go
+    ];
+  };
 
   programs = {
     home-manager = {
@@ -126,5 +130,4 @@ in
     zathura.enable = true;
     zoxide.enable = true;
   };
-
 }

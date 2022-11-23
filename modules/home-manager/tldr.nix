@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   programs.tealdeer = {
     enable = true;
     settings = {
@@ -6,7 +11,7 @@
         compact = false;
         use_pager = true;
       };
-      updates = { auto_update = true; };
+      updates = {auto_update = true;};
     };
   };
 }

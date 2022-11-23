@@ -1,18 +1,21 @@
-{ config, lib, pkgs, ... }: {
-  home.packages = [ pkgs.github-cli pkgs.git-crypt ];
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
+  home.packages = [pkgs.github-cli pkgs.git-crypt];
   programs.git = {
     userName = "Kennan LeJeune";
     enable = true;
     aliases = {
-      ignore =
-        "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
+      ignore = "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
     };
     extraConfig = {
       credential.helper =
-        if pkgs.stdenvNoCC.isDarwin then
-          "osxkeychain"
-        else
-          "cache --timeout=1000000000";
+        if pkgs.stdenvNoCC.isDarwin
+        then "osxkeychain"
+        else "cache --timeout=1000000000";
       commit.verbose = true;
       fetch.prune = true;
       http.sslVerify = true;

@@ -1,5 +1,10 @@
-{ config, pkgs, lib, ... }: {
-  imports = [ ./plugins ];
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
+  imports = [./plugins];
 
   lib.vimUtils = rec {
     # For plugins configured with lua
@@ -9,16 +14,18 @@
       EOF
     '';
     readVimConfigRaw = file:
-      if (lib.strings.hasSuffix ".lua" (builtins.toString file)) then
-        wrapLuaConfig (builtins.readFile file)
-      else
-        builtins.readFile file;
+      if (lib.strings.hasSuffix ".lua" (builtins.toString file))
+      then wrapLuaConfig (builtins.readFile file)
+      else builtins.readFile file;
     readVimConfig = file: ''
       if !exists('g:vscode')
         ${readVimConfigRaw file}
       endif
     '';
-    pluginWithCfg = { plugin, file }: {
+    pluginWithCfg = {
+      plugin,
+      file,
+    }: {
       inherit plugin;
       config = readVimConfig file;
     };
@@ -53,5 +60,4 @@
       ${config.lib.vimUtils.readVimConfigRaw ./keybindings.lua}
     '';
   };
-
 }

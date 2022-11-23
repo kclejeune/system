@@ -1,6 +1,10 @@
-{ config, pkgs, ... }: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   # bundles essential nixos modules
-  imports = [ ./keybase.nix ../common.nix ];
+  imports = [./keybase.nix ../common.nix];
 
   services.syncthing = {
     enable = true;
@@ -10,9 +14,9 @@
     dataDir = config.user.home;
   };
 
-  environment.systemPackages = with pkgs; [ vscode firefox gnome.gnome-tweaks ];
+  environment.systemPackages = with pkgs; [vscode firefox gnome.gnome-tweaks];
 
-  hm = { pkgs, ... }: { imports = [ ../home-manager/gnome ]; };
+  hm = {pkgs, ...}: {imports = [../home-manager/gnome];};
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users = {
@@ -21,10 +25,8 @@
     users = {
       "${config.user.name}" = {
         isNormalUser = true;
-        extraGroups =
-          [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
-        hashedPassword =
-          "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
+        extraGroups = ["wheel" "networkmanager"]; # Enable ‘sudo’ for the user.
+        hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
       };
     };
   };
@@ -119,5 +121,4 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "20.09"; # Did you read the comment?
-
 }

@@ -1,5 +1,11 @@
-{ inputs, config, lib, pkgs, ... }: {
-  nixpkgs = { config = import ./config.nix; };
+{
+  inputs,
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
+  nixpkgs = {config = import ./config.nix;};
 
   nix = {
     package = pkgs.nix;
@@ -10,7 +16,7 @@
     '';
     settings = {
       max-jobs = 8;
-      trusted-users = [ "${config.user.name}" "root" "@admin" "@wheel" ];
+      trusted-users = ["${config.user.name}" "root" "@admin" "@wheel"];
       trusted-substituters = [
         "https://cache.nixos.org"
         "https://kclejeune.cachix.org"
@@ -26,12 +32,13 @@
     };
 
     readOnlyStore = true;
-    nixPath = builtins.map
+    nixPath =
+      builtins.map
       (source: "${source}=/etc/${config.environment.etc.${source}.target}") [
-      "home-manager"
-      "nixpkgs"
-      "stable"
-    ];
+        "home-manager"
+        "nixpkgs"
+        "stable"
+      ];
     registry = {
       nixpkgs = {
         from = {

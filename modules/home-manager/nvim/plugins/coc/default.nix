@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }: {
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   # link coc-settings to the right location
   xdg.configFile."nvim/coc-settings.json".source = ./coc-settings.json;
 
