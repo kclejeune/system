@@ -153,6 +153,18 @@
         "type": "github"
       }
     },
+    "nixpkgs_3": {
+      "locked": {
+        "lastModified": 0,
+        "narHash": "sha256-msePxmSRNi1vHfPCFeSW9u+zkDDouOkW+mH8DjlZaHQ=",
+        "path": "/nix/store/yn6xb3q7bpw1qask9vcbp0p4h8xag2y0-source",
+        "type": "path"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "type": "indirect"
+      }
+    },
     "root": {
       "inputs": {
         "darwin": "darwin",
@@ -163,7 +175,8 @@
         "nixos-unstable": "nixos-unstable",
         "nixpkgs": "nixpkgs_2",
         "small": "small",
-        "stable": "stable"
+        "stable": "stable",
+        "treefmt-nix": "treefmt-nix"
       }
     },
     "small": {
@@ -195,6 +208,24 @@
         "owner": "nixos",
         "ref": "nixos-22.05",
         "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "treefmt-nix": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_3"
+      },
+      "locked": {
+        "lastModified": 1669190538,
+        "narHash": "sha256-bJJuQfOwYTHzkY+FxM5R7rqSY3YCOC970ENRJ4Yigg4=",
+        "owner": "kclejeune",
+        "repo": "treefmt-nix",
+        "rev": "2b99a8ff19f661397441fa4fd0e0ecb29a1f26c2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kclejeune",
+        "repo": "treefmt-nix",
         "type": "github"
       }
     },
