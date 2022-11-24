@@ -12,9 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # - uses: styfle/cancel-workflow-action@0.7.0
-      #   with:
-      #     access_token: ${{ github.token }}
       - uses: actions/checkout@v3
         with:
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
@@ -37,7 +34,7 @@ jobs:
           branch: flakebot
           force: true
       - name: pull-request-action
-        uses: vsoch/pull-request-action@1.0.22
+        uses: vsoch/pull-request-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
           PULL_REQUEST_FROM_BRANCH: 'flakebot'
