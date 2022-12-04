@@ -66,6 +66,7 @@ in {
       curl
       fd
       ffmpeg
+      flyctl
       gawk
       gnugrep
       gnupg
