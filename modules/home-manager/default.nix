@@ -47,7 +47,6 @@ in {
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       NODE_PATH = "${NODE_GLOBAL}/lib";
-      JAVA_HOME = "${pkgs.jdk}";
       # HOMEBREW_NO_AUTO_UPDATE = 1;
     };
     sessionPath = [
@@ -57,9 +56,10 @@ in {
 
     # define package definitions for current user environment
     packages = with pkgs; [
-      alejandra
       age
+      alejandra
       cachix
+      cb
       cirrus-cli
       comma
       coreutils-full
@@ -72,11 +72,14 @@ in {
       gnupg
       gnused
       google-cloud-sdk
+      helm-docs
       helmfile
       httpie
-      jdk
+      k9s
       kubectl
+      kubectx
       kubernetes-helm
+      kustomize
       luajit
       mmv
       neofetch
@@ -93,6 +96,7 @@ in {
           with ps; [
             numpy
             scipy
+            matplotlib
             networkx
           ]))
       ranger
@@ -122,6 +126,10 @@ in {
     go.enable = true;
     gpg.enable = true;
     htop.enable = true;
+    java = {
+        enable = true;
+        package = pkgs.jdk11;
+    };
     jq.enable = true;
     less.enable = true;
     man.enable = true;

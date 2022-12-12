@@ -264,12 +264,65 @@
         #! ${pyEnv}/bin/python3
         ${builtins.readFile ./bin/do.py}
       '';
+      cb = pkgs.writeShellScriptBin "cb" ''
+        #! ${pkgs.lib.getExe pkgs.bash}
+        # universal clipboard, stephen@niedzielski.com
+
+        shopt -s expand_aliases
+
+        # ------------------------------------------------------------------------------
+        # os utils
+
+        case "$OSTYPE$(uname)" in
+          [lL]inux*) TUX_OS=1 ;;
+         [dD]arwin*) MAC_OS=1 ;;
+          [cC]ygwin) WIN_OS=1 ;;
+                  *) echo "unknown os=\"$OSTYPE$(uname)\"" >&2 ;;
+        esac
+
+        is_tux() { [ ''${TUX_OS-0} -ne 0 ]; }
+        is_mac() { [ ''${MAC_OS-0} -ne 0 ]; }
+        is_win() { [ ''${WIN_OS-0} -ne 0 ]; }
+
+        # ------------------------------------------------------------------------------
+        # copy and paste
+
+        if is_mac; then
+          alias cbcopy=pbcopy
+          alias cbpaste=pbpaste
+        elif is_win; then
+          alias cbcopy=putclip
+          alias cbpaste=getclip
+        else
+          alias cbcopy='${pkgs.xclip} -sel c'
+          alias cbpaste='${pkgs.xclip} -sel c -o'
+        fi
+
+        # ------------------------------------------------------------------------------
+        cb() {
+          if [ ! -t 0 ] && [ $# -eq 0 ]; then
+            # no stdin and no call for --help, blow away the current clipboard and copy
+            cbcopy
+          else
+            cbpaste ''${@:+"$@"}
+          fi
+        }
+
+        # ------------------------------------------------------------------------------
+        if ! return 2>/dev/null; then
+          cb ''${@:+"$@"}
+        fi
+      '';
     });
 
     apps = eachSystemMap defaultSystems (system: rec {
       sysdo = {
         type = "app";
         program = "${self.packages.${system}.sysdo}/bin/sysdo";
+      };
+      cb = {
+        type = "app";
+        program = "${self.packages.${system}.cb}/bin/cb";
       };
       default = sysdo;
     });
@@ -283,6 +336,7 @@
       extraPackages = final: prev: {
         sysdo = self.packages.${prev.system}.sysdo;
         pyEnv = self.packages.${prev.system}.pyEnv;
+        cb = self.packages.${prev.system}.cb;
       };
       devshell = inputs.devshell.overlay;
     };
