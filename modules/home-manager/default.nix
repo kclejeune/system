@@ -48,6 +48,7 @@ in {
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       NODE_PATH = "${NODE_GLOBAL}/lib";
       # HOMEBREW_NO_AUTO_UPDATE = 1;
+      JAVA_HOME = "${pkgs.jdk}";
     };
     sessionPath = [
       "${NODE_GLOBAL}/bin"
@@ -126,10 +127,10 @@ in {
     go.enable = true;
     gpg.enable = true;
     htop.enable = true;
-    java = {
-        enable = true;
-        package = pkgs.jdk11;
-    };
+    # java = {
+    #     enable = true;
+    #     package = pkgs.jdk11;
+    # };
     jq.enable = true;
     less.enable = true;
     man.enable = true;
