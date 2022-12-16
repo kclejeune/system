@@ -48,7 +48,6 @@ in {
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       NODE_PATH = "${NODE_GLOBAL}/lib";
       # HOMEBREW_NO_AUTO_UPDATE = 1;
-      JAVA_HOME = "${pkgs.jdk11}";
     };
     sessionPath = [
       "${NODE_GLOBAL}/bin"
@@ -76,7 +75,6 @@ in {
       helm-docs
       helmfile
       httpie
-      jdk11
       k9s
       kubectl
       kubectx
@@ -128,6 +126,10 @@ in {
     go.enable = true;
     gpg.enable = true;
     htop.enable = true;
+    java = {
+        enable = true;
+        package = pkgs.jdk11;
+    };
     jq.enable = true;
     less.enable = true;
     man.enable = true;
