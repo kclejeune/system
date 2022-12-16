@@ -128,10 +128,6 @@ in {
     go.enable = true;
     gpg.enable = true;
     htop.enable = true;
-    # java = {
-    #     enable = true;
-    #     package = pkgs.jdk11;
-    # };
     jq.enable = true;
     less.enable = true;
     man.enable = true;
