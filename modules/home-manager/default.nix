@@ -75,7 +75,7 @@ in {
       google-cloud-sdk
       helm-docs
       helmfile
-      httpie
+      # httpie
       # jdk11
       k9s
       kubectl

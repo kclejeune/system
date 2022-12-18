@@ -9,7 +9,7 @@
     plugins = with pkgs.vimPlugins; [
       # new neovim stuff
       (config.lib.vimUtils.pluginWithCfg {
-        plugin = nvim-treesitter.withPlugins (_: pkgs.tree-sitter.allGrammars);
+        plugin = nvim-treesitter.withAllGrammars;
         file = ./nvim-treesitter.lua;
       })
       (config.lib.vimUtils.pluginWithCfg {
