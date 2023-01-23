@@ -3,7 +3,7 @@ env:
   CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
   CACHIX_USER: kclejeune
   CIRRUS_SHELL: bash -il
-  DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-monterey-base:latest
+  DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-ventura-base:latest
   LINUX_BUILD_IMAGE: nixos/nix:latest
   NIX_INSTALL_URL: https://nixos.org/nix/install
   SUDO: sudo
