@@ -13,7 +13,7 @@ build_template: &BUILD_TEMPLATE
   name: build_${CIRRUS_OS}_${ARCH}
   timeout_in: 120m
   enable_flake_script: echo "experimental-features = nix-command flakes" | $SUDO tee -a /etc/nix/nix.conf
-  install_cachix_script: nix profile install github:nixos/nixpkgs/nixos-22.05#cachix && cachix use kclejeune
+  install_cachix_script: nix profile install github:nixos/nixpkgs/nixos-22.11#cachix && cachix use kclejeune
   flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} -v --show-trace --accept-flake-config
 
 build_darwin_task:
