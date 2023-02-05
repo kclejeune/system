@@ -48,7 +48,7 @@ in {
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       NODE_PATH = "${NODE_GLOBAL}/lib";
       # HOMEBREW_NO_AUTO_UPDATE = 1;
-      # JAVA_HOME = "${pkgs.jdk11}";
+      JAVA_HOME = "${pkgs.jdk11}";
     };
     sessionPath = [
       "${NODE_GLOBAL}/bin"
@@ -75,8 +75,8 @@ in {
       google-cloud-sdk
       helm-docs
       helmfile
-      # httpie
-      # jdk11
+      httpie
+      jdk11
       k9s
       kubectl
       kubectx
@@ -84,6 +84,7 @@ in {
       kustomize
       luajit
       mmv
+      ncdu
       neofetch
       nix
       nixfmt
