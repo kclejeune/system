@@ -2,7 +2,10 @@
   description = "nix system configurations";
 
   nixConfig = {
-    substituters = ["https://cache.nixos.org" "https://kclejeune.cachix.org"];
+    substituters = [
+      "https://cache.nixos.org"
+      "https://kclejeune.cachix.org"
+    ];
 
     trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
@@ -12,10 +15,8 @@
 
   inputs = {
     # package repos
-    stable.url = "github:nixos/nixpkgs/nixos-22.11";
-    nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    small.url = "github:nixos/nixpkgs/nixos-unstable-small";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
+    unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
 
     # system management
     nixos-hardware.url = "github:nixos/nixos-hardware";
@@ -24,16 +25,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/release-22.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # shell stuff
     flake-utils.url = "github:numtide/flake-utils";
-    devshell = {
-      url = "github:numtide/devshell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    devshell.url = "github:numtide/devshell";
     treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
@@ -52,14 +50,18 @@
       if isDarwin system
       then "/Users"
       else "/home";
-    defaultSystems = ["aarch64-linux" "aarch64-darwin" "x86_64-darwin" "x86_64-linux"];
+    defaultSystems = [
+      "aarch64-linux"
+      "aarch64-darwin"
+      "x86_64-darwin"
+      "x86_64-linux"
+    ];
 
     # generate a base darwin configuration with the
     # specified hostname, overlays, and any extraModules applied
     mkDarwinConfig = {
       system ? "aarch64-darwin",
       nixpkgs ? inputs.nixpkgs,
-      stable ? inputs.stable,
       baseModules ? [
         home-manager.darwinModules.home-manager
         ./modules/darwin
@@ -76,8 +78,7 @@
     # specified overlays, hardware modules, and any extraModules applied
     mkNixosConfig = {
       system ? "x86_64-linux",
-      nixpkgs ? inputs.nixos-unstable,
-      stable ? inputs.stable,
+      nixpkgs ? inputs.nixpkgs,
       hardwareModules,
       baseModules ? [
         home-manager.nixosModules.home-manager
@@ -97,7 +98,6 @@
       username,
       system ? "x86_64-linux",
       nixpkgs ? inputs.nixpkgs,
-      stable ? inputs.stable,
       baseModules ? [
         ./modules/home-manager
         {
@@ -105,7 +105,7 @@
             inherit username;
             homeDirectory = "${homePrefix system}/${username}";
             sessionVariables = {
-              NIX_PATH = "nixpkgs=${nixpkgs}:stable=${stable}\${NIX_PATH:+:}$NIX_PATH";
+              NIX_PATH = "nixpkgs=${nixpkgs}:unstable=${inputs.unstable}\${NIX_PATH:+:}$NIX_PATH";
             };
           };
         }
@@ -330,8 +330,7 @@
     overlays = {
       channels = final: prev: {
         # expose other channels via overlays
-        stable = import inputs.stable {system = prev.system;};
-        small = import inputs.small {system = prev.system;};
+        unstable = import inputs.unstable {system = prev.system;};
       };
       extraPackages = final: prev: {
         sysdo = self.packages.${prev.system}.sysdo;
