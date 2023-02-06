@@ -41,11 +41,11 @@ When possible, home-manager functionality is extracted into [./profiles/home-man
 
 ### Non-NixOS Prerequisite: Install Nix Package Manager
 
-Run the installer script to perform a multi-user installation
-on darwin or any other type of linux. This script can optionally accept an argument with the URL to a nix installer, but will use the nixFlakes installer by default:
+Run the installer script to perform a multi-user installation on darwin or linux:
 
 ```bash
-./install-nix.sh
+sh <(curl -L https://nixos.org/nix/install) --daemon
+echo "experimental-features = nix-command flakes" | sudo tee -a /etc/nix/nix.conf
 ```
 
 Note that this step is naturally skipped on NixOS since `nix` is the package manager by default.
@@ -71,13 +71,13 @@ git clone https://github.com/kclejeune/system ~/.nixpkgs
 You can bootstrap a new nix-darwin system using
 
 ```bash
-nix --extra-experimental-features "nix-command flakes" develop -c sysdo bootstrap --darwin randall
+nix --extra-experimental-features "nix-command flakes" run github:kclejeune/system#sysdo -- bootstrap --darwin
 ```
 
 or a home-manager configuration using
 
 ```bash
-nix --extra-experimental-features "nix-command flakes" develop -c sysdo bootstrap --home-manager [host]
+nix --extra-experimental-features "nix-command flakes" develop -c sysdo bootstrap --home-manager
 ```
 
 ## `sysdo` CLI
