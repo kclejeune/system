@@ -37,7 +37,7 @@
       (source: "${source}=/etc/${config.environment.etc.${source}.target}") [
         "home-manager"
         "nixpkgs"
-        "stable"
+        "unstable"
       ];
     registry = {
       nixpkgs = {
@@ -47,12 +47,12 @@
         };
         flake = inputs.nixpkgs;
       };
-      stable = {
+      unstable = {
         from = {
-          id = "stable";
+          id = "unstable";
           type = "indirect";
         };
-        flake = inputs.stable;
+        flake = inputs.unstable;
       };
     };
   };
