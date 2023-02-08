@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # this is gross but we don't want to run this on systems before monterey
-if [[ $(sw_vers -productVersion | awk 'BEGIN { FS="." } { print $1 }') -ge 12 ]]; then
+if [ "$(sw_vers -productVersion | awk 'BEGIN { FS="." } { print $1 }')" -ge 12 ]; then
     sudo yabai --load-sa
     yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
 fi

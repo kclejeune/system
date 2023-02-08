@@ -16,7 +16,7 @@
 
   environment.systemPackages = with pkgs; [vscode firefox gnome.gnome-tweaks];
 
-  hm = {pkgs, ...}: {imports = [../home-manager/gnome];};
+  hm = {...}: {imports = [../home-manager/gnome];};
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users = {

@@ -2,7 +2,6 @@
   self,
   inputs,
   config,
-  lib,
   pkgs,
   ...
 }: {

@@ -1,8 +1,4 @@
-{
-  config,
-  pkgs,
-  ...
-}: let
+{pkgs, ...}: let
   theme = builtins.readFile ./theme.conf;
 in {
   programs.kitty = {

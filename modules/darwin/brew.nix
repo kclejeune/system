@@ -1,9 +1,4 @@
-{
-  inputs,
-  config,
-  pkgs,
-  ...
-}: {
+{...}: {
   homebrew = {
     enable = true;
     global = {
