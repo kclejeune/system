@@ -6,11 +6,8 @@
     gofmt.enable = true;
     prettier.enable = true;
     rufo.enable = true;
-    shellcheck.enable = false;
-    shfmt.enable = true;
+    shellcheck.enable = true;
+    shfmt.enable = false;
     stylua.enable = true;
-  };
-  settings.formatter = {
-    stylua.options = ["--indent-type" "Spaces"];
   };
 }

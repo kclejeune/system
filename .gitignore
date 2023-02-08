@@ -2,3 +2,5 @@
 .vscode/
 **/result
 .git/
+.devenv/
+.pre-commit-config.yaml

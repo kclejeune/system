@@ -17,6 +17,7 @@
     # package repos
     nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
     unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    devenv.url = "github:cachix/devenv";
 
     # system management
     nixos-hardware.url = "github:nixos/nixos-hardware";
@@ -31,18 +32,17 @@
 
     # shell stuff
     flake-utils.url = "github:numtide/flake-utils";
-    devshell.url = "github:numtide/devshell";
     treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
-  outputs = inputs @ {
+  outputs = {
     self,
     darwin,
-    home-manager,
+    devenv,
     flake-utils,
-    treefmt-nix,
+    home-manager,
     ...
-  }: let
+  } @ inputs: let
     inherit (flake-utils.lib) eachSystemMap;
 
     isDarwin = system: (builtins.elem system inputs.nixpkgs.lib.platforms.darwin);
@@ -232,21 +232,10 @@
         overlays = builtins.attrValues self.overlays;
       };
     in {
-      default = pkgs.devshell.mkShell {
-        packages = [
-          pkgs.nixfmt
-          pkgs.pre-commit
-          pkgs.rnix-lsp
-          self.packages.${system}.pyEnv
-          (treefmt-nix.lib.mkWrapper pkgs (import ./treefmt.nix))
-        ];
-        commands = [
-          {
-            name = "sysdo";
-            package = self.packages.${system}.sysdo;
-            category = "utilities";
-            help = "perform actions on this repository";
-          }
+      default = devenv.lib.mkShell {
+        inherit inputs pkgs;
+        modules = [
+          (import ./devenv.nix)
         ];
       };
     });
@@ -337,7 +326,6 @@
         pyEnv = self.packages.${prev.system}.pyEnv;
         cb = self.packages.${prev.system}.cb;
       };
-      devshell = inputs.devshell.overlay;
     };
   };
 }
