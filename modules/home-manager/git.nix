@@ -18,6 +18,7 @@
       pull.rebase = true;
       push.followTags = true;
       push.autoSetupRemote = true;
+      pager.difftool = true;
     };
     aliases = {
       fix = "commit --amend --no-edit";
@@ -31,7 +32,10 @@
         line-numbers = true;
       };
     };
-    difftastic.enable = true;
+    difftastic = {
+      enable = true;
+      display = "inline";
+    };
     lfs.enable = true;
   };
 }

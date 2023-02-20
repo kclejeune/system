@@ -253,6 +253,7 @@
         #! ${pyEnv}/bin/python3
         ${builtins.readFile ./bin/do.py}
       '';
+      devenv = inputs.devenv.defaultPackage.${system};
       cb = pkgs.writeShellScriptBin "cb" ''
         #! ${pkgs.lib.getExe pkgs.bash}
         # universal clipboard, stephen@niedzielski.com
@@ -325,6 +326,7 @@
         sysdo = self.packages.${prev.system}.sysdo;
         pyEnv = self.packages.${prev.system}.pyEnv;
         cb = self.packages.${prev.system}.cb;
+        devenv = self.packages.${prev.system}.devenv;
       };
     };
   };

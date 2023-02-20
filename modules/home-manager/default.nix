@@ -53,6 +53,7 @@
 
     # define package definitions for current user environment
     packages = with pkgs; [
+      awscli2
       age
       alejandra
       cachix
@@ -61,6 +62,7 @@
       comma
       coreutils-full
       curl
+      devenv
       fd
       ffmpeg
       flyctl
