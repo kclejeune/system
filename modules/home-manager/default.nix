@@ -53,7 +53,7 @@
 
     # define package definitions for current user environment
     packages = with pkgs; [
-      unstable.awscli2
+      # awscli2
       age
       alejandra
       cachix

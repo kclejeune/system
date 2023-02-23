@@ -4,7 +4,9 @@
     global = {
       brewfile = true;
     };
-    brews = [];
+    brews = [
+      "awscli"
+    ];
 
     taps = [
       "1password/tap"
