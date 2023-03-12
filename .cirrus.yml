@@ -13,8 +13,10 @@ build_template: &BUILD_TEMPLATE
   timeout_in: 120m
   env:
     NIX_INSTALLER_EXTRA_CONF: |
-      trusted-users = root admin
+      trusted-users = root admin @sudo @wheel
       extra-platforms = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}
+      substituters = https://cache.nixos.org https://kclejeune.cachix.org
+      trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=
       sandbox = false
       access-tokens = github.com=${GITHUB_TOKEN}
   install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm --extra-conf "${NIX_INSTALLER_EXTRA_CONF}"
@@ -49,7 +51,7 @@ build_linux_task:
     - container:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
-        memory: 16G
+        memory: 12G
       env:
         ARCH: x86_64
         USER: root
