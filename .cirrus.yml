@@ -11,7 +11,6 @@ build_template: &BUILD_TEMPLATE
   name: build_${CIRRUS_OS}_${ARCH}
   timeout_in: 120m
   env:
-    USER: root
     NIX_INSTALLER_EXTRA_CONF: "trusted-users = root admin\nextra-platforms = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}\nsandbox = false"
   install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm --extra-conf "${NIX_INSTALLER_EXTRA_CONF}"
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixos-22.11#cachix && cachix use $CACHIX_USER
@@ -41,11 +40,13 @@ build_linux_task:
         memory: 12G
       env:
         ARCH: arm64
+        USER: root
     - container:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
         memory: 12G
       env:
         ARCH: x86_64
-  install_curl_script: apt update && apt -y install curl git sudo
+        USER: root
+  install_env_script: apt update && apt -y install curl git sudo
   <<: *BUILD_TEMPLATE
