@@ -49,7 +49,7 @@ build_linux_task:
     - container:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
-        memory: 12G
+        memory: 16G
       env:
         ARCH: x86_64
         USER: root
