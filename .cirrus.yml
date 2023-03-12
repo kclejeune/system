@@ -5,13 +5,13 @@ env:
   CIRRUS_SHELL: bash -il
   DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-ventura-base:latest
   LINUX_BUILD_IMAGE: debian:11
-  USER: root
 
 build_template: &BUILD_TEMPLATE
   only_if: $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_TAG != "" || $CIRRUS_PR != "" || $CIRRUS_BUILD_SOURCE == ""
   name: build_${CIRRUS_OS}_${ARCH}
   timeout_in: 120m
   env:
+    USER: root
     NIX_INSTALLER_EXTRA_CONF: "trusted-users = root admin\nextra-platforms = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}\nsandbox = false"
   install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm --extra-conf "${NIX_INSTALLER_EXTRA_CONF}"
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixos-22.11#cachix && cachix use $CACHIX_USER
@@ -47,5 +47,5 @@ build_linux_task:
         memory: 12G
       env:
         ARCH: x86_64
-  install_curl_script: apt update && apt -y install curl
+  install_curl_script: apt update && apt -y install curl git
   <<: *BUILD_TEMPLATE
