@@ -1,6 +1,7 @@
 # global env values
 env:
   CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
+  GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
   CACHIX_USER: kclejeune
   CIRRUS_SHELL: bash -il
   DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-ventura-base:latest
@@ -11,10 +12,14 @@ build_template: &BUILD_TEMPLATE
   name: build_${CIRRUS_OS}_${ARCH}
   timeout_in: 120m
   env:
-    NIX_INSTALLER_EXTRA_CONF: "trusted-users = root admin\nextra-platforms = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}\nsandbox = false"
+    NIX_INSTALLER_EXTRA_CONF: |
+      trusted-users = root admin
+      extra-platforms = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}
+      sandbox = false
+      access-tokens = github.com=${GITHUB_TOKEN}
   install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm --extra-conf "${NIX_INSTALLER_EXTRA_CONF}"
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixpkgs-unstable#cachix && cachix use $CACHIX_USER
-  flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} -v --show-trace --accept-flake-config
+  flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --show-trace --accept-flake-config
 
 build_darwin_task:
   macos_instance:
