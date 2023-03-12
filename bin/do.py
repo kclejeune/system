@@ -46,9 +46,7 @@ else:
     # in all other cases of linux
     PLATFORM = FlakeOutputs.HOME_MANAGER
 
-USERNAME = (
-    subprocess.run(["id", "-u", "--name"], capture_output=True).stdout.decode().strip()
-)
+USERNAME = subprocess.run(["id", "-un"], capture_output=True).stdout.decode().strip()
 SYSTEM_ARCH = "aarch64" if UNAME.machine == "arm64" else UNAME.machine
 SYSTEM_OS = UNAME.system.lower()
 DEFAULT_HOST = f"{USERNAME}@{SYSTEM_ARCH}-{SYSTEM_OS}"
@@ -108,7 +106,13 @@ def bootstrap(
     home_manager: bool = False,
 ):
     cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
-    flags = ["-v", "--experimental-features", "nix-command flakes"]
+    flags = [
+        "-v",
+        "--experimental-features",
+        "nix-command flakes",
+        "--extra-substituters",
+        "https://kclejeune.cachix.org",
+    ]
 
     bootstrap_flake = REMOTE_FLAKE if remote else FLAKE_PATH
     if host is None:
