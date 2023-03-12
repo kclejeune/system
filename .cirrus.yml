@@ -2,17 +2,19 @@
 env:
   CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
   CACHIX_USER: kclejeune
-  CIRRUS_SHELL: bash -il
+  CIRRUS_SHELL: sh -il
   DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-ventura-base:latest
   LINUX_BUILD_IMAGE: debian:11
-  NIX_INSTALL_URL: https://nixos.org/nix/install
+  USER: root
 
 build_template: &BUILD_TEMPLATE
   only_if: $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_TAG != "" || $CIRRUS_PR != "" || $CIRRUS_BUILD_SOURCE == ""
   name: build_${CIRRUS_OS}_${ARCH}
   timeout_in: 120m
-  install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
-  install_cachix_script: nix profile install github:nixos/nixpkgs/nixos-22.11#cachix && cachix use kclejeune
+  env:
+    NIX_INSTALLER_EXTRA_CONF: "trusted-users = root admin\nextra-platforms = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}\nsandbox = false"
+  install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm --extra-conf "${NIX_INSTALLER_EXTRA_CONF}"
+  install_cachix_script: nix profile install github:nixos/nixpkgs/nixos-22.11#cachix && cachix use $CACHIX_USER
   flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} -v --show-trace --accept-flake-config
 
 build_darwin_task:
@@ -29,9 +31,6 @@ build_darwin_task:
     - env:
         ARCH: x86_64
   install_rosetta_script: softwareupdate --install-rosetta --agree-to-license
-  enable_multi_arch_script: echo "extra-platforms = x86_64-darwin aarch64-darwin" | sudo tee -a /etc/nix/nix.conf
-  enable_trusted_users_script: echo "trusted-users = root admin" | sudo tee -a /etc/nix/nix.conf
-  kickstart_nix_daemon_script: sudo launchctl kickstart -k system/org.nixos.nix-daemon
   <<: *BUILD_TEMPLATE
 
 build_linux_task:
