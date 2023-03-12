@@ -75,7 +75,6 @@ nix run .#sysdo bootstrap
 
 This will attempt to detect the host system and install nix-darwin or home-manager, but this behavior can be overridden using the `--darwin` or `--home-manager` flags.
 
-
 ## `sysdo` CLI
 
 The `sysdo` utility is a python script that wraps `nix`, `darwin-rebuild`, `nixos-rebuild`,
