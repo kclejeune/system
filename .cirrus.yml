@@ -47,5 +47,5 @@ build_linux_task:
         memory: 12G
       env:
         ARCH: x86_64
-  install_curl_script: apt update && apt -y install curl git
+  install_curl_script: apt update && apt -y install curl git sudo
   <<: *BUILD_TEMPLATE
