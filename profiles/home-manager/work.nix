@@ -1,7 +1,6 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     cacert
-    earthly
     kubectl
     kubernetes-helm
     kustomize
