@@ -38,7 +38,7 @@ build_linux_task:
   matrix:
     - arm_container:
         image: $LINUX_BUILD_IMAGE
-        cpu: 6
+        cpu: 4
         memory: 16G
       env:
         ARCH: arm64
@@ -46,7 +46,7 @@ build_linux_task:
     - container:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
-        memory: 12G
+        memory: 16G
       env:
         ARCH: x86_64
         USER: root
