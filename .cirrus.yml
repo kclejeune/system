@@ -21,8 +21,7 @@ build_template: &BUILD_TEMPLATE
       access-tokens = github.com=${GITHUB_TOKEN}
   install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixpkgs-unstable#cachix && cachix use $CACHIX_USER
-  start_cachix_background_script: cachix watch-store kclejeune
-  flake_check_script: nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --show-trace --accept-flake-config
+  flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --show-trace --accept-flake-config
 
 build_darwin_task:
   macos_instance:
