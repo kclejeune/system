@@ -12,6 +12,8 @@ build_template: &BUILD_TEMPLATE
   name: build_${CIRRUS_OS}_${ARCH}
   timeout_in: 120m
   env:
+    NIX_INSTALLER_TAG: "v0.7.0"
+    NIX_INSTALLER_NO_CONFIRM: "1"
     NIX_INSTALLER_EXTRA_CONF: |
       trusted-users = root admin @sudo @wheel
       extra-platforms = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}
@@ -19,7 +21,7 @@ build_template: &BUILD_TEMPLATE
       trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
       sandbox = false
       access-tokens = github.com=${GITHUB_TOKEN}
-  install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm --init none --extra-conf "${NIX_INSTALLER_EXTRA_CONF}"
+  install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install ${CIRRUS_OS} --init none
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixpkgs-unstable#cachix && cachix use $CACHIX_USER && cachix use devenv
   start_cachix_background_script: cachix watch-store kclejeune
   flake_check_script: nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --show-trace --accept-flake-config
