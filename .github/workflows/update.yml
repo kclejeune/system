@@ -18,7 +18,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Update flake.lock
-        uses: DeterminateSystems/update-flake-lock@v17
+        uses: DeterminateSystems/update-flake-lock@v18
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           pr-title: "Update flake.lock"
