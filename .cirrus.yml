@@ -21,7 +21,7 @@ build_template: &BUILD_TEMPLATE
       access-tokens = github.com=${GITHUB_TOKEN}
   install_nix_script: |
     if [[ "$CIRRUS_OS" = "linux" ]]; then export NIX_INSTALLER_INIT="--init none"; fi
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install $CIRRUS_OS -- $NIX_INSTALLER_INIT
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install $CIRRUS_OS $NIX_INSTALLER_INIT
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixpkgs-unstable#cachix && cachix use $CACHIX_USER
   flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --show-trace --accept-flake-config
 
