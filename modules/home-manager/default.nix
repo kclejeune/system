@@ -62,7 +62,6 @@
       comma
       coreutils-full
       curl
-      devenv
       fd
       ffmpeg
       flyctl
