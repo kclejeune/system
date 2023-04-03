@@ -6,6 +6,7 @@
     };
     brews = [
       "awscli"
+      "earthly"
     ];
 
     taps = [
@@ -27,7 +28,6 @@
       "appcleaner"
       "bartender"
       "docker"
-      "earthly"
       "firefox-developer-edition"
       "fork"
       "google-chrome"
