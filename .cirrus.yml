@@ -22,11 +22,11 @@ build_template: &BUILD_TEMPLATE
       sandbox = false
       access-tokens = github.com=${GITHUB_TOKEN}
   install_nix_script: |
-    curl -sL -o nix-installer https://install.determinate.systems/nix/nix-installer-${CIRRUS_ARCH:-${ARCH//arm/aarch}}-${CIRRUS_OS} && chmod +x nix-installer
+    curl -sL -o nix-installer https://install.determinate.systems/nix/nix-installer.sh && chmod +x nix-installer.sh
     if [[ "$CIRRUS_OS" = "linux" ]]; then
-      ./nix-installer install linux --init none
+      ./nix-installer.sh install linux --init none
     else
-      ./nix-installer install
+      ./nix-installer.sh install
     fi
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixpkgs-unstable#cachix && cachix use $CACHIX_USER
   flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --show-trace --accept-flake-config
