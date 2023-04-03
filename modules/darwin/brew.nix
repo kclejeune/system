@@ -4,12 +4,16 @@
     global = {
       brewfile = true;
     };
-    brews = [];
+    brews = [
+      "awscli"
+      "earthly"
+    ];
 
     taps = [
       "1password/tap"
       "beeftornado/rmtree"
       "cloudflare/cloudflare"
+      "earthly/earthly"
       "homebrew/bundle"
       "homebrew/cask-fonts"
       "homebrew/cask-versions"
@@ -31,7 +35,6 @@
       "hammerspoon"
       "hot"
       "iina"
-      "intellij-idea"
       "jetbrains-toolbox"
       "kitty"
       "obsidian"

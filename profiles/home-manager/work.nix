@@ -1,12 +1,10 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     cacert
-    earthly
-    vault-bin
-    helmfile
-    awscli2
     kubectl
     kubernetes-helm
+    kustomize
+    vault-bin
   ];
   home.sessionVariables = rec {
     NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
@@ -19,7 +17,6 @@
   programs.git = {
     enable = true;
     lfs.enable = true;
-    package = pkgs.git;
     userEmail = "kennan.lejeune@jhuapl.edu";
     userName = "Kennan LeJeune";
     extraConfig = {

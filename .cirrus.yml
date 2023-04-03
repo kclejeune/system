@@ -1,8 +1,4 @@
-# global env values
 env:
-  CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
-  GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
-  CACHIX_USER: kclejeune
   CIRRUS_SHELL: bash -il
   DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-ventura-base:latest
   LINUX_BUILD_IMAGE: debian:11
@@ -12,23 +8,31 @@ build_template: &BUILD_TEMPLATE
   name: build_${CIRRUS_OS}_${ARCH}
   timeout_in: 120m
   env:
+    RUST_BACKTRACE: "1"
+    CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
+    CACHIX_USER: kclejeune
+    GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
+    NIX_INSTALLER_NO_CONFIRM: "true"
+    NIX_INSTALLER_TAG: "v0.7.0"
     NIX_INSTALLER_EXTRA_CONF: |
-      trusted-users = root admin
-      extra-platforms = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}
+      trusted-users = root admin @sudo @wheel
+      extra-systems = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}
+      substituters = https://cache.nixos.org https://kclejeune.cachix.org https://devenv.cachix.org
+      trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
       sandbox = false
       access-tokens = github.com=${GITHUB_TOKEN}
-  install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm --extra-conf "${NIX_INSTALLER_EXTRA_CONF}"
+  install_nix_script: |
+    if [[ "$CIRRUS_OS" = "linux" ]]; then
+      curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
+    else
+      curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+    fi
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixpkgs-unstable#cachix && cachix use $CACHIX_USER
   flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --show-trace --accept-flake-config
 
 build_darwin_task:
   macos_instance:
     image: $DARWIN_BUILD_IMAGE
-  # env:
-  #   matrix:
-  #     ARCH: arm64
-  #     ARCH: x86_64
-  # TODO: this is a stupid way to set up the build matrix, but yaml lint yells at me if I do it the other way
   matrix:
     - env:
         ARCH: arm64
@@ -42,16 +46,17 @@ build_linux_task:
     - arm_container:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
-        memory: 12G
+        memory: 16G
       env:
         ARCH: arm64
         USER: root
     - container:
         image: $LINUX_BUILD_IMAGE
         cpu: 4
-        memory: 12G
+        memory: 16G
       env:
         ARCH: x86_64
         USER: root
   install_env_script: apt update && apt -y install curl git sudo
   <<: *BUILD_TEMPLATE
+

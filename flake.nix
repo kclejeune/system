@@ -17,7 +17,7 @@
     # package repos
     nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
     unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    devenv.url = "github:cachix/devenv";
+    devenv.url = "github:cachix/devenv/v0.6.2";
 
     # system management
     nixos-hardware.url = "github:nixos/nixos-hardware";
@@ -253,6 +253,7 @@
         #! ${pyEnv}/bin/python3
         ${builtins.readFile ./bin/do.py}
       '';
+      devenv = inputs.devenv.defaultPackage.${system};
       cb = pkgs.writeShellScriptBin "cb" ''
         #! ${pkgs.lib.getExe pkgs.bash}
         # universal clipboard, stephen@niedzielski.com
@@ -325,6 +326,7 @@
         sysdo = self.packages.${prev.system}.sysdo;
         pyEnv = self.packages.${prev.system}.pyEnv;
         cb = self.packages.${prev.system}.cb;
+        devenv = self.packages.${prev.system}.devenv;
       };
     };
   };
