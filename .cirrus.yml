@@ -8,6 +8,7 @@ build_template: &BUILD_TEMPLATE
   name: build_${CIRRUS_OS}_${ARCH}
   timeout_in: 120m
   env:
+    RUST_BACKTRACE: "1"
     CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
     CACHIX_USER: kclejeune
     GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
@@ -21,7 +22,7 @@ build_template: &BUILD_TEMPLATE
       access-tokens = github.com=${GITHUB_TOKEN}
   install_nix_script: |
     if [[ "$CIRRUS_OS" = "linux" ]]; then export NIX_INSTALLER_INIT="--init none"; fi
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install $CIRRUS_OS $NIX_INSTALLER_INIT
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install $NIX_INSTALLER_INIT
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixpkgs-unstable#cachix && cachix use $CACHIX_USER
   flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --show-trace --accept-flake-config
 
