@@ -49,6 +49,7 @@
     sessionPath = [
       "${NODE_GLOBAL}/bin"
       "${config.home.homeDirectory}/.rd/bin"
+      "${config.home.homeDirectory}/.local/bin"
     ];
 
     # define package definitions for current user environment
