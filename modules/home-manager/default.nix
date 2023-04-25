@@ -4,7 +4,6 @@
   ...
 }: {
   imports = [
-    ./1password.nix
     ./bat.nix
     ./direnv.nix
     ./dotfiles
@@ -63,8 +62,10 @@
       comma
       coreutils-full
       curl
+      diffutils
       fd
       ffmpeg
+      findutils
       flyctl
       gawk
       gnugrep
