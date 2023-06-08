@@ -42,8 +42,6 @@
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
       NODE_PATH = "${NODE_GLOBAL}/lib";
-      # HOMEBREW_NO_AUTO_UPDATE = 1;
-      JAVA_HOME = "${pkgs.unstable.jdk11}";
     };
     sessionPath = [
       "${NODE_GLOBAL}/bin"
@@ -53,8 +51,8 @@
 
     # define package definitions for current user environment
     packages = with pkgs; [
-      # awscli2
-      age
+      awscli2
+      # age
       alejandra
       cachix
       cb
@@ -75,7 +73,6 @@
       helm-docs
       helmfile
       httpie
-      unstable.jdk11
       k9s
       kubectl
       kubectx
@@ -88,7 +85,7 @@
       nix
       nixfmt
       nixpkgs-fmt
-      nodejs_latest
+      nodejs-18_x
       parallel
       poetry
       pre-commit
@@ -122,13 +119,16 @@
   programs = {
     home-manager = {
       enable = true;
-      path = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager";
     };
     dircolors.enable = true;
     go.enable = true;
     gpg.enable = true;
     htop.enable = true;
     jq.enable = true;
+    java = {
+      enable = true;
+      package = pkgs.jdk17;
+    };
     less.enable = true;
     man.enable = true;
     nix-index.enable = true;

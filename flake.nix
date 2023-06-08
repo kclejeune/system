@@ -15,8 +15,8 @@
 
   inputs = {
     # package repos
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
-    unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    stable.url = "github:nixos/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     devenv.url = "github:cachix/devenv/latest";
 
     # system management
@@ -26,7 +26,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = "github:nix-community/home-manager/release-22.11";
+      url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -78,7 +78,7 @@
     # specified overlays, hardware modules, and any extraModules applied
     mkNixosConfig = {
       system ? "x86_64-linux",
-      nixpkgs ? inputs.nixpkgs,
+      nixpkgs ? inputs.stable,
       hardwareModules,
       baseModules ? [
         home-manager.nixosModules.home-manager
@@ -105,7 +105,7 @@
             inherit username;
             homeDirectory = "${homePrefix system}/${username}";
             sessionVariables = {
-              NIX_PATH = "nixpkgs=${nixpkgs}:unstable=${inputs.unstable}\${NIX_PATH:+:}$NIX_PATH";
+              NIX_PATH = "nixpkgs=${nixpkgs}:stable=${inputs.stable}\${NIX_PATH:+:}$NIX_PATH";
             };
           };
         }
@@ -320,7 +320,7 @@
     overlays = {
       channels = final: prev: {
         # expose other channels via overlays
-        unstable = import inputs.unstable {system = prev.system;};
+        stable = import inputs.stable {system = prev.system;};
       };
       extraPackages = final: prev: {
         sysdo = self.packages.${prev.system}.sysdo;

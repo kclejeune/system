@@ -13,7 +13,7 @@ build_template: &BUILD_TEMPLATE
     CACHIX_USER: kclejeune
     GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
     NIX_INSTALLER_NO_CONFIRM: "true"
-    NIX_INSTALLER_TAG: "v0.8.0"
+    NIX_INSTALLER_TAG: "v0.9.1"
     NIX_INSTALLER_EXTRA_CONF: |
       trusted-users = root admin @sudo @wheel
       extra-systems = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}
