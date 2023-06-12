@@ -15,12 +15,11 @@ build_template: &BUILD_TEMPLATE
     NIX_INSTALLER_NO_CONFIRM: "true"
     NIX_INSTALLER_TAG: "v0.9.1"
     NIX_INSTALLER_EXTRA_CONF: |
-      trusted-users = root admin @sudo @wheel
-      extra-systems = x86_64-${CIRRUS_OS} aarch64-${CIRRUS_OS}
+      access-tokens = github.com=${GITHUB_TOKEN}
+      http2 = false
       substituters = https://cache.nixos.org https://kclejeune.cachix.org https://devenv.cachix.org
       trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
-      sandbox = false
-      access-tokens = github.com=${GITHUB_TOKEN}
+      trusted-users = root admin @sudo @wheel
   install_nix_script: |
     if [[ "$CIRRUS_OS" = "linux" ]]; then
       curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
