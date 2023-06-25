@@ -16,7 +16,6 @@ build_template: &BUILD_TEMPLATE
     NIX_INSTALLER_TAG: "v0.9.1"
     NIX_INSTALLER_EXTRA_CONF: |
       access-tokens = github.com=${GITHUB_TOKEN}
-      http2 = false
       sandbox = false
       substituters = https://cache.nixos.org https://kclejeune.cachix.org https://devenv.cachix.org
       trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=

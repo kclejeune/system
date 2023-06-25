@@ -17,6 +17,7 @@
     # package repos
     stable.url = "github:nixos/nixpkgs/nixos-23.05";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     devenv.url = "github:cachix/devenv/latest";
 
     # system management
@@ -78,7 +79,7 @@
     # specified overlays, hardware modules, and any extraModules applied
     mkNixosConfig = {
       system ? "x86_64-linux",
-      nixpkgs ? inputs.stable,
+      nixpkgs ? inputs.nixos-unstable,
       hardwareModules,
       baseModules ? [
         home-manager.nixosModules.home-manager
