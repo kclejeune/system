@@ -1,31 +1,23 @@
 env:
+  CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
+  CACHIX_USER: kclejeune
   CIRRUS_SHELL: bash -il
   DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-ventura-base:latest
-  LINUX_BUILD_IMAGE: debian:11
+  GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
+  LINUX_BUILD_IMAGE: nixos/nix:latest
+  NIX_INSTALLER_NO_CONFIRM: "true"
+  NIX_INSTALLER_TAG: "v0.9.1"
+  NIX_INSTALLER_EXTRA_CONF: |
+    access-tokens = github.com=${GITHUB_TOKEN}
+    substituters = https://cache.nixos.org https://kclejeune.cachix.org https://devenv.cachix.org
+    trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
+    trusted-users = root admin @sudo @wheel
+  RUST_BACKTRACE: "1"
 
 build_template: &BUILD_TEMPLATE
-  only_if: $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_TAG != "" || $CIRRUS_PR != "" || $CIRRUS_BUILD_SOURCE == ""
   name: build_${CIRRUS_OS}_${ARCH}
+  only_if: $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_TAG != "" || $CIRRUS_PR != "" || $CIRRUS_BUILD_SOURCE == ""
   timeout_in: 120m
-  env:
-    RUST_BACKTRACE: "1"
-    CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
-    CACHIX_USER: kclejeune
-    GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
-    NIX_INSTALLER_NO_CONFIRM: "true"
-    NIX_INSTALLER_TAG: "v0.9.1"
-    NIX_INSTALLER_EXTRA_CONF: |
-      access-tokens = github.com=${GITHUB_TOKEN}
-      sandbox = false
-      substituters = https://cache.nixos.org https://kclejeune.cachix.org https://devenv.cachix.org
-      trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
-      trusted-users = root admin @sudo @wheel
-  install_nix_script: |
-    if [[ "$CIRRUS_OS" = "linux" ]]; then
-      curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
-    else
-      curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-    fi
   install_cachix_script: nix profile install github:nixos/nixpkgs/nixpkgs-unstable#cachix && cachix use $CACHIX_USER
   flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --show-trace --accept-flake-config
 
@@ -38,6 +30,7 @@ build_darwin_task:
     - env:
         ARCH: x86_64
   install_rosetta_script: softwareupdate --install-rosetta --agree-to-license
+  install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
   <<: *BUILD_TEMPLATE
 
 build_linux_task:
@@ -56,6 +49,5 @@ build_linux_task:
       env:
         ARCH: x86_64
         USER: root
-  install_env_script: apt update && apt -y install curl git sudo
   <<: *BUILD_TEMPLATE
 
