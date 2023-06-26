@@ -49,5 +49,6 @@ build_linux_task:
       env:
         ARCH: x86_64
         USER: root
+  configure_flake_script: echo $NIX_INSTALLER_EXTRA_CONF | tee -a /etc/nix/nix.conf
   <<: *BUILD_TEMPLATE
 
