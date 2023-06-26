@@ -1,9 +1,9 @@
 {config, ...}: {
-  homebrew.extraConfig = ''
-    brew "yabai", restart_service: "changed"
-  '';
+  # homebrew.extraConfig = ''
+  #   brew "yabai", restart_service: "changed"
+  # '';
   services.yabai = {
-    enable = false;
+    enable = true;
     config = {
       mouse_follows_focus = "off";
       focus_follows_mouse = "off";
