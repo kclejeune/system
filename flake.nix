@@ -192,11 +192,11 @@
         ];
         extraModules = [./profiles/personal.nix];
       };
-      "kclejeune@aarch64-linux" = mkNixosConfig {
-        system = "aarch64-linux";
-        hardwareModules = [./modules/hardware/phil.nix];
-        extraModules = [./profiles/personal.nix];
-      };
+      # "kclejeune@aarch64-linux" = mkNixosConfig {
+      #   system = "aarch64-linux";
+      #   hardwareModules = [./modules/hardware/phil.nix];
+      #   extraModules = [./profiles/personal.nix];
+      # };
     };
 
     homeConfigurations = {
