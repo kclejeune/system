@@ -57,7 +57,6 @@
       cachix
       cb
       cirrus-cli
-      colima
       comma
       coreutils-full
       curl
@@ -79,7 +78,6 @@
       kubectx
       kubernetes-helm
       kustomize
-      lima
       luajit
       mmv
       ncdu
