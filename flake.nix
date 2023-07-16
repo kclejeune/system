@@ -23,7 +23,7 @@
     # system management
     nixos-hardware.url = "github:nixos/nixos-hardware";
     darwin = {
-      url = "github:kclejeune/nix-darwin";
+      url = "github:lnl7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
