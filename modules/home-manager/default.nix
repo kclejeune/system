@@ -71,13 +71,13 @@
       gnused
       google-cloud-sdk
       helm-docs
-      helmfile
       httpie
-      k9s
+      hurl
       kubectl
       kubectx
       kubernetes-helm
       kustomize
+      lazydocker
       luajit
       mmv
       ncdu
@@ -100,7 +100,6 @@
           ]))
       ranger
       rclone
-      ripgrep
       rsync
       (ruby.withPackages (ps: with ps; [rufo solargraph]))
       shellcheck
@@ -129,10 +128,13 @@
       enable = true;
       package = pkgs.jdk17;
     };
+    k9s.enable = true;
+    lazygit.enable = true;
     less.enable = true;
     man.enable = true;
     nix-index.enable = true;
     pandoc.enable = true;
+    ripgrep.enable = true;
     starship.enable = true;
     yt-dlp.enable = true;
     zathura.enable = true;
