@@ -70,6 +70,7 @@
       gnupg
       gnused
       google-cloud-sdk
+      grype
       helm-docs
       httpie
       hurl
@@ -85,6 +86,7 @@
       nix
       nixfmt
       nixpkgs-fmt
+      nmap
       nodejs-18_x
       parallel
       poetry

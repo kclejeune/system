@@ -52,7 +52,7 @@
       then "/Users"
       else "/home";
     defaultSystems = [
-      "aarch64-linux"
+      # "aarch64-linux"
       "aarch64-darwin"
       "x86_64-darwin"
       "x86_64-linux"
@@ -192,11 +192,11 @@
         ];
         extraModules = [./profiles/personal.nix];
       };
-      "kclejeune@aarch64-linux" = mkNixosConfig {
-        system = "aarch64-linux";
-        hardwareModules = [./modules/hardware/phil.nix];
-        extraModules = [./profiles/personal.nix];
-      };
+      # "kclejeune@aarch64-linux" = mkNixosConfig {
+      #   system = "aarch64-linux";
+      #   hardwareModules = [./modules/hardware/phil.nix];
+      #   extraModules = [./profiles/personal.nix];
+      # };
     };
 
     homeConfigurations = {
@@ -205,11 +205,11 @@
         system = "x86_64-linux";
         extraModules = [./profiles/home-manager/personal.nix];
       };
-      "kclejeune@aarch64-linux" = mkHomeConfig {
-        username = "kclejeune";
-        system = "aarch64-linux";
-        extraModules = [./profiles/home-manager/personal.nix];
-      };
+      # "kclejeune@aarch64-linux" = mkHomeConfig {
+      #   username = "kclejeune";
+      #   system = "aarch64-linux";
+      #   extraModules = [./profiles/home-manager/personal.nix];
+      # };
       "kclejeune@x86_64-darwin" = mkHomeConfig {
         username = "kclejeune";
         system = "x86_64-darwin";
