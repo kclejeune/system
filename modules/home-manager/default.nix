@@ -57,7 +57,6 @@
       cachix
       cb
       cirrus-cli
-      comma
       coreutils-full
       curl
       diffutils
@@ -135,6 +134,7 @@
     less.enable = true;
     man.enable = true;
     nix-index.enable = true;
+    nix-index-database.comma.enable = true;
     pandoc.enable = true;
     ripgrep.enable = true;
     starship.enable = true;

@@ -33,6 +33,7 @@
     imports = [
       ./home-manager
       ./home-manager/1password.nix
+      inputs.nix-index-database.hmModules.nix-index
     ];
   };
 
