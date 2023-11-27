@@ -80,6 +80,6 @@
 
   fonts = {
     fontDir.enable = true;
-    packages = with pkgs; [jetbrains-mono];
+    fonts = with pkgs; [jetbrains-mono];
   };
 }
