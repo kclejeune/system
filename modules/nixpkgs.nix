@@ -47,7 +47,7 @@
       };
       stable = {
         from = {
-          id = "unstable";
+          id = "stable";
           type = "indirect";
         };
         flake = inputs.stable;
