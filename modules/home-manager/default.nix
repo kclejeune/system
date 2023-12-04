@@ -51,7 +51,6 @@
 
     # define package definitions for current user environment
     packages = with pkgs; [
-      awscli2
       # age
       alejandra
       cachix
@@ -64,12 +63,10 @@
       fd
       ffmpeg
       findutils
-      flyctl
       gawk
       gnugrep
       gnupg
       gnused
-      google-cloud-sdk
       grype
       helm-docs
       httpie
@@ -103,7 +100,6 @@
       ranger
       rclone
       rsync
-      (ruby.withPackages (ps: with ps; [rufo solargraph]))
       shellcheck
       stylua
       sysdo
@@ -111,7 +107,6 @@
       tree
       treefmt
       trivy
-      vagrant
       yarn
       yq-go
     ];
