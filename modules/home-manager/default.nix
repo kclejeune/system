@@ -134,7 +134,6 @@
     ripgrep.enable = true;
     starship.enable = true;
     yt-dlp.enable = true;
-    zathura.enable = true;
     zoxide.enable = true;
   };
 }
