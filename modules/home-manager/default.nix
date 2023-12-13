@@ -103,7 +103,6 @@
       shellcheck
       stylua
       sysdo
-      terraform
       tree
       treefmt
       trivy
