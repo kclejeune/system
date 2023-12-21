@@ -71,6 +71,7 @@
       helm-docs
       httpie
       hurl
+      kotlin
       kubectl
       kubectx
       kubernetes-helm
@@ -84,7 +85,7 @@
       nixfmt
       nixpkgs-fmt
       nmap
-      nodejs-18_x
+      nodejs-20_x
       parallel
       poetry
       pre-commit
@@ -99,6 +100,7 @@
           ]))
       ranger
       rclone
+      ruff
       rsync
       shellcheck
       stylua
@@ -106,7 +108,6 @@
       tree
       treefmt
       trivy
-      yarn
       yq-go
     ];
   };
@@ -122,7 +123,7 @@
     jq.enable = true;
     java = {
       enable = true;
-      package = pkgs.jdk17;
+      package = pkgs.jdk21;
     };
     k9s.enable = true;
     lazygit.enable = true;
