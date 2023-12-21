@@ -85,7 +85,7 @@
       nixfmt
       nixpkgs-fmt
       nmap
-      nodejs-20_x
+      nodejs-20
       parallel
       poetry
       pre-commit
