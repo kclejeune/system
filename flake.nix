@@ -129,7 +129,7 @@
     mkChecks = {
       arch,
       os,
-      username ? "ldmsh",
+      username ? "ldm",
     }: {
       "${arch}-${os}" = {
         "${username}_${os}" =
@@ -169,11 +169,11 @@
       });
 
     darwinConfigurations = {
-      "ldmsh@aarch64-darwin" = mkDarwinConfig {
+      "ldm@aarch64-darwin" = mkDarwinConfig {
         system = "aarch64-darwin";
         extraModules = [./profiles/personal.nix ./modules/darwin/apps.nix];
       };
-      "ldmsh@x86_64-darwin" = mkDarwinConfig {
+      "ldm@x86_64-darwin" = mkDarwinConfig {
         system = "x86_64-darwin";
         extraModules = [./profiles/personal.nix ./modules/darwin/apps.nix];
       };
@@ -188,7 +188,7 @@
     };
 
     nixosConfigurations = {
-      "ldmsh@x86_64-linux" = mkNixosConfig {
+      "ldm@x86_64-linux" = mkNixosConfig {
         system = "x86_64-linux";
         hardwareModules = [
           ./modules/hardware/phil.nix
@@ -196,7 +196,7 @@
         ];
         extraModules = [./profiles/personal.nix];
       };
-      # "ldmsh@aarch64-linux" = mkNixosConfig {
+      # "ldm@aarch64-linux" = mkNixosConfig {
       #   system = "aarch64-linux";
       #   hardwareModules = [./modules/hardware/phil.nix];
       #   extraModules = [./profiles/personal.nix];
@@ -204,23 +204,23 @@
     };
 
     homeConfigurations = {
-      "ldmsh@x86_64-linux" = mkHomeConfig {
-        username = "ldmsh";
+      "ldm@x86_64-linux" = mkHomeConfig {
+        username = "ldm";
         system = "x86_64-linux";
         extraModules = [./profiles/home-manager/personal.nix];
       };
-      # "ldmsh@aarch64-linux" = mkHomeConfig {
-      #   username = "ldmsh";
+      # "ldm@aarch64-linux" = mkHomeConfig {
+      #   username = "ldm";
       #   system = "aarch64-linux";
       #   extraModules = [./profiles/home-manager/personal.nix];
       # };
-      "ldmsh@x86_64-darwin" = mkHomeConfig {
-        username = "ldmsh";
+      "ldm@x86_64-darwin" = mkHomeConfig {
+        username = "ldm";
         system = "x86_64-darwin";
         extraModules = [./profiles/home-manager/personal.nix];
       };
-      "ldmsh@aarch64-darwin" = mkHomeConfig {
-        username = "ldmsh";
+      "ldm@aarch64-darwin" = mkHomeConfig {
+        username = "ldm";
         system = "aarch64-darwin";
         extraModules = [./profiles/home-manager/personal.nix];
       };

@@ -1,6 +1,6 @@
 # Nix System Configuration
 
-[![Build Status](https://api.cirrus-ci.com/github/ldmsh/system.svg?branch=master)](https://cirrus-ci.com/github/ldmsh/system)
+[![Build Status](https://api.cirrus-ci.com/github/ldm/system.svg?branch=master)](https://cirrus-ci.com/github/ldm/system)
 
 This repository manages system configurations for all of my
 macOS, nixOS, and linux machines.
@@ -24,7 +24,7 @@ These modules are imported into all other configurations in the common module si
 
 ```nix
 { config, pkgs, ... }: {
-  home-manager.users.ldmsh = import ./home-manager/home.nix;
+  home-manager.users.ldm = import ./home-manager/home.nix;
 }
 ```
 
@@ -56,7 +56,7 @@ Note that this step is naturally skipped on NixOS since `nix` is the package man
 Follow the installation instructions, then run
 
 ```bash
-sudo nixos-install --flake github:ldmsh/system#phil
+sudo nixos-install --flake github:ldm/system#phil
 ```
 
 ### Darwin/Linux
@@ -64,7 +64,7 @@ sudo nixos-install --flake github:ldmsh/system#phil
 Clone this repository into `~/.nixpkgs` with
 
 ```bash
-git clone https://github.com/ldmsh/system ~/.nixpkgs
+git clone https://github.com/ldm/system ~/.nixpkgs
 ```
 
 You can bootstrap a new system with the `bootstrap` command:

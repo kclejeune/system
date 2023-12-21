@@ -23,7 +23,7 @@ class Colors(Enum):
 
 check_git = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True)
 LOCAL_FLAKE = os.path.realpath(check_git.stdout.decode().strip())
-REMOTE_FLAKE = "github:ldmsh/system"
+REMOTE_FLAKE = "github:ldm/system"
 is_local = check_git.returncode == 0 and os.path.isfile(
     os.path.join(LOCAL_FLAKE, "flake.nix")
 )
@@ -319,7 +319,7 @@ def switch(
 
 
 @app.command(hidden=not is_local, help="cache the output environment of flake.nix")
-def cache(cache_name: str = "ldmsh"):
+def cache(cache_name: str = "ldm"):
     cmd = f"nix flake archive --json | jq -r '.path,(.inputs|to_entries[].value.path)' | cachix push {cache_name}"
     run_cmd(cmd.split(), shell=True)
 

@@ -18,7 +18,7 @@ in {
       homeDir = mkOption {
         type = types.nullOr types.path;
         default = "~";
-        example = "/Users/ldmsh";
+        example = "/Users/ldm";
         description = ''
           the base location for the syncthing folder
         '';
