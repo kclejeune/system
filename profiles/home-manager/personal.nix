@@ -1,9 +1,9 @@
 {...}: {
   programs.git = {
-    userEmail = "kennan@case.edu";
-    userName = "Kennan LeJeune";
+    userEmail = "me@ldm.sh";
+    userName = "ldmsh";
     signing = {
-      key = "kennan@case.edu";
+      key = "me@ldm.sh";
       signByDefault = true;
     };
   };

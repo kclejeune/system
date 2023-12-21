@@ -110,8 +110,8 @@ def bootstrap(
         "-v",
         "--experimental-features",
         "nix-command flakes",
-        "--extra-substituters",
-        "https://ldmsh.cachix.org",
+        # "--extra-substituters",
+        # "https://ldmsh.cachix.org",
     ]
 
     bootstrap_flake = REMOTE_FLAKE if remote else FLAKE_PATH
@@ -128,7 +128,7 @@ def bootstrap(
         )
         raise typer.Abort()
     elif cfg == FlakeOutputs.DARWIN:
-        disk_setup()
+        # disk_setup()
         flake = f"{bootstrap_flake}#{cfg.value}.{host}.config.system.build.toplevel"
         run_cmd(["nix", "build", flake] + flags)
         run_cmd(
@@ -205,24 +205,24 @@ def clean(
     run_cmd(f"find . -type l -maxdepth 1 -name {filename} -exec rm {{}} +".split())
 
 
-@app.command(
-    hidden=PLATFORM != FlakeOutputs.DARWIN,
-    help="configure disk setup for nix-darwin",
-)
-def disk_setup():
-    if not test_cmd("grep -q ^run\\b /etc/synthetic.conf".split()):
-        APFS_UTIL = "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util"
-        typer.secho("setting up /etc/synthetic.conf", fg=Colors.INFO.value)
-        run_cmd(
-            "echo 'run\tprivate/var/run' | sudo tee -a /etc/synthetic.conf".split(),
-            shell=True,
-        )
-        run_cmd([APFS_UTIL, "-B"])
-        run_cmd([APFS_UTIL, "-t"])
-    if not test_cmd(["test", "-L", "/run"]):
-        typer.secho("linking /run directory", fg=Colors.INFO.value)
-        run_cmd("sudo ln -sfn private/var/run /run".split())
-    typer.secho("disk setup complete", fg=Colors.SUCCESS.value)
+# @app.command(
+#     hidden=PLATFORM != FlakeOutputs.DARWIN,
+#     help="configure disk setup for nix-darwin",
+# )
+# def disk_setup():
+#     if not test_cmd("grep -q ^run\\b /etc/synthetic.conf".split()):
+#         APFS_UTIL = "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util"
+#         typer.secho("setting up /etc/synthetic.conf", fg=Colors.INFO.value)
+#         run_cmd(
+#             "echo 'run\tprivate/var/run' | sudo tee -a /etc/synthetic.conf".split(),
+#             shell=True,
+#         )
+#         run_cmd([APFS_UTIL, "-B"])
+#         run_cmd([APFS_UTIL, "-t"])
+#     if not test_cmd(["test", "-L", "/run"]):
+#         typer.secho("linking /run directory", fg=Colors.INFO.value)
+#         run_cmd("sudo ln -sfn private/var/run /run".split())
+#     typer.secho("disk setup complete", fg=Colors.SUCCESS.value)
 
 
 @app.command(

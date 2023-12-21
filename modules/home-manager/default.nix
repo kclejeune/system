@@ -117,7 +117,7 @@
     };
     dircolors.enable = true;
     go.enable = true;
-    gpg.enable = true;
+    gpg.enable = false;
     htop.enable = true;
     jq.enable = true;
     java = {
