@@ -224,7 +224,7 @@
         system = "aarch64-darwin";
         extraModules = [./profiles/home-manager/personal.nix];
       };
-      "ldm@x86_64-linux" = mkHomeConfig {
+      "ldmsh@x86_64-linux" = mkHomeConfig {
         username = "ldm";
         system = "x86_64-linux";
         extraModules = [./profiles/home-manager/work.nix];
