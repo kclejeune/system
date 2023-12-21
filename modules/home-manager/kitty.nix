@@ -15,8 +15,8 @@ in {
       bold_italic_font = "auto";
       font_size =
         if pkgs.stdenvNoCC.isDarwin
-        then 14
-        else 12;
+        then 16
+        else 14;
       strip_trailing_spaces = "smart";
       enable_audio_bell = "no";
       term = "xterm-256color";

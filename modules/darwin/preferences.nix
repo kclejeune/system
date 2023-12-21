@@ -1,5 +1,9 @@
 {...}: {
   system.defaults = {
+    universalaccess = {
+      reduceMotion = true;
+    };
+
     # login window settings
     loginwindow = {
       # disable guest account
@@ -10,9 +14,21 @@
 
     # file viewer settings
     finder = {
+      ShowPathbar = true;
+      ShowStatusBar = true;
+      DisableAllAnimations = true;
+      AppleShowAllFiles = true;
       AppleShowAllExtensions = true;
       FXEnableExtensionChangeWarning = true;
+      FXPreferredViewStyle = "Nlsv";
       _FXShowPosixPathInTitle = true;
+      _FXSortFoldersFirst = true;
+      WarnOnEmptyTrash = false;
+    };
+
+    desktopservices = {
+      DSDontWriteNetworkStores = true;
+      DSDontWriteUSBStores = true;
     };
 
     # trackpad settings
@@ -25,10 +41,6 @@
       FirstClickThreshold = 1;
       # firmness level for force touch
       SecondClickThreshold = 1;
-      # don't allow positional right click
-      TrackpadRightClick = false;
-      # three finger drag for space switching
-      # TrackpadThreeFingerDrag = true;
     };
 
     # firewall settings
@@ -37,6 +49,10 @@
       globalstate = 1;
       loggingenabled = 0;
       stealthenabled = 1;
+    };
+
+    LaunchServices = {
+      LSQuarantine = false;
     };
 
     # dock settings
@@ -65,6 +81,14 @@
       KeyRepeat = 1;
       AppleShowAllExtensions = true;
       AppleShowScrollBars = "Automatic";
+      # disable auto correct
+      NSAutomaticSpellingCorrectionEnabled = false;
+      AppleMeasurementUnits = "centimeters";
+      # Enable full keyboard access for all controls
+      # (e.g. enable Tab in modal dialogs)
+      AppleKeyboardUIMode = 3;
+      # disable OTT animated focus ring
+      NSUseAnimatedFocusRing = false;
     };
   };
 

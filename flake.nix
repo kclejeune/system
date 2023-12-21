@@ -1,17 +1,17 @@
 {
   description = "nix system configurations";
 
-  nixConfig = {
-    substituters = [
-      "https://cache.nixos.org"
-      "https://ldmsh.cachix.org"
-    ];
+  # nixConfig = {
+  #   substituters = [
+  #     "https://cache.nixos.org"
+  #     "https://ldmsh.cachix.org"
+  #   ];
 
-    trusted-public-keys = [
-      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-      "ldmsh.cachix.org-1:LpH9hFBWLQ6JJEjTkApsezg8MXC9miyjOPeTzjgNT8c="
-    ];
-  };
+  #   trusted-public-keys = [
+  #     "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+  #     "ldmsh.cachix.org-1:LpH9hFBWLQ6JJEjTkApsezg8MXC9miyjOPeTzjgNT8c="
+  #   ];
+  # };
 
   inputs = {
     # package repos

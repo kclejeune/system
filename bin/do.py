@@ -131,6 +131,7 @@ def bootstrap(
         # disk_setup()
         flake = f"{bootstrap_flake}#{cfg.value}.{host}.config.system.build.toplevel"
         run_cmd(["nix", "build", flake] + flags)
+        print("DARWIN-REBUILD-CMD->>>>>>>>>", f"./result/sw/bin/darwin-rebuild switch --flake {FLAKE_PATH}#{host}".split())
         run_cmd(
             f"./result/sw/bin/darwin-rebuild switch --flake {FLAKE_PATH}#{host}".split()
         )
