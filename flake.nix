@@ -177,11 +177,11 @@
         system = "x86_64-darwin";
         extraModules = [./profiles/personal.nix ./modules/darwin/apps.nix];
       };
-      "ldm@aarch64-darwin" = mkDarwinConfig {
+      "ldmsh@aarch64-darwin" = mkDarwinConfig {
         system = "aarch64-darwin";
         extraModules = [./profiles/work.nix];
       };
-      "ldm@x86_64-darwin" = mkDarwinConfig {
+      "ldmsh@x86_64-darwin" = mkDarwinConfig {
         system = "aarch64-darwin";
         extraModules = [./profiles/work.nix];
       };
