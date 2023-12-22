@@ -9,6 +9,7 @@
       "notion"
       "signal"
       "slack"
+      "figma"
     ];
     masApps = {};
   };
