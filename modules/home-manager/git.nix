@@ -3,9 +3,9 @@
   programs.git = {
     userName = "ldmsh";
     enable = true;
-    aliases = {
-      ignore = "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
-    };
+    # aliases = {
+    #   ignore = "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
+    # };
     extraConfig = {
       credential.helper =
         if pkgs.stdenvNoCC.isDarwin
@@ -13,7 +13,7 @@
         else "cache --timeout=1000000000";
       commit.verbose = true;
       fetch.prune = true;
-      http.sslVerify = true;
+      http.sslVerify = false;
       init.defaultBranch = "main";
       pull.rebase = true;
       push.followTags = true;

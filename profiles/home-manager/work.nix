@@ -17,7 +17,7 @@
   programs.git = {
     enable = true;
     lfs.enable = true;
-    userEmail = "me@ldm.sh";
+    userEmail = "exponent42@skiff.com";
     userName = "ldmsh";
     extraConfig = {
       http.sslVerify = true;
