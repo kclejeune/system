@@ -37,6 +37,6 @@ Install:andUse("Caffeine", {
     start = true,
 })
 
--- import keybindings for yabai
-yabai = require("yabai")
+-- import keybindings
+-- todo aerospace = require("aerospace")
 caps2esc = require("caps2esc")
