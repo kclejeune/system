@@ -48,7 +48,8 @@
       stealthenabled = 1;
     };
 
-    spaces.spans-displays = false; # separate spaces on each display
+    # https://macos-defaults.com/mission-control/spans-displays.html
+    spaces.spans-displays = true; # separate spaces on each display
 
     # dock settings
     dock = {
