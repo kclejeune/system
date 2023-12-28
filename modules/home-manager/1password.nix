@@ -10,7 +10,7 @@
   aliases = {
     gh = "op plugin run -- gh";
     cachix = "op plugin run -- cachix";
-    brew = "op plugin run -- brew";
+    # brew = "op plugin run -- brew";
   };
 in {
   home.sessionVariables = {
