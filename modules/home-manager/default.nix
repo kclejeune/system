@@ -100,6 +100,7 @@
           ]))
       ranger
       rclone
+      restic
       ruff
       rsync
       shellcheck
