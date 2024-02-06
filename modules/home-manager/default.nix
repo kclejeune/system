@@ -93,11 +93,12 @@
       (python3.withPackages
         (ps:
           with ps; [
-            numpy
-            scipy
-            pandas
+            httpx
             matplotlib
             networkx
+            numpy
+            pandas
+            scipy
           ]))
       ranger
       rclone
