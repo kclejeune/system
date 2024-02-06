@@ -95,6 +95,7 @@
           with ps; [
             numpy
             scipy
+            pandas
             matplotlib
             networkx
           ]))
