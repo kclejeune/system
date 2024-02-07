@@ -6,7 +6,7 @@ env:
   GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
   LINUX_BUILD_IMAGE: nixos/nix:latest
   NIX_INSTALLER_NO_CONFIRM: "true"
-  NIX_INSTALLER_TAG: "v0.15.1"
+  NIX_INSTALLER_TAG: "v0.16.1"
   NIX_INSTALLER_EXTRA_CONF: |
     access-tokens = github.com=${GITHUB_TOKEN}
     substituters = https://cache.nixos.org https://kclejeune.cachix.org https://devenv.cachix.org
@@ -17,7 +17,7 @@ build_template: &BUILD_TEMPLATE
   name: build_${CIRRUS_OS}_${ARCH}
   only_if: $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_TAG != "" || $CIRRUS_PR != "" || $CIRRUS_BUILD_SOURCE == ""
   timeout_in: 120m
-  install_cachix_script: nix profile install github:nixos/nixpkgs/nixpkgs-unstable#cachix && cachix use $CACHIX_USER
+  install_cachix_script: nix profile install nixpkgs#cachix && cachix use $CACHIX_USER
   flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --impure --show-trace --accept-flake-config
 
 build_darwin_task:
