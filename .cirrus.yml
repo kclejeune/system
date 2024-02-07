@@ -17,7 +17,7 @@ build_template: &BUILD_TEMPLATE
   name: build_${CIRRUS_OS}_${ARCH}
   only_if: $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_TAG != "" || $CIRRUS_PR != "" || $CIRRUS_BUILD_SOURCE == ""
   timeout_in: 120m
-  install_cachix_script: nix profile install nixpkgs#cachix && cachix use $CACHIX_USER
+  install_cachix_script: nix-env -iA cachix -f https://cachix.org/api/v1/install && cachix use $CACHIX_USER
   flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --impure --show-trace --accept-flake-config
 
 build_darwin_task:
