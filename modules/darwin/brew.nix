@@ -5,7 +5,6 @@
       brewfile = true;
     };
     brews = [
-      "awscli"
       "earthly"
     ];
 

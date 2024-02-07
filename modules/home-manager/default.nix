@@ -60,6 +60,7 @@
       coreutils-full
       curl
       diffutils
+      duckdb
       fd
       ffmpeg
       findutils
@@ -93,6 +94,7 @@
       (python3.withPackages
         (ps:
           with ps; [
+            duckdb
             httpx
             matplotlib
             networkx
