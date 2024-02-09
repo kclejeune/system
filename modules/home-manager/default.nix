@@ -60,6 +60,7 @@
       coreutils-full
       curl
       diffutils
+      dive
       duckdb
       fd
       ffmpeg
