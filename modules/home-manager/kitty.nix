@@ -9,6 +9,7 @@ in {
       name = "JetBrains Mono";
     };
     theme = "One Dark";
+    shellIntegration.mode = "no-cursor";
     settings = {
       bold_font = "auto";
       italic_font = "auto";
@@ -22,8 +23,8 @@ in {
       term = "xterm-256color";
       macos_titlebar_color = "background";
       macos_option_as_alt = "yes";
-      scrollback_lines = 10000;
-      shell_integration = "no-cursor";
+      scrollback_lines = 99999;
+      cursor_shape = "block";
     };
   };
 }
