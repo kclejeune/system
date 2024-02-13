@@ -41,7 +41,7 @@
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
-      NODE_PATH = "${NODE_GLOBAL}/lib";
+      NODE_PATH = "${NODE_GLOBAL}";
     };
     sessionPath = [
       "${NODE_GLOBAL}/bin"
