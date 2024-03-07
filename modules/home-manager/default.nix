@@ -22,9 +22,7 @@
     allowUnfree = true;
   };
 
-  home = let
-    NODE_GLOBAL = "${config.home.homeDirectory}/.node-packages";
-  in {
+  home = rec {
     # This value determines the Home Manager release that your
     # configuration is compatible with. This helps avoid breakage
     # when a new Home Manager release introduces backwards
@@ -41,11 +39,12 @@
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
-      NODE_PATH = "${NODE_GLOBAL}";
+      NODE_PATH = "${config.home.homeDirectory}/.node";
     };
     sessionPath = [
-      "${NODE_GLOBAL}/bin"
+      "${sessionVariables.NODE_PATH}/bin"
       "${config.home.homeDirectory}/.rd/bin"
+      "${config.home.homeDirectory}/.docker/bin"
       "${config.home.homeDirectory}/.local/bin"
     ];
 
@@ -59,6 +58,7 @@
       comma
       coreutils-full
       curl
+      devbox
       diffutils
       dive
       duckdb

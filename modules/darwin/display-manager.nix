@@ -1,8 +1,6 @@
-{config, ...}: let
-  isYabaiEnabled = true;
-in {
+{config, ...}: {
   services.yabai = {
-    enable = isYabaiEnabled;
+    enable = true;
     config = {
       mouse_follows_focus = "off";
       focus_follows_mouse = "off";
@@ -42,9 +40,9 @@ in {
   };
 
   system.activationScripts.yabai = {
-    enable = isYabaiEnabled;
+    enable = true;
     text = ''
-      yabai --restart-service || yabai --start-service
+      yabai --install-service && yabai --start-service
     '';
   };
 }
