@@ -1,8 +1,6 @@
-{pkgs, ...}: let
-  theme = builtins.readFile ./theme.conf;
-in {
+{pkgs, ...}: {
   programs.kitty = {
-    enable = true;
+    enable = false;
     package = pkgs.kitty;
     font = {
       package = pkgs.jetbrains-mono;
