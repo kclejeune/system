@@ -66,6 +66,7 @@
       ffmpeg
       findutils
       gawk
+      git-absorb
       gnugrep
       gnupg
       gnused
