@@ -75,7 +75,7 @@ indent-for-nested-containers-with-the-same-orientation = 30
 
 # You can uncomment this line to open up terminal with alt + enter shortcut
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#exec-and-forget
-alt-enter = 'exec-and-forget kitty --single-instance'
+alt-enter = 'exec-and-forget open -na /Applications/kitty.app --args --single-instance'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands.html#layout
 alt-slash = 'layout tiles horizontal vertical'
