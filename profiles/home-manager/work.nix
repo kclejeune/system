@@ -1,4 +1,6 @@
-{pkgs, ...}: {
+{pkgs, ...}: let
+  SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
+in {
   home.packages = with pkgs; [
     cacert
     kubectl
@@ -6,13 +8,13 @@
     kustomize
     vault-bin
   ];
-  home.sessionVariables = rec {
-    NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
-    SSL_CERT_FILE = NIX_SSL_CERT_FILE;
-    REQUESTS_CA_BUNDLE = NIX_SSL_CERT_FILE;
-    PIP_CERT = NIX_SSL_CERT_FILE;
-    GIT_SSL_CAINFO = NIX_SSL_CERT_FILE;
-    NODE_EXTRA_CA_CERTS = NIX_SSL_CERT_FILE;
+  home.sessionVariables = {
+    inherit SSL_CERT_FILE;
+    NIX_SSL_CERT_FILE = SSL_CERT_FILE;
+    REQUESTS_CA_BUNDLE = SSL_CERT_FILE;
+    PIP_CERT = SSL_CERT_FILE;
+    GIT_SSL_CAINFO = SSL_CERT_FILE;
+    NODE_EXTRA_CA_CERTS = SSL_CERT_FILE;
   };
   programs.git = {
     enable = true;
@@ -21,7 +23,7 @@
     userName = "Kennan LeJeune";
     extraConfig = {
       http.sslVerify = true;
-      http.sslCAInfo = "/etc/ssl/certs/ca-certificates.crt";
+      http.sslCAInfo = SSL_CERT_FILE;
     };
   };
 }
