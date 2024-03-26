@@ -1,5 +1,4 @@
 {
-  inputs,
   config,
   pkgs,
   ...
@@ -34,24 +33,24 @@
       builtins.map
       (source: "${source}=/etc/${config.environment.etc.${source}.target}") [
         "home-manager"
-        "nixpkgs"
-        "stable"
+        # "nixpkgs"
+        # "stable"
       ];
-    registry = {
-      nixpkgs = {
-        from = {
-          id = "nixpkgs";
-          type = "indirect";
-        };
-        flake = inputs.nixpkgs;
-      };
-      stable = {
-        from = {
-          id = "stable";
-          type = "indirect";
-        };
-        flake = inputs.stable;
-      };
-    };
+    # registry = {
+    #   unstable = {
+    #     from = {
+    #       id = "nixpkgs";
+    #       type = "indirect";
+    #     };
+    #     flake = inputs.nixpkgs;
+    #   };
+    #   stable = {
+    #     from = {
+    #       id = "stable";
+    #       type = "indirect";
+    #     };
+    #     flake = inputs.stable;
+    #   };
+    # };
   };
 }
