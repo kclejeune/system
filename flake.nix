@@ -18,7 +18,10 @@
     stable.url = "github:nixos/nixpkgs/nixos-23.11";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    devenv.url = "github:cachix/devenv/latest";
+    devenv = {
+      url = "github:cachix/devenv/latest";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # system management
     nixos-hardware.url = "github:nixos/nixos-hardware";
@@ -110,7 +113,7 @@
             inherit username;
             homeDirectory = "${homePrefix system}/${username}";
             sessionVariables = {
-              NIX_PATH = "nixpkgs=${nixpkgs}:stable=${inputs.stable}\${NIX_PATH:+:}$NIX_PATH";
+              NIX_PATH = "nixpkgs=${nixpkgs}";
             };
           };
         }
