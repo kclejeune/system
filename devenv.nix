@@ -4,7 +4,7 @@
   ...
 }: {
   packages = [
-    pkgs.rnix-lsp
+    pkgs.nixd
     self.packages.${pkgs.system}.pyEnv
   ];
 
