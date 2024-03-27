@@ -19,18 +19,18 @@
     };
   initExtraCommon = ''
     ${functions}
-    if command -v devbox >/dev/null; then
-      eval "$(devbox global shellenv)"
-    fi
-    if [[ -d "${config.home.homeDirectory}/.asdf/" ]]; then
-      . "${config.home.homeDirectory}/.asdf/asdf.sh"
-      . "${config.home.homeDirectory}/.asdf/completions/asdf.bash"
-    fi
     ${lib.optionalString pkgs.stdenvNoCC.isDarwin ''
       if [[ -d /opt/homebrew ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
       fi
     ''}
+    if [[ -d "${config.home.homeDirectory}/.asdf/" ]]; then
+      . "${config.home.homeDirectory}/.asdf/asdf.sh"
+      . "${config.home.homeDirectory}/.asdf/completions/asdf.bash"
+    fi
+    if command -v devbox >/dev/null; then
+      eval "$(devbox global shellenv)"
+    fi
   '';
 in {
   programs.zsh = let
