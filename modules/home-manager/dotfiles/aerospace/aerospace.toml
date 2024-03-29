@@ -243,6 +243,15 @@ run = 'move-node-to-workspace E'
 if.app-id = 'com.microsoft.Outlook'
 run = 'move-node-to-workspace O'
 
+# lump apple mail/calendar in with it too? idk
+[[on-window-detected]]
+if.app-id = 'com.apple.iCal'
+run = 'move-node-to-workspace O'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.mail'
+run = 'move-node-to-workspace O'
+
 # mnemonics W - word
 [[on-window-detected]]
 if.app-id = 'com.microsoft.Word'
