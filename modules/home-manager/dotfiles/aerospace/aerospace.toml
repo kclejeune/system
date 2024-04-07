@@ -18,7 +18,7 @@ after-startup-command = []
 start-at-login = true
 
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide.html#normalization
-enable-normalization-flatten-containers = true
+enable-normalization-flatten-containers = false
 enable-normalization-opposite-orientation-for-nested-containers = true
 
 # See: https://nikitabobko.github.io/AeroSpace/guide.html#layouts
@@ -194,6 +194,10 @@ if.app-id = 'com.google.Chrome'
 run = 'move-node-to-workspace B'
 
 [[on-window-detected]]
+if.app-id = 'com.microsoft.edgemac'
+run = 'move-node-to-workspace B'
+
+[[on-window-detected]]
 if.app-id = 'org.mozilla.firefox'
 run = 'move-node-to-workspace B'
 
@@ -226,6 +230,10 @@ run = 'move-node-to-workspace I'
 
 [[on-window-detected]]
 if.app-id = 'com.jetbrains.pycharm'
+run = 'move-node-to-workspace I'
+
+[[on-window-detected]]
+if.app-id = 'com.jetbrains.datagrip'
 run = 'move-node-to-workspace I'
 
 # mnemonics P - PowerPoint
@@ -266,14 +274,33 @@ run = 'move-node-to-workspace N'
 if.app-id = 'com.apple.Notes'
 run = 'move-node-to-workspace N'
 
-# mnemonics S - slack
+# mnemonics S - slack/sms
 [[on-window-detected]]
 if.app-id = 'com.tinyspeck.slackmacgap'
 run = 'move-node-to-workspace S'
 
 [[on-window-detected]]
-# not really a better place to put this one
 if.app-id = 'com.cisco.Jabber'
+run = 'move-node-to-workspace S'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.MobileSMS'
+run = 'move-node-to-workspace S'
+
+[[on-window-detected]]
+if.app-id = 'keybase.Electron'
+run = 'move-node-to-workspace S'
+
+[[on-window-detected]]
+if.app-id = 'com.facebook.archon.developerID'
+run = 'move-node-to-workspace S'
+
+[[on-window-detected]]
+if.app-id = 'com.hnc.Discord'
+run = 'move-node-to-workspace S'
+
+[[on-window-detected]]
+if.app-id = 'org.whispersystems.signal-desktop'
 run = 'move-node-to-workspace S'
 
 # mnemonics V - vscode
@@ -284,6 +311,10 @@ run = 'move-node-to-workspace V'
 # mnemonics Z - zoom
 [[on-window-detected]]
 if.app-id = 'us.zoom.xos'
+run = 'move-node-to-workspace Z'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.FaceTime'
 run = 'move-node-to-workspace Z'
 
 [workspace-to-monitor-force-assignment]
