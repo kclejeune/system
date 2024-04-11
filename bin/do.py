@@ -46,7 +46,9 @@ else:
     # in all other cases of linux
     PLATFORM = FlakeOutputs.HOME_MANAGER
 
-USERNAME = subprocess.run(["id", "-un"], capture_output=True).stdout.decode().strip()
+USERNAME = os.getenv(
+    "USER", subprocess.run(["id", "-un"], capture_output=True).stdout.decode().strip()
+)
 SYSTEM_ARCH = "aarch64" if UNAME.machine == "arm64" else UNAME.machine
 SYSTEM_OS = UNAME.system.lower()
 DEFAULT_HOST = f"{USERNAME}@{SYSTEM_ARCH}-{SYSTEM_OS}"
