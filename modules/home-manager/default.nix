@@ -143,6 +143,11 @@
     ripgrep.enable = true;
     starship.enable = true;
     yt-dlp.enable = true;
-    zoxide.enable = true;
+    zoxide = {
+      enable = true;
+      options = [
+        "--hook pwd"
+      ];
+    };
   };
 }
