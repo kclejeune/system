@@ -7,7 +7,6 @@
   functions = builtins.readFile ./functions.sh;
   aliases =
     rec {
-      cd = "z";
       ls = "${pkgs.coreutils}/bin/ls --color=auto -h";
       la = "${ls} -a";
       ll = "${ls} -la";
