@@ -51,6 +51,7 @@
     # define package definitions for current user environment
     packages = with pkgs; [
       # age
+      asciidoctor
       alejandra
       cachix
       cb
@@ -58,6 +59,7 @@
       comma
       coreutils-full
       curl
+      d2
       devbox
       diffutils
       dive

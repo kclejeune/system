@@ -54,6 +54,7 @@
       # vim addon utilities
       direnv-vim
       ranger-vim
+      zoxide-vim
     ];
     extraConfig = ''
       ${config.lib.vimUtils.readVimConfig ./settings.lua}

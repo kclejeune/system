@@ -7,6 +7,7 @@
   functions = builtins.readFile ./functions.sh;
   aliases =
     rec {
+      cd = "z";
       ls = "${pkgs.coreutils}/bin/ls --color=auto -h";
       la = "${ls} -a";
       ll = "${ls} -la";
@@ -28,9 +29,7 @@
       . "${config.home.homeDirectory}/.asdf/asdf.sh"
       . "${config.home.homeDirectory}/.asdf/completions/asdf.bash"
     fi
-    if command -v devbox >/dev/null; then
-      eval "$(devbox global shellenv)"
-    fi
+    eval "$(${pkgs.devbox}/bin/devbox global shellenv)"
   '';
 in {
   programs.zsh = let
