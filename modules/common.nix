@@ -64,10 +64,6 @@
       bat
       fzf
       ripgrep
-
-      # languages
-      python3
-      ruby
     ];
     etc = {
       home-manager.source = "${inputs.home-manager}";
