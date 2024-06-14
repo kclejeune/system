@@ -6,7 +6,7 @@ env:
   GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
   LINUX_BUILD_IMAGE: nixos/nix:latest
   NIX_INSTALLER_NO_CONFIRM: "true"
-  NIX_INSTALLER_TAG: "v0.17.1"
+  NIX_INSTALLER_TAG: "v0.19.1"
   NIX_INSTALLER_EXTRA_CONF: |
     access-tokens = github.com=${GITHUB_TOKEN}
     substituters = https://cache.nixos.org https://kclejeune.cachix.org https://devenv.cachix.org

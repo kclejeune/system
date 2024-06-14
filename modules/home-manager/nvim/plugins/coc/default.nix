@@ -10,7 +10,7 @@
   programs.neovim = {
     extraPackages = with pkgs; [
       rubyPackages.solargraph
-      nodePackages.pyright
+      pyright
       nixd
       fzf
     ];

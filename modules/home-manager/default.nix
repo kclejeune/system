@@ -60,7 +60,7 @@
       coreutils-full
       curl
       d2
-      devbox
+      # devbox
       diffutils
       dive
       duckdb

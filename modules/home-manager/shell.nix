@@ -28,7 +28,12 @@
       . "${config.home.homeDirectory}/.asdf/asdf.sh"
       . "${config.home.homeDirectory}/.asdf/completions/asdf.bash"
     fi
-    eval "$(${pkgs.devbox}/bin/devbox global shellenv)"
+
+    if [[ -f /usr/local/bin/devbox ]]; then
+        eval "$(/usr/local/bin/devbox global shellenv)"
+    else
+        eval "$(${pkgs.devbox}/bin/devbox global shellenv)"
+    fi
   '';
 in {
   programs.zsh = let
