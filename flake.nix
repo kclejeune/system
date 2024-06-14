@@ -15,11 +15,11 @@
 
   inputs = {
     # package repos
-    stable.url = "github:nixos/nixpkgs/nixos-23.11";
+    stable.url = "github:nixos/nixpkgs/nixos-24.05";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     devenv = {
-      url = "github:cachix/devenv/latest";
+      url = "github:cachix/devenv/v1.0.7";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -76,7 +76,7 @@
       ],
       extraModules ? [],
     }:
-      inputs.darwin.lib.darwinSystem {
+      darwin.lib.darwinSystem {
         inherit system;
         modules = baseModules ++ extraModules;
         specialArgs = {inherit self inputs nixpkgs;};

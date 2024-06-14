@@ -13,14 +13,15 @@
       black.enable = true;
       shellcheck.enable = true;
       alejandra.enable = true;
-      deadnix.enable = true;
       shfmt.enable = false;
       stylua.enable = true;
-    };
-
-    settings = {
-      deadnix.edit = true;
-      deadnix.noLambdaArg = true;
+      deadnix = {
+        enable = true;
+        settings = {
+          edit = true;
+          noLambdaArg = true;
+        };
+      };
     };
   };
 }

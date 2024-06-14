@@ -84,7 +84,7 @@
       lazydocker
       luajit
       mmv
-      ncdu
+      stable.ncdu
       neofetch
       nix
       nixfmt
