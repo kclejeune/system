@@ -17,24 +17,27 @@
       ibrew = "arch -x86_64 brew";
       abrew = "arch -arm64 brew";
     };
-  initExtraCommon = ''
-    ${functions}
-    ${lib.optionalString pkgs.stdenvNoCC.isDarwin ''
+  initExtraCommon = lib.concatStringsSep "\n" [
+    functions
+    (lib.optionalString pkgs.stdenvNoCC.isDarwin ''
       if [[ -d /opt/homebrew ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
       fi
-    ''}
-    if [[ -d "${config.home.homeDirectory}/.asdf/" ]]; then
-      . "${config.home.homeDirectory}/.asdf/asdf.sh"
-      . "${config.home.homeDirectory}/.asdf/completions/asdf.bash"
-    fi
-
-    if [[ -f /usr/local/bin/devbox ]]; then
-        eval "$(/usr/local/bin/devbox global shellenv)"
-    else
-        eval "$(${pkgs.devbox}/bin/devbox global shellenv)"
-    fi
-  '';
+    '')
+    ''
+      if [[ -d "${config.home.homeDirectory}/.asdf/" ]]; then
+        . "${config.home.homeDirectory}/.asdf/asdf.sh"
+        . "${config.home.homeDirectory}/.asdf/completions/asdf.bash"
+      fi
+    ''
+    # ''
+    #   if [[ -f /usr/local/bin/devbox ]]; then
+    #       eval "$(/usr/local/bin/devbox global shellenv)"
+    #   else
+    #       eval "$(${pkgs.devbox}/bin/devbox global shellenv)"
+    #   fi
+    # ''
+  ];
 in {
   programs.zsh = let
     mkZshPlugin = {
