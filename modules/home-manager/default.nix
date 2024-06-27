@@ -83,6 +83,7 @@
       kustomize
       lazydocker
       luajit
+      mise
       mmv
       stable.ncdu
       neofetch
