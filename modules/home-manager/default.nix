@@ -68,6 +68,7 @@
       ffmpeg
       findutils
       gawk
+      gdu
       git-absorb
       gnugrep
       gnupg
@@ -85,7 +86,6 @@
       luajit
       mise
       mmv
-      stable.ncdu
       neofetch
       nix
       nixfmt
