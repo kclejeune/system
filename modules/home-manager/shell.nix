@@ -12,38 +12,24 @@
       ll = "${ls} -la";
       lt = "${ls} -lat";
     }
-    // lib.optionalAttrs pkgs.stdenvNoCC.isDarwin rec {
+    // lib.optionalAttrs pkgs.stdenvNoCC.isDarwin {
       # darwin specific aliases
       ibrew = "arch -x86_64 brew";
       abrew = "arch -arm64 brew";
     };
-  initExtraCommon = lib.concatStringsSep "\n" [
-    functions
-    (lib.optionalString pkgs.stdenvNoCC.isDarwin ''
-      if [[ -d /opt/homebrew ]]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-      fi
-    '')
-    ''
-      if [[ -d "${config.home.homeDirectory}/.asdf/" ]]; then
-        . "${config.home.homeDirectory}/.asdf/asdf.sh"
-        . "${config.home.homeDirectory}/.asdf/completions/asdf.bash"
-      fi
-    ''
-    # ''
-    #   if [[ -f /usr/local/bin/devbox ]]; then
-    #       eval "$(/usr/local/bin/devbox global shellenv)"
-    #   else
-    #       eval "$(${pkgs.devbox}/bin/devbox global shellenv)"
-    #   fi
-    # ''
-  ];
+  initExtraCommon = {shell ? "bash"}:
+    lib.concatStringsSep "\n" [
+      functions
+      ''
+        eval "$(${pkgs.mise}/bin/mise activate ${shell})"
+      ''
+    ];
 in {
   programs.zsh = let
     mkZshPlugin = {
       pkg,
       file ? "${pkg.pname}.plugin.zsh",
-    }: rec {
+    }: {
       name = pkg.pname;
       src = pkg.src;
       inherit file;
@@ -65,33 +51,37 @@ in {
       fpath+=~/.zfunc
     '';
     initExtra = ''
-      ${initExtraCommon}
+      ${(initExtraCommon {shell = "zsh";})}
       unset RPS1
     '';
     profileExtra = ''
       ${lib.optionalString pkgs.stdenvNoCC.isLinux "[[ -e /etc/profile ]] && source /etc/profile"}
     '';
-    plugins = with pkgs; [
-      (mkZshPlugin {pkg = zsh-autopair;})
-      (mkZshPlugin {pkg = zsh-completions;})
-      (mkZshPlugin {pkg = zsh-autosuggestions;})
+    plugins = [
+      (mkZshPlugin {pkg = pkgs.zsh-autopair;})
+      (mkZshPlugin {pkg = pkgs.zsh-completions;})
+      (mkZshPlugin {pkg = pkgs.zsh-autosuggestions;})
       (mkZshPlugin {
-        pkg = zsh-fast-syntax-highlighting;
+        pkg = pkgs.zsh-fast-syntax-highlighting;
         file = "fast-syntax-highlighting.plugin.zsh";
       })
-      (mkZshPlugin {pkg = zsh-history-substring-search;})
+      (mkZshPlugin {pkg = pkgs.zsh-history-substring-search;})
     ];
     oh-my-zsh = {
       enable = true;
-      plugins = ["git" "sudo" "asdf"];
+      plugins = [
+        "git"
+        "sudo"
+        "brew"
+        "asdf"
+        "1password"
+      ];
     };
   };
 
   programs.bash = {
     enable = true;
     shellAliases = aliases;
-    initExtra = ''
-      ${initExtraCommon}
-    '';
+    initExtra = initExtraCommon {shell = "bash";};
   };
 }
