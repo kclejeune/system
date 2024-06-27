@@ -22,6 +22,7 @@
       functions
       ''
         eval "$(${pkgs.mise}/bin/mise activate ${shell})"
+        eval "$(${pkgs.mise}/bin/mise hook-env -s ${shell})"
       ''
     ];
 in {
