@@ -74,7 +74,6 @@ in {
         "git"
         "sudo"
         "brew"
-        "asdf"
         "1password"
       ];
     };
