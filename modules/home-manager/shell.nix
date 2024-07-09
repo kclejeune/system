@@ -4,27 +4,28 @@
   pkgs,
   ...
 }: let
-  functions = builtins.readFile ./functions.sh;
-  aliases =
-    rec {
-      ls = "${pkgs.coreutils}/bin/ls --color=auto -h";
-      la = "${ls} -a";
-      ll = "${ls} -la";
-      lt = "${ls} -lat";
-    }
-    // lib.optionalAttrs pkgs.stdenvNoCC.isDarwin {
-      # darwin specific aliases
-      ibrew = "arch -x86_64 brew";
-      abrew = "arch -arm64 brew";
-    };
-  initExtraCommon = {shell ? "bash"}:
-    lib.concatStringsSep "\n" [
-      functions
-      ''
-        eval "$(${pkgs.mise}/bin/mise activate ${shell})"
-        eval "$(${pkgs.mise}/bin/mise hook-env -s ${shell})"
-      ''
-    ];
+  aliases = rec {
+    ls = "${pkgs.coreutils}/bin/ls --color=auto -h";
+    la = "${ls} -a";
+    ll = "${ls} -la";
+    lt = "${ls} -lat";
+  };
+  localBin = ''
+    export PATH=${config.home.homeDirectory}/.local/bin:$PATH
+  '';
+  miseActivate = ''
+    eval "$(mise activate $MISE_SHELL)"
+    eval "$(mise hook-env -s $MISE_SHELL)"
+  '';
+  commonVariables = {
+    LANG = "en_US.UTF-8";
+    GPG_TTY = "/dev/ttys000";
+    DEFAULT_USER = "${config.home.username}";
+    CLICOLOR = 1;
+    LS_COLORS = "ExFxBxDxCxegedabagacad";
+    TERM = "xterm-256color";
+    MISE_ENV_FILE = ".env";
+  };
 in {
   programs.zsh = let
     mkZshPlugin = {
@@ -39,20 +40,18 @@ in {
     enable = true;
     autocd = true;
     dotDir = ".config/zsh";
-    localVariables = {
-      LANG = "en_US.UTF-8";
-      GPG_TTY = "/dev/ttys000";
-      DEFAULT_USER = "${config.home.username}";
-      CLICOLOR = 1;
-      LS_COLORS = "ExFxBxDxCxegedabagacad";
-      TERM = "xterm-256color";
-    };
+    sessionVariables =
+      commonVariables
+      // {
+        MISE_SHELL = "zsh";
+      };
     shellAliases = aliases;
-    initExtraBeforeCompInit = ''
-      fpath+=~/.zfunc
-    '';
+    # initExtraBeforeCompInit = ''
+    #   fpath+=~/.zfunc
+    # '';
     initExtra = ''
-      ${(initExtraCommon {shell = "zsh";})}
+      ${localBin}
+      ${miseActivate}
       unset RPS1
     '';
     profileExtra = ''
@@ -82,6 +81,14 @@ in {
   programs.bash = {
     enable = true;
     shellAliases = aliases;
-    initExtra = initExtraCommon {shell = "bash";};
+    sessionVariables =
+      commonVariables
+      // {
+        MISE_SHELL = "bash";
+      };
+    initExtra = ''
+      ${localBin}
+      ${miseActivate}
+    '';
   };
 }

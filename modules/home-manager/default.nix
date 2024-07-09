@@ -2,7 +2,9 @@
   config,
   pkgs,
   ...
-}: {
+}: let
+  homeDir = config.home.homeDirectory;
+in {
   imports = [
     ./bat.nix
     ./direnv.nix
@@ -22,7 +24,9 @@
     allowUnfree = true;
   };
 
-  home = rec {
+  home = let
+    nodePath = "${homeDir}/.node";
+  in {
     # This value determines the Home Manager release that your
     # configuration is compatible with. This helps avoid breakage
     # when a new Home Manager release introduces backwards
@@ -38,14 +42,12 @@
       VISUAL = "nvim";
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
-      KAGGLE_CONFIG_DIR = "${config.xdg.configHome}/kaggle";
-      NODE_PATH = "${config.home.homeDirectory}/.node";
+      NODE_PATH = nodePath;
     };
     sessionPath = [
-      "${sessionVariables.NODE_PATH}/bin"
-      "${config.home.homeDirectory}/.rd/bin"
-      "${config.home.homeDirectory}/.docker/bin"
-      "${config.home.homeDirectory}/.local/bin"
+      "${homeDir}/.rd/bin"
+      "${homeDir}/.docker/bin"
+      "${nodePath}/bin"
     ];
 
     # define package definitions for current user environment
@@ -116,7 +118,6 @@
       stylua
       sysdo
       tree
-      treefmt
       trivy
       yq-go
     ];
