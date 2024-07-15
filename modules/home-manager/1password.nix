@@ -4,23 +4,22 @@
   pkgs,
   ...
 }: let
-  home = config.home.homeDirectory;
-  darwinSockPath = "${home}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
-  sockPath = "${home}/.1password/agent.sock";
+  darwinSockPath = "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
+  sockPath = ".1password/agent.sock";
   aliases = {
-    gh = "op plugin run -- gh";
-    cachix = "op plugin run -- cachix";
+    # gh = "op plugin run -- gh";
+    # cachix = "op plugin run -- cachix";
     # brew = "op plugin run -- brew";
   };
 in {
   home.sessionVariables = {
-    SSH_AUTH_SOCK = sockPath;
+    SSH_AUTH_SOCK = "~/${sockPath}";
     OP_PLUGIN_ALIASES_SOURCED = 1;
   };
 
   home.file.sock = lib.mkIf pkgs.stdenvNoCC.isDarwin {
     source = config.lib.file.mkOutOfStoreSymlink darwinSockPath;
-    target = ".1password/agent.sock";
+    target = sockPath;
   };
   programs.bash = {
     initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin ''
@@ -47,7 +46,7 @@ in {
   programs.ssh = {
     enable = true;
     extraConfig = ''
-      IdentityAgent "${sockPath}"
+      IdentityAgent "~/${sockPath}"
     '';
   };
 }
