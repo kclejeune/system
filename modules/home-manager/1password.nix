@@ -4,7 +4,8 @@
   pkgs,
   ...
 }: let
-  darwinSockPath = "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
+  home = config.home.homeDirectory;
+  darwinSockPath = "${home}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
   sockPath = ".1password/agent.sock";
   aliases = {
     # gh = "op plugin run -- gh";
@@ -13,7 +14,7 @@
   };
 in {
   home.sessionVariables = {
-    SSH_AUTH_SOCK = "~/${sockPath}";
+    SSH_AUTH_SOCK = "${home}/${sockPath}";
     OP_PLUGIN_ALIASES_SOURCED = 1;
   };
 
