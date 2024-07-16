@@ -16,6 +16,15 @@ in {
     GIT_SSL_CAINFO = SSL_CERT_FILE;
     NODE_EXTRA_CA_CERTS = SSL_CERT_FILE;
   };
+  xdg.configFile = {
+    opAgent = {
+      target = "1Password/ssh/agent.toml";
+      text = ''
+        [[ssh-keys]]
+        vault = "APL"
+      '';
+    };
+  };
   programs.git = {
     enable = true;
     lfs.enable = true;

@@ -46,8 +46,6 @@ in {
   };
   programs.ssh = {
     enable = true;
-    extraConfig = ''
-      IdentityAgent "~/${sockPath}"
-    '';
+    extraConfig = "IdentityAgent ~/${sockPath}";
   };
 }
