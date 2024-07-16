@@ -10,12 +10,18 @@
     ll = "${ls} -la";
     lt = "${ls} -lat";
   };
+
+  homeDir = config.home.homeDirectory;
   localBin = ''
-    export PATH=${config.home.homeDirectory}/.local/bin:$PATH
+    export PATH="${homeDir}/.local/bin:$PATH"
   '';
   miseActivate = ''
     eval "$(mise activate $MISE_SHELL)"
     eval "$(mise hook-env -s $MISE_SHELL)"
+  '';
+  ryeActivate = ''
+    [[ -d "~/.rye" ]] && source "~/.rye/env"
+    export PATH="${homeDir}/.rye/shims:$PATH"
   '';
   commonVariables = {
     LANG = "en_US.UTF-8";
@@ -46,10 +52,11 @@ in {
         MISE_SHELL = "zsh";
       };
     shellAliases = aliases;
-    # initExtraBeforeCompInit = ''
-    #   fpath+=~/.zfunc
-    # '';
+    initExtraBeforeCompInit = ''
+      fpath+=~/.zfunc
+    '';
     initExtra = ''
+      ${ryeActivate}
       ${localBin}
       ${miseActivate}
       unset RPS1
@@ -87,6 +94,7 @@ in {
         MISE_SHELL = "bash";
       };
     initExtra = ''
+      ${ryeActivate}
       ${localBin}
       ${miseActivate}
     '';
