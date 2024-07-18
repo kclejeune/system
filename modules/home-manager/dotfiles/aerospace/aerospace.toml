@@ -224,6 +224,10 @@ if.app-id = 'com.jetbrains.intellij'
 run = 'move-node-to-workspace I'
 
 [[on-window-detected]]
+if.app-id = 'com.jetbrains.fleet'
+run = 'move-node-to-workspace I'
+
+[[on-window-detected]]
 if.app-id = 'com.jetbrains.pycharm'
 run = 'move-node-to-workspace I'
 
@@ -298,9 +302,17 @@ run = 'move-node-to-workspace S'
 if.app-id = 'org.whispersystems.signal-desktop'
 run = 'move-node-to-workspace S'
 
-# mnemonics V - vscode
+# mnemonics V - vscode + other text editors
 [[on-window-detected]]
 if.app-id = 'com.microsoft.VSCode'
+run = 'move-node-to-workspace V'
+
+[[on-window-detected]]
+if.app-id = 'dev.zed.Zed-Preview'
+run = 'move-node-to-workspace V'
+
+[[on-window-detected]]
+if.app-id = 'dev.zed.Zed'
 run = 'move-node-to-workspace V'
 
 # mnemonics Z - zoom
