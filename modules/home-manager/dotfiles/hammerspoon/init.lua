@@ -32,10 +32,6 @@ end)
 --     },
 -- })
 
-Install:andUse("Caffeine", {
-    start = true,
-})
-
 -- import keybindings for yabai
 -- yabai = require("yabai")
 caps2esc = require("caps2esc")

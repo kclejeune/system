@@ -21,7 +21,6 @@
   '';
   ryeActivate = ''
     [[ -d "~/.rye" ]] && source "~/.rye/env"
-    export PATH="${homeDir}/.rye/shims:$PATH"
   '';
   commonVariables = {
     LANG = "en_US.UTF-8";
@@ -62,7 +61,7 @@ in {
       unset RPS1
     '';
     profileExtra = ''
-      ${lib.optionalString pkgs.stdenvNoCC.isLinux "[[ -e /etc/profile ]] && source /etc/profile"}
+      ${lib.optionalString pkgs.stdenvNoCC.isLinux "[[ -f /etc/profile ]] && source /etc/profile"}
     '';
     plugins = [
       (mkZshPlugin {pkg = pkgs.zsh-autopair;})
