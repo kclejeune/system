@@ -45,6 +45,8 @@ in {
       NODE_PATH = nodePath;
     };
     sessionPath = [
+      # "${homeDir}/.local/bin"
+      "${homeDir}/.rye/shims"
       "${homeDir}/.rd/bin"
       "${homeDir}/.docker/bin"
       "${nodePath}/bin"
@@ -106,7 +108,7 @@ in {
             matplotlib
             networkx
             numpy
-            pandas
+            polars
             scipy
           ]))
       ranger

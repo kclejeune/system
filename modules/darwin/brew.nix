@@ -6,6 +6,11 @@
     };
     brews = [
       "earthly"
+      {
+        name = "ollama";
+        start_service = true;
+        restart_service = "changed";
+      }
     ];
 
     taps = [
