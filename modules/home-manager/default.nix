@@ -81,6 +81,7 @@ in {
       helm-docs
       httpie
       hurl
+      hyperfine
       kotlin
       kubectl
       kubectx
