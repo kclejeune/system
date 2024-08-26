@@ -94,6 +94,7 @@ in {
       neofetch
       nix
       nixfmt
+      nixpacks
       nixpkgs-fmt
       nmap
       nodejs_20
