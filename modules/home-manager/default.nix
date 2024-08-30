@@ -93,6 +93,7 @@ in {
       mmv
       neofetch
       nix
+      nixd
       nixfmt
       nixpacks
       nixpkgs-fmt
