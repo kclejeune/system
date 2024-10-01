@@ -88,7 +88,7 @@
   # Enable CUPS to print documents.
   services.printing.enable = true;
 
-  hardware.pulseaudio.enable = true;
+  hardware.pulseaudio.enable = false;
 
   # Enable the X11 windowing system.
   services.xserver = {
