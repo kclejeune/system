@@ -3,6 +3,8 @@
     enable = true;
     global = {brewfile = true;};
     brews = [
+      "jnv"
+      "kscript"
       {
         name = "ollama";
         start_service = true;
@@ -12,14 +14,14 @@
 
     taps = [
       "1password/tap"
-      "beeftornado/brew-rmtree"
+      "beeftornado/rmtree"
       "cirruslabs/cli"
+      "coder/coder"
       "earthly/earthly"
       "hcavarsan/kftray"
       "homebrew/bundle"
       "homebrew/services"
       "koekeishiya/formulae"
-      "yqna/tap"
     ];
     casks = [
       "1password"
@@ -31,11 +33,9 @@
       "httpie"
       "iina"
       "jetbrains-toolbox"
-      "jnv"
       "jordanbaird-ice"
       "kftray"
       "kitty"
-      "kscript"
       "obsidian"
       "orbstack"
       "raycast"
