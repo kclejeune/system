@@ -94,9 +94,8 @@ in {
       neofetch
       nix
       nixd
-      nixfmt
+      nixfmt-rfc-style
       nixpacks
-      nixpkgs-fmt
       nmap
       nodejs_20
       parallel
