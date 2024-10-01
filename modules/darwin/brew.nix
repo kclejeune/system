@@ -1,11 +1,8 @@
 {...}: {
   homebrew = {
     enable = true;
-    global = {
-      brewfile = true;
-    };
+    global = {brewfile = true;};
     brews = [
-      "earthly"
       {
         name = "ollama";
         start_service = true;
@@ -15,36 +12,37 @@
 
     taps = [
       "1password/tap"
-      "beeftornado/rmtree"
-      "cloudflare/cloudflare"
+      "beeftornado/brew-rmtree"
+      "cirruslabs/cli"
       "earthly/earthly"
+      "hcavarsan/kftray"
       "homebrew/bundle"
       "homebrew/services"
       "koekeishiya/formulae"
-      "teamookla/speedtest"
+      "yqna/tap"
     ];
     casks = [
       "1password"
       "1password-cli"
-      "alt-tab"
-      "appcleaner"
-      "bartender"
-      "docker"
+      "aerospace"
       "firefox@developer-edition"
-      "fork"
       "google-chrome"
-      "gpg-suite"
       "hammerspoon"
-      "hot"
+      "httpie"
       "iina"
       "jetbrains-toolbox"
+      "jnv"
+      "jordanbaird-ice"
+      "kftray"
       "kitty"
+      "kscript"
       "obsidian"
+      "orbstack"
       "raycast"
-      # "rancher"
       "stats"
       "utm"
       "visual-studio-code"
+      "zed@preview"
       "zotero"
     ];
   };
