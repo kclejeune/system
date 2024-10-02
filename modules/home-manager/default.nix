@@ -67,7 +67,7 @@ in {
       diffutils
       dive
       dotenvx
-      duckdb
+      stable.duckdb
       fd
       ffmpeg
       findutils
