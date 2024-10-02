@@ -64,9 +64,9 @@ in {
       coreutils-full
       curl
       d2
-      # devbox
       diffutils
       dive
+      dotenvx
       duckdb
       fd
       ffmpeg

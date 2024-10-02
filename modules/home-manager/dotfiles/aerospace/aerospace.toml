@@ -213,6 +213,10 @@ run = 'move-node-to-workspace D'
 if.app-id = 'com.docker.docker'
 run = 'move-node-to-workspace D'
 
+[[on-window-detected]]
+if.app-id = 'dev.kdrag0n.MacVirt'
+run = 'move-node-to-workspace D'
+
 # mnemonics F - files/finder
 [[on-window-detected]]
 if.app-id = 'com.apple.finder'

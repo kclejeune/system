@@ -12,13 +12,14 @@
 
   # auto manage nixbld users with nix darwin
   nix = {
-    configureBuildUsers = true;
+    configureBuildUsers = false;
     nixPath = ["darwin=/etc/${config.environment.etc.darwin.target}"];
     extraOptions = ''
       extra-platforms = x86_64-darwin aarch64-darwin
     '';
   };
 
+  security.pam.enableSudoTouchIdAuth = true;
   # Auto upgrade nix package and the daemon service.
   services.nix-daemon.enable = true;
 
