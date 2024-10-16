@@ -6,7 +6,7 @@
       package = pkgs.jetbrains-mono;
       name = "JetBrains Mono";
     };
-    theme = "One Dark";
+    themeFile = "OneDark";
     shellIntegration.mode = "no-cursor";
     settings = {
       bold_font = "auto";
