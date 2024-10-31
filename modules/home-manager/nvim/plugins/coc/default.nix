@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  lib,
   ...
 }: {
   # link coc-settings to the right location
@@ -36,7 +35,6 @@
       coc-smartf
       coc-snippets
       coc-solargraph
-      coc-tslint
       coc-tsserver
       coc-vetur
       coc-vimlsp
