@@ -98,6 +98,7 @@ in {
       nixpacks
       nmap
       nodejs_20
+      openldap
       parallel
       poetry
       pre-commit
@@ -138,10 +139,6 @@ in {
     gpg.enable = true;
     htop.enable = true;
     jq.enable = true;
-    java = {
-      enable = true;
-      package = pkgs.jdk21;
-    };
     k9s.enable = true;
     lazygit.enable = true;
     less.enable = true;
