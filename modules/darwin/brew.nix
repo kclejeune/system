@@ -22,6 +22,7 @@
       "homebrew/bundle"
       "homebrew/services"
       "koekeishiya/formulae"
+      "kscripting/tap"
     ];
     casks = [
       "1password"
