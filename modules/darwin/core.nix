@@ -14,7 +14,7 @@
 
   # auto manage nixbld users with nix darwin
   nix = {
-    configureBuildUsers = false;
+    configureBuildUsers = true;
     nixPath = ["darwin=/etc/${config.environment.etc.darwin.target}" "nixpkgs=/etc/${config.environment.etc.nixpkgs.target}" "stable=/etc/${config.environment.etc.stable.target}"];
     extraOptions = ''
       extra-platforms = x86_64-darwin aarch64-darwin
@@ -27,5 +27,5 @@
 
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
-  system.stateVersion = 4;
+  system.stateVersion = 5;
 }
