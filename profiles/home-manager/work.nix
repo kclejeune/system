@@ -21,7 +21,7 @@ in {
       target = "1Password/ssh/agent.toml";
       text = ''
         [[ssh-keys]]
-        vault = "APL"
+        vault = "Private"
       '';
     };
   };
