@@ -28,7 +28,9 @@
       "1password"
       "1password-cli"
       "aerospace"
+      "devpod"
       "firefox@developer-edition"
+      "ghostty"
       "google-chrome"
       "hammerspoon"
       "httpie"
@@ -43,6 +45,7 @@
       "stats"
       "utm"
       "visual-studio-code"
+      "vscodium"
       "zed@preview"
       "zotero"
     ];

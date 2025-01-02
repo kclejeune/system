@@ -28,16 +28,22 @@
     };
   };
 
-  xdg.enable = true;
-  xdg.configFile = {
-    "nixpkgs/config.nix".source = ../../config.nix;
-    aerospace = lib.mkIf pkgs.stdenvNoCC.isDarwin {
-      source = ./aerospace;
-      recursive = true;
-    };
-    kitty = lib.mkIf pkgs.stdenvNoCC.isDarwin {
-      source = ./kitty;
-      recursive = true;
+  xdg = {
+    enable = true;
+    configFile = {
+      "nixpkgs/config.nix".source = ../../config.nix;
+      aerospace = lib.mkIf pkgs.stdenvNoCC.isDarwin {
+        source = ./aerospace;
+        recursive = true;
+      };
+      ghostty = {
+        source = ./ghostty;
+        recursive = true;
+      };
+      kitty = lib.mkIf pkgs.stdenvNoCC.isDarwin {
+        source = ./kitty;
+        recursive = true;
+      };
     };
   };
 }
