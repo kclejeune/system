@@ -40,6 +40,14 @@
         source = ./ghostty;
         recursive = true;
       };
+      "ghostty/os.conf" = lib.mkMerge [
+        (lib.mkIf pkgs.stdenvNoCC.isDarwin {
+          source = ./ghostty/macos.conf;
+        })
+        (lib.mkIf pkgs.stdenvNoCC.isLinux {
+          source = ./ghostty/linux.conf;
+        })
+      ];
       kitty = lib.mkIf pkgs.stdenvNoCC.isDarwin {
         source = ./kitty;
         recursive = true;

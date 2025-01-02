@@ -183,6 +183,10 @@ run = 'move-node-to-workspace T'
 if.app-id = 'net.kovidgoyal.kitty'
 run = 'move-node-to-workspace T'
 
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = ['move-node-to-workspace T']
+
 # mnemonics B - browsers
 [[on-window-detected]]
 if.app-id = 'com.google.Chrome'

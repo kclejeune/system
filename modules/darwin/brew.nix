@@ -23,6 +23,7 @@
       "homebrew/services"
       "koekeishiya/formulae"
       "kscripting/tap"
+      "nikitabobko/tap"
     ];
     casks = [
       "1password"
