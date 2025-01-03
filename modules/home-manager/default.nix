@@ -24,9 +24,7 @@ in {
     allowUnfree = true;
   };
 
-  home = let
-    nodePath = "${homeDir}/.node";
-  in {
+  home = {
     # This value determines the Home Manager release that your
     # configuration is compatible with. This helps avoid breakage
     # when a new Home Manager release introduces backwards
@@ -42,14 +40,10 @@ in {
       VISUAL = "nvim";
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
-      NODE_PATH = nodePath;
+      NODE_PATH = "${homeDir}/.node";
     };
     sessionPath = [
-      # "${homeDir}/.local/bin"
-      "${homeDir}/.rye/shims"
-      "${homeDir}/.rd/bin"
-      "${homeDir}/.docker/bin"
-      "${nodePath}/bin"
+      "${homeDir}/.node/bin"
     ];
 
     # define package definitions for current user environment
@@ -124,6 +118,7 @@ in {
       sysdo
       tree
       trivy
+      usage
       yq-go
     ];
   };

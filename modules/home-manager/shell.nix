@@ -4,6 +4,7 @@
   pkgs,
   ...
 }: let
+  homeDir = config.home.homeDirectory;
   aliases = rec {
     ls = "${pkgs.coreutils}/bin/ls --color=auto -h";
     la = "${ls} -a";
@@ -19,10 +20,6 @@
         export PATH="${path}:$PATH"
         ;;
     esac
-  '';
-  miseActivate = ''
-    eval "$(mise activate $MISE_SHELL)"
-    eval "$(mise hook-env -s $MISE_SHELL)"
   '';
 
   commonVariables = {
@@ -48,18 +45,13 @@ in {
     enable = true;
     autocd = true;
     dotDir = ".config/zsh";
-    sessionVariables =
-      commonVariables
-      // {
-        MISE_SHELL = "zsh";
-      };
+    sessionVariables = commonVariables;
     shellAliases = aliases;
     initExtraBeforeCompInit = ''
       fpath+=~/.zfunc
     '';
     initExtra = ''
-      ${mkPath "$HOME/.local/bin"}
-      ${miseActivate}
+      ${mkPath "${homeDir}/.local/bin"}
       unset RPS1
     '';
     profileExtra = ''
@@ -78,10 +70,11 @@ in {
     oh-my-zsh = {
       enable = true;
       plugins = [
-        "git"
-        "sudo"
-        "brew"
         "1password"
+        "brew"
+        "git"
+        "mise"
+        "sudo"
       ];
     };
   };
@@ -89,14 +82,11 @@ in {
   programs.bash = {
     enable = true;
     shellAliases = aliases;
-    sessionVariables =
-      commonVariables
-      // {
-        MISE_SHELL = "bash";
-      };
+    sessionVariables = commonVariables;
     initExtra = ''
-      ${mkPath "$HOME/.local/bin"}
-      ${miseActivate}
+      ${mkPath "${homeDir}/.local/bin"}
+      eval "$(mise activate bash)"
+      eval "$(mise hook-env -s bash)"
     '';
   };
 }
