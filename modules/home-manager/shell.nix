@@ -4,7 +4,6 @@
   pkgs,
   ...
 }: let
-  homeDir = config.home.homeDirectory;
   aliases = rec {
     ls = "${pkgs.coreutils}/bin/ls --color=auto -h";
     la = "${ls} -a";
@@ -48,10 +47,10 @@ in {
     sessionVariables = commonVariables;
     shellAliases = aliases;
     initExtraBeforeCompInit = ''
+      ${mkPath "~/.local/bin"}
       fpath+=~/.zfunc
     '';
     initExtra = ''
-      ${mkPath "${homeDir}/.local/bin"}
       unset RPS1
     '';
     profileExtra = ''
@@ -84,7 +83,7 @@ in {
     shellAliases = aliases;
     sessionVariables = commonVariables;
     initExtra = ''
-      ${mkPath "${homeDir}/.local/bin"}
+      ${mkPath "~/.local/bin"}
       eval "$(mise activate bash)"
       eval "$(mise hook-env -s bash)"
     '';
