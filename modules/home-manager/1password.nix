@@ -37,11 +37,12 @@ in {
     shellAliases = aliases;
   };
   programs.zsh = {
-    initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin ''
-      if command -v op >/dev/null; then
-        eval "$(op completion zsh)"; compdef _op op
-      fi
-    '';
+    # handled by oh-my-zsh
+    # initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin ''
+    #   if command -v op >/dev/null; then
+    #     eval "$(op completion zsh)"; compdef _op op
+    #   fi
+    # '';
     shellAliases = aliases;
   };
   programs.ssh = {

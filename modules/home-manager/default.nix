@@ -115,11 +115,13 @@ in {
       rsync
       shellcheck
       stylua
+      starship
       sysdo
       tree
       trivy
       usage
       yq-go
+      zoxide
     ];
   };
 
@@ -141,13 +143,6 @@ in {
     nix-index.enable = true;
     pandoc.enable = true;
     ripgrep.enable = true;
-    starship.enable = true;
     yt-dlp.enable = true;
-    zoxide = {
-      enable = true;
-      options = [
-        "--hook pwd"
-      ];
-    };
   };
 }
