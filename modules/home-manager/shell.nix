@@ -19,6 +19,15 @@
     MISE_ENV_FILE = ".env";
   };
 in {
+  programs.atuin = {
+    enable = true;
+    package = pkgs.atuin;
+    daemon = {
+      enable = true;
+      logLevel = "warn";
+    };
+    flags = [];
+  };
   # configure zsh custom plugin directory
   xdg = let
     mkZshPlugin = {
@@ -63,6 +72,7 @@ in {
       enable = true;
       plugins = [
         "1password"
+        "argocd"
         "brew"
         "git"
         "kitty"
