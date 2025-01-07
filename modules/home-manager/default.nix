@@ -11,7 +11,6 @@ in {
     ./dotfiles
     ./fzf.nix
     ./git.nix
-    ./kitty.nix
     ./nushell.nix
     ./nvim
     ./shell.nix
@@ -43,6 +42,7 @@ in {
       NODE_PATH = "${homeDir}/.node";
     };
     sessionPath = [
+      "${homeDir}/.local/bin"
       "${homeDir}/.node/bin"
     ];
 
@@ -76,6 +76,7 @@ in {
       httpie
       hurl
       hyperfine
+      jnv
       kotlin
       kubectl
       kubectx
@@ -83,9 +84,7 @@ in {
       kustomize
       lazydocker
       luajit
-      mise
       mmv
-      neofetch
       nix
       nixd
       nixfmt-rfc-style
@@ -132,6 +131,14 @@ in {
       enable = true;
     };
     dircolors.enable = true;
+    eza = {
+      enable = true;
+      extraOptions = [
+        "--group-directories-first"
+        "--git"
+      ];
+    };
+    fastfetch.enable = true;
     go.enable = true;
     gpg.enable = true;
     htop.enable = true;

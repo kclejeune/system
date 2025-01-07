@@ -3,13 +3,8 @@
     enable = true;
     global = {brewfile = true;};
     brews = [
-      "jnv"
       "kscript"
-      {
-        name = "ollama";
-        start_service = true;
-        restart_service = "changed";
-      }
+      "mise"
     ];
 
     taps = [

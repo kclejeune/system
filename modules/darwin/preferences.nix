@@ -11,8 +11,10 @@
     # file viewer settings
     finder = {
       AppleShowAllExtensions = true;
+      AppleShowAllFiles = true;
       FXEnableExtensionChangeWarning = true;
       _FXShowPosixPathInTitle = true;
+      _FXSortFoldersFirstOnDesktop = true;
     };
 
     # trackpad settings
@@ -65,6 +67,10 @@
       KeyRepeat = 1;
       AppleShowAllExtensions = true;
       AppleShowScrollBars = "Automatic";
+
+      # disable native tabs that render as separate windows with Aerospace
+      # ref: https://github.com/nikitabobko/AeroSpace/issues/68
+      # NSWindowTabbingEnabled = false;
     };
   };
 

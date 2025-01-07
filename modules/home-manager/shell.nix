@@ -4,23 +4,10 @@
   pkgs,
   ...
 }: let
-  aliases = rec {
-    ls = "${pkgs.coreutils}/bin/ls --color=auto -h";
-    la = "${ls} -a";
-    ll = "${ls} -la";
-    lt = "${ls} -lat";
+  aliases = {
+    neofetch = "fastfetch";
+    ncdu = "gdu";
   };
-
-  mkPath = path: ''
-    case ":$PATH:" in
-      *:"${path}":*)
-        ;;
-      *)
-        export PATH="${path}:$PATH"
-        ;;
-    esac
-  '';
-
   zshCustomPrefix = "oh-my-zsh";
   commonVariables = {
     LANG = "en_US.UTF-8";
@@ -70,7 +57,6 @@ in {
       unset RPS1
     '';
     profileExtra = ''
-      ${mkPath "~/.local/bin"}
       ${lib.optionalString pkgs.stdenvNoCC.isLinux "[[ -f /etc/profile ]] && source /etc/profile"}
     '';
     oh-my-zsh = {
@@ -101,7 +87,6 @@ in {
     shellAliases = aliases;
     sessionVariables = commonVariables;
     initExtra = ''
-      ${mkPath "~/.local/bin"}
       eval "$(mise activate bash)"
       eval "$(mise hook-env -s bash)"
     '';
