@@ -119,6 +119,7 @@ in {
       tree
       trivy
       usage
+      uv
       yq-go
       zoxide
     ];
