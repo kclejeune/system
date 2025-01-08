@@ -1,3 +1,12 @@
+#! /usr/bin/env -S uv run
+# /// script
+# requires-python = ">=3.11,<3.14"
+# dependencies = [
+#     "colorama",
+#     "shellingham",
+#     "typer",
+# ]
+# ///
 import os
 import subprocess
 from enum import Enum

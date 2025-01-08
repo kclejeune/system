@@ -253,13 +253,9 @@
         inherit system;
         overlays = builtins.attrValues self.overlays;
       };
-    in rec {
-      pyEnv =
-        pkgs.python3.withPackages
-        (ps: with ps; [black typer colorama shellingham]);
+    in {
       sysdo = pkgs.writeScriptBin "sysdo" ''
-        #! ${pyEnv}/bin/python3
-        ${builtins.readFile ./bin/do.py}
+        ${pkgs.uv}/bin/uv run -q ${./sysdo.py}
       '';
       cb = pkgs.writeShellScriptBin "cb" ''
         #! ${pkgs.lib.getExe pkgs.bash}
@@ -331,7 +327,6 @@
       };
       extraPackages = final: prev: {
         sysdo = self.packages.${prev.system}.sysdo;
-        pyEnv = self.packages.${prev.system}.pyEnv;
         cb = self.packages.${prev.system}.cb;
         devenv = self.packages.${prev.system}.devenv;
       };

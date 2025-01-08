@@ -1,11 +1,6 @@
-{
-  self,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   packages = [
     pkgs.nixd
-    self.packages.${pkgs.system}.pyEnv
   ];
 
   pre-commit = {
