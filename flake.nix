@@ -254,8 +254,8 @@
         overlays = builtins.attrValues self.overlays;
       };
     in {
-      sysdo = pkgs.writeScriptBin "sysdo" ''
-        ${pkgs.uv}/bin/uv run -q ${./sysdo.py}
+      sysdo = pkgs.writeShellScriptBin "sysdo" ''
+        ${pkgs.uv}/bin/uv run -q ${./sysdo.py} $@
       '';
       cb = pkgs.writeShellScriptBin "cb" ''
         #! ${pkgs.lib.getExe pkgs.bash}

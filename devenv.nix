@@ -1,6 +1,12 @@
-{pkgs, ...}: {
+{
+  self,
+  pkgs,
+  ...
+}: {
   packages = [
+    self.packages.${pkgs.system}.sysdo
     pkgs.nixd
+    pkgs.uv
   ];
 
   pre-commit = {

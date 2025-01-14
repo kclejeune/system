@@ -7,6 +7,7 @@
   aliases = {
     neofetch = "fastfetch";
     ncdu = "gdu";
+    cat = "bat -pp";
   };
   zshCustomPrefix = "oh-my-zsh";
   commonVariables = {
@@ -23,7 +24,7 @@ in {
     enable = true;
     package = pkgs.atuin;
     daemon = {
-      enable = true;
+      enable = false;
       logLevel = "warn";
     };
     flags = [];
