@@ -23,10 +23,6 @@ in {
   programs.atuin = {
     enable = true;
     package = pkgs.atuin;
-    daemon = {
-      enable = false;
-      logLevel = "warn";
-    };
     flags = [];
   };
   # configure zsh custom plugin directory
