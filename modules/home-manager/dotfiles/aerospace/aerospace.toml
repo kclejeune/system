@@ -193,6 +193,10 @@ if.app-id = 'com.google.Chrome'
 run = 'move-node-to-workspace B'
 
 [[on-window-detected]]
+if.app-id = 'com.brave.Browser'
+run = 'move-node-to-workspace B'
+
+[[on-window-detected]]
 if.app-id = 'com.microsoft.edgemac'
 run = 'move-node-to-workspace B'
 
@@ -331,6 +335,11 @@ run = 'move-node-to-workspace Z'
 [[on-window-detected]]
 if.app-id = 'com.apple.FaceTime'
 run = 'move-node-to-workspace Z'
+
+# disable background processes that interfere with intellij
+[[on-window-detected]]
+if.app-id = 'com.jetbrains.jbr.java'
+run = 'layout floating'
 
 [workspace-to-monitor-force-assignment]
 B = [1, 'secondary', 'main']

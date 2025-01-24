@@ -41,6 +41,10 @@
       stealthenabled = 1;
     };
 
+    spaces = {
+      spans-displays = true;
+    };
+
     # dock settings
     dock = {
       # auto show and hide dock
@@ -56,6 +60,7 @@
       show-process-indicators = true;
       orientation = "bottom";
       mru-spaces = false;
+      expose-group-apps = true;
     };
 
     NSGlobalDomain = {
