@@ -180,14 +180,6 @@
         system = "x86_64-darwin";
         extraModules = [./profiles/personal.nix ./modules/darwin/apps.nix];
       };
-      "lejeukc1@aarch64-darwin" = mkDarwinConfig {
-        system = "aarch64-darwin";
-        extraModules = [./profiles/work.nix];
-      };
-      "lejeukc1@x86_64-darwin" = mkDarwinConfig {
-        system = "aarch64-darwin";
-        extraModules = [./profiles/work.nix];
-      };
     };
 
     nixosConfigurations = {
