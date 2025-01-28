@@ -19,6 +19,12 @@
       push.followTags = true;
       push.autoSetupRemote = true;
     };
+    includes = [
+      {
+        path = "~/.gitconfig";
+      }
+    ];
+
     aliases = {
       fix = "commit --amend --no-edit";
       oops = "reset HEAD~1";

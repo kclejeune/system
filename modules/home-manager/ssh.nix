@@ -1,7 +1,7 @@
 {...}: {
   programs.ssh = {
     enable = true;
-    includes = ["config.d/*"];
+    includes = ["conf.d/*"];
     forwardAgent = true;
     matchBlocks = {
       "ssh.github.com" = {

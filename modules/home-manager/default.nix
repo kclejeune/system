@@ -49,8 +49,9 @@ in {
     # define package definitions for current user environment
     packages = with pkgs; [
       # age
-      asciidoctor
       alejandra
+      asciidoctor
+      cacert
       cachix
       cb
       cirrus-cli
@@ -61,7 +62,6 @@ in {
       diffutils
       dive
       dotenvx
-      stable.duckdb
       fd
       ffmpeg
       findutils
@@ -93,7 +93,6 @@ in {
       nodejs_20
       openldap
       parallel
-      poetry
       pre-commit
       # python with default packages
       (python3.withPackages

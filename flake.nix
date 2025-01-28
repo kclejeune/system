@@ -15,9 +15,10 @@
 
   inputs = {
     # package repos
-    stable.url = "github:nixos/nixpkgs/nixos-24.05";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    # determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0.1";
     devenv = {
       url = "github:cachix/devenv/v1.0.7";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -46,6 +47,7 @@
   outputs = {
     self,
     darwin,
+    # determinate,
     devenv,
     flake-utils,
     home-manager,
@@ -180,6 +182,10 @@
         system = "x86_64-darwin";
         extraModules = [./profiles/personal.nix ./modules/darwin/apps.nix];
       };
+      "klejeune@aarch64-darwin" = mkDarwinConfig {
+        system = "aarch64-darwin";
+        extraModules = [./profiles/work.nix];
+      };
     };
 
     nixosConfigurations = {
@@ -191,11 +197,6 @@
         ];
         extraModules = [./profiles/personal.nix];
       };
-      # "kclejeune@aarch64-linux" = mkNixosConfig {
-      #   system = "aarch64-linux";
-      #   hardwareModules = [./modules/hardware/phil.nix];
-      #   extraModules = [./profiles/personal.nix];
-      # };
     };
 
     homeConfigurations = {
@@ -204,11 +205,6 @@
         system = "x86_64-linux";
         extraModules = [./profiles/home-manager/personal.nix];
       };
-      # "kclejeune@aarch64-linux" = mkHomeConfig {
-      #   username = "kclejeune";
-      #   system = "aarch64-linux";
-      #   extraModules = [./profiles/home-manager/personal.nix];
-      # };
       "kclejeune@x86_64-darwin" = mkHomeConfig {
         username = "kclejeune";
         system = "x86_64-darwin";
@@ -219,8 +215,13 @@
         system = "aarch64-darwin";
         extraModules = [./profiles/home-manager/personal.nix];
       };
-      "lejeukc1@x86_64-linux" = mkHomeConfig {
-        username = "lejeukc1";
+      "klejeune@aarch64-darwin" = mkHomeConfig {
+        username = "klejeune";
+        system = "aarch64-darwin";
+        extraModules = [./profiles/home-manager/work.nix];
+      };
+      "klejeune@x86_64-linux" = mkHomeConfig {
+        username = "klejeune";
         system = "x86_64-linux";
         extraModules = [./profiles/home-manager/work.nix];
       };
@@ -315,7 +316,6 @@
     overlays = {
       channels = final: prev: {
         # expose other channels via overlays
-        stable = import inputs.stable {system = prev.system;};
       };
       extraPackages = final: prev: {
         sysdo = self.packages.${prev.system}.sysdo;

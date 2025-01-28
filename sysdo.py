@@ -69,7 +69,14 @@ def fmt_command(cmd: List[str]):
 
 
 def test_cmd(cmd: List[str]):
-    return subprocess.run(cmd).returncode == 0
+    out = subprocess.run(cmd)
+    if out.returncode == 0:
+        return True
+    else:
+        typer.secho(fmt_command(cmd), fg=Colors.ERROR.value)
+        typer.secho(
+            f"command failed with return code {out.returncode}", fg=Colors.ERROR.value
+        )
 
 
 def run_cmd(cmd: List[str], shell=False):
@@ -221,16 +228,21 @@ def clean(
     help="configure disk setup for nix-darwin",
 )
 def disk_setup():
-    if not test_cmd("grep -q ^run\\b /etc/synthetic.conf".split()):
-        APFS_UTIL = "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util"
-        typer.secho("setting up /etc/synthetic.conf", fg=Colors.INFO.value)
+    synthetic_conf = "/etc/synthetic.conf"
+    apfs_util = "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util"
+    run_mount_configured = False
+    with open(synthetic_conf, "r") as f:
+        run_mount_configured = any(
+            "run\tprivate/var/run" == l.strip() for l in f.readlines()
+        )
+    if not run_mount_configured:
+        typer.secho(f"setting up {synthetic_conf}", fg=Colors.INFO.value)
         run_cmd(
-            "echo 'run\tprivate/var/run' | sudo tee -a /etc/synthetic.conf".split(),
+            f"echo 'run\\tprivate/var/run' | sudo tee -a {synthetic_conf}".split(),
             shell=True,
         )
-        run_cmd([APFS_UTIL, "-B"])
-        run_cmd([APFS_UTIL, "-t"])
-    if not test_cmd(["test", "-L", "/run"]):
+        run_cmd(f"sudo {apfs_util} -t".split())
+    if not os.path.islink("/run"):
         typer.secho("linking /run directory", fg=Colors.INFO.value)
         run_cmd("sudo ln -sfn private/var/run /run".split())
     typer.secho("disk setup complete", fg=Colors.SUCCESS.value)

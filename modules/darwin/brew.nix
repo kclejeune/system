@@ -1,10 +1,13 @@
 {...}: {
   homebrew = {
     enable = true;
-    global = {brewfile = true;};
+    global = {
+      brewfile = true;
+    };
     brews = [
       "kscript"
       "mise"
+      "tart"
     ];
 
     taps = [
@@ -21,16 +24,12 @@
       "nikitabobko/tap"
     ];
     casks = [
-      "1password"
       "1password-cli"
       "aerospace"
       "devpod"
-      "firefox@developer-edition"
       "ghostty"
-      "google-chrome"
       "hammerspoon"
       "httpie"
-      "iina"
       "jetbrains-toolbox"
       "jordanbaird-ice"
       "kftray"

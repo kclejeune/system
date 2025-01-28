@@ -49,4 +49,18 @@ in {
     enable = true;
     extraConfig = "IdentityAgent ~/${sockPath}";
   };
+
+  programs.git = {
+    signing = {
+      signByDefault = true;
+      key = null;
+      gpgPath =
+        if pkgs.stdenvNoCC.isDarwin
+        then "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+        else "${pkgs._1password-gui}/share/1password/op-ssh-sign";
+    };
+    extraConfig = {
+      gpg.format = "ssh";
+    };
+  };
 }
