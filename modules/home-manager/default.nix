@@ -50,6 +50,7 @@ in {
     packages = with pkgs; [
       # age
       alejandra
+      argocd
       asciidoctor
       cacert
       cachix

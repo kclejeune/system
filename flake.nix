@@ -17,7 +17,11 @@
     # package repos
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-
+    _1password-shell-plugins = {
+      url = "github:1Password/shell-plugins";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
     # determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0.1";
     devenv = {
       url = "github:cachix/devenv/v1.0.7";
@@ -122,7 +126,7 @@
       ],
       extraModules ? [],
     }:
-      inputs.home-manager.lib.homeManagerConfiguration rec {
+      inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import nixpkgs {
           inherit system;
           overlays = builtins.attrValues self.overlays;

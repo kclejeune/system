@@ -1,4 +1,5 @@
 {
+  inputs,
   config,
   lib,
   pkgs,
@@ -7,12 +8,8 @@
   home = config.home.homeDirectory;
   darwinSockPath = "${home}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
   sockPath = ".1password/agent.sock";
-  aliases = {
-    # gh = "op plugin run -- gh";
-    # cachix = "op plugin run -- cachix";
-    # brew = "op plugin run -- brew";
-  };
 in {
+  imports = [inputs._1password-shell-plugins.hmModules.default];
   home.sessionVariables = {
     SSH_AUTH_SOCK = "${home}/${sockPath}";
     OP_PLUGIN_ALIASES_SOURCED = 1;
@@ -22,19 +19,29 @@ in {
     source = config.lib.file.mkOutOfStoreSymlink darwinSockPath;
     target = sockPath;
   };
+  programs._1password-shell-plugins = {
+    # enable 1Password shell plugins for bash, zsh, and fish shell
+    enable = true;
+    # the specified packages as well as 1Password CLI will be
+    # automatically installed and configured to use shell plugins
+    plugins = with pkgs; [
+      gh
+      argocd
+      awscli2
+      cachix
+    ];
+  };
   programs.bash = {
     initExtra = lib.mkIf pkgs.stdenvNoCC.isDarwin ''
       if command -v op >/dev/null; then
         source <(op completion bash)
       fi
     '';
-    shellAliases = aliases;
   };
   programs.fish = {
     interactiveShellInit = lib.mkIf pkgs.stdenvNoCC.isDarwin ''
       op completion fish | source
     '';
-    shellAliases = aliases;
   };
   programs.zsh = {
     # handled by oh-my-zsh
@@ -43,7 +50,6 @@ in {
     #     eval "$(op completion zsh)"; compdef _op op
     #   fi
     # '';
-    shellAliases = aliases;
   };
   programs.ssh = {
     enable = true;
