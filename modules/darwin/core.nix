@@ -7,7 +7,6 @@
   environment = {
     etc = {
       darwin.source = "${inputs.darwin}";
-      nixpkgs.source = "${inputs.nixpkgs}";
     };
   };
 
@@ -16,8 +15,10 @@
     configureBuildUsers = true;
     nixPath = [
       "darwin=/etc/${config.environment.etc.darwin.target}"
-      "nixpkgs=/etc/${config.environment.etc.nixpkgs.target}"
     ];
+    registry = {
+      darwin.flake = inputs.darwin;
+    };
     extraOptions = ''
       extra-platforms = x86_64-darwin aarch64-darwin
       !include nix.custom.conf

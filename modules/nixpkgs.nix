@@ -1,9 +1,17 @@
 {
+  inputs,
   config,
   pkgs,
   ...
 }: {
   nixpkgs = {config = import ./config.nix;};
+
+  environment = {
+    etc = {
+      nixpkgs.source = "${inputs.nixpkgs}";
+      home-manager.source = "${inputs.home-manager}";
+    };
+  };
 
   nix = {
     package = pkgs.nix;
@@ -12,9 +20,12 @@
       keep-derivations = true
       experimental-features = nix-command flakes
     '';
+    optimise = {
+      automatic = true;
+    };
     settings = {
       max-jobs = 8;
-      trusted-users = ["${config.user.name}" "root" "@admin" "@wheel"];
+      trusted-users = ["${config.user.name}" "root" "@admin" "@sudo" "@wheel"];
       trusted-substituters = [
         "https://cache.nixos.org"
         "https://kclejeune.cachix.org"
@@ -33,8 +44,11 @@
       builtins.map
       (source: "${source}=/etc/${config.environment.etc.${source}.target}") [
         "home-manager"
-        # "nixpkgs"
-        # "stable"
+        "nixpkgs"
       ];
+    registry = {
+      nixpkgs.flake = inputs.nixpkgs;
+      home-manager.flake = inputs.home-manager;
+    };
   };
 }
