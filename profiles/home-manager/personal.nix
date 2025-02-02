@@ -20,7 +20,5 @@
   programs.git = {
     userEmail = "kennan@case.edu";
     userName = "Kennan LeJeune";
-    lfs.enable = true;
-    signing.key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM48VQYrCQErK9QdC/mZ61Yzjh/4xKpgZ2WU5G19FpBG";
   };
 }
