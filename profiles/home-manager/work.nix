@@ -1,10 +1,5 @@
-{pkgs, ...}: {
+{...}: {
   imports = [../../modules/home-manager/1password.nix];
-  home.packages = with pkgs; [
-    kubectl
-    kubernetes-helm
-    kustomize
-  ];
   xdg.configFile = {
     opAgent = {
       recursive = true;

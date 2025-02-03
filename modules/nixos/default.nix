@@ -14,7 +14,7 @@
     dataDir = config.user.home;
   };
 
-  environment.systemPackages = with pkgs; [vscode firefox gnome-tweaks];
+  environment.systemPackages = with pkgs; [vscode brave gnome-tweaks];
 
   hm = {...}: {imports = [../home-manager/gnome];};
 
@@ -25,7 +25,7 @@
     users = {
       "${config.user.name}" = {
         isNormalUser = true;
-        extraGroups = ["wheel" "networkmanager"]; # Enable ‘sudo’ for the user.
+        extraGroups = ["sudo" "wheel" "networkmanager"]; # Enable ‘sudo’ for the user.
         hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
       };
     };
@@ -88,17 +88,16 @@
   # Enable CUPS to print documents.
   services.printing.enable = true;
 
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
+
+  # Enable touchpad support.
+  services.libinput.enable = true;
 
   # Enable the X11 windowing system.
   services.xserver = {
+    xkb.layout = "us";
     enable = true;
-    layout = "us";
     # services.xserver.xkbOptions = "eurosign:e";
-
-    # Enable touchpad support.
-    libinput.enable = true;
-
     # Enable the KDE Desktop Environment.
     # services.xserver.displayManager.sddm.enable = true;
     # services.xserver.desktopManager.plasma5.enable = true;
@@ -117,5 +116,5 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "20.09"; # Did you read the comment?
+  system.stateVersion = "24.11";
 }

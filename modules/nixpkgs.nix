@@ -1,4 +1,5 @@
 {
+  lib,
   inputs,
   config,
   pkgs,
@@ -46,7 +47,7 @@
         "home-manager"
         "nixpkgs"
       ];
-    registry = {
+    registry = lib.mkForce {
       nixpkgs.flake = inputs.nixpkgs;
       home-manager.flake = inputs.home-manager;
     };

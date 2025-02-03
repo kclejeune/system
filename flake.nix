@@ -14,21 +14,9 @@
   };
 
   inputs = {
-    # package repos
+    pre-commit-hooks.url = "github:cachix/git-hooks.nix";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    _1password-shell-plugins = {
-      url = "github:1Password/shell-plugins";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
-    };
-    # determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0.1";
-    devenv = {
-      url = "github:cachix/devenv/v1.0.7";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # system management
     nixos-hardware.url = "github:nixos/nixos-hardware";
     darwin = {
       url = "github:lnl7/nix-darwin";
@@ -42,34 +30,29 @@
       url = "github:Mic92/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # shell stuff
-    flake-utils.url = "github:numtide/flake-utils";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
   outputs = {
     self,
     darwin,
-    # determinate,
-    devenv,
-    flake-utils,
     home-manager,
     ...
   } @ inputs: let
-    inherit (flake-utils.lib) eachSystemMap;
+    inherit (inputs.nixpkgs) lib;
+    inherit (lib) attrValues elem filterAttrs genAttrs intersectLists map mapAttrs mapAttrs' mapAttrsToList mergeAttrsList nameValuePair platforms;
 
-    isDarwin = system: (builtins.elem system inputs.nixpkgs.lib.platforms.darwin);
+    defaultSystems =
+      intersectLists
+      (platforms.linux ++ platforms.darwin)
+      (platforms.x86_64 ++ platforms.aarch64);
+    darwinSystems = intersectLists defaultSystems platforms.darwin;
+    linuxSystems = intersectLists defaultSystems platforms.linux;
+    eachSystemMap = genAttrs;
+
     homePrefix = system:
-      if isDarwin system
+      if (elem system darwinSystems)
       then "/Users"
       else "/home";
-    defaultSystems = [
-      # "aarch64-linux"
-      "aarch64-darwin"
-      "x86_64-darwin"
-      "x86_64-linux"
-    ];
 
     # generate a base darwin configuration with the
     # specified hostname, overlays, and any extraModules applied
@@ -129,180 +112,146 @@
       inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import nixpkgs {
           inherit system;
-          overlays = builtins.attrValues self.overlays;
+          overlays = attrValues self.overlays;
         };
         extraSpecialArgs = {inherit self inputs nixpkgs;};
         modules = baseModules ++ extraModules;
       };
-
-    mkChecks = {
-      arch,
-      os,
-      username ? "kclejeune",
-    }: {
-      "${arch}-${os}" = {
-        "${username}_${os}" =
-          (
-            if os == "darwin"
-            then self.darwinConfigurations
-            else self.nixosConfigurations
-          )
-          ."${username}@${arch}-${os}"
-          .config
-          .system
-          .build
-          .toplevel;
-        "${username}_home" =
-          self.homeConfigurations."${username}@${arch}-${os}".activationPackage;
-        devShell = self.devShells."${arch}-${os}".default;
+    mkHooks = system:
+      inputs.pre-commit-hooks.lib.${system}.run {
+        src = ./.;
+        hooks = {
+          black.enable = true;
+          shellcheck.enable = true;
+          alejandra.enable = true;
+          shfmt.enable = false;
+          stylua.enable = true;
+          deadnix = {
+            enable = true;
+            settings = {
+              edit = true;
+              noLambdaArg = true;
+            };
+          };
+        };
       };
-    };
   in {
-    checks =
-      {}
-      // (mkChecks {
-        arch = "aarch64";
-        os = "darwin";
-      })
-      // (mkChecks {
-        arch = "x86_64";
-        os = "darwin";
-      })
-      // (mkChecks {
-        arch = "aarch64";
-        os = "linux";
-      })
-      // (mkChecks {
-        arch = "x86_64";
-        os = "linux";
-      });
+    checks = mergeAttrsList [
+      # verify devShell + pre-commit hooks; need to work on all platforms
+      (eachSystemMap defaultSystems (
+        system: {
+          devShell = self.devShells.${system}.default;
+          pre-commit-check = mkHooks system;
+        }
+      ))
+      # home-manager checks; add _home suffix to original config to avoid nixos coflict
+      (eachSystemMap defaultSystems (system:
+        mapAttrs'
+        (name: drv: (nameValuePair "${name}_home" drv.activationPackage))
+        (filterAttrs
+          (name: drv: lib.strings.hasSuffix system name)
+          self.homeConfigurations)))
+      # darwin checks; limit these to darwinSystems
+      (eachSystemMap darwinSystems (system:
+        mapAttrs
+        (name: drv: drv.config.system.build.toplevel)
+        (filterAttrs
+          (name: drv: lib.strings.hasSuffix system name)
+          self.darwinConfigurations)))
+      # nixos checks; limit these to linuxSystems
+      (eachSystemMap linuxSystems (system:
+        mapAttrs
+        (name: drv: drv.config.system.build.toplevel)
+        (filterAttrs
+          (name: drv: lib.strings.hasSuffix system name)
+          self.nixosConfigurations)))
+    ];
 
-    darwinConfigurations = {
-      "kclejeune@aarch64-darwin" = mkDarwinConfig {
-        system = "aarch64-darwin";
-        extraModules = [./profiles/personal.nix ./modules/darwin/apps.nix];
-      };
-      "kclejeune@x86_64-darwin" = mkDarwinConfig {
-        system = "x86_64-darwin";
-        extraModules = [./profiles/personal.nix ./modules/darwin/apps.nix];
-      };
-      "klejeune@aarch64-darwin" = mkDarwinConfig {
-        system = "aarch64-darwin";
-        extraModules = [./profiles/work.nix];
-      };
-    };
+    darwinConfigurations =
+      # generate darwin configs for each supported platform
+      mergeAttrsList (
+        # arch-independent configs that can operate on both x86_64-darwin and aarch64-darwin
+        (map
+          (system: {
+            "kclejeune@${system}" = mkDarwinConfig {
+              inherit system;
+              extraModules = [./profiles/personal.nix ./modules/darwin/apps.nix];
+            };
+            "klejeune@${system}" = mkDarwinConfig {
+              inherit system;
+              extraModules = [./profiles/work.nix];
+            };
+          })
+          darwinSystems)
+        # and "custom" ones that aren't universal
+        ++ []
+      );
 
-    nixosConfigurations = {
-      "kclejeune@x86_64-linux" = mkNixosConfig {
-        system = "x86_64-linux";
-        hardwareModules = [
-          ./modules/hardware/phil.nix
-          inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
-        ];
-        extraModules = [./profiles/personal.nix];
-      };
-    };
+    nixosConfigurations =
+      # generate nixos configs, if these are ever applicable
+      mergeAttrsList [
+        {
+          "kclejeune@x86_64-linux" = mkNixosConfig {
+            system = "x86_64-linux";
+            hardwareModules = [
+              ./modules/hardware/phil.nix
+              inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
+            ];
+            extraModules = [./profiles/personal.nix];
+          };
+        }
+      ];
 
-    homeConfigurations = {
-      "kclejeune@x86_64-linux" = mkHomeConfig {
-        username = "kclejeune";
-        system = "x86_64-linux";
-        extraModules = [./profiles/home-manager/personal.nix];
-      };
-      "kclejeune@x86_64-darwin" = mkHomeConfig {
-        username = "kclejeune";
-        system = "x86_64-darwin";
-        extraModules = [./profiles/home-manager/personal.nix];
-      };
-      "kclejeune@aarch64-darwin" = mkHomeConfig {
-        username = "kclejeune";
-        system = "aarch64-darwin";
-        extraModules = [./profiles/home-manager/personal.nix];
-      };
-      "klejeune@aarch64-darwin" = mkHomeConfig {
-        username = "klejeune";
-        system = "aarch64-darwin";
-        extraModules = [./profiles/home-manager/work.nix];
-      };
-      "klejeune@x86_64-linux" = mkHomeConfig {
-        username = "klejeune";
-        system = "x86_64-linux";
-        extraModules = [./profiles/home-manager/work.nix];
-      };
-    };
+    homeConfigurations =
+      # generate home-manager configs for each supported platform
+      mergeAttrsList (
+        (map (system: {
+            "kclejeune@${system}" = mkHomeConfig {
+              inherit system;
+              username = "kclejeune";
+              extraModules = [./profiles/home-manager/personal.nix];
+            };
+            "klejeune@${system}" = mkHomeConfig {
+              inherit system;
+              username = "klejeune";
+              extraModules = [./profiles/home-manager/work.nix];
+            };
+          })
+          defaultSystems)
+        # and "custom" ones that aren't universal
+        ++ []
+      );
 
     devShells = eachSystemMap defaultSystems (system: let
       pkgs = import inputs.nixpkgs {
         inherit system;
-        overlays = builtins.attrValues self.overlays;
+        overlays = attrValues self.overlays;
       };
+      pre-commit-check = mkHooks system;
     in {
-      default = devenv.lib.mkShell {
-        inherit inputs pkgs;
-        modules = [
-          (import ./devenv.nix)
-        ];
+      default = pkgs.mkShell {
+        inherit (pre-commit-check) shellHook;
+        packages = with pkgs;
+          [
+            bashInteractive
+            fd
+            nixd
+            ripgrep
+            uv
+          ]
+          ++ (mapAttrsToList (name: value: value) self.packages.${system});
+        inputsFrom = pre-commit-check.enabledPackages;
       };
     });
 
     packages = eachSystemMap defaultSystems (system: let
       pkgs = import inputs.nixpkgs {
         inherit system;
-        overlays = builtins.attrValues self.overlays;
+        overlays = attrValues self.overlays;
       };
     in {
-      sysdo = pkgs.writeShellScriptBin "sysdo" ''
-        ${pkgs.uv}/bin/uv run -q ${./sysdo.py} $@
-      '';
-      cb = pkgs.writeShellScriptBin "cb" ''
-        #! ${pkgs.lib.getExe pkgs.bash}
-        # universal clipboard, stephen@niedzielski.com
-
-        shopt -s expand_aliases
-
-        # ------------------------------------------------------------------------------
-        # os utils
-
-        case "$OSTYPE$(uname)" in
-          [lL]inux*) TUX_OS=1 ;;
-         [dD]arwin*) MAC_OS=1 ;;
-          [cC]ygwin) WIN_OS=1 ;;
-                  *) echo "unknown os=\"$OSTYPE$(uname)\"" >&2 ;;
-        esac
-
-        is_tux() { [ ''${TUX_OS-0} -ne 0 ]; }
-        is_mac() { [ ''${MAC_OS-0} -ne 0 ]; }
-        is_win() { [ ''${WIN_OS-0} -ne 0 ]; }
-
-        # ------------------------------------------------------------------------------
-        # copy and paste
-
-        if is_mac; then
-          alias cbcopy=pbcopy
-          alias cbpaste=pbpaste
-        elif is_win; then
-          alias cbcopy=putclip
-          alias cbpaste=getclip
-        else
-          alias cbcopy='${pkgs.xclip} -sel c'
-          alias cbpaste='${pkgs.xclip} -sel c -o'
-        fi
-
-        # ------------------------------------------------------------------------------
-        cb() {
-          if [ ! -t 0 ] && [ $# -eq 0 ]; then
-            # no stdin and no call for --help, blow away the current clipboard and copy
-            cbcopy
-          else
-            cbpaste ''${@:+"$@"}
-          fi
-        }
-
-        # ------------------------------------------------------------------------------
-        if ! return 2>/dev/null; then
-          cb ''${@:+"$@"}
-        fi
-      '';
+      sysdo = pkgs.writeShellScriptBin "sysdo" "${pkgs.uv}/bin/uv run -q ${./bin/sysdo.py} $@";
+      cb = pkgs.writeShellScriptBin "cb" "${pkgs.bash}/bin/bash ${./bin/cb.sh}";
     });
 
     apps = eachSystemMap defaultSystems (system: rec {
@@ -318,13 +267,9 @@
     });
 
     overlays = {
-      channels = final: prev: {
-        # expose other channels via overlays
-      };
       extraPackages = final: prev: {
         sysdo = self.packages.${prev.system}.sysdo;
         cb = self.packages.${prev.system}.cb;
-        devenv = self.packages.${prev.system}.devenv;
       };
     };
   };

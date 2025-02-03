@@ -23,6 +23,11 @@ in {
   programs.atuin = {
     enable = true;
     package = pkgs.atuin;
+    daemon.enable = true;
+    settings = {
+      update_check = false;
+      sync_frequency = "15m";
+    };
     flags = [];
   };
   # configure zsh custom plugin directory
