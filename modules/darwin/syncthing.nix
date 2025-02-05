@@ -47,7 +47,7 @@ in {
         StandardOutPath = "${cfg.logDir}/Syncthing.log";
         StandardErrorPath = "${cfg.logDir}/Syncthing-Errors.log";
         EnvironmentVariables = {
-          NIX_PATH = "nixpkgs=" + toString pkgs.path;
+          NIX_PATH = "unstable=" + toString pkgs.path;
           STNORESTART = "1";
         };
       };

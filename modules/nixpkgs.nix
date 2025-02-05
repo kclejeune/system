@@ -1,5 +1,4 @@
 {
-  lib,
   inputs,
   config,
   pkgs,
@@ -9,7 +8,7 @@
 
   environment = {
     etc = {
-      nixpkgs.source = "${inputs.nixpkgs}";
+      unstable.source = "${inputs.nixpkgs}";
       home-manager.source = "${inputs.home-manager}";
     };
   };
@@ -45,10 +44,10 @@
       builtins.map
       (source: "${source}=/etc/${config.environment.etc.${source}.target}") [
         "home-manager"
-        "nixpkgs"
+        "unstable"
       ];
-    registry = lib.mkForce {
-      nixpkgs.flake = inputs.nixpkgs;
+    registry = {
+      unstable.flake = inputs.nixpkgs;
       home-manager.flake = inputs.home-manager;
     };
   };

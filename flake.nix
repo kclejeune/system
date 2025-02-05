@@ -102,7 +102,7 @@
             inherit username;
             homeDirectory = "${homePrefix system}/${username}";
             sessionVariables = {
-              NIX_PATH = "nixpkgs=${nixpkgs}";
+              NIX_PATH = "unstable=${nixpkgs}:home-manager=${inputs.home-manager}";
             };
           };
         }
