@@ -1,20 +1,11 @@
 {
   inputs,
   config,
-  pkgs,
   ...
 }: {
   nixpkgs = {config = import ./config.nix;};
 
-  environment = {
-    etc = {
-      unstable.source = "${inputs.nixpkgs}";
-      home-manager.source = "${inputs.home-manager}";
-    };
-  };
-
   nix = {
-    package = pkgs.nix;
     extraOptions = ''
       keep-outputs = true
       keep-derivations = true
@@ -39,15 +30,7 @@
       automatic = true;
       options = "--delete-older-than 14d";
     };
-
-    nixPath =
-      builtins.map
-      (source: "${source}=/etc/${config.environment.etc.${source}.target}") [
-        "home-manager"
-        "unstable"
-      ];
     registry = {
-      unstable.flake = inputs.nixpkgs;
       home-manager.flake = inputs.home-manager;
     };
   };

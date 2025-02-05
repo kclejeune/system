@@ -85,8 +85,8 @@ in {
       kustomize
       lazydocker
       luajit
+      mise
       mmv
-      nix
       nixd
       nixfmt-rfc-style
       nixpacks

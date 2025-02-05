@@ -10,7 +10,7 @@
     ./nixpkgs.nix
   ];
 
-  nixpkgs.overlays = builtins.attrValues self.overlays;
+  nixpkgs.overlays = [self.overlays.default];
 
   programs.zsh = {
     enable = true;

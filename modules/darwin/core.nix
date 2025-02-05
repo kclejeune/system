@@ -1,21 +1,7 @@
-{
-  inputs,
-  config,
-  ...
-}: {
-  # environment setup
-  environment = {
-    etc = {
-      darwin.source = "${inputs.darwin}";
-    };
-  };
-
+{inputs, ...}: {
   # auto manage nixbld users with nix darwin
   nix = {
     configureBuildUsers = true;
-    nixPath = [
-      "darwin=/etc/${config.environment.etc.darwin.target}"
-    ];
     registry = {
       darwin.flake = inputs.darwin;
     };

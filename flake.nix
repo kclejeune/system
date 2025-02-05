@@ -15,6 +15,7 @@
 
   inputs = {
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
+    nixpkgs-2405.url = "github:nixos/nixpkgs/nixos-24.05";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
@@ -101,9 +102,6 @@
           home = {
             inherit username;
             homeDirectory = "${homePrefix system}/${username}";
-            sessionVariables = {
-              NIX_PATH = "unstable=${nixpkgs}:home-manager=${inputs.home-manager}";
-            };
           };
         }
       ],
@@ -112,7 +110,7 @@
       inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import nixpkgs {
           inherit system;
-          overlays = attrValues self.overlays;
+          overlays = [self.overlays.default];
         };
         extraSpecialArgs = {inherit self inputs nixpkgs;};
         modules = baseModules ++ extraModules;
@@ -247,7 +245,7 @@
     packages = eachSystemMap defaultSystems (system: let
       pkgs = import inputs.nixpkgs {
         inherit system;
-        overlays = attrValues self.overlays;
+        overlays = [self.overlays.default];
       };
     in {
       sysdo = pkgs.writeShellScriptBin "sysdo" "${pkgs.uv}/bin/uv run -q ${./bin/sysdo.py} $@";
@@ -315,7 +313,7 @@
     });
 
     overlays = {
-      extraPackages = final: prev: {
+      default = final: prev: {
         sysdo = self.packages.${prev.system}.sysdo;
         cb = self.packages.${prev.system}.cb;
       };
