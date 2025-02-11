@@ -8,6 +8,9 @@
   darwinSockPath = "${home}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
   sockPath = ".1password/agent.sock";
 in {
+  home.packages = [
+    pkgs._1password-cli
+  ];
   home.sessionVariables = {
     SSH_AUTH_SOCK = "${home}/${sockPath}";
     OP_PLUGIN_ALIASES_SOURCED = 1;
@@ -39,7 +42,7 @@ in {
   };
   programs.ssh = {
     enable = true;
-    extraConfig = "IdentityAgent ~/${sockPath}";
+    extraConfig = "IdentityAgent ${config.home.sessionVariables.SSH_AUTH_SOCK}";
   };
 
   programs.git = {

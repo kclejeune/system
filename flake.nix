@@ -19,6 +19,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
+    nixGL.url = "github:nix-community/nixGL";
     darwin = {
       url = "github:lnl7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -106,11 +107,11 @@
         }
       ],
       extraModules ? [],
+      overlays ? [self.overlays.default],
     }:
       inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import nixpkgs {
-          inherit system;
-          overlays = [self.overlays.default];
+          inherit system overlays;
         };
         extraSpecialArgs = {inherit self inputs nixpkgs;};
         modules = baseModules ++ extraModules;
@@ -173,11 +174,14 @@
           (system: {
             "kclejeune@${system}" = mkDarwinConfig {
               inherit system;
-              extraModules = [./profiles/personal.nix ./modules/darwin/apps.nix];
+              extraModules = [./profiles/personal ./modules/darwin/apps.nix];
             };
             "klejeune@${system}" = mkDarwinConfig {
               inherit system;
-              extraModules = [./profiles/work.nix];
+              overlays = [self.overlays.default self.overlays.work];
+              extraModules = [
+                ./profiles/work
+              ];
             };
           })
           darwinSystems)
@@ -195,7 +199,7 @@
               ./modules/hardware/phil.nix
               inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
             ];
-            extraModules = [./profiles/personal.nix];
+            extraModules = [./profiles/personal];
           };
         }
       ];
@@ -207,12 +211,14 @@
             "kclejeune@${system}" = mkHomeConfig {
               inherit system;
               username = "kclejeune";
-              extraModules = [./profiles/home-manager/personal.nix];
+              extraModules = [./profiles/personal/home-manager];
             };
             "klejeune@${system}" = mkHomeConfig {
               inherit system;
               username = "klejeune";
-              extraModules = [./profiles/home-manager/work.nix];
+              extraModules = [
+                ./profiles/work/home-manager
+              ];
             };
           })
           defaultSystems)
@@ -279,8 +285,8 @@
           alias cbcopy=putclip
           alias cbpaste=getclip
         else
-          alias cbcopy='${pkgs.xclip} -sel c'
-          alias cbpaste='${pkgs.xclip} -sel c -o'
+          alias cbcopy='${pkgs.xclip}/bin/xclip -sel c'
+          alias cbpaste='${pkgs.xclip}/bin/xclip -sel c -o'
         fi
 
         # ------------------------------------------------------------------------------
@@ -316,6 +322,12 @@
       default = final: prev: {
         sysdo = self.packages.${prev.system}.sysdo;
         cb = self.packages.${prev.system}.cb;
+      };
+      work = final: prev: let
+        pkgs-2405 = import inputs.nixpkgs-2405 {inherit (prev) system;};
+      in {
+        nix_2_18 = pkgs-2405.nixVersions.nix_2_18;
+        cachix = pkgs-2405.cachix;
       };
     };
   };

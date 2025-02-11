@@ -28,6 +28,6 @@ vim.g.fzf_history_dir = "~/.local/share/fzf-history"
 -- nnoremap <silent> <leader>b :Buffers<CR>
 vim.cmd([[
   nnoremap <silent> <C-p> :call fzf#vim#files('.', {'options': '--prompt ""'})<CR>
-  let $FZF_DEFAULT_COMMAND =  "fd --type f"
+  let $FZF_DEFAULT_COMMAND =  "fd --type f --hidden"
   let $FZF_DEFAULT_OPTS="--layout=reverse --preview 'bat --style=changes {}' --preview-window right:50%"
 ]])

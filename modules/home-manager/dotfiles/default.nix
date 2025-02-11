@@ -48,7 +48,7 @@
           source = ./ghostty/linux.conf;
         })
       ];
-      kitty = lib.mkIf pkgs.stdenvNoCC.isDarwin {
+      kitty = {
         source = ./kitty;
         recursive = true;
       };

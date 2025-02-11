@@ -2,9 +2,7 @@
   config,
   pkgs,
   ...
-}: let
-  homeDir = config.home.homeDirectory;
-in {
+}: {
   imports = [
     ./bat.nix
     ./direnv.nix
@@ -33,18 +31,6 @@ in {
     # the Home Manager release notes for a list of state version
     # changes in each release.
     stateVersion = "22.05";
-    sessionVariables = {
-      GPG_TTY = "/dev/ttys000";
-      EDITOR = "nvim";
-      VISUAL = "nvim";
-      CLICOLOR = 1;
-      LSCOLORS = "ExFxBxDxCxegedabagacad";
-      NODE_PATH = "${homeDir}/.node";
-    };
-    sessionPath = [
-      "${homeDir}/.local/bin"
-      "${homeDir}/.node/bin"
-    ];
 
     # define package definitions for current user environment
     packages = with pkgs; [
@@ -77,6 +63,7 @@ in {
       httpie
       hurl
       hyperfine
+      jetbrains-mono
       jnv
       kotlin
       kubectl
@@ -125,7 +112,9 @@ in {
     ];
   };
 
-  fonts.fontconfig.enable = true;
+  fonts.fontconfig = {
+    enable = true;
+  };
 
   programs = {
     home-manager = {

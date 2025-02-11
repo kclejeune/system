@@ -4,22 +4,35 @@
   pkgs,
   ...
 }: let
-  aliases = {
-    neofetch = "fastfetch";
-    ncdu = "gdu";
-    cat = "bat -pp";
-  };
   zshCustomPrefix = "oh-my-zsh";
-  commonVariables = {
-    LANG = "en_US.UTF-8";
-    GPG_TTY = "/dev/ttys000";
-    DEFAULT_USER = "${config.home.username}";
-    CLICOLOR = 1;
-    LS_COLORS = "ExFxBxDxCxegedabagacad";
-    TERM = "xterm-256color";
-    MISE_ENV_FILE = ".env";
-  };
+  homeDir = config.home.homeDirectory;
 in {
+  home = {
+    preferXdgDirectories = true;
+    sessionVariables = {
+      GPG_TTY = "/dev/ttys000";
+      EDITOR = "nvim";
+      VISUAL = "nvim";
+      CLICOLOR = 1;
+      LSCOLORS = "ExFxBxDxCxegedabagacad";
+      NODE_PATH = "${homeDir}/.node";
+      LANG = "en_US.UTF-8";
+      DEFAULT_USER = "${config.home.username}";
+      LS_COLORS = "ExFxBxDxCxegedabagacad";
+      TERM = "xterm-256color";
+      MISE_ENV_FILE = ".env";
+    };
+    sessionPath = [
+      "${homeDir}/.local/bin"
+      "${homeDir}/.node/bin"
+    ];
+    shellAliases = {
+      neofetch = "fastfetch";
+      ncdu = "gdu";
+      cat = "bat -pp";
+    };
+  };
+
   programs.atuin = {
     enable = true;
     package = pkgs.atuin;
@@ -59,16 +72,12 @@ in {
     autocd = true;
     dotDir = ".config/zsh";
     sessionVariables =
-      commonVariables
+      config.home.sessionVariables
       // {
         ZSH_CUSTOM = "${config.xdg.dataHome}/${zshCustomPrefix}";
       };
-    shellAliases = aliases;
     initExtra = ''
       unset RPS1
-    '';
-    profileExtra = ''
-      ${lib.optionalString pkgs.stdenvNoCC.isLinux "[[ -f /etc/profile ]] && source /etc/profile"}
     '';
     oh-my-zsh = {
       enable = true;
@@ -96,8 +105,7 @@ in {
 
   programs.bash = {
     enable = true;
-    shellAliases = aliases;
-    sessionVariables = commonVariables;
+    sessionVariables = config.home.sessionVariables // {};
     initExtra = ''
       eval "$(mise activate bash)"
       eval "$(mise hook-env -s bash)"
