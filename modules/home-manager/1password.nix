@@ -24,7 +24,6 @@ in {
 
   programs.ssh = {
     enable = true;
-    extraConfig = "IdentityAgent ${sockPath}";
   };
 
   programs.git = {
