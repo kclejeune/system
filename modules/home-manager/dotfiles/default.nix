@@ -31,7 +31,6 @@
   xdg = {
     enable = true;
     configFile = {
-      "nixpkgs/config.nix".source = ../../config.nix;
       aerospace = lib.mkIf pkgs.stdenvNoCC.isDarwin {
         source = ./aerospace;
         recursive = true;
