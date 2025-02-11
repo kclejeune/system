@@ -3,19 +3,25 @@
   pkgs,
   ...
 }: {
-  imports = [
-    ./bat.nix
-    ./direnv.nix
-    ./dotfiles
-    ./fzf.nix
-    ./git.nix
-    ./nushell.nix
-    ./nvim
-    ./shell.nix
-    ./ssh.nix
-    ./tldr.nix
-    ./tmux.nix
-  ];
+  imports =
+    [
+      ./bat.nix
+      ./direnv.nix
+      ./dotfiles
+      ./fzf.nix
+      ./git.nix
+      ./nushell.nix
+      ./nvim
+      ./shell.nix
+      ./ssh.nix
+      ./tldr.nix
+      ./tmux.nix
+    ]
+    ++ (
+      if pkgs.stdenvNoCC.isLinux
+      then [./gnome.nix]
+      else []
+    );
 
   nixpkgs.config = {
     allowUnfree = true;
