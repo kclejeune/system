@@ -178,7 +178,6 @@
             };
             "klejeune@${system}" = mkDarwinConfig {
               inherit system;
-              overlays = [self.overlays.default self.overlays.work];
               extraModules = [
                 ./profiles/work
               ];

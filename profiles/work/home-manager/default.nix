@@ -5,6 +5,7 @@
 }: {
   imports = [../../../modules/home-manager/1password.nix];
 
+  nix.package = pkgs.nix_2_18;
   nixpkgs.overlays = [self.overlays.default self.overlays.work];
   home.packages = with pkgs;
     [
