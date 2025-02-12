@@ -45,7 +45,7 @@
       argocd
       asciidoctor
       cacert
-      cachix
+      stable.cachix
       cb
       cirrus-cli
       comma

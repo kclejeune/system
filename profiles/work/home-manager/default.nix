@@ -1,21 +1,14 @@
-{
-  self,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [../../../modules/home-manager/1password.nix];
 
-  nix.package = pkgs.nix_2_18;
-  nixpkgs.overlays = [self.overlays.default self.overlays.work];
+  nix.package = pkgs.stable.nixVersions.nix_2_18;
   home.packages = with pkgs;
     [
       awscli2
       helmfile
       kubectl
       kubernetes-helm
-      teleport
-      nix_2_18
-      cachix
+      stable.cachix
     ]
     ++ (
       if (pkgs.stdenvNoCC.isLinux)

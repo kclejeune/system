@@ -15,7 +15,7 @@
 
   inputs = {
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
-    nixpkgs-2405.url = "github:nixos/nixpkgs/nixos-24.05";
+    stable.url = "github:nixos/nixpkgs/nixos-24.11";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
@@ -321,12 +321,7 @@
       default = final: prev: {
         sysdo = self.packages.${prev.system}.sysdo;
         cb = self.packages.${prev.system}.cb;
-      };
-      work = final: prev: let
-        pkgs-2405 = import inputs.nixpkgs-2405 {inherit (prev) system;};
-      in {
-        nix_2_18 = pkgs-2405.nixVersions.nix_2_18;
-        cachix = pkgs-2405.cachix;
+        stable = import inputs.stable {inherit (prev) system;};
       };
     };
   };
