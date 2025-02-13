@@ -9,6 +9,8 @@
       kubectl
       kubernetes-helm
       stable.cachix
+      stable.teleport
+      stable.nixVersions.nix_2_18
     ]
     ++ (
       if (pkgs.stdenvNoCC.isLinux)

@@ -10,8 +10,6 @@
     ./nixpkgs.nix
   ];
 
-  nixpkgs.overlays = [self.overlays.default];
-
   programs.zsh = {
     enable = true;
     enableCompletion = true;

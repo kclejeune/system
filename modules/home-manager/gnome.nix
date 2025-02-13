@@ -1,11 +1,12 @@
 {
+  lib,
   pkgs,
   ...
 }: {
-  targets.genericLinux.enable = true;
-  xdg.mime.enable = true;
+  targets.genericLinux.enable = pkgs.stdenvNoCC.isLinux;
+  xdg.mime.enable = pkgs.stdenvNoCC.isLinux;
 
-  gtk = {
+  gtk = lib.mkIf pkgs.stdenvNoCC.isLinux {
     enable = true;
 
     iconTheme = {
@@ -29,9 +30,8 @@
       gtk-application-prefer-dark-theme = 1;
     };
   };
-  services.gnome-keyring.enable = false;
 
-  dconf.settings = {
+  dconf.settings = lib.mkIf pkgs.stdenvNoCC.isLinux {
     "org/gnome/desktop/datetime" = {automatic-timezone = true;};
     "org/gnome/desktop/peripherals/keyboard" = {
       delay = "uint32 304";

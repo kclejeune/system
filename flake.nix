@@ -16,7 +16,8 @@
   inputs = {
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
     stable.url = "github:nixos/nixpkgs/nixos-24.11";
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.follows = "unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixGL.url = "github:nix-community/nixGL";
@@ -41,7 +42,7 @@
     ...
   } @ inputs: let
     inherit (inputs.nixpkgs) lib;
-    inherit (lib) attrValues elem filterAttrs genAttrs intersectLists map mapAttrs mapAttrs' mapAttrsToList mergeAttrsList nameValuePair platforms;
+    inherit (lib) elem filterAttrs genAttrs intersectLists map mapAttrs mapAttrs' mapAttrsToList mergeAttrsList nameValuePair platforms;
 
     defaultSystems =
       intersectLists
@@ -107,11 +108,11 @@
         }
       ],
       extraModules ? [],
-      overlays ? [self.overlays.default],
     }:
       inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import nixpkgs {
-          inherit system overlays;
+          inherit system;
+          overlays = [self.overlays.default];
         };
         extraSpecialArgs = {inherit self inputs nixpkgs;};
         modules = baseModules ++ extraModules;
@@ -228,7 +229,7 @@
     devShells = eachSystemMap defaultSystems (system: let
       pkgs = import inputs.nixpkgs {
         inherit system;
-        overlays = attrValues self.overlays;
+        overlays = [self.overlays.default];
       };
       pre-commit-check = mkHooks system;
     in {

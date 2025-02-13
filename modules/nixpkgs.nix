@@ -1,10 +1,9 @@
 {
-  inputs,
+  self,
   config,
   ...
 }: {
-  nixpkgs = {config = import ./config.nix;};
-
+  imports = [./home-manager/nixpkgs.nix];
   nix = {
     extraOptions = ''
       keep-outputs = true
@@ -16,8 +15,8 @@
     };
     settings = {
       max-jobs = 8;
-      trusted-users = ["${config.user.name}" "root" "@admin" "@sudo" "@wheel"];
-      trusted-substituters = [
+      trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
+      substituters = [
         "https://cache.nixos.org"
         "https://kclejeune.cachix.org"
       ];
@@ -30,8 +29,6 @@
       automatic = true;
       options = "--delete-older-than 14d";
     };
-    registry = {
-      home-manager.flake = inputs.home-manager;
-    };
   };
+  nixpkgs.overlays = [self.overlays.default];
 }
