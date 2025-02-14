@@ -13,7 +13,10 @@ in {
     pkgs._1password-cli
   ];
   home.sessionVariables = {
-    SSH_AUTH_SOCK = ''''${SSH_AUTH_SOCK:-${sockPath}}'';
+    SSH_AUTH_SOCK =
+      if pkgs.stdenvNoCC.isDarwin
+      then sockPath
+      else ''''${SSH_AUTH_SOCK:-${sockPath}}'';
     OP_PLUGIN_ALIASES_SOURCED = 1;
   };
 
