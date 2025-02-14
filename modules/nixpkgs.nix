@@ -25,10 +25,6 @@
         "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
       ];
     };
-    gc = {
-      automatic = true;
-      options = "--delete-older-than 14d";
-    };
   };
   nixpkgs.overlays = [self.overlays.default];
 }

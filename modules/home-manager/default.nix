@@ -77,8 +77,8 @@
       parallel
       pre-commit
       # python with default packages
-      (python3.withPackages
-        (ps:
+      (python3.withPackages (
+        ps:
           with ps; [
             duckdb
             httpx
@@ -87,7 +87,8 @@
             numpy
             polars
             scipy
-          ]))
+          ]
+      ))
       ranger
       rclone
       restic

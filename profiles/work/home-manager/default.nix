@@ -1,7 +1,11 @@
-{pkgs, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   imports = [../../../modules/home-manager/1password.nix];
 
-  nix.package = pkgs.stable.nixVersions.nix_2_18;
+  nix.package = lib.mkDefault pkgs.stable.nixVersions.nix_2_18;
   home.packages = with pkgs;
     [
       awscli2
