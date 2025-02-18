@@ -102,6 +102,7 @@
       trivy
       usage
       uv
+      yadm
       yq-go
       zoxide
     ];
