@@ -9,9 +9,10 @@
   sockLink = ".1password/agent.sock";
   sockPath = "${home}/${sockLink}";
 in {
-  home.packages = [
-    pkgs._1password-cli
-  ];
+  # home.packages = [
+  #   pkgs._1password-cli
+  #   pkgs._1password-gui
+  # ];
   home.sessionVariables = {
     SSH_AUTH_SOCK =
       if pkgs.stdenvNoCC.isDarwin
