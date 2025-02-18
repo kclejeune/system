@@ -66,7 +66,6 @@
       kustomize
       lazydocker
       luajit
-      mise
       mmv
       nixd
       nixfmt-rfc-style
@@ -100,7 +99,6 @@
       sysdo
       tree
       trivy
-      usage
       uv
       yadm
       yq-go

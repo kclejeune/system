@@ -108,7 +108,6 @@ in {
     sessionVariables = config.home.sessionVariables // {};
     initExtra = ''
       eval "$(mise activate bash)"
-      eval "$(mise hook-env -s bash)"
     '';
   };
 }
