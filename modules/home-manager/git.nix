@@ -1,5 +1,5 @@
 {pkgs, ...}: {
-  home.packages = [pkgs.github-cli pkgs.git-crypt];
+  home.packages = [pkgs.github-cli pkgs.git-crypt pkgs.transcrypt];
   programs.git = {
     userName = "Kennan LeJeune";
     enable = true;
