@@ -51,6 +51,10 @@
         source = ./kitty;
         recursive = true;
       };
+      fd = {
+        source = ./fd;
+        recursive = true;
+      };
     };
   };
 }

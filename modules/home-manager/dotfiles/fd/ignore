@@ -1,0 +1,5 @@
+.git/
+.cache/
+.bazel_disk_cache/
+.zsh_sessions/
+.DS_Store
