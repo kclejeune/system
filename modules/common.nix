@@ -35,6 +35,8 @@
     ];
   };
 
+  security.pam.services.sudo_local.touchIdAuth = true;
+
   # let nix manage home-manager profiles and use global nixpkgs
   home-manager = {
     extraSpecialArgs = {inherit self inputs;};
