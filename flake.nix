@@ -2,15 +2,8 @@
   description = "nix system configurations";
 
   nixConfig = {
-    substituters = [
-      "https://cache.nixos.org"
-      "https://kclejeune.cachix.org"
-    ];
-
-    trusted-public-keys = [
-      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-      "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
-    ];
+    extra-substituters = ["https://kclejeune.cachix.org"];
+    extra-trusted-public-keys = ["kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="];
   };
 
   inputs = {
