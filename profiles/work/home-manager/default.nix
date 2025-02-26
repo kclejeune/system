@@ -14,7 +14,7 @@
       helmfile
       kubectl
       kubernetes-helm
-      stable.teleport
+      teleport
       (lib.hiPrio config.nix.package)
     ]
     ++ (
