@@ -2,6 +2,5 @@ builds:
   exclude:
     - "*.x86_64-darwin.*"
     - "*.aarch64-darwin.*"
-    - "homeConfigurations.*@aarch64-darwin"
-    - "homeConfigurations.*@x86_64-darwin"
+    - "*.*-darwin*"
     - "darwinConfigurations.*"
