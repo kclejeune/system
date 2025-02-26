@@ -17,7 +17,6 @@
     registry = {
       unstable.flake = inputs.unstable;
       stable.flake = inputs.stable;
-      nixpkgs.flake = inputs.nixpkgs;
       home-manager.flake = inputs.home-manager;
     };
     nixPath = lib.mapAttrsToList (name: value: "${name}=${registry.${name}.flake}") registry;
