@@ -6,11 +6,11 @@ env:
   GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
   LINUX_BUILD_IMAGE: nixos/nix:latest
   NIX_INSTALLER_NO_CONFIRM: "true"
-  NIX_INSTALLER_TAG: "v0.32.2"
+  NIX_INSTALLER_TAG: "v0.38.0"
   NIX_INSTALLER_EXTRA_CONF: |
     access-tokens = github.com=${GITHUB_TOKEN}
-    substituters = https://cache.nixos.org https://kclejeune.cachix.org https://devenv.cachix.org
-    trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
+    extra-substituters = https://kclejeune.cachix.org
+    extra-trusted-public-keys = kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=
     trusted-users = root admin @sudo @wheel
 
 build_template: &BUILD_TEMPLATE
