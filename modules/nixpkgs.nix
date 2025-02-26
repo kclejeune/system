@@ -3,7 +3,16 @@
   config,
   ...
 }: {
-  imports = [./home-manager/nixpkgs.nix];
+  nixpkgs = {
+    config = {
+      allowUnsupportedSystem = true;
+      allowUnfree = true;
+      allowBroken = false;
+    };
+    overlays = [
+      self.overlays.default
+    ];
+  };
   nix = {
     extraOptions = ''
       keep-outputs = true
@@ -18,5 +27,4 @@
       trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
     };
   };
-  nixpkgs.overlays = [self.overlays.default];
 }

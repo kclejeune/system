@@ -12,7 +12,8 @@ bold-is-bright = true
 theme = dark:OneHalfDark,light:OneHalfLight
 
 # OS-specific overrides
-config-file = ?os.conf
+config-file = ?macos.conf
+config-file = ?linux.conf
 
 # escape hatch for non-declarative testing
 config-file = ?local.conf

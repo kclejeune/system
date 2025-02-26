@@ -56,7 +56,7 @@ in {
     };
   in {
     enable = true;
-    dataFile = lib.mkMerge [
+    dataFile = lib.mergeAttrsList [
       (mkZshPlugin {pkg = pkgs.zsh-autopair;})
       (mkZshPlugin {pkg = pkgs.zsh-completions;})
       (mkZshPlugin {pkg = pkgs.zsh-autosuggestions;})

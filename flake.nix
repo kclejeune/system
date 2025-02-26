@@ -93,6 +93,7 @@
       nixpkgs ? inputs.nixpkgs,
       baseModules ? [
         ./modules/home-manager
+        ./modules/nixpkgs.nix
         {
           home = {
             inherit username;
