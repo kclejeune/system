@@ -16,6 +16,8 @@
     enableBashCompletion = true;
   };
 
+  nix.optimise.automatic = true;
+
   user = {
     description = "Kennan LeJeune";
     home = "${
