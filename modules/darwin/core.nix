@@ -4,9 +4,9 @@
     registry = {
       darwin.flake = inputs.darwin;
     };
-    extraOptions = ''
-      extra-platforms = x86_64-darwin aarch64-darwin
-    '';
+    settings = {
+      extra-platforms = ["x86_64-darwin" "aarch64-darwin"];
+    };
   };
 
   security.pam.services.sudo_local.touchIdAuth = true;
