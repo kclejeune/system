@@ -1,8 +1,4 @@
-{
-  self,
-  config,
-  ...
-}: {
+{self, ...}: {
   nixpkgs = {
     config = {
       allowUnsupportedSystem = true;
@@ -19,9 +15,5 @@
       keep-derivations = true
       experimental-features = nix-command flakes
     '';
-    settings = {
-      max-jobs = 8;
-      trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
-    };
   };
 }

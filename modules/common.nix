@@ -16,7 +16,13 @@
     enableBashCompletion = true;
   };
 
-  nix.optimise.automatic = true;
+  nix = {
+    optimise.automatic = true;
+    settings = {
+      max-jobs = 8;
+      trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
+    };
+  };
 
   user = {
     description = "Kennan LeJeune";
