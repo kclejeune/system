@@ -106,6 +106,7 @@
       inputs.home-manager.lib.homeManagerConfiguration {
         pkgs = import nixpkgs {
           inherit system;
+          config = import ./modules/config.nix;
           overlays = [self.overlays.default];
         };
         extraSpecialArgs = {inherit self inputs nixpkgs;};
@@ -160,6 +161,8 @@
           (name: drv: lib.strings.hasSuffix system name)
           self.nixosConfigurations)))
     ];
+
+    formatter = eachSystemMap defaultSystems (system: (mkHooks system).config.hooks.alejandra.package);
 
     darwinConfigurations =
       # generate darwin configs for each supported platform
