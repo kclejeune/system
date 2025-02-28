@@ -91,11 +91,12 @@
       ranger
       rclone
       restic
-      ruff
       rsync
+      ruff
       shellcheck
-      stylua
+      skopeo
       starship
+      stylua
       sysdo
       tree
       trivy
