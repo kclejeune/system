@@ -101,7 +101,6 @@
       tree
       trivy
       uv
-      yadm
       yq-go
       zoxide
     ];
