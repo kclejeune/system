@@ -95,7 +95,6 @@
       ruff
       shellcheck
       skopeo
-      starship
       stylua
       sysdo
       tree
@@ -134,6 +133,7 @@
     nix-index.enable = true;
     pandoc.enable = true;
     ripgrep.enable = true;
+    starship.enable = true;
     yt-dlp.enable = true;
   };
 }
