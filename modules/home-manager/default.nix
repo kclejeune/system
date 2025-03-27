@@ -67,6 +67,7 @@
       lazydocker
       luajit
       mmv
+      mosh
       nixd
       nixfmt-rfc-style
       nixpacks
