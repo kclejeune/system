@@ -65,6 +65,7 @@
       kubernetes-helm
       kustomize
       lazydocker
+      lima
       luajit
       mmv
       mosh
