@@ -29,7 +29,6 @@ in {
     shellAliases = {
       neofetch = "fastfetch";
       ncdu = "gdu";
-      cat = "bat -pp";
     };
   };
 
@@ -76,7 +75,7 @@ in {
       // {
         ZSH_CUSTOM = "${config.xdg.dataHome}/${zshCustomPrefix}";
       };
-    initExtra = ''
+    initContent = ''
       unset RPS1
     '';
     oh-my-zsh = {
