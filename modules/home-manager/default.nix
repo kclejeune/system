@@ -97,6 +97,7 @@
       ruff
       shellcheck
       skopeo
+      sshpass
       stylua
       sysdo
       tree
