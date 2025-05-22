@@ -27,85 +27,86 @@
     stateVersion = "22.05";
 
     # define package definitions for current user environment
-    packages = with pkgs; [
-      # age
-      alejandra
-      argocd
-      asciidoctor
-      cacert
-      cachix
-      cb
-      cirrus-cli
-      comma
-      coreutils-full
-      curl
-      d2
-      diffutils
-      dive
-      dotenvx
-      fd
-      ffmpeg
-      findutils
-      gawk
-      gdu
-      git-absorb
-      gnugrep
-      gnupg
-      gnused
-      grype
-      helm-docs
-      httpie
-      hurl
-      hyperfine
-      jetbrains-mono
-      jnv
-      kotlin
-      kubectl
-      kubectx
-      kubernetes-helm
-      kustomize
-      lazydocker
-      lima
-      luajit
-      mmv
-      mosh
-      nixd
-      nixfmt-rfc-style
-      nixpacks
-      nmap
-      nodejs_20
-      openldap
-      parallel
-      pre-commit
-      # python with default packages
-      (python3.withPackages (
-        ps:
-          with ps; [
-            duckdb
-            httpx
-            matplotlib
-            networkx
-            numpy
-            polars
-            scipy
-          ]
-      ))
-      ranger
-      rclone
-      restic
-      rsync
-      ruff
-      shellcheck
-      skopeo
-      sshpass
-      stylua
-      sysdo
-      tree
-      trivy
-      uv
-      yq-go
-      zoxide
-    ];
+    packages = with pkgs; ([
+        # age
+        alejandra
+        argocd
+        asciidoctor
+        cacert
+        cachix
+        cb
+        cirrus-cli
+        comma
+        coreutils-full
+        curl
+        d2
+        diffutils
+        dive
+        dotenvx
+        fd
+        ffmpeg
+        findutils
+        gawk
+        gdu
+        git-absorb
+        gnugrep
+        gnupg
+        gnused
+        grype
+        helm-docs
+        httpie
+        hurl
+        hyperfine
+        jetbrains-mono
+        jnv
+        kotlin
+        kubectl
+        kubectx
+        kubernetes-helm
+        kustomize
+        lazydocker
+        lima
+        luajit
+        mmv
+        mosh
+        nixd
+        nixfmt-rfc-style
+        nixpacks
+        nmap
+        nodejs_20
+        openldap
+        parallel
+        pre-commit
+        # python with default packages
+        (python3.withPackages (
+          ps:
+            with ps; [
+              duckdb
+              httpx
+              matplotlib
+              networkx
+              numpy
+              polars
+              scipy
+            ]
+        ))
+        ranger
+        rclone
+        restic
+        rsync
+        ruff
+        shellcheck
+        skopeo
+        sshpass
+        stylua
+        sysdo
+        tree
+        trivy
+        uv
+        yq-go
+        zoxide
+      ]
+      ++ lib.optionals pkgs.stdenvNoCC.isDarwin [iproute2mac]);
   };
 
   fonts.fontconfig = {
