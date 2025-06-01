@@ -1,4 +1,9 @@
-{inputs, ...}: {
+{
+  inputs,
+  config,
+  ...
+}: {
+  system.primaryUser = config.user.name;
   # auto manage nixbld users with nix darwin
   nix = {
     registry = {
