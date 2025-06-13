@@ -77,6 +77,7 @@
         openldap
         parallel
         pre-commit
+        procps
         # python with default packages
         (python3.withPackages (
           ps:

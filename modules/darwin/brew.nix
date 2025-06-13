@@ -6,7 +6,6 @@
     };
     brews = [
       "kscript"
-      "mise"
       "tart"
     ];
 
