@@ -69,6 +69,7 @@
         luajit
         mmv
         mosh
+        nil
         nixd
         nixfmt-rfc-style
         nixpacks
@@ -78,6 +79,7 @@
         parallel
         pre-commit
         procps
+        pyright
         # python with default packages
         (python3.withPackages (
           ps:
