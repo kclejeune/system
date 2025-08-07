@@ -52,6 +52,7 @@
         gnugrep
         gnupg
         gnused
+        go-task
         grype
         helm-docs
         httpie
