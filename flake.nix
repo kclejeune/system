@@ -8,7 +8,7 @@
 
   inputs = {
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
-    stable.url = "github:nixos/nixpkgs/nixos-24.11";
+    stable.url = "github:nixos/nixpkgs/nixos-25.05";
     unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixpkgs.follows = "unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";

@@ -1,4 +1,8 @@
-{inputs, ...}: {
+{
+  inputs,
+  config,
+  ...
+}: {
   # auto manage nixbld users with nix darwin
   nix = {
     registry = {
@@ -8,6 +12,7 @@
       extra-platforms = ["x86_64-darwin" "aarch64-darwin"];
     };
   };
+  system.primaryUser = config.user.name;
 
   security.pam.services.sudo_local.touchIdAuth = true;
 
