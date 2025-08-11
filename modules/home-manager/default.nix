@@ -32,6 +32,7 @@
         alejandra
         argocd
         asciidoctor
+        basedpyright
         cacert
         cachix
         cb
