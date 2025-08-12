@@ -40,10 +40,12 @@ FLAKE_PATH = LOCAL_FLAKE if is_local else REMOTE_FLAKE
 
 UNAME = platform.uname()
 check_nixos = subprocess.run(
-    ["/usr/bin/env", "type", "nixos-rebuild"], capture_output=True
+    ["/usr/bin/env", "type", "/run/current-system/sw/bin/nixos-rebuild"],
+    capture_output=True,
 )
 check_darwin = subprocess.run(
-    ["/usr/bin/env", "type", "darwin-rebuild"], capture_output=True
+    ["/usr/bin/env", "type", "/run/current-system/sw/bin/darwin-rebuild"],
+    capture_output=True,
 )
 if check_nixos.returncode == 0:
     # if we're on nixos, this command is built in
@@ -190,12 +192,13 @@ def build(
     home_manager: bool = False,
 ):
     cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
+    current_system = "/run/current-system/sw/bin"
     if cfg is None:
         return
     elif cfg == FlakeOutputs.NIXOS:
-        cmd = ["sudo", "nixos-rebuild", "build", "--flake"]
+        cmd = ["sudo", f"{current_system}/nixos-rebuild", "build", "--flake"]
     elif cfg == FlakeOutputs.DARWIN:
-        cmd = ["sudo", "darwin-rebuild", "build", "--flake"]
+        cmd = ["sudo", f"{current_system}/darwin-rebuild", "build", "--flake"]
     elif cfg == FlakeOutputs.HOME_MANAGER:
         cmd = ["home-manager", "build", "--flake"]
     else:
@@ -321,12 +324,13 @@ def switch(
         raise typer.Abort()
 
     cfg = select(nixos=nixos, darwin=darwin, home_manager=home_manager)
+    current_system = "/run/current-system/sw/bin"
     if cfg is None:
         return
     elif cfg == FlakeOutputs.NIXOS:
-        cmd = f"sudo nixos-rebuild switch --flake"
+        cmd = f"sudo {current_system}/nixos-rebuild switch --flake"
     elif cfg == FlakeOutputs.DARWIN:
-        cmd = f"sudo darwin-rebuild switch --flake"
+        cmd = f"sudo {current_system}/darwin-rebuild switch --flake"
     elif cfg == FlakeOutputs.HOME_MANAGER:
         cmd = f"home-manager switch --flake"
     else:
