@@ -8,7 +8,9 @@
 
   inputs = {
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
-    stable.url = "github:nixos/nixpkgs/nixos-25.05";
+    pkgs-2411.url = "github:nixos/nixpkgs/nixos-24.11";
+    pkgs-2505.url = "github:nixos/nixpkgs/nixos-25.05";
+    stable.follows = "pkgs-2505";
     unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixpkgs.follows = "unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -320,6 +322,7 @@
         sysdo = self.packages.${prev.system}.sysdo;
         cb = self.packages.${prev.system}.cb;
         stable = import inputs.stable {inherit (prev) system;};
+        nixVersions = prev.nixVersions // {nix_2_18 = inputs.pkgs-2411.legacyPackages.${prev.system}.nixVersions.nix_2_18;};
       };
     };
   };
