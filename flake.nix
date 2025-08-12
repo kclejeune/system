@@ -322,7 +322,7 @@
         sysdo = self.packages.${prev.system}.sysdo;
         cb = self.packages.${prev.system}.cb;
         stable = import inputs.stable {inherit (prev) system;};
-        nixVersions = prev.nixVersions // {nix_2_18 = inputs.pkgs-2411.legacyPackages.${prev.system}.nixVersions.nix_2_18;};
+        nix_2_18 = inputs.pkgs-2411.legacyPackages.${prev.system}.nixVersions.nix_2_18;
       };
     };
   };

@@ -150,7 +150,7 @@ def bootstrap(
         flake = f"{bootstrap_flake}#{cfg.value}.{host}.config.system.build.toplevel"
         run_cmd(["nix", "build", flake] + flags)
         run_cmd(
-            f"./result/sw/bin/darwin-rebuild switch --flake {FLAKE_PATH}#{host}".split()
+            f"sudo ./result/sw/bin/darwin-rebuild switch --flake {FLAKE_PATH}#{host}".split()
         )
     elif cfg == FlakeOutputs.HOME_MANAGER:
         flake = f"{bootstrap_flake}#{host}"
@@ -195,7 +195,7 @@ def build(
     elif cfg == FlakeOutputs.NIXOS:
         cmd = ["sudo", "nixos-rebuild", "build", "--flake"]
     elif cfg == FlakeOutputs.DARWIN:
-        cmd = ["darwin-rebuild", "build", "--flake"]
+        cmd = ["sudo", "darwin-rebuild", "build", "--flake"]
     elif cfg == FlakeOutputs.HOME_MANAGER:
         cmd = ["home-manager", "build", "--flake"]
     else:
@@ -326,7 +326,7 @@ def switch(
     elif cfg == FlakeOutputs.NIXOS:
         cmd = f"sudo nixos-rebuild switch --flake"
     elif cfg == FlakeOutputs.DARWIN:
-        cmd = f"darwin-rebuild switch --flake"
+        cmd = f"sudo darwin-rebuild switch --flake"
     elif cfg == FlakeOutputs.HOME_MANAGER:
         cmd = f"home-manager switch --flake"
     else:
