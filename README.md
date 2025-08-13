@@ -8,7 +8,7 @@ macOS, nixOS, and linux machines.
 ## Structure
 
 This repository is a [flake](https://nixos.wiki/wiki/Flakes). All system configurations are defined
-in [flake.nix](./flake.nix). Platorm specific configurations are found defined in the flake outputs
+in [flake.nix](./flake.nix). Platform specific configurations are found defined in the flake outputs
 `darwinConfigurations`, `nixosConfigurations` for macOS and NixOS respectively.
 
 ### Overlapping Nix-Darwin and NixOS
