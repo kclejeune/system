@@ -28,7 +28,7 @@
       "devpod"
       "ghostty"
       "hammerspoon"
-      "httpie"
+      "httpie-desktop"
       "jetbrains-toolbox"
       "jordanbaird-ice"
       "kftray"

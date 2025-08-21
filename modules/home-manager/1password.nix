@@ -7,17 +7,8 @@
   home = config.home.homeDirectory;
   darwinSockPath = "${home}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
   sockLink = ".1password/agent.sock";
-  sockPath = "${home}/${sockLink}";
 in {
-  # home.packages = [
-  #   pkgs._1password-cli
-  #   pkgs._1password-gui
-  # ];
   home.sessionVariables = {
-    SSH_AUTH_SOCK =
-      if pkgs.stdenvNoCC.isDarwin
-      then sockPath
-      else ''''${SSH_AUTH_SOCK:-${sockPath}}'';
     OP_PLUGIN_ALIASES_SOURCED = 1;
   };
 
@@ -28,19 +19,22 @@ in {
 
   programs.ssh = {
     enable = true;
+    matchBlocks = {
+      "*" = {
+        identityAgent = "~/.1password/agent.sock";
+      };
+    };
   };
 
   programs.git = {
     signing = {
       signByDefault = true;
       key = null;
+      format = "ssh";
       signer =
         if pkgs.stdenvNoCC.isDarwin
         then "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
         else "${pkgs._1password-gui}/share/1password/op-ssh-sign";
-    };
-    extraConfig = {
-      gpg.format = "ssh";
     };
   };
 }
