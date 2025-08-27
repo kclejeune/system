@@ -57,7 +57,6 @@
         grype
         helm-docs
         httpie
-        hurl
         hyperfine
         jetbrains-mono
         jnv

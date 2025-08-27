@@ -1,13 +1,16 @@
 {...}: {
   programs.ssh = {
     enable = true;
+    enableDefaultConfig = false;
     includes = ["conf.d/*"];
-    forwardAgent = true;
     matchBlocks = {
       "ssh.github.com" = {
         hostname = "ssh.github.com";
         user = "git";
         port = 443;
+      };
+      "*" = {
+        forwardAgent = true;
       };
     };
   };
