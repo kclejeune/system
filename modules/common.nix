@@ -16,17 +16,6 @@
     enableBashCompletion = true;
   };
 
-  nix = {
-    optimise.automatic = true;
-    settings = {
-      max-jobs = 8;
-      trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
-      keep-outputs = true;
-      keep-derivations = true;
-      experimental-features = ["nix-command" "flakes"];
-    };
-  };
-
   user = {
     description = "Kennan LeJeune";
     home = "${
