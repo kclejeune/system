@@ -12,6 +12,7 @@
     ./tldr.nix
     ./tmux.nix
     ./gnome.nix
+    ./nixpkgs.nix
   ];
 
   home = {

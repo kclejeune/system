@@ -6,6 +6,12 @@
   # bundles essential nixos modules
   imports = [./keybase.nix ../common.nix];
 
+  nix.settings = {
+    extra-trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
+    keep-outputs = true;
+    keep-derivations = true;
+  };
+
   services.syncthing = {
     enable = true;
     user = config.user.name;
