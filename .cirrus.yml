@@ -6,7 +6,7 @@ env:
   GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
   LINUX_BUILD_IMAGE: nixos/nix:latest
   NIX_INSTALLER_NO_CONFIRM: "true"
-  NIX_INSTALLER_TAG: "v0.38.0"
+  NIX_INSTALLER_TAG: "v3.10.1"
   NIX_INSTALLER_EXTRA_CONF: |
     access-tokens = github.com=${GITHUB_TOKEN}
     extra-substituters = https://kclejeune.cachix.org
@@ -30,7 +30,7 @@ build_darwin_task:
     - env:
         ARCH: x86_64
   install_rosetta_script: softwareupdate --install-rosetta --agree-to-license
-  install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+  install_nix_script: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
   <<: *BUILD_TEMPLATE
 
 build_linux_task:
