@@ -1,7 +1,4 @@
-{
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [../../../modules/home-manager/1password.nix];
 
   home.packages = with pkgs;
