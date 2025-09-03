@@ -22,6 +22,16 @@ in lib.mkMerge [
       nix.package = inputs.determinate.inputs.nix.packages.${pkgs.system}.default;
       home-manager.sharedModules = [{
         nix.enable = lib.mkForce true;
+        home.packages = [inputs.determinate.packages.${pkgs.system}.default];
       }];
+      environment.etc."determinate/config.json".text = ''
+        {
+          "authentication": {
+            "additionalNetrcSources": [
+              "/etc/determinate/netrc"
+            ]
+          }
+        }
+      '';
     })
   ]
