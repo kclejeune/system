@@ -8,7 +8,7 @@ macOS, nixOS, and linux machines.
 ## Structure
 
 This repository is a [flake](https://nixos.wiki/wiki/Flakes). All system configurations are defined
-in [flake.nix](./flake.nix). Platorm specific configurations are found defined in the flake outputs
+in [flake.nix](./flake.nix). Platform specific configurations are found defined in the flake outputs
 `darwinConfigurations`, `nixosConfigurations` for macOS and NixOS respectively.
 
 ### Overlapping Nix-Darwin and NixOS
@@ -44,7 +44,7 @@ When possible, home-manager functionality is extracted into [./profiles/home-man
 Run the installer script to perform a multi-user installation on darwin or linux:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
 ```
 
 Note that this step is naturally skipped on NixOS since `nix` is the package manager by default.
