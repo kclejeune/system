@@ -1,6 +1,9 @@
 builds:
-  exclude:
-    - "*.x86_64-darwin.*"
-    - "*.aarch64-darwin.*"
-    - "*.*-darwin*"
-    - "darwinConfigurations.*"
+  exclude: []
+  include:
+    - '*.x86_64-linux.*'
+    - packages.*.default
+    - devShells.*.default
+    - homeConfigurations.*
+    - darwinConfigurations.*
+    - nixosConfigurations.*
