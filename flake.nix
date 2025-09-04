@@ -100,6 +100,7 @@
       baseModules ? [
         ./modules/home-manager
         {
+          nix.package = determinate.inputs.nix.packages.${system}.default;
           home = {
             inherit username;
             homeDirectory = "${homePrefix system}/${username}";
