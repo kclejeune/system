@@ -1,12 +1,6 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [../../../modules/home-manager/1password.nix];
 
-  nix.package = lib.mkDefault pkgs.nix;
   home.packages = with pkgs;
     [
       awscli2
@@ -14,8 +8,7 @@
       helmfile
       kubectl
       kubernetes-helm
-      teleport
-      (lib.hiPrio config.nix.package)
+      teleport_16
     ]
     ++ (
       if (pkgs.stdenvNoCC.isLinux)
@@ -26,14 +19,4 @@
       ]
       else []
     );
-  xdg.configFile = {
-    opAgent = {
-      recursive = true;
-      target = "1Password/ssh/agent.toml";
-      text = ''
-        [[ssh-keys]]
-        vault = "Employee"
-      '';
-    };
-  };
 }

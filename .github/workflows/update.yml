@@ -12,13 +12,13 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v17
+        uses: DeterminateSystems/nix-installer-action@v19
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Update flake.lock
-        uses: DeterminateSystems/update-flake-lock@v24
+        uses: DeterminateSystems/update-flake-lock@v27
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           pr-title: "Update flake.lock"

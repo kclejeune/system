@@ -135,10 +135,6 @@ def bootstrap(
     ]
 
     bootstrap_flake = REMOTE_FLAKE if remote else FLAKE_PATH
-    if host is None:
-        typer.secho("host unspecified", fg=Colors.ERROR.value)
-        return
-
     if cfg is None:
         typer.secho("missing configuration", fg=Colors.ERROR.value)
     elif cfg == FlakeOutputs.NIXOS:
@@ -148,7 +144,6 @@ def bootstrap(
         )
         raise typer.Abort()
     elif cfg == FlakeOutputs.DARWIN:
-        disk_setup()
         flake = f"{bootstrap_flake}#{cfg.value}.{host}.config.system.build.toplevel"
         run_cmd(["nix", "build", flake] + flags)
         run_cmd(
@@ -215,43 +210,6 @@ def build(
 
 
 @app.command(
-    hidden=not is_local,
-    help="remove previously built configurations and symlinks from the current directory",
-)
-def clean(
-    filename: str = typer.Argument(
-        "result", help="the filename to be cleaned, or '*' for all files"
-    ),
-):
-    run_cmd(f"find . -type l -maxdepth 1 -name {filename} -exec rm {{}} +".split())
-
-
-@app.command(
-    hidden=PLATFORM != FlakeOutputs.DARWIN,
-    help="configure disk setup for nix-darwin",
-)
-def disk_setup():
-    synthetic_conf = "/etc/synthetic.conf"
-    apfs_util = "/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util"
-    run_mount_configured = False
-    with open(synthetic_conf, "r") as f:
-        run_mount_configured = any(
-            "run\tprivate/var/run" == l.strip() for l in f.readlines()
-        )
-    if not run_mount_configured:
-        typer.secho(f"setting up {synthetic_conf}", fg=Colors.INFO.value)
-        run_cmd(
-            f"echo 'run\\tprivate/var/run' | sudo tee -a {synthetic_conf}".split(),
-            shell=True,
-        )
-        run_cmd(f"sudo {apfs_util} -t".split())
-    if not os.path.islink("/run"):
-        typer.secho("linking /run directory", fg=Colors.INFO.value)
-        run_cmd("sudo ln -sfn private/var/run /run".split())
-    typer.secho("disk setup complete", fg=Colors.SUCCESS.value)
-
-
-@app.command(
     help="run garbage collection on unused nix store paths",
     no_args_is_help=True,
 )
@@ -296,12 +254,6 @@ def update(
         run_cmd(["nix", "flake", "lock"] + inputs + flags)
 
 
-@app.command(help="pull changes from remote repo", hidden=not is_local)
-def pull():
-    cmd = f"git stash && git pull && git stash apply"
-    run_cmd(cmd.split())
-
-
 @app.command(
     help="builds and activates the specified flake output; infers correct platform to use if not specified",
 )
@@ -343,12 +295,6 @@ def switch(
         flake = f"{FLAKE_PATH}#{host}"
     flags = ["--show-trace"]
     run_cmd(cmd.split() + [flake] + flags)
-
-
-@app.command(hidden=not is_local, help="cache the output environment of flake.nix")
-def cache(cache_name: str = "kclejeune"):
-    cmd = f"nix flake archive --json | jq -r '.path,(.inputs|to_entries[].value.path)' | cachix push {cache_name}"
-    run_cmd(cmd.split(), shell=True)
 
 
 if __name__ == "__main__":

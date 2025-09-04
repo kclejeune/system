@@ -2,11 +2,12 @@
   description = "nix system configurations";
 
   nixConfig = {
-    extra-substituters = ["https://kclejeune.cachix.org"];
-    extra-trusted-public-keys = ["kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="];
+    extra-substituters = ["https://kclejeune.cachix.org" "https://install.determinate.systems"];
+    extra-trusted-public-keys = ["kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=" "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="];
   };
 
   inputs = {
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
     pkgs-2411.url = "github:nixos/nixpkgs/nixos-24.11";
     pkgs-2505.url = "github:nixos/nixpkgs/nixos-25.05";
@@ -34,6 +35,7 @@
     self,
     darwin,
     home-manager,
+    determinate,
     ...
   } @ inputs: let
     inherit (inputs.nixpkgs) lib;
@@ -58,6 +60,7 @@
       system ? "aarch64-darwin",
       nixpkgs ? inputs.nixpkgs,
       baseModules ? [
+        determinate.darwinModules.default
         home-manager.darwinModules.home-manager
         ./modules/darwin
       ],
@@ -76,6 +79,7 @@
       nixpkgs ? inputs.nixos-unstable,
       hardwareModules,
       baseModules ? [
+        determinate.nixosModules.default
         home-manager.nixosModules.home-manager
         ./modules/nixos
       ],
@@ -95,8 +99,8 @@
       nixpkgs ? inputs.nixpkgs,
       baseModules ? [
         ./modules/home-manager
-        ./modules/nixpkgs.nix
         {
+          nix.package = determinate.inputs.nix.packages.${system}.default;
           home = {
             inherit username;
             homeDirectory = "${homePrefix system}/${username}";

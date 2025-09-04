@@ -24,7 +24,7 @@
     # You can update Home Manager without changing this value. See
     # the Home Manager release notes for a list of state version
     # changes in each release.
-    stateVersion = "22.05";
+    stateVersion = "25.05";
 
     # define package definitions for current user environment
     packages = with pkgs; ([
@@ -57,7 +57,6 @@
         grype
         helm-docs
         httpie
-        hurl
         hyperfine
         jetbrains-mono
         jnv
