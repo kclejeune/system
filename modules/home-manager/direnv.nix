@@ -1,7 +1,12 @@
-{config, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
+    nix-direnv.package = pkgs.nix-direnv.override (prev: prev // {nix = config.nix.package;});
     stdlib = ''
       # stolen from @i077; store .direnv in cache instead of project dir
       declare -A direnv_layout_dirs
