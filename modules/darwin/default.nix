@@ -18,6 +18,15 @@
     extra-trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
     keep-outputs = true;
     keep-derivations = true;
+    eval-cores = 0;
+    extra-experimental-features = "external-builders";
+    external-builders = builtins.toJSON [
+      {
+        systems = ["aarch64-linux" "x86_64-linux"];
+        program = "/usr/local/bin/determinate-nixd";
+        args = ["builder"];
+      }
+    ];
   };
 
   hm.nix.registry = {

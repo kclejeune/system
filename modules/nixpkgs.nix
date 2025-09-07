@@ -13,7 +13,8 @@
   home-manager.sharedModules = [
     {
       nix.enable = lib.mkForce true;
-      home.packages = [inputs.determinate.packages.${pkgs.system}.default];
+      # assume this already exists in the environment...maybe
+      # home.packages = [inputs.determinate.packages.${pkgs.system}.default];
     }
   ];
   environment.etc."determinate/config.json".text = ''
