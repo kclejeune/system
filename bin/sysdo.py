@@ -10,7 +10,6 @@
 import os
 import subprocess
 from enum import Enum
-from typing import List
 
 import platform
 import typer
@@ -65,12 +64,12 @@ SYSTEM_OS = UNAME.system.lower()
 DEFAULT_HOST = f"{USERNAME}@{SYSTEM_ARCH}-{SYSTEM_OS}"
 
 
-def fmt_command(cmd: List[str]):
+def fmt_command(cmd: list[str]):
     cmd_str = " ".join(cmd)
     return f"$ {cmd_str}"
 
 
-def test_cmd(cmd: List[str]):
+def test_cmd(cmd: list[str]):
     out = subprocess.run(cmd)
     if out.returncode == 0:
         return True
@@ -81,7 +80,7 @@ def test_cmd(cmd: List[str]):
         )
 
 
-def run_cmd(cmd: List[str], shell=False):
+def run_cmd(cmd: list[str], shell=False):
     typer.secho(fmt_command(cmd), fg=Colors.INFO.value)
     return (
         subprocess.run(" ".join(cmd), shell=True)
@@ -232,7 +231,7 @@ def gc(
     help="update all flake inputs or optionally specific flakes",
 )
 def update(
-    flake: List[str] = typer.Option(
+    flake: list[str] = typer.Option(
         None,
         "--flake",
         "-f",
