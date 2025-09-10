@@ -135,7 +135,13 @@
     htop.enable = true;
     jq.enable = true;
     k9s.enable = true;
-    lazygit.enable = true;
+    lazygit = {
+      enable = true;
+      settings = {
+        git.useExternalDiffGitConfig = true;
+      };
+    };
+    lazysql.enable = true;
     less.enable = true;
     man.enable = true;
     nix-index.enable = true;

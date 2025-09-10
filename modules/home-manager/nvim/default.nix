@@ -93,25 +93,25 @@ in {
       direnv-vim
       ranger-vim
       zoxide-vim
+      nvim-autopairs
 
       # configurable plugins
       lazy-nix-helper-nvim
       lazy-nvim
       guess-indent-nvim
-      fzf-vim
-      (pkgs.vimUtils.buildVimPlugin {
-        pname = "fzf.vim";
-        inherit (pkgs.fzf) version src;
-      })
+      fzf-lua
       vimtex
       nvim-lspconfig
+      indent-blankline-nvim
 
       nvim-treesitter.withAllGrammars
       nvim-treesitter-refactor
       nvim-treesitter-textobjects
       nvim-treesitter-context
+      mason-nvim
+      mason-lspconfig-nvim
       lualine-nvim
-      awesome-vim-colorschemes
+      onedark-nvim
       (pkgs.vimUtils.buildVimPlugin {
         pname = "auto-dark-mode.nvim";
         version = "v0.1.0";

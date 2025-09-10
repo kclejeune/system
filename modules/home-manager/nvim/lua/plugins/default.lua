@@ -1,34 +1,17 @@
 return {
     {
-        "rafi/awesome-vim-colorschemes",
-        lazy = false, -- make sure we load this during startup if it is your main colorscheme
+        "navarasu/onedark.nvim",
+        lazy = false,
+        dir = require("lazy-nix-helper").get_plugin_path("onedark.nvim"),
         priority = 1000, -- make sure to load this before all the other start plugins
-        dir = require("lazy-nix-helper").get_plugin_path("awesome-vim-colorschemes"),
         config = function()
-            if vim.fn.empty("$TMUX") then
-                if vim.fn.has("nvim") then
-                    vim.cmd("let $NVIM_TUI_ENABLE_TRUE_COLOR=1")
-                end
-                if vim.fn.has("termguicolors") then
-                    vim.opt.termguicolors = true
-                end
-            end
-            vim.cmd([[
-              syntax enable
-              colorscheme one
-            ]])
+            require("onedark").setup({})
+            -- Enable theme
+            require("onedark").load()
         end,
     },
     {
-        "f-person/auto-dark-mode.nvim",
-        lazy = false,
-        priority = 900,
-        dir = require("lazy-nix-helper").get_plugin_path("auto-dark-mode.nvim"),
-        opts = {},
-    },
-    {
         "nvim-lualine/lualine.nvim",
-        lazy = false,
         opts = {
             options = { theme = "auto" },
         },
@@ -41,8 +24,47 @@ return {
         },
     },
     {
+        "nvim-tree/nvim-tree.lua",
+        opts = {
+            renderer = {
+                group_empty = true,
+            },
+            filters = {
+                dotfiles = true,
+            },
+        },
+        dir = require("lazy-nix-helper").get_plugin_path("nvim-tree.lua"),
+        keys = {
+            { "<C-e>", desc = "nvim-tree Open: In Place" },
+            { "<C-t>", desc = "nvim tree Open: New Tab" },
+            { "<C-v>", desc = "nvim tree Open: Vertical Split" },
+            { "<C-x>", desc = "nvim tree Open: Horizontal Split" },
+        },
+        dependencies = {
+            {
+                "nvim-tree/nvim-web-devicons",
+                dir = require("lazy-nix-helper").get_plugin_path("nvim-web-devicons"),
+            },
+        },
+    },
+    {
+        "lukas-reineke/indent-blankline.nvim",
+        dir = require("lazy-nix-helper").get_plugin_path("intent-blankline.nvim"),
+        main = "ibl",
+        ---@module "ibl"
+        ---@type ibl.config
+        opts = {},
+    },
+    {
         "nmac427/guess-indent.nvim",
         dir = require("lazy-nix-helper").get_plugin_path("guess-indent.nvim"),
+        event = "InsertEnter",
+    },
+    {
+        "windwp/nvim-autopairs",
+        dir = require("lazy-nix-helper").get_plugin_path("nvim-autopairs"),
+        event = "InsertEnter",
+        opts = {},
     },
     {
         "tpope/vim-sensible",
@@ -61,10 +83,6 @@ return {
         dir = require("lazy-nix-helper").get_plugin_path("vim-sandwich"),
     },
     {
-        "LnL7/vim-nix",
-        dir = require("lazy-nix-helper").get_plugin_path("vim-nix"),
-    },
-    {
         "NotAShelf/direnv.nvim",
         dir = require("lazy-nix-helper").get_plugin_path("direnv.nvim"),
         opts = {
@@ -74,7 +92,7 @@ return {
             -- Statusline integration
             statusline = {
                 -- Enable statusline component
-                enabled = false,
+                enabled = true,
                 -- Icon to display in statusline
                 icon = "󱚟",
             },

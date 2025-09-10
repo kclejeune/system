@@ -66,16 +66,11 @@ end
 -- strip all files by default
 vim.cmd("autocmd BufWritePre * :lua vim.fn.stripTrailingWhitespace()")
 
--- Functional wrapper for mapping custom keybindings
-function map(mode, lhs, rhs, opts)
-    local options = { noremap = true }
-    if opts then
-        options = vim.tbl_extend("force", options, opts or {})
-    end
-    vim.api.nvim_set_keymap(mode, lhs, rhs, options)
-end
 vim.api.nvim_set_keymap("n", "j", "gj", {})
 vim.api.nvim_set_keymap("n", "k", "gk", {})
+
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
 
 -- Setup lazy.nvim
 require("lazy").setup({
@@ -85,7 +80,7 @@ require("lazy").setup({
     },
     -- Configure any other settings here. See the documentation for more details.
     -- colorscheme that will be used when installing plugins.
-    install = { colorscheme = { "one" } },
+    install = { colorscheme = { "onedark" } },
     -- automatically check for plugin updates
     checker = { enabled = false },
 })

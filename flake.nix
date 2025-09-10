@@ -8,27 +8,28 @@
 
   inputs = {
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-    pre-commit-hooks.url = "github:cachix/git-hooks.nix";
     pkgs-2411.url = "github:nixos/nixpkgs/nixos-24.11";
     pkgs-2505.url = "github:nixos/nixpkgs/nixos-25.05";
     stable.follows = "pkgs-2505";
     unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    nixpkgs.follows = "unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
+    nixpkgs.follows = "unstable";
+
+    git-hooks.url = "github:cachix/git-hooks.nix";
+    git-hooks.inputs.nixpkgs.follows = "nixpkgs";
+
     nixGL.url = "github:nix-community/nixGL";
-    darwin = {
-      url = "github:lnl7/nix-darwin";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nix-index-database = {
-      url = "github:Mic92/nix-index-database";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixGL.inputs.nixpkgs.follows = "nixpkgs";
+
+    darwin.url = "github:lnl7/nix-darwin";
+    darwin.inputs.nixpkgs.follows = "nixpkgs";
+
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
+    nix-index-database.url = "github:Mic92/nix-index-database";
+    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -119,11 +120,12 @@
         modules = baseModules ++ extraModules;
       };
     mkHooks = system:
-      inputs.pre-commit-hooks.lib.${system}.run {
+      inputs.git-hooks.lib.${system}.run {
         src = ./.;
         hooks = {
           black.enable = true;
           shellcheck.enable = true;
+          shellcheck.excludes = [".envrc"];
           alejandra.enable = true;
           shfmt.enable = false;
           stylua.enable = true;
@@ -138,11 +140,11 @@
       };
   in {
     checks = mergeAttrsList [
-      # verify devShell + pre-commit hooks; need to work on all platforms
+      # verify devShell + git hooks; need to work on all platforms
       (eachSystemMap defaultSystems (
         system: {
           devShell = self.devShells.${system}.default;
-          pre-commit-check = mkHooks system;
+          git-check = mkHooks system;
         }
       ))
       # home-manager checks; add _home suffix to original config to avoid nixos coflict
@@ -234,10 +236,10 @@
         inherit system;
         overlays = [self.overlays.default];
       };
-      pre-commit-check = mkHooks system;
+      git-check = mkHooks system;
     in {
       default = pkgs.mkShell {
-        inherit (pre-commit-check) shellHook;
+        inherit (git-check) shellHook;
         packages = with pkgs;
           [
             bashInteractive
@@ -247,7 +249,7 @@
             uv
           ]
           ++ (mapAttrsToList (name: value: value) self.packages.${system});
-        inputsFrom = pre-commit-check.enabledPackages;
+        inputsFrom = git-check.enabledPackages;
       };
     });
 

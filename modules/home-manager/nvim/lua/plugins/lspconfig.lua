@@ -6,15 +6,17 @@ return {
         {
             "williamboman/mason.nvim",
             enable = require("lazy-nix-helper").mason_enabled(),
+            dir = require("lazy-nix-helper").get_plugin_path("mason.nvim"),
         },
         {
             "williamboman/mason-lspconfig.nvim",
             enable = require("lazy-nix-helper").mason_enabled(),
+            dir = require("lazy-nix-helper").get_plugin_path("mason-lspconfig.nvim"),
         },
     },
     config = function()
         vim.lsp.enable("angularls")
-        vim.lsp.enable("ansible")
+        vim.lsp.enable("ansiblels")
         vim.lsp.enable("astro")
         vim.lsp.enable("autotools_ls")
         vim.lsp.enable("awk_ls")
@@ -43,5 +45,15 @@ return {
         vim.lsp.enable("vue_ls")
         vim.lsp.enable("yamlls")
         vim.lsp.enable("zls")
+        vim.lsp.completion.enable()
+        vim.diagnostic.config({ virtual_text = true })
+        vim.api.nvim_create_autocmd("LspAttach", {
+            callback = function(args)
+                local client = vim.lsp.get_client_by_id(args.data.client_id)
+                if client and client:supports_method("textDocument/inlineCompletion") then
+                    vim.lsp.inline_completion.enable(true)
+                end
+            end,
+        })
     end,
 }
