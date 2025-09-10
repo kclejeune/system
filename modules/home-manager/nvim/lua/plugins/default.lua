@@ -49,7 +49,7 @@ return {
     },
     {
         "lukas-reineke/indent-blankline.nvim",
-        dir = require("lazy-nix-helper").get_plugin_path("intent-blankline.nvim"),
+        dir = require("lazy-nix-helper").get_plugin_path("indent-blankline.nvim"),
         main = "ibl",
         ---@module "ibl"
         ---@type ibl.config
@@ -107,7 +107,7 @@ return {
         },
     },
     {
-        "francoiscabrol/ranger.vim",
-        dir = require("lazy-nix-helper").get_plugin_path("ranger.vim"),
+        "kelly-lin/ranger.nvim",
+        dir = require("lazy-nix-helper").get_plugin_path("ranger.nvim"),
     },
 }

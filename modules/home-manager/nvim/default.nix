@@ -49,7 +49,37 @@
       sha256 = "sha256-4DyuBMp83vM344YabL2SklQCg6xD7xGF5CvQP2q+W7A=";
     };
   };
-
+  direnv-nvim = pkgs.vimUtils.buildVimPlugin {
+    name = "direnv.nvim";
+    src = pkgs.fetchFromGitHub {
+      owner = "NotAShelf";
+      repo = "direnv.nvim";
+      rev = "4dfc8758a1deab45e37b7f3661e0fd3759d85788";
+      sha256 = "sha256-ZCViqnA+VoEOG+Xr+aJNlfRKCjxJm5y78HRXax3o8UY=";
+    };
+    meta.homepage = "https://github.com/NotAShelf/direnv.nvim";
+  };
+  ranger-nvim = pkgs.vimUtils.buildVimPlugin {
+    name = "ranger.nvim";
+    src = pkgs.fetchFromGitHub {
+      owner = "kelly-lin";
+      repo = "ranger.nvim";
+      rev = "fd2cc999f3ef88f7cdcbcad5f26000c52b16c489";
+      sha256 = "sha256-ZCViqnA+VoEOG+Xr+aJNlfRKCjxJm5y78HRXax3o8UY=";
+    };
+    meta.homepage = "https://github.com/kelly-lin/ranger.nvim";
+  };
+  auto-dark-mode-nvim = pkgs.vimUtils.buildVimPlugin {
+    pname = "auto-dark-mode.nvim";
+    version = "v0.1.0";
+    src = pkgs.fetchFromGitHub {
+      owner = "f-person";
+      repo = "auto-dark-mode.nvim";
+      rev = "c31de126963ffe9403901b4b0990dde0e6999cc6";
+      sha256 = "sha256-ZCViqnA+VoEOG+Xr+aJNlfRKCjxJm5y78HRXax3o8UY=";
+    };
+    meta.homepage = "https://github.com/f-person/auto-dark-mode.nvim";
+  };
   sanitizePluginName = input: let
     name = lib.strings.getName input;
     vimplugin_removed = lib.strings.removePrefix "vimplugin-" name;
@@ -90,9 +120,6 @@ in {
       vim-sandwich
       vim-commentary
       vim-nix
-      direnv-vim
-      ranger-vim
-      zoxide-vim
       nvim-autopairs
 
       # configurable plugins
@@ -108,21 +135,15 @@ in {
       nvim-treesitter-refactor
       nvim-treesitter-textobjects
       nvim-treesitter-context
+      nvim-web-devicons
+      nvim-tree-lua
       mason-nvim
       mason-lspconfig-nvim
       lualine-nvim
       onedark-nvim
-      (pkgs.vimUtils.buildVimPlugin {
-        pname = "auto-dark-mode.nvim";
-        version = "v0.1.0";
-        src = pkgs.fetchFromGitHub {
-          owner = "f-person";
-          repo = "auto-dark-mode.nvim";
-          rev = "c31de126963ffe9403901b4b0990dde0e6999cc6";
-          sha256 = "sha256-ZCViqnA+VoEOG+Xr+aJNlfRKCjxJm5y78HRXax3o8UY=";
-        };
-        meta.homepage = "https://github.com/f-person/auto-dark-mode.nvim";
-      })
+      direnv-nvim
+      ranger-nvim
+      auto-dark-mode-nvim
     ];
 
     extraLuaConfig = lib.mkBefore ''
