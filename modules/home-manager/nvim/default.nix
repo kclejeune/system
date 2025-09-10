@@ -14,15 +14,15 @@
     bash-language-server
     cmake-language-server
     cuelsp
-    gopls
+    diagnostic-languageserver
     docker-compose-language-service
     docker-language-server
     fzf
+    gopls
     jdt-language-server
     lua-language-server
     nil
     nixd
-    vscode-langservers-extracted
     protols
     ruby-lsp
     ruff
@@ -31,12 +31,14 @@
     tailwindcss-language-server
     terraform-ls
     texlab
+    textlsp
     tooling-language-server
     typescript-language-server
     vim-language-server
+    vscode-langservers-extracted
     vue-language-server
     yaml-language-server
-    textlsp
+    zls
   ];
   lazy-nix-helper-nvim = pkgs.vimUtils.buildVimPlugin {
     name = "lazy-nix-helper.nvim";
