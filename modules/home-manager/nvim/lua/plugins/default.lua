@@ -14,21 +14,23 @@ return {
                 end
             end
             vim.cmd([[
-            syntax enable
-            colorscheme one
-        ]])
+              syntax enable
+              colorscheme one
+            ]])
         end,
     },
     {
         "f-person/auto-dark-mode.nvim",
         lazy = false,
+        priority = 900,
         dir = require("lazy-nix-helper").get_plugin_path("auto-dark-mode.nvim"),
+        opts = {},
     },
     {
         "nvim-lualine/lualine.nvim",
         lazy = false,
         opts = {
-            options = { theme = "onedark" },
+            options = { theme = "auto" },
         },
         dir = require("lazy-nix-helper").get_plugin_path("lualine.nvim"),
         dependencies = {

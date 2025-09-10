@@ -15,7 +15,7 @@ return {
         "max-perf",
         winopts = {
             preview = { default = "bat" },
-            treesitter = true;
+            treesitter = true,
         },
         previewers = {
             bat = {
