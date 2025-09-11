@@ -15,6 +15,7 @@
     cmake-language-server
     cuelsp
     diagnostic-languageserver
+    direnv
     docker-compose-language-service
     docker-language-server
     fzf
@@ -56,7 +57,7 @@
       owner = "NotAShelf";
       repo = "direnv.nvim";
       rev = "4dfc8758a1deab45e37b7f3661e0fd3759d85788";
-      sha256 = "sha256-ZCViqnA+VoEOG+Xr+aJNlfRKCjxJm5y78HRXax3o8UY=";
+      sha256 = "sha256-KqO8uDbVy4sVVZ6mHikuO+SWCzWr97ZuFRC8npOPJIE=";
     };
     meta.homepage = "https://github.com/NotAShelf/direnv.nvim";
   };
@@ -66,7 +67,7 @@
       owner = "kelly-lin";
       repo = "ranger.nvim";
       rev = "fd2cc999f3ef88f7cdcbcad5f26000c52b16c489";
-      sha256 = "sha256-ZCViqnA+VoEOG+Xr+aJNlfRKCjxJm5y78HRXax3o8UY=";
+      sha256 = "sha256-rqZjtPAAWaSavPCNtBI7vm627ZyffJOQ2Qs32M9uz3I=";
     };
     meta.homepage = "https://github.com/kelly-lin/ranger.nvim";
   };

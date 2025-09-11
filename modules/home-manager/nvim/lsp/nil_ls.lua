@@ -7,7 +7,7 @@ return {
             binary = "nix",
             maxMemoryMB = 2560,
             flake = {
-                autoArchive = false,
+                autoArchive = true,
                 autoEvalInputs = true,
                 nixpkgsInputName = "nixpkgs",
             },

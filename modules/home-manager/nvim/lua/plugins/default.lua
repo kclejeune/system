@@ -12,8 +12,19 @@ return {
     },
     {
         "nvim-lualine/lualine.nvim",
+        lazy = false,
         opts = {
             options = { theme = "auto" },
+            sections = {
+                lualine_x = {
+                    function()
+                        return require("direnv").statusline()
+                    end,
+                    "encoding",
+                    "fileformat",
+                    "filetype",
+                },
+            },
         },
         dir = require("lazy-nix-helper").get_plugin_path("lualine.nvim"),
         dependencies = {
@@ -84,7 +95,9 @@ return {
     },
     {
         "NotAShelf/direnv.nvim",
+        lazy = false,
         dir = require("lazy-nix-helper").get_plugin_path("direnv.nvim"),
+        main = "direnv",
         opts = {
             -- Whether to automatically load direnv when entering a directory with .envrc
             autoload_direnv = false,
@@ -96,8 +109,6 @@ return {
                 -- Icon to display in statusline
                 icon = "󱚟",
             },
-
-            -- Keyboard mappings
             keybindings = {
                 allow = "<Leader>da",
                 deny = "<Leader>dd",
