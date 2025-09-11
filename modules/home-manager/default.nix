@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ./bat.nix
     ./direnv.nix
@@ -110,6 +114,7 @@
         yq-go
         zoxide
       ]
+      ++ lib.optionals config.nix.enable [config.nix.package]
       ++ lib.optionals pkgs.stdenvNoCC.isDarwin [iproute2mac]);
   };
 
