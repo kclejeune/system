@@ -55,6 +55,7 @@ vim.opt.smartindent = false
 vim.opt.incsearch = true
 vim.opt.hlsearch = true
 vim.opt.foldenable = false
+vim.opt.exrc = true
 
 function vim.fn.stripTrailingWhitespace()
     local l = vim.fn.line(".")

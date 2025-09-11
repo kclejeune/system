@@ -4,7 +4,7 @@
   lib,
   ...
 }: let
-  lsp-servers = with pkgs; [
+  extraPackages = with pkgs; [
     angular-language-server
     ansible-language-server
     astro-language-server
@@ -22,6 +22,7 @@
     jdt-language-server
     lua-language-server
     nil
+    git
     nixd
     protols
     ruby-lsp
@@ -95,12 +96,20 @@
     )
     plugins;
 in {
-  home.packages = lsp-servers;
-  xdg.configFile."nvim/lua" = {
-    source = ./lua;
-    recursive = true;
+  home.packages = extraPackages;
+  xdg.configFile = {
+    "nvim/lua" = {
+      source = ./lua;
+      recursive = true;
+    };
+    "nvim/lsp" = {
+      source = ./lsp;
+      recursive = true;
+    };
   };
+
   programs.neovim = {
+    inherit extraPackages;
     enable = true;
     viAlias = true;
     vimAlias = true;
@@ -110,7 +119,6 @@ in {
     withNodeJs = true;
     withRuby = true;
     withPython3 = true;
-    extraPackages = [pkgs.git] ++ lsp-servers;
 
     # share vim plugins since nothing is specific to nvim
     plugins = with pkgs.vimPlugins; [
