@@ -16,6 +16,11 @@
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.follows = "unstable";
 
+    flake-compat.url = "github:nix-community/flake-compat";
+
+    treefmt-nix.url = "github:numtide/treefmt-nix";
+    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+
     git-hooks.url = "github:cachix/git-hooks.nix";
     git-hooks.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -119,23 +124,19 @@
         extraSpecialArgs = {inherit self inputs nixpkgs;};
         modules = baseModules ++ extraModules;
       };
+    mkTreefmt = system:
+      inputs.treefmt-nix.lib.evalModule (import inputs.nixpkgs {
+        inherit system;
+        config = import ./modules/config.nix;
+        overlays = [self.overlays.default];
+      })
+      ./treefmt.nix;
     mkHooks = system:
       inputs.git-hooks.lib.${system}.run {
         src = ./.;
         hooks = {
-          black.enable = true;
-          shellcheck.enable = true;
-          shellcheck.excludes = [".envrc"];
-          alejandra.enable = true;
-          shfmt.enable = false;
-          stylua.enable = true;
-          deadnix = {
-            enable = true;
-            settings = {
-              edit = true;
-              noLambdaArg = true;
-            };
-          };
+          treefmt.enable = true;
+          treefmt.package = (mkTreefmt system).config.build.wrapper;
         };
       };
   in {
@@ -144,7 +145,7 @@
       (eachSystemMap defaultSystems (
         system: {
           devShell = self.devShells.${system}.default;
-          git-check = mkHooks system;
+          treefmt = (mkTreefmt system).config.build.check self;
         }
       ))
       # home-manager checks; add _home suffix to original config to avoid nixos coflict
@@ -170,7 +171,7 @@
           self.nixosConfigurations)))
     ];
 
-    formatter = eachSystemMap defaultSystems (system: (mkHooks system).config.hooks.alejandra.package);
+    formatter = eachSystemMap defaultSystems (system: (mkTreefmt system).config.build.wrapper);
 
     darwinConfigurations =
       # generate darwin configs for each supported platform
@@ -247,6 +248,7 @@
             nixd
             ripgrep
             uv
+            (mkTreefmt pkgs.system).config.build.wrapper
           ]
           ++ (mapAttrsToList (name: value: value) self.packages.${system});
         inputsFrom = git-check.enabledPackages;

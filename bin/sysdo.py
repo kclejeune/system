@@ -8,10 +8,10 @@
 # ]
 # ///
 import os
+import platform
 import subprocess
 from enum import Enum
 
-import platform
 import typer
 
 app = typer.Typer()
@@ -283,7 +283,7 @@ def switch(
     elif cfg == FlakeOutputs.DARWIN:
         cmd = f"sudo {current_system}/darwin-rebuild switch --flake"
     elif cfg == FlakeOutputs.HOME_MANAGER:
-        cmd = f"home-manager switch --flake"
+        cmd = "home-manager switch --flake"
     else:
         typer.secho("could not infer system type.", fg=Colors.ERROR.value)
         raise typer.Abort()
