@@ -4,10 +4,7 @@
     global = {
       brewfile = true;
     };
-    brews = [
-      "kscript"
-      "tart"
-    ];
+    brews = [];
 
     taps = [
       "1password/tap"
@@ -16,8 +13,6 @@
       "coder/coder"
       "earthly/earthly"
       "hcavarsan/kftray"
-      "homebrew/bundle"
-      "homebrew/services"
       "koekeishiya/formulae"
       "kscripting/tap"
       "nikitabobko/tap"
