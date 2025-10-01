@@ -6,7 +6,6 @@
 }: let
   extraPackages = with pkgs; [
     angular-language-server
-    ansible-language-server
     astro-language-server
     autotools-language-server
     awk-language-server
