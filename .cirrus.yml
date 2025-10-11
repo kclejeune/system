@@ -2,7 +2,7 @@ env:
   CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
   CACHIX_USER: kclejeune
   CIRRUS_SHELL: bash -il
-  DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-sequoia-base:latest
+  DARWIN_BUILD_IMAGE: ghcr.io/cirruslabs/macos-runner:sequoia
   GITHUB_TOKEN: ENCRYPTED[!c4841aa1f80b4c94abe2742b4cf2cc998e9b7bbc4d1fa182abb50636b09272b6062bcd2be016a597c225e3715f784969!]
   LINUX_BUILD_IMAGE: nixos/nix:latest
   NIX_INSTALLER_NO_CONFIRM: "true"
