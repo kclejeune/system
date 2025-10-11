@@ -284,6 +284,7 @@
                 uv
               ]
               ++ config.pre-commit.settings.enabledPackages
+              ++ (lib.attrValues config.treefmt.build.programs)
               ++ (lib.mapAttrsToList (name: value: value) config.packages);
             shellHook = config.pre-commit.installationScript;
           };
