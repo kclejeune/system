@@ -56,7 +56,7 @@ Note that this step is naturally skipped on NixOS since `nix` is the package man
 Follow the installation instructions, then run
 
 ```bash
-sudo nixos-install --flake github:kclejeune/system#phil
+sudo nixos-install --flake "github:kclejeune/system#kclejeune@x86_64-linux"
 ```
 
 ### Darwin/Linux
@@ -79,4 +79,4 @@ This will attempt to detect the host system and install nix-darwin or home-manag
 
 The `sysdo` utility is a python script that wraps `nix`, `darwin-rebuild`, `nixos-rebuild`,
 and `home-manager` commands to provide a consistent interface across multiple platforms. It has some dependencies which are defined in the `devShell`
-flake output. Source for this tool is found in [bin/sysdo.py](./bin/sysdo.py).
+flake output. Source for this tool is found in [pkgs/sysdo/sysdo.py](./pkgs/sysdo/sysdo.py).
