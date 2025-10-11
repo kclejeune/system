@@ -100,21 +100,10 @@
   services.libinput.enable = true;
 
   # Enable the X11 windowing system.
-  services.xserver = {
-    xkb.layout = "us";
-    enable = true;
-    # services.xserver.xkbOptions = "eurosign:e";
-    # Enable the KDE Desktop Environment.
-    # services.xserver.displayManager.sddm.enable = true;
-    # services.xserver.desktopManager.plasma5.enable = true;
-    displayManager = {
-      gdm = {
-        enable = true;
-        wayland = true;
-      };
-    };
-    desktopManager.gnome.enable = true;
-  };
+  services.xserver.enable = true;
+  services.xserver.xkb.layout = "us";
+  services.desktopManager.gnome.enable = true;
+  services.displayManager.gdm.enable = true;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
