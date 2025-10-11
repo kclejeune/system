@@ -228,11 +228,12 @@
             (name: cfg: (lib.nameValuePair "${name}_home" cfg.activationPackage))
             (filterSystem self.homeConfigurations))
 
-          # darwin checks; limit these to darwinSystems
+          # nixOS + nix-darwin checks
           (lib.mapAttrs
             (_: cfg: cfg.config.system.build.toplevel)
-            (filterSystem self.darwinConfigurations // self.nixosConfigurations))
+            (filterSystem (self.darwinConfigurations // self.nixosConfigurations)))
         ];
+        legacyPackages = pkgs;
         packages = {
           inherit (pkgs) cb sysdo;
         };
