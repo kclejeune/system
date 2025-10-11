@@ -8,9 +8,7 @@
 
   inputs = {
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-    pkgs-2411.url = "github:nixos/nixpkgs/nixos-24.11";
-    pkgs-2505.url = "github:nixos/nixpkgs/nixos-25.05";
-    stable.follows = "pkgs-2505";
+    stable.url = "github:nixos/nixpkgs/nixos-25.05";
     unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
