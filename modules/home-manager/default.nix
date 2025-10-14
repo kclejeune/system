@@ -41,7 +41,7 @@
         cachix
         cb
         cirrus-cli
-        comma
+        (comma.override (_: {nix = config.nix.package;}))
         coreutils-full
         curl
         d2
@@ -51,6 +51,7 @@
         fd
         ffmpeg
         findutils
+        flyctl
         gawk
         gdu
         git-absorb
@@ -62,6 +63,7 @@
         helm-docs
         httpie
         hyperfine
+        iperf
         jetbrains-mono
         jnv
         kotlin
@@ -72,6 +74,7 @@
         lazydocker
         lima
         luajit
+        mise
         mmv
         mosh
         nil
@@ -110,7 +113,9 @@
         sysdo
         tree
         trivy
+        usage
         uv
+        yadm
         yq-go
         zoxide
       ]
