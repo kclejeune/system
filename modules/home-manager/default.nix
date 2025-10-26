@@ -47,6 +47,7 @@
         d2
         diffutils
         dive
+        dix
         dotenvx
         fd
         ffmpeg
@@ -78,6 +79,7 @@
         mmv
         mosh
         nil
+        nix-output-monitor
         nixd
         nixfmt-rfc-style
         nixpacks
@@ -156,6 +158,10 @@
     lazysql.enable = true;
     less.enable = true;
     man.enable = true;
+    nix-your-shell = {
+      enable = true;
+      nix-output-monitor.enable = true;
+    };
     nh = {
       enable = true;
       flake = "${config.home.homeDirectory}/.nixpkgs";
