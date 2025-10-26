@@ -1,12 +1,9 @@
 {pkgs, ...}: {
   home.packages = [pkgs.github-cli pkgs.git-crypt pkgs.transcrypt pkgs.git-subrepo];
   programs.git = {
-    userName = "Kennan LeJeune";
     enable = true;
-    aliases = {
-      ignore = "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
-    };
-    extraConfig = {
+    settings = {
+      user.name = "Kennan LeJeune";
       credential.helper =
         if pkgs.stdenvNoCC.isDarwin
         then "osxkeychain"
@@ -18,6 +15,12 @@
       pull.rebase = true;
       push.followTags = true;
       push.autoSetupRemote = true;
+      alias = {
+        fix = "commit --amend --no-edit";
+        ignore = "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
+        oops = "reset HEAD~1";
+        sub = "submodule update --init --recursive";
+      };
     };
     includes = [
       {
@@ -25,19 +28,6 @@
       }
     ];
 
-    aliases = {
-      fix = "commit --amend --no-edit";
-      oops = "reset HEAD~1";
-      sub = "submodule update --init --recursive";
-    };
-    delta = {
-      enable = false;
-      options = {
-        side-by-side = true;
-        line-numbers = true;
-      };
-    };
-    difftastic.enable = true;
     lfs.enable = true;
   };
 }

@@ -131,6 +131,8 @@
     home-manager = {
       enable = true;
     };
+    difftastic.enable = true;
+    difftastic.git.enable = true;
     dircolors.enable = true;
     eza = {
       enable = true;
