@@ -77,7 +77,6 @@
         mise
         mmv
         mosh
-        nh
         nil
         nixd
         nixfmt-rfc-style
@@ -155,6 +154,10 @@
     lazysql.enable = true;
     less.enable = true;
     man.enable = true;
+    nh = {
+      enable = true;
+      flake = "${config.home.homeDirectory}/.nixpkgs";
+    };
     nix-index.enable = true;
     pandoc.enable = true;
     ripgrep.enable = true;
