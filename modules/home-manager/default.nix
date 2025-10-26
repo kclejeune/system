@@ -77,6 +77,7 @@
         mise
         mmv
         mosh
+        nh
         nil
         nixd
         nixfmt-rfc-style
