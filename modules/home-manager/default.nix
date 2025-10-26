@@ -153,6 +153,7 @@
       enable = true;
       settings = {
         git.useExternalDiffGitConfig = true;
+        git.overrideGpg = true;
       };
     };
     lazysql.enable = true;
