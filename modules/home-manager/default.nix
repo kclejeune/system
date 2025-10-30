@@ -1,9 +1,11 @@
 {
+  inputs,
   config,
   pkgs,
   ...
 }: {
   imports = [
+    inputs.nix-index-database.homeModules.nix-index
     ./bat.nix
     ./direnv.nix
     ./dotfiles
