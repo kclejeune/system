@@ -220,7 +220,13 @@
         overlayAttrs = {
           sysdo = pkgs.callPackage ./pkgs/sysdo/package.nix {};
           cb = pkgs.callPackage ./pkgs/cb/package.nix {};
-          stable = import inputs.stable {inherit system;};
+          stable = inputs.stable.legacyPackages.${system};
+          ranger = pkgs.ranger.overrideAttrs (prev: {
+            postFixup = ''
+              ${prev.postFixup}
+              sed -i "s_#!/nix/store/.*_#!${pkgs.pypy3}/bin/pypy3_g" $out/bin/.ranger-wrapped
+            '';
+          });
         };
         checks = lib.mergeAttrsList [
           # home-manager checks; add _home suffix to original config to avoid nixos coflict

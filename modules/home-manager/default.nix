@@ -31,28 +31,40 @@
     stateVersion = "25.05";
 
     # define package definitions for current user environment
-    packages = with pkgs; ([
-        # age
+    packages = with pkgs; let
+      commaWithNix = comma.override (_: {nix = config.nix.package;});
+    in
+      [
+        age
         alejandra
         argocd
         asciidoctor
         basedpyright
+        bfs
+        btop
         cacert
         cachix
         cb
         cirrus-cli
-        (comma.override (_: {nix = config.nix.package;}))
+        commaWithNix
         coreutils-full
+        dust
         curl
+        curlie
         d2
         diffutils
         dive
         dix
         dotenvx
+        doxx
         fd
         ffmpeg
         findutils
+        flamegraph
+        flamelens
+        flawz
         flyctl
+        fx
         gawk
         gdu
         git-absorb
@@ -75,11 +87,14 @@
         lazydocker
         lima
         luajit
+        mawk
         mise
         mmv
         mosh
         nil
+        nix-inspect
         nix-output-monitor
+        nix-tree
         nixd
         nixfmt-rfc-style
         nixpacks
@@ -88,8 +103,32 @@
         openldap
         parallel
         pre-commit
+        process-compose
         procps
+        pv
         pyright
+        ranger
+        rclone
+        restic
+        rsync
+        ruff
+        rustscan
+        sd
+        shellcheck
+        sig
+        skopeo
+        sshpass
+        stylua
+        sysdo
+        tre
+        tree
+        trivy
+        usage
+        uv
+        yadm
+        yazi
+        yq-go
+        zoxide
         # python with default packages
         (python3.withPackages (
           ps:
@@ -103,26 +142,10 @@
               scipy
             ]
         ))
-        ranger
-        rclone
-        restic
-        rsync
-        ruff
-        shellcheck
-        skopeo
-        sshpass
-        stylua
-        sysdo
-        tree
-        trivy
-        usage
-        uv
-        yadm
-        yq-go
-        zoxide
       ]
       ++ lib.optionals config.nix.enable [config.nix.package]
-      ++ lib.optionals pkgs.stdenvNoCC.isDarwin [iproute2mac]);
+      ++ lib.optionals pkgs.stdenvNoCC.isDarwin [iproute2mac]
+      ++ lib.optionals pkgs.stdenvNoCC.isLinux [systemctl-tui lazyjournal];
   };
 
   fonts.fontconfig = {
@@ -146,6 +169,7 @@
     fastfetch.enable = true;
     go.enable = true;
     gpg.enable = true;
+    btop.enable = true;
     htop.enable = true;
     jq.enable = true;
     k9s.enable = true;

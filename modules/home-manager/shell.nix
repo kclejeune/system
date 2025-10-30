@@ -21,6 +21,7 @@ in {
       LS_COLORS = "ExFxBxDxCxegedabagacad";
       TERM = "xterm-256color";
       MISE_ENV_FILE = ".env";
+      NH_HOST = "${config.home.username}@${pkgs.system}";
     };
     sessionPath = [
       "${homeDir}/.local/bin"

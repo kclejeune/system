@@ -19,7 +19,7 @@
     keep-outputs = true;
     keep-derivations = true;
     eval-cores = 0;
-    extra-experimental-features = "external-builders";
+    extra-experimental-features = "external-builders nix-command flakes";
     external-builders = builtins.toJSON [
       {
         systems = ["aarch64-linux" "x86_64-linux"];

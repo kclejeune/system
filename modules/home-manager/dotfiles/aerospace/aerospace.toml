@@ -185,7 +185,7 @@ run = 'move-node-to-workspace T'
 
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'
-run = ['layout tiling', 'move-node-to-workspace T']
+run = 'move-node-to-workspace T'
 
 # mnemonics B - browsers
 [[on-window-detected]]
