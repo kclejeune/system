@@ -13,9 +13,9 @@
   system.primaryUser = config.user.name;
 
   nix.enable = false;
-  nix.package = inputs.determinate.inputs.nix.packages.${pkgs.system}.default;
+  nix.package = pkgs.nix;
   determinate-nix.customSettings = {
-    extra-trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
+    extra-trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel" "@staff"];
     keep-outputs = true;
     keep-derivations = true;
     eval-cores = 0;

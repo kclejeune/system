@@ -102,13 +102,13 @@
       nixpkgs ? inputs.nixpkgs,
       baseModules ? [
         ./modules/home-manager
-        {
-          nix.package = determinate.inputs.nix.packages.${system}.default;
+        ({pkgs, ...}: {
+          nix.package = pkgs.nix;
           home = {
             inherit username;
             homeDirectory = "${homePrefix system}/${username}";
           };
-        }
+        })
       ],
       extraModules ? [],
     }:
@@ -204,6 +204,7 @@
         config,
         pkgs,
         system,
+        lib,
         ...
       }: let
         filterSystem = attrs:
@@ -227,6 +228,8 @@
               sed -i "s_#!/nix/store/.*_#!${pkgs.pypy3}/bin/pypy3_g" $out/bin/.ranger-wrapped
             '';
           });
+          determinate-nixd = inputs.determinate.packages.${system}.default;
+          nix = inputs.determinate.inputs.nix.packages.${system}.default;
         };
         checks = lib.mergeAttrsList [
           # home-manager checks; add _home suffix to original config to avoid nixos coflict

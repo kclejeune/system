@@ -33,9 +33,7 @@
     stateVersion = "25.05";
 
     # define package definitions for current user environment
-    packages = with pkgs; let
-      commaWithNix = comma.override (_: {nix = config.nix.package;});
-    in
+    packages = with pkgs;
       [
         age
         alejandra
@@ -48,7 +46,6 @@
         cachix
         cb
         cirrus-cli
-        commaWithNix
         coreutils-full
         dust
         curl
@@ -194,6 +191,7 @@
       flake = "${config.home.homeDirectory}/.nixpkgs";
     };
     nix-index.enable = true;
+    nix-index-database.comma.enable = true;
     pandoc.enable = true;
     ripgrep.enable = true;
     starship.enable = true;
