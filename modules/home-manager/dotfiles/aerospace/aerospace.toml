@@ -41,12 +41,12 @@ default-root-container-orientation = 'auto'
 #                 In this example, 24 is a default value when there is no match.
 #                 Monitor pattern is the same as for 'workspace-to-monitor-force-assignment'.
 #                 See: https://nikitabobko.github.io/AeroSpace/guide.html#assign-workspaces-to-monitors
-gaps.inner.horizontal = 6
-gaps.inner.vertical =   6
-gaps.outer.left =       6
-gaps.outer.bottom =     6
-gaps.outer.top =        6
-gaps.outer.right =      6
+gaps.inner.horizontal = 4
+gaps.inner.vertical =   4
+gaps.outer.left =       4
+gaps.outer.bottom =     4
+gaps.outer.top =        4
+gaps.outer.right =      4
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide.html#binding-modes
@@ -185,7 +185,7 @@ run = 'move-node-to-workspace T'
 
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'
-run = 'move-node-to-workspace T'
+run = ['layout floating', 'move-node-to-workspace T']
 
 # mnemonics B - browsers
 [[on-window-detected]]
