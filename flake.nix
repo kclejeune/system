@@ -14,6 +14,9 @@
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.follows = "unstable";
 
+    nh.url = "github:nix-community/nh";
+    nh.inputs.nixpkgs.follows = "unstable";
+
     flake-compat.url = "github:nix-community/flake-compat";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -230,6 +233,7 @@
           });
           determinate-nixd = inputs.determinate.packages.${system}.default;
           nix = inputs.determinate.inputs.nix.packages.${system}.default;
+          nh = inputs.nh.packages.${system}.default;
         };
         checks = lib.mergeAttrsList [
           # home-manager checks; add _home suffix to original config to avoid nixos coflict
