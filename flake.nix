@@ -178,6 +178,12 @@
                 extraModules = [./profiles/personal];
               };
             }
+            {
+              homelab = inputs.nixos-unstable.lib.nixosSystem {
+                system = "x86_64-linux";
+                modules = [./modules/nixos/lxc.nix];
+              };
+            }
           ];
 
         homeConfigurations =
