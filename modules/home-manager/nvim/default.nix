@@ -123,12 +123,12 @@ in {
     # share vim plugins since nothing is specific to nvim
     plugins = with pkgs.vimPlugins; [
       # basics
-      vim-sensible
-      vim-fugitive
-      vim-sandwich
-      vim-commentary
-      vim-nix
+      comment-nvim
       nvim-autopairs
+      vim-fugitive
+      vim-nix
+      vim-sandwich
+      vim-sensible
 
       # configurable plugins
       lazy-nix-helper-nvim

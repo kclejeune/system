@@ -35,6 +35,11 @@ return {
         },
     },
     {
+        "numToStr/Comment.nvim",
+        opts = {},
+        dir = require("lazy-nix-helper").get_plugin_path("comment.nvim"),
+    },
+    {
         "nvim-tree/nvim-tree.lua",
         opts = {
             renderer = {
@@ -86,8 +91,9 @@ return {
         dir = require("lazy-nix-helper").get_plugin_path("vim-fugitive"),
     },
     {
-        "tpope/vim-commentary",
-        dir = require("lazy-nix-helper").get_plugin_path("vim-commentary"),
+        "numToStr/Comment.nvim",
+        opts = {},
+        dir = require("lazy-nix-helper").get_plugin_path("comment-nvim"),
     },
     {
         "machakann/vim-sandwich",
