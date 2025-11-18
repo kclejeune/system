@@ -13,6 +13,7 @@ in {
     fileWidgetOptions = [
       "--preview '${lib.getExe pkgs.bat} --color=always --plain --line-range=:200 {}'"
     ];
+    tmux.enableShellIntegration = true;
     changeDirWidgetCommand = "${fd} -H --type d";
     changeDirWidgetOptions = ["--preview '${pkgs.tree}/bin/tree -C {} | head -200'"];
     historyWidgetOptions = [];

@@ -1,5 +1,32 @@
-{...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
+  home.packages = lib.optionals (pkgs.stdenvNoCC.isDarwin) [
+    pkgs.reattach-to-user-namespace
+  ];
   programs.tmux = {
     enable = true;
+    clock24 = true;
+    historyLimit = 50000;
+    escapeTime = 0;
+    focusEvents = true;
+    keyMode = "vi";
+    plugins = with pkgs.tmuxPlugins; [
+      tmux-floax
+      tmux-sessionx
+      tmux-thumbs
+      tmux-which-key
+      sensible
+    ];
+    extraConfig =
+      ''
+        set -as terminal-features ",*-256color:RGB"
+        bind g display-popup -E -xC -yC -w 80% -h 80% -d "#{pane_current_path}" ${pkgs.lazygit}/bin/lazygit
+      ''
+      + lib.optionalString pkgs.stdenvNoCC.isDarwin ''
+        set -g default-command "${pkgs.reattach-to-user-namespace}/bin/reattach-to-user-namespace -l zsh"
+      '';
   };
 }
