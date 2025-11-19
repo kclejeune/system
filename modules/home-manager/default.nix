@@ -84,7 +84,6 @@
         kubernetes-helm
         kustomize
         lazydocker
-        lima
         luajit
         mawk
         mise

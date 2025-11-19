@@ -234,7 +234,7 @@
           determinate-nixd = inputs.determinate.packages.${system}.default;
           nix = inputs.determinate.inputs.nix.packages.${system}.default;
           nh = inputs.nh.packages.${system}.default;
-          inherit (inputs.stable.legacyPackages.${system}) telport_16;
+          inherit (inputs.stable.legacyPackages.${system}) teleport_16;
         };
         checks = lib.mergeAttrsList [
           # home-manager checks; add _home suffix to original config to avoid nixos coflict
