@@ -74,12 +74,11 @@ return {
     {
         "nmac427/guess-indent.nvim",
         dir = require("lazy-nix-helper").get_plugin_path("guess-indent.nvim"),
-        event = "InsertEnter",
+        opts = {},
     },
     {
         "windwp/nvim-autopairs",
         dir = require("lazy-nix-helper").get_plugin_path("nvim-autopairs"),
-        event = "InsertEnter",
         opts = {},
     },
     {
