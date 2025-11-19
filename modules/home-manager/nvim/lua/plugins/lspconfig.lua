@@ -86,6 +86,14 @@ return {
                 "neovim/nvim-lspconfig",
                 dir = require("lazy-nix-helper").get_plugin_path("nvim-lspconfig"),
             },
+            {
+                "bydlw98/blink-cmp-env",
+                dir = require("lazy-nix-helper").get_plugin_path("blink-cmp-env"),
+            },
+            {
+                "disrupted/blink-cmp-conventional-commits",
+                dir = require("lazy-nix-helper").get_plugin_path("blink-cmp-conventional-commits"),
+            },
         },
         opts = {
             keymap = {
@@ -93,13 +101,33 @@ return {
             },
             sources = {
                 -- add lazydev to your completion providers
-                default = { "lazydev", "lsp", "path", "snippets", "buffer" },
+                default = { "lazydev", "lsp", "path", "snippets", "buffer", "env", "conventional_commits" },
                 providers = {
                     lazydev = {
                         name = "LazyDev",
                         module = "lazydev.integrations.blink",
                         -- make lazydev completions top priority (see `:h blink.cmp`)
                         score_offset = 100,
+                    },
+                    env = {
+                        name = "Env",
+                        module = "blink-cmp-env",
+                        --- @type blink-cmp-env.Options
+                        opts = {
+                            item_kind = require("blink.cmp.types").CompletionItemKind.Variable,
+                            show_braces = true,
+                            show_documentation_window = true,
+                        },
+                    },
+                    conventional_commits = {
+                        name = "Conventional Commits",
+                        module = "blink-cmp-conventional-commits",
+                        enabled = function()
+                            return vim.bo.filetype == "gitcommit"
+                        end,
+                        ---@module 'blink-cmp-conventional-commits'
+                        ---@type blink-cmp-conventional-commits.Options
+                        opts = {}, -- none so far
                     },
                 },
             },
