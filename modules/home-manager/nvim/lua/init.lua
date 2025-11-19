@@ -20,7 +20,11 @@ vim.opt.rtp:prepend(lazy_nix_helper_path)
 local plugins = plugins or {}
 -- call the Lazy Nix Helper setup function
 local non_nix_lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-local lazy_nix_helper_opts = { lazypath = non_nix_lazypath, input_plugin_table = plugins }
+local lazy_nix_helper_opts = {
+    lazypath = non_nix_lazypath,
+    input_plugin_table = plugins,
+    friendly_plugin_names = true,
+}
 local lazy_nix_helper = require("lazy-nix-helper")
 lazy_nix_helper.setup(lazy_nix_helper_opts)
 

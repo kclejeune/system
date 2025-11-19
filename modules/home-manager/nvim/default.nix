@@ -152,6 +152,10 @@ in {
       direnv-nvim
       ranger-nvim
       auto-dark-mode-nvim
+      friendly-snippets
+      lazygit-nvim
+      lazydev-nvim
+      blink-cmp
     ];
 
     extraLuaConfig = lib.mkBefore ''
