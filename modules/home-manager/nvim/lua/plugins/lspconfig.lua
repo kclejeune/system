@@ -86,10 +86,10 @@ return {
                 "neovim/nvim-lspconfig",
                 dir = require("lazy-nix-helper").get_plugin_path("nvim-lspconfig"),
             },
-            {
-                "bydlw98/blink-cmp-env",
-                dir = require("lazy-nix-helper").get_plugin_path("blink-cmp-env"),
-            },
+            -- {
+            --     "bydlw98/blink-cmp-env",
+            --     dir = require("lazy-nix-helper").get_plugin_path("blink-cmp-env"),
+            -- },
             {
                 "disrupted/blink-cmp-conventional-commits",
                 dir = require("lazy-nix-helper").get_plugin_path("blink-cmp-conventional-commits"),
@@ -101,7 +101,7 @@ return {
             },
             sources = {
                 -- add lazydev to your completion providers
-                default = { "lazydev", "lsp", "path", "snippets", "buffer", "env", "conventional_commits" },
+                default = { "lazydev", "lsp", "path", "snippets", "buffer", "conventional_commits" },
                 providers = {
                     lazydev = {
                         name = "LazyDev",
@@ -109,16 +109,16 @@ return {
                         -- make lazydev completions top priority (see `:h blink.cmp`)
                         score_offset = 100,
                     },
-                    env = {
-                        name = "Env",
-                        module = "blink-cmp-env",
-                        --- @type blink-cmp-env.Options
-                        opts = {
-                            item_kind = require("blink.cmp.types").CompletionItemKind.Variable,
-                            show_braces = true,
-                            show_documentation_window = true,
-                        },
-                    },
+                    -- env = {
+                    --     name = "Env",
+                    --     module = "blink-cmp-env",
+                    --     --- @type blink-cmp-env.Options
+                    --     opts = {
+                    --         item_kind = require("blink.cmp.types").CompletionItemKind.Variable,
+                    --         show_braces = true,
+                    --         show_documentation_window = true,
+                    --     },
+                    -- },
                     conventional_commits = {
                         name = "Conventional Commits",
                         module = "blink-cmp-conventional-commits",
