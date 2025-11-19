@@ -98,6 +98,7 @@ return {
         opts = {
             keymap = {
                 preset = "super-tab",
+                ["<CR>"] = { "accept", "fallback" },
             },
             sources = {
                 -- add lazydev to your completion providers
