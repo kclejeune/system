@@ -34,7 +34,7 @@ return {
                 "jsonls",
                 "lua_ls",
                 "nil_ls",
-                "nixd",
+                -- "nixd",
                 "protols",
                 "ruby_lsp",
                 "ruff",

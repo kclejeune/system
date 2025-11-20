@@ -225,12 +225,6 @@
           sysdo = pkgs.callPackage ./pkgs/sysdo/package.nix {};
           cb = pkgs.callPackage ./pkgs/cb/package.nix {};
           stable = inputs.stable.legacyPackages.${system};
-          ranger = pkgs.ranger.overrideAttrs (prev: {
-            postFixup = ''
-              ${prev.postFixup}
-              sed -i "s_#!/nix/store/.*_#!${pkgs.pypy3}/bin/pypy3_g" $out/bin/.ranger-wrapped
-            '';
-          });
           determinate-nixd = inputs.determinate.packages.${system}.default;
           nix = inputs.determinate.inputs.nix.packages.${system}.default;
           nh = inputs.nh.packages.${system}.default;
