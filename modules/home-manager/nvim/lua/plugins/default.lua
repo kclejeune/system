@@ -66,6 +66,7 @@ return {
     {
         "kdheepak/lazygit.nvim",
         lazy = true,
+        dir = require("lazy-nix-helper").get_plugin_path("lazygit.nvim"),
         cmd = {
             "LazyGit",
             "LazyGitConfig",

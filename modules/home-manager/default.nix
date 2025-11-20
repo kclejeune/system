@@ -131,7 +131,6 @@
         (python3.withPackages (
           ps:
             with ps; [
-              duckdb
               httpx
               matplotlib
               networkx

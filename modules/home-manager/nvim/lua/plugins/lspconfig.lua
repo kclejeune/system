@@ -1,17 +1,5 @@
 return {
     {
-        "folke/lazydev.nvim",
-        dir = require("lazy-nix-helper").get_plugin_path("lazydev.nvim"),
-        ft = "lua", -- only load on lua files
-        opts = {
-            library = {
-                -- See the configuration section for more details
-                -- Load luvit types when the `vim.uv` word is found
-                { path = "${3rd}/luv/library", words = { "vim%.uv" } },
-            },
-        },
-    },
-    {
         "neovim/nvim-lspconfig",
         lazy = false,
         dir = require("lazy-nix-helper").get_plugin_path("nvim-lspconfig"),
@@ -28,46 +16,69 @@ return {
             },
         },
         config = function()
-            vim.lsp.enable("angularls")
-            vim.lsp.enable("astro")
-            vim.lsp.enable("autotools_ls")
-            vim.lsp.enable("awk_ls")
-            vim.lsp.enable("basedpyright")
-            vim.lsp.enable("bashls")
-            vim.lsp.enable("biome")
-            vim.lsp.enable("cssls")
-            vim.lsp.enable("dagger")
-            vim.lsp.enable("diagnosticls")
-            vim.lsp.enable("docker_compose_language_service")
-            vim.lsp.enable("docker_language_server")
-            vim.lsp.enable("html")
-            vim.lsp.enable("jdtls")
-            vim.lsp.enable("jsonls")
-            vim.lsp.enable("lua_ls")
-            vim.lsp.enable("nil_ls")
-            vim.lsp.enable("nixd")
-            vim.lsp.enable("protols")
-            vim.lsp.enable("ruby_lsp")
-            vim.lsp.enable("ruff")
-            vim.lsp.enable("svelte")
-            vim.lsp.enable("terraformls")
-            vim.lsp.enable("texlab")
-            vim.lsp.enable("textlsp")
-            vim.lsp.enable("ts_ls")
-            vim.lsp.enable("vue_ls")
-            vim.lsp.enable("yamlls")
-            vim.lsp.enable("zls")
-            vim.lsp.completion.enable()
-            vim.diagnostic.config({ virtual_text = true })
+            vim.lsp.enable({
+                "angularls",
+                "astro",
+                "autotools_ls",
+                "awk_ls",
+                "basedpyright",
+                "bashls",
+                "biome",
+                "cssls",
+                "dagger",
+                "diagnosticls",
+                "docker_compose_language_service",
+                "docker_language_server",
+                "html",
+                "jdtls",
+                "jsonls",
+                "lua_ls",
+                "nil_ls",
+                "nixd",
+                "protols",
+                "ruby_lsp",
+                "ruff",
+                "svelte",
+                "terraformls",
+                "texlab",
+                "textlsp",
+                "ts_ls",
+                "vue_ls",
+                "yamlls",
+                "zls",
+            }, true)
+            -- use tiny-inline-diagnostic.nvim for this
+            vim.diagnostic.config({ virtual_text = false })
+            -- disable lsp highlight
             vim.api.nvim_create_autocmd("LspAttach", {
                 callback = function(args)
                     local client = vim.lsp.get_client_by_id(args.data.client_id)
-                    if client and client:supports_method("textDocument/inlineCompletion") then
-                        vim.lsp.inline_completion.enable(true)
-                    end
+                    client.server_capabilities.semanticTokensProvider = nil
                 end,
             })
         end,
+    },
+    {
+        "rachartier/tiny-inline-diagnostic.nvim",
+        dir = require("lazy-nix-helper").get_plugin_path("tiny-inline-diagnostic.nvim"),
+        event = "VeryLazy",
+        priority = 1000,
+        config = function()
+            require("tiny-inline-diagnostic").setup()
+            vim.diagnostic.config({ virtual_text = false }) -- Disable Neovim's default virtual text diagnostics
+        end,
+    },
+    {
+        "folke/lazydev.nvim",
+        dir = require("lazy-nix-helper").get_plugin_path("lazydev.nvim"),
+        ft = "lua", -- only load on lua files
+        opts = {
+            library = {
+                -- See the configuration section for more details
+                -- Load luvit types when the `vim.uv` word is found
+                { path = "${3rd}/luv/library", words = { "vim%.uv" } },
+            },
+        },
     },
     {
         "saghen/blink.cmp",
@@ -99,6 +110,26 @@ return {
             keymap = {
                 preset = "super-tab",
                 ["<CR>"] = { "accept", "fallback" },
+                ["<C-u>"] = { "scroll_signature_up", "fallback" },
+                ["<C-d>"] = { "scroll_signature_down", "fallback" },
+            },
+            completion = {
+                documentation = {
+                    auto_show = false,
+                },
+                list = {
+                    selection = {
+                        preselect = function(ctx)
+                            return not require("blink.cmp").snippet_active({ direction = 1 })
+                        end,
+                    },
+                },
+            },
+            signature = {
+                enabled = true,
+                trigger = {
+                    show_on_insert_or_trigger_character = true,
+                },
             },
             sources = {
                 -- add lazydev to your completion providers

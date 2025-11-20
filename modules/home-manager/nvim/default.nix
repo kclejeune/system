@@ -158,6 +158,7 @@ in {
       blink-cmp
       # blink-cmp-env
       blink-cmp-conventional-commits
+      tiny-inline-diagnostic-nvim
     ];
 
     extraLuaConfig = lib.mkBefore ''
