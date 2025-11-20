@@ -48,14 +48,17 @@ return {
                 "zls",
             }, true)
             -- use tiny-inline-diagnostic.nvim for this
-            vim.diagnostic.config({ virtual_text = false })
-            -- disable lsp highlight
-            vim.api.nvim_create_autocmd("LspAttach", {
-                callback = function(args)
-                    local client = vim.lsp.get_client_by_id(args.data.client_id)
-                    client.server_capabilities.semanticTokensProvider = nil
-                end,
+            vim.diagnostic.config({
+                virtual_text = false,
+                underline = true,
             })
+            -- disable lsp highlight
+            -- vim.api.nvim_create_autocmd("LspAttach", {
+            --     callback = function(args)
+            --         local client = vim.lsp.get_client_by_id(args.data.client_id)
+            --         client.server_capabilities.semanticTokensProvider = nil
+            --     end,
+            -- })
         end,
     },
     {
@@ -63,10 +66,15 @@ return {
         dir = require("lazy-nix-helper").get_plugin_path("tiny-inline-diagnostic.nvim"),
         event = "VeryLazy",
         priority = 1000,
-        config = function()
-            require("tiny-inline-diagnostic").setup()
-            vim.diagnostic.config({ virtual_text = false }) -- Disable Neovim's default virtual text diagnostics
-        end,
+        opts = {
+            show_source = {
+                enabled = true,
+            },
+            multilines = {
+                enabled = true,
+                trim_whitespaces = true,
+            },
+        },
     },
     {
         "folke/lazydev.nvim",

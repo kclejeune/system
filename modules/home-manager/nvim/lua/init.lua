@@ -60,6 +60,7 @@ vim.opt.incsearch = true
 vim.opt.hlsearch = true
 vim.opt.foldenable = false
 vim.opt.exrc = true
+vim.opt.signcolumn = "yes:1"
 
 function vim.fn.stripTrailingWhitespace()
     local l = vim.fn.line(".")
