@@ -22,7 +22,29 @@ in {
     neovim
   ];
 
-  # networking.firewall.enable = true;
+  networking.firewall.enable = false;
+  networking.firewall.allowedTCPPorts = [
+    # SPICE
+    3128
+    # corosync PVE cluster
+    5404
+    # rpcbind
+    111
+  ];
+  networking.firewall.allowedTCPPortRanges = [
+    {
+      from = 5900;
+      to = 5999;
+    }
+  ];
+  networking.firewall.allowedUDPPorts = [
+    # SPICE
+    3128
+    # corosync PVE cluster
+    5405
+    # rpcbind
+    111
+  ];
   services.openssh.enable = true;
   services.openssh.openFirewall = true;
 
