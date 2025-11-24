@@ -12,6 +12,7 @@
     basedpyright
     bash-language-server
     cmake-language-server
+    claude-code
     cuelsp
     diagnostic-languageserver
     direnv
@@ -50,6 +51,17 @@
       sha256 = "sha256-4DyuBMp83vM344YabL2SklQCg6xD7xGF5CvQP2q+W7A=";
     };
   };
+  claudecode-nvim = pkgs.vimUtils.buildVimPlugin {
+    pname = "claudecode.nvim";
+    version = "2025-10-19";
+    src = pkgs.fetchFromGitHub {
+      owner = "coder";
+      repo = "claudecode.nvim";
+      rev = "1552086ebcce9f4a2ea3b9793018a884d6b60169";
+      sha256 = "sha256-XYmf1RQ2bVK6spINZW4rg6OQQ5CWWcR0Tw4QX8ZDjgs=";
+    };
+    meta.homepage = "https://github.com/coder/claudecode.nvim";
+  };
   direnv-nvim = pkgs.vimUtils.buildVimPlugin {
     name = "direnv.nvim";
     src = pkgs.fetchFromGitHub {
@@ -69,17 +81,6 @@
       sha256 = "sha256-rqZjtPAAWaSavPCNtBI7vm627ZyffJOQ2Qs32M9uz3I=";
     };
     meta.homepage = "https://github.com/kelly-lin/ranger.nvim";
-  };
-  auto-dark-mode-nvim = pkgs.vimUtils.buildVimPlugin {
-    pname = "auto-dark-mode.nvim";
-    version = "v0.1.0";
-    src = pkgs.fetchFromGitHub {
-      owner = "f-person";
-      repo = "auto-dark-mode.nvim";
-      rev = "c31de126963ffe9403901b4b0990dde0e6999cc6";
-      sha256 = "sha256-ZCViqnA+VoEOG+Xr+aJNlfRKCjxJm5y78HRXax3o8UY=";
-    };
-    meta.homepage = "https://github.com/f-person/auto-dark-mode.nvim";
   };
   sanitizePluginName = input: let
     name = lib.strings.getName input;
@@ -151,7 +152,6 @@ in {
       onedark-nvim
       direnv-nvim
       ranger-nvim
-      auto-dark-mode-nvim
       friendly-snippets
       lazygit-nvim
       lazydev-nvim
@@ -159,6 +159,10 @@ in {
       # blink-cmp-env
       blink-cmp-conventional-commits
       tiny-inline-diagnostic-nvim
+      plenary-nvim
+      snacks-nvim
+      claudecode-nvim
+      which-key-nvim
     ];
 
     extraLuaConfig = lib.mkBefore ''

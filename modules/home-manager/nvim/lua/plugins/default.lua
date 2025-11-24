@@ -4,9 +4,8 @@ return {
         lazy = false,
         dir = require("lazy-nix-helper").get_plugin_path("onedark.nvim"),
         priority = 1000, -- make sure to load this before all the other start plugins
-        config = function()
-            require("onedark").setup({})
-            -- Enable theme
+        opts = {},
+        init = function()
             require("onedark").load()
         end,
     },
@@ -114,6 +113,21 @@ return {
     {
         "machakann/vim-sandwich",
         dir = require("lazy-nix-helper").get_plugin_path("vim-sandwich"),
+    },
+    {
+        "folke/which-key.nvim",
+        dir = require("lazy-nix-helper").get_plugin_path("which-key.nvim"),
+        event = "VeryLazy",
+        opts = {},
+        keys = {
+            {
+                "<leader>?",
+                function()
+                    require("which-key").show({ global = false })
+                end,
+                desc = "Buffer Local Keymaps (which-key)",
+            },
+        },
     },
     {
         "NotAShelf/direnv.nvim",

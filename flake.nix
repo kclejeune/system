@@ -222,13 +222,14 @@
           ];
         };
         overlayAttrs = {
+          inherit (inputs.stable.legacyPackages.${system}) teleport_16;
+
           sysdo = pkgs.callPackage ./pkgs/sysdo/package.nix {};
           cb = pkgs.callPackage ./pkgs/cb/package.nix {};
           stable = inputs.stable.legacyPackages.${system};
           determinate-nixd = inputs.determinate.packages.${system}.default;
           nix = inputs.determinate.inputs.nix.packages.${system}.default;
           nh = inputs.nh.packages.${system}.default;
-          inherit (inputs.stable.legacyPackages.${system}) teleport_16;
         };
         checks = lib.mergeAttrsList [
           # home-manager checks; add _home suffix to original config to avoid nixos coflict
