@@ -13,6 +13,7 @@
     escapeTime = 0;
     focusEvents = true;
     keyMode = "vi";
+    terminal = "screen-256color";
     plugins = with pkgs.tmuxPlugins; [
       tmux-floax
       tmux-sessionx
@@ -22,6 +23,9 @@
     ];
     extraConfig =
       ''
+        set -g allow-passthrough on
+        set -ga update-environment TERM
+        set -ga update-environment TERM_PROGRAM
         set -as terminal-features ",*-256color:RGB"
         bind g display-popup -E -xC -yC -w 80% -h 80% -d "#{pane_current_path}" ${pkgs.lazygit}/bin/lazygit
       ''
