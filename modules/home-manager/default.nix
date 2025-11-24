@@ -17,6 +17,7 @@
     ./ssh.nix
     ./tldr.nix
     ./tmux.nix
+    ./yazi
     ./gnome.nix
     ./nixpkgs.nix
   ];
@@ -99,13 +100,13 @@
         nmap
         nodejs_20
         openldap
+        ouch
         parallel
         pre-commit
         process-compose
         procps
         pv
         pyright
-        ranger
         rclone
         restic
         rsync
@@ -124,7 +125,6 @@
         usage
         uv
         yadm
-        yazi
         yq-go
         zoxide
         # python with default packages

@@ -72,16 +72,6 @@
     };
     meta.homepage = "https://github.com/NotAShelf/direnv.nvim";
   };
-  ranger-nvim = pkgs.vimUtils.buildVimPlugin {
-    name = "ranger.nvim";
-    src = pkgs.fetchFromGitHub {
-      owner = "kelly-lin";
-      repo = "ranger.nvim";
-      rev = "fd2cc999f3ef88f7cdcbcad5f26000c52b16c489";
-      sha256 = "sha256-rqZjtPAAWaSavPCNtBI7vm627ZyffJOQ2Qs32M9uz3I=";
-    };
-    meta.homepage = "https://github.com/kelly-lin/ranger.nvim";
-  };
   sanitizePluginName = input: let
     name = lib.strings.getName input;
     vimplugin_removed = lib.strings.removePrefix "vimplugin-" name;
@@ -150,7 +140,6 @@ in {
       lualine-nvim
       onedark-nvim
       direnv-nvim
-      ranger-nvim
       friendly-snippets
       lazygit-nvim
       lazydev-nvim
