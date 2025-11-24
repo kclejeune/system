@@ -39,30 +39,6 @@ return {
         dir = require("lazy-nix-helper").get_plugin_path("comment.nvim"),
     },
     {
-        "nvim-tree/nvim-tree.lua",
-        opts = {
-            renderer = {
-                group_empty = true,
-            },
-            filters = {
-                dotfiles = true,
-            },
-        },
-        dir = require("lazy-nix-helper").get_plugin_path("nvim-tree.lua"),
-        keys = {
-            { "<C-e>", desc = "nvim-tree Open: In Place" },
-            { "<C-t>", desc = "nvim tree Open: New Tab" },
-            { "<C-v>", desc = "nvim tree Open: Vertical Split" },
-            { "<C-x>", desc = "nvim tree Open: Horizontal Split" },
-        },
-        dependencies = {
-            {
-                "nvim-tree/nvim-web-devicons",
-                dir = require("lazy-nix-helper").get_plugin_path("nvim-web-devicons"),
-            },
-        },
-    },
-    {
         "kdheepak/lazygit.nvim",
         lazy = true,
         dir = require("lazy-nix-helper").get_plugin_path("lazygit.nvim"),
@@ -154,7 +130,45 @@ return {
         },
     },
     {
-        "kelly-lin/ranger.nvim",
-        dir = require("lazy-nix-helper").get_plugin_path("ranger.nvim"),
+        "mikavilpas/yazi.nvim",
+        lazy = true,
+        dir = require("lazy-nix-helper").get_plugin_path("yazi.nvim"),
+        version = "*", -- use the latest stable version
+        event = "VeryLazy",
+        dependencies = {
+            {
+                "nvim-lua/plenary.nvim",
+                dir = require("lazy-nix-helper").get_plugin_path("plenary.nvim"),
+                lazy = true,
+            },
+        },
+        keys = {
+            -- 👇 in this section, choose your own keymappings!
+            {
+                "<leader>-",
+                mode = { "n", "v" },
+                "<cmd>Yazi<cr>",
+                desc = "Open yazi at the current file",
+            },
+            {
+                -- Open in the current working directory
+                "<leader>cw",
+                "<cmd>Yazi cwd<cr>",
+                desc = "Open the file manager in nvim's working directory",
+            },
+        },
+        opts = {
+            open_for_directories = true,
+            keymaps = {
+                show_help = "<f1>",
+            },
+        },
+        -- if you use `open_for_directories=true`, this is recommended
+        init = function()
+            -- mark netrw as loaded so it's not loaded at all.
+            --
+            -- More details: https://github.com/mikavilpas/yazi.nvim/issues/802
+            vim.g.loaded_netrwPlugin = 1
+        end,
     },
 }

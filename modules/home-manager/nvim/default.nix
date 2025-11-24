@@ -145,7 +145,6 @@ in {
       nvim-treesitter-textobjects
       nvim-treesitter-context
       nvim-web-devicons
-      nvim-tree-lua
       mason-nvim
       mason-lspconfig-nvim
       lualine-nvim
@@ -163,6 +162,7 @@ in {
       snacks-nvim
       claudecode-nvim
       which-key-nvim
+      yazi-nvim
     ];
 
     extraLuaConfig = lib.mkBefore ''

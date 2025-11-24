@@ -41,6 +41,10 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
     })
 end
 
+-- disable netrw to avoid conflict with yazi + nvim-tree
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 vim.opt.rtp:prepend(lazypath)
 -- General Vim settings
 vim.opt.number = true
@@ -58,7 +62,7 @@ vim.opt.autoindent = true
 vim.opt.smartindent = true
 vim.opt.incsearch = true
 vim.opt.hlsearch = true
-vim.opt.foldenable = false
+vim.opt.foldenable = true
 vim.opt.exrc = true
 vim.opt.signcolumn = "yes:1"
 
@@ -72,11 +76,9 @@ end
 -- strip all files by default
 vim.cmd("autocmd BufWritePre * :lua vim.fn.stripTrailingWhitespace()")
 
-vim.api.nvim_set_keymap("n", "j", "gj", {})
-vim.api.nvim_set_keymap("n", "k", "gk", {})
-
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
+vim.keymap.set({ "n", "v" }, "<leader>y", '"+y', { desc = "Yank to clipboard" })
+vim.keymap.set({ "n" }, "j", "gj", {})
+vim.keymap.set({ "n" }, "k", "gk", {})
 
 -- Setup lazy.nvim
 require("lazy").setup({
