@@ -13,13 +13,13 @@
       nix.enable = lib.mkForce true;
     }
   ];
-  environment.etc."determinate/config.json".text = ''
-    {
-      "authentication": {
-        "additionalNetrcSources": [
-          "/etc/determinate/netrc"
-        ]
-      }
-    }
-  '';
+  environment.etc."determinate/config.json".text = builtins.toJSON {
+    authentication.additionalNetrcSources = ["/etc/determinate/netrc"];
+    garbageCollector.strategy = "automatic";
+    builder = {
+      state = "enabled";
+      memoryBytes = 8589934592;
+      cpuCount = 1;
+    };
+  };
 }
