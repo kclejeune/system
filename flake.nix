@@ -13,6 +13,10 @@
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.follows = "unstable";
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     nh.url = "github:nix-community/nh";
     nh.inputs.nixpkgs.follows = "unstable";
@@ -45,6 +49,7 @@
     home-manager,
     determinate,
     flake-parts,
+    nixos-generators,
     ...
   } @ inputs: let
     inherit (inputs.nixpkgs) lib;
@@ -83,7 +88,9 @@
     mkNixosConfig = {
       system ? "x86_64-linux",
       nixpkgs ? inputs.nixos-unstable,
-      hardwareModules,
+      hardwareModules ? [
+        nixos-generators.nixosModules.all-formats
+      ],
       baseModules ? [
         determinate.nixosModules.default
         home-manager.nixosModules.home-manager
@@ -188,7 +195,7 @@
             {
               homelab = mkNixosConfig {
                 system = "x86_64-linux";
-                hardwareModules = [./modules/nixos/qcow2.nix ./modules/nixos/iso.nix];
+                # hardwareModules = [./modules/nixos/qcow2.nix ./modules/nixos/iso.nix];
                 extraModules = [./profiles/personal];
               };
             }

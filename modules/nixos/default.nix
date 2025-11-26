@@ -4,7 +4,9 @@
   ...
 }: {
   # bundles essential nixos modules
-  imports = [./keybase.nix ../common.nix];
+  imports = [
+    ../common.nix
+  ];
 
   nix.settings = {
     extra-trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
