@@ -172,6 +172,7 @@
               "kclejeune@x86_64-linux" = mkNixosConfig {
                 system = "x86_64-linux";
                 hardwareModules = [
+                  ./modules/nixos/laptop.nix
                   ./modules/hardware/phil.nix
                   inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
                 ];
@@ -179,9 +180,16 @@
               };
             }
             {
-              homelab = inputs.nixos-unstable.lib.nixosSystem {
+              homelab-lxc = inputs.nixos-unstable.lib.nixosSystem {
                 system = "x86_64-linux";
                 modules = [./modules/nixos/lxc.nix];
+              };
+            }
+            {
+              homelab = mkNixosConfig {
+                system = "x86_64-linux";
+                hardwareModules = [./modules/nixos/qcow2.nix];
+                extraModules = [./profiles/personal];
               };
             }
           ];

@@ -24,6 +24,13 @@
 
   hm = {...}: {imports = [../home-manager/gnome.nix];};
 
+  # Enable passwordless sudo.
+  security.pam.rssh.enable = true;
+  security.pam.services.sudo.rssh = true;
+  security.sudo.extraConfig = ''
+    Defaults noninteractive_auth
+  '';
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users = {
     defaultUserShell = pkgs.zsh;
@@ -31,29 +38,24 @@
     users = {
       "${config.user.name}" = {
         isNormalUser = true;
-        extraGroups = ["sudo" "wheel" "networkmanager"]; # Enable ‘sudo’ for the user.
+        extraGroups = ["sudo" "wheel" "docker" "networkmanager"]; # Enable ‘sudo’ for the user.
         hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
+        openssh.authorizedKeys.keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM48VQYrCQErK9QdC/mZ61Yzjh/4xKpgZ2WU5G19FpBG"];
       };
     };
   };
 
-  networking.hostName = "Phil"; # Define your hostname.
-  networking.networkmanager.enable = true;
+  virtualisation.docker = {
+    enable = true;
+    autoPrune.enable = true;
+    daemon.settings = {
+      features = {
+        containerd-snapshotter = true;
+      };
+    };
+  };
 
-  # Use the GRUB 2 boot loader.
-  boot.loader.grub.enable = true;
-  # Define on which hard drive you want to install Grub.
-  boot.loader.grub.device = "/dev/sda"; # or "nodev" for efi only
-  # boot.loader.grub.efiSupport = true;
-  # boot.loader.grub.efiInstallAsRemovable = true;
-  # boot.loader.efi.efiSysMountPoint = "/boot/efi";
-
-  # The global useDHCP flag is deprecated, therefore explicitly set to false here.
-  # Per-interface useDHCP will be mandatory in the future, so this generated config
-  # replicates the default behaviour.
-  networking.useDHCP = false;
-  networking.interfaces.enp0s31f6.useDHCP = true;
-  networking.interfaces.wlp4s0.useDHCP = true;
+  networking.hostName = "nixos"; # Define your hostname.
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
