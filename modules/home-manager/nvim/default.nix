@@ -112,47 +112,47 @@ in {
     withPython3 = true;
 
     # share vim plugins since nothing is specific to nvim
-    plugins = with pkgs.vimPlugins; [
-      # basics
-      comment-nvim
-      nvim-autopairs
-      vim-fugitive
-      vim-nix
-      vim-sandwich
-      vim-sensible
+    plugins = lib.attrValues {
+      inherit lazy-nix-helper-nvim claudecode-nvim direnv-nvim;
+      inherit
+        (pkgs.vimPlugins)
+        # basics
+        comment-nvim
+        nvim-autopairs
+        vim-fugitive
+        vim-nix
+        vim-sandwich
+        vim-sensible
+        # configurable plugins
+        lazy-nvim
+        guess-indent-nvim
+        fzf-lua
+        vimtex
+        nvim-lspconfig
+        indent-blankline-nvim
+        nvim-treesitter-refactor
+        nvim-treesitter-textobjects
+        nvim-treesitter-context
+        nvim-web-devicons
+        mason-nvim
+        mason-lspconfig-nvim
+        onedark-nvim
+        friendly-snippets
+        lazygit-nvim
+        lazydev-nvim
+        blink-cmp
+        # blink-cmp-env
+        blink-cmp-conventional-commits
+        tiny-inline-diagnostic-nvim
+        plenary-nvim
+        snacks-nvim
+        which-key-nvim
+        yazi-nvim
+        ;
 
-      # configurable plugins
-      lazy-nix-helper-nvim
-      lazy-nvim
-      guess-indent-nvim
-      fzf-lua
-      vimtex
-      nvim-lspconfig
-      indent-blankline-nvim
-
-      nvim-treesitter.withAllGrammars
-      nvim-treesitter-refactor
-      nvim-treesitter-textobjects
-      nvim-treesitter-context
-      nvim-web-devicons
-      mason-nvim
-      mason-lspconfig-nvim
-      lualine-nvim
-      onedark-nvim
-      direnv-nvim
-      friendly-snippets
-      lazygit-nvim
-      lazydev-nvim
-      blink-cmp
-      # blink-cmp-env
-      blink-cmp-conventional-commits
-      tiny-inline-diagnostic-nvim
-      plenary-nvim
-      snacks-nvim
-      claudecode-nvim
-      which-key-nvim
-      yazi-nvim
-    ];
+      inherit (pkgs.stable.vimPlugins) lualine-nvim;
+      nvim-treesitter = pkgs.vimPlugins.nvim-treesitter.withAllGrammars;
+    };
 
     extraLuaConfig = lib.mkBefore ''
       local plugins = {
