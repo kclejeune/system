@@ -188,7 +188,7 @@
             {
               homelab = mkNixosConfig {
                 system = "x86_64-linux";
-                hardwareModules = [./modules/nixos/qcow2.nix];
+                hardwareModules = [./modules/nixos/qcow2.nix ./modules/nixos/iso.nix];
                 extraModules = [./profiles/personal];
               };
             }
