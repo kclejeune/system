@@ -36,7 +36,7 @@ in {
   programs.atuin = {
     enable = true;
     package = pkgs.atuin;
-    daemon.enable = true;
+    daemon.enable = false;
     flags = [];
   };
   # configure zsh custom plugin directory
