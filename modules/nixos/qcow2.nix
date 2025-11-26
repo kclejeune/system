@@ -15,7 +15,7 @@
   boot.loader.grub.device = lib.mkDefault "/dev/vda";
   system.build.qcow2 = import "${modulesPath}/../lib/make-disk-image.nix" {
     inherit lib config pkgs;
-    diskSize = 10240;
+    diskSize = "auto";
     format = "qcow2";
     partitionTableType = "hybrid";
   };
