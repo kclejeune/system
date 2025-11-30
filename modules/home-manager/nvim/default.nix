@@ -4,45 +4,48 @@
   lib,
   ...
 }: let
-  extraPackages = with pkgs; [
-    angular-language-server
-    astro-language-server
-    autotools-language-server
-    awk-language-server
-    basedpyright
-    bash-language-server
-    claude-code
-    cmake-language-server
-    cuelsp
-    diagnostic-languageserver
-    direnv
-    docker-compose-language-service
-    docker-language-server
-    fzf
-    git
-    gopls
-    jdt-language-server
-    lua-language-server
-    nil
-    nixd
-    protols
-    ruby-lsp
-    ruff
-    svelte-language-server
-    systemd-language-server
-    tailwindcss-language-server
-    terraform-ls
-    texlab
-    textlsp
-    tooling-language-server
-    tree-sitter
-    typescript-language-server
-    vim-language-server
-    vscode-langservers-extracted
-    vue-language-server
-    yaml-language-server
-    zls
-  ];
+  extraPackages = builtins.attrValues {
+    inherit
+      (pkgs)
+      angular-language-server
+      astro-language-server
+      autotools-language-server
+      awk-language-server
+      basedpyright
+      bash-language-server
+      claude-code
+      cmake-language-server
+      cuelsp
+      diagnostic-languageserver
+      direnv
+      docker-compose-language-service
+      docker-language-server
+      fzf
+      git
+      gopls
+      jdt-language-server
+      lua-language-server
+      nil
+      nixd
+      protols
+      ruby-lsp
+      ruff
+      svelte-language-server
+      systemd-language-server
+      tailwindcss-language-server
+      terraform-ls
+      texlab
+      textlsp
+      tooling-language-server
+      tree-sitter
+      typescript-language-server
+      vim-language-server
+      vscode-langservers-extracted
+      vue-language-server
+      yaml-language-server
+      zls
+      ;
+  };
   lazy-nix-helper-nvim = pkgs.vimUtils.buildVimPlugin {
     name = "lazy-nix-helper.nvim";
     src = pkgs.fetchFromGitHub {
