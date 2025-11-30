@@ -224,7 +224,6 @@
         overlayAttrs = {
           inherit (inputs.stable.legacyPackages.${system}) teleport_16;
 
-          sysdo = pkgs.callPackage ./pkgs/sysdo/package.nix {};
           cb = pkgs.callPackage ./pkgs/cb/package.nix {};
           stable = inputs.stable.legacyPackages.${system};
           determinate-nixd = inputs.determinate.packages.${system}.default;
@@ -244,7 +243,7 @@
         ];
         legacyPackages = pkgs;
         packages = {
-          inherit (pkgs) cb sysdo;
+          inherit (pkgs) cb;
         };
         treefmt = {
           programs = {
@@ -284,14 +283,10 @@
         };
         devShells = {
           default = pkgs.mkShell {
-            packages = with pkgs;
-              [
-                bashInteractive
-                fd
-                nixd
-                ripgrep
-                uv
-              ]
+            packages =
+              (builtins.attrValues {
+                inherit (pkgs) bashInteractive fd ripgrep uv nh;
+              })
               ++ config.pre-commit.settings.enabledPackages
               ++ (lib.attrValues config.treefmt.build.programs)
               ++ (lib.mapAttrsToList (name: value: value) config.packages);

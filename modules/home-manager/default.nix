@@ -118,8 +118,6 @@
         skopeo
         sshpass
         stylua
-        sysdo
-        tre
         tree
         trivy
         usage

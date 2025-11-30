@@ -11,19 +11,19 @@
     awk-language-server
     basedpyright
     bash-language-server
-    cmake-language-server
     claude-code
+    cmake-language-server
     cuelsp
     diagnostic-languageserver
     direnv
     docker-compose-language-service
     docker-language-server
     fzf
+    git
     gopls
     jdt-language-server
     lua-language-server
     nil
-    git
     nixd
     protols
     ruby-lsp
@@ -35,6 +35,7 @@
     texlab
     textlsp
     tooling-language-server
+    tree-sitter
     typescript-language-server
     vim-language-server
     vscode-langservers-extracted
