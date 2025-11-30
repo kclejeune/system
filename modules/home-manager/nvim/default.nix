@@ -85,6 +85,11 @@
   in
     result;
 
+  nvim-treesitter = pkgs.vimPlugins.nvim-treesitter.withAllGrammars;
+  nvim-treesitter-grammars = pkgs.symlinkJoin {
+    name = "nvim-treesitter-grammars";
+    paths = nvim-treesitter.dependencies;
+  };
   pluginList = plugins:
     lib.strings.concatMapStrings (
       plugin: "  [\"${sanitizePluginName plugin.name}\"] = \"${plugin.outPath}\",\n"
@@ -99,6 +104,10 @@ in {
     };
     "nvim/lsp" = {
       source = ./lsp;
+      recursive = true;
+    };
+    "nvim/parser" = {
+      source = "${nvim-treesitter-grammars}/parser";
       recursive = true;
     };
   };
@@ -117,7 +126,7 @@ in {
 
     # share vim plugins since nothing is specific to nvim
     plugins = lib.attrValues {
-      inherit lazy-nix-helper-nvim claudecode-nvim direnv-nvim;
+      inherit lazy-nix-helper-nvim claudecode-nvim direnv-nvim nvim-treesitter;
       inherit
         (pkgs.vimPlugins)
         # basics
@@ -155,7 +164,6 @@ in {
         ;
 
       inherit (pkgs.stable.vimPlugins) lualine-nvim;
-      nvim-treesitter = pkgs.vimPlugins.nvim-treesitter.withAllGrammars;
     };
 
     extraLuaConfig = lib.mkBefore ''
