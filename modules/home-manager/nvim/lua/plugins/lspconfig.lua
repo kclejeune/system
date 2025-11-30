@@ -149,16 +149,16 @@ return {
                         -- make lazydev completions top priority (see `:h blink.cmp`)
                         score_offset = 100,
                     },
-                    -- env = {
-                    --     name = "Env",
-                    --     module = "blink-cmp-env",
-                    --     --- @type blink-cmp-env.Options
-                    --     opts = {
-                    --         item_kind = require("blink.cmp.types").CompletionItemKind.Variable,
-                    --         show_braces = true,
-                    --         show_documentation_window = true,
-                    --     },
-                    -- },
+                    env = {
+                        name = "Env",
+                        module = "blink-cmp-env",
+                        --- @type blink-cmp-env.Options
+                        opts = {
+                            item_kind = require("blink.cmp.types").CompletionItemKind.Variable,
+                            show_braces = true,
+                            show_documentation_window = true,
+                        },
+                    },
                     conventional_commits = {
                         name = "Conventional Commits",
                         module = "blink-cmp-conventional-commits",

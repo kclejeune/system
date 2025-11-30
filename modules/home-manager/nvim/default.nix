@@ -154,7 +154,7 @@ in {
         lazygit-nvim
         lazydev-nvim
         blink-cmp
-        # blink-cmp-env
+        blink-cmp-env
         blink-cmp-conventional-commits
         tiny-inline-diagnostic-nvim
         plenary-nvim
