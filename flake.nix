@@ -228,7 +228,7 @@
           stable = inputs.stable.legacyPackages.${system};
           determinate-nixd = inputs.determinate.packages.${system}.default;
           nix = inputs.determinate.inputs.nix.packages.${system}.default;
-          # nh = inputs.nh.packages.${system}.default;
+          nh = inputs.nh.packages.${system}.default;
         };
         checks = lib.mergeAttrsList [
           # home-manager checks; add _home suffix to original config to avoid nixos coflict

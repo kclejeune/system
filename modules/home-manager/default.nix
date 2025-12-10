@@ -138,7 +138,7 @@
             ]
         ))
       ]
-      ++ lib.optionals config.nix.enable [config.nix.package]
+      ++ lib.optionals (config.nix.package != null) [config.nix.package]
       ++ lib.optionals pkgs.stdenvNoCC.isDarwin [iproute2mac]
       ++ lib.optionals pkgs.stdenvNoCC.isLinux [systemctl-tui lazyjournal];
   };
