@@ -105,10 +105,10 @@ return {
                 "neovim/nvim-lspconfig",
                 dir = require("lazy-nix-helper").get_plugin_path("nvim-lspconfig"),
             },
-            -- {
-            --     "bydlw98/blink-cmp-env",
-            --     dir = require("lazy-nix-helper").get_plugin_path("blink-cmp-env"),
-            -- },
+            {
+                "bydlw98/blink-cmp-env",
+                dir = require("lazy-nix-helper").get_plugin_path("blink-cmp-env"),
+            },
             {
                 "disrupted/blink-cmp-conventional-commits",
                 dir = require("lazy-nix-helper").get_plugin_path("blink-cmp-conventional-commits"),
@@ -136,7 +136,8 @@ return {
             signature = {
                 enabled = true,
                 trigger = {
-                    show_on_insert_or_trigger_character = true,
+                    show_on_insert = true,
+                    show_on_insert_on_trigger_character = true,
                 },
             },
             sources = {

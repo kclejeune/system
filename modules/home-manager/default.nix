@@ -41,6 +41,7 @@
         argocd
         asciidoctor
         basedpyright
+        bento
         bfs
         btop
         cacert
@@ -116,6 +117,7 @@
         shellcheck
         sig
         skopeo
+        ssh-to-age
         sshpass
         stylua
         tree
