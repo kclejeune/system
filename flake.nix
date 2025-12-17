@@ -224,6 +224,7 @@
         overlayAttrs = {
           inherit (inputs.stable.legacyPackages.${system}) teleport_16;
 
+          sysdo = pkgs.callPackage ./pkgs/sysdo/package.nix {};
           cb = pkgs.callPackage ./pkgs/cb/package.nix {};
           stable = inputs.stable.legacyPackages.${system};
           determinate-nixd = inputs.determinate.packages.${system}.default;
@@ -243,7 +244,7 @@
         ];
         legacyPackages = pkgs;
         packages = {
-          inherit (pkgs) cb;
+          inherit (pkgs) cb sysdo;
         };
         treefmt = {
           programs = {
