@@ -1,5 +1,15 @@
 {pkgs, ...}: {
-  home.packages = [pkgs.github-cli pkgs.git-crypt pkgs.transcrypt pkgs.git-subrepo];
+  home.packages = builtins.attrValues {
+    inherit
+      (pkgs)
+      github-cli
+      git-subrepo
+      git-get
+      git-trim
+      git-who
+      git-my
+      ;
+  };
   programs.git = {
     enable = true;
     settings = {
