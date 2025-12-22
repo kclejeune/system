@@ -77,6 +77,7 @@ end
 vim.cmd("autocmd BufWritePre * :lua vim.fn.stripTrailingWhitespace()")
 
 vim.keymap.set({ "n", "v" }, "<leader>y", '"+y', { desc = "Yank to clipboard" })
+vim.keymap.set({ "n", "v" }, "<leader>d", '"+d', { desc = "Cut to clipboard" })
 vim.keymap.set({ "n" }, "j", "gj", {})
 vim.keymap.set({ "n" }, "k", "gk", {})
 

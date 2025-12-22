@@ -37,7 +37,19 @@ return {
             end,
         },
         {
+            "<leader>ff",
+            function()
+                return require("fzf-lua").files()
+            end,
+        },
+        {
             "<C-g>",
+            function()
+                return require("fzf-lua").live_grep_native({ resume = true })
+            end,
+        },
+        {
+            "<leader>fg",
             function()
                 return require("fzf-lua").live_grep_native({ resume = true })
             end,

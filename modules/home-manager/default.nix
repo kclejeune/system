@@ -48,8 +48,8 @@
         cachix
         cb
         cirrus-cli
+        codespell
         coreutils-full
-        dust
         curl
         curlie
         d2
@@ -58,6 +58,7 @@
         dix
         dotenvx
         doxx
+        dust
         fd
         ffmpeg
         findutils
@@ -69,6 +70,7 @@
         gawk
         gdu
         git-absorb
+        gotools
         gnugrep
         gnupg
         gnused
@@ -104,6 +106,7 @@
         ouch
         parallel
         pre-commit
+        prettier
         process-compose
         procps
         pv
@@ -112,6 +115,7 @@
         restic
         rsync
         ruff
+        rustfmt
         rustscan
         sd
         shellcheck
@@ -142,7 +146,10 @@
       ]
       ++ lib.optionals (config.nix.package != null) [config.nix.package]
       ++ lib.optionals pkgs.stdenvNoCC.isDarwin [iproute2mac]
-      ++ lib.optionals pkgs.stdenvNoCC.isLinux [systemctl-tui lazyjournal];
+      ++ lib.optionals pkgs.stdenvNoCC.isLinux [
+        systemctl-tui
+        lazyjournal
+      ];
   };
 
   fonts.fontconfig = {

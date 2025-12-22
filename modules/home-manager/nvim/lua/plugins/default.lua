@@ -55,7 +55,7 @@ return {
             },
             {
                 -- Customize or remove this keymap to your liking
-                "<leader>f",
+                "<leader>fb",
                 function()
                     require("conform").format({ async = true })
                 end,
@@ -71,11 +71,12 @@ return {
                 lua = { "stylua" },
                 -- Conform will run multiple formatters sequentially
                 go = { "goimports", "gofmt" },
-                nix = { "nixfmt" },
+                nix = { "alejandra", "nixfmt", stop_after_first = true },
                 -- You can also customize some of the format options for the filetype
-                rust = { "rustfmt", lsp_format = "fallback" },
-                javascript = { "prettierd", "prettier", stop_after_first = true },
-                typescript = { "prettierd", "prettier", stop_after_first = true },
+                rust = { "rustfmt", lsp_format = "fallback", stop_after_first = true },
+                javascript = { "prettier", stop_after_first = true },
+                typescript = { "prettier", stop_after_first = true },
+                html = { "prettier", stop_after_first = true },
                 -- You can use a function here to determine the formatters dynamically
                 python = function(bufnr)
                     if require("conform").get_formatter_info("ruff_format", bufnr).available then
