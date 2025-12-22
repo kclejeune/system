@@ -30,6 +30,7 @@
       protols
       ruby-lsp
       ruff
+      rust-analyzer
       svelte-language-server
       systemd-language-server
       tailwindcss-language-server
@@ -131,6 +132,7 @@ in {
         (pkgs.vimPlugins)
         # basics
         comment-nvim
+        conform-nvim
         nvim-autopairs
         vim-fugitive
         vim-nix
