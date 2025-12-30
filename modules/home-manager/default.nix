@@ -104,8 +104,10 @@
         nmap
         nodejs_20
         openldap
+        openssl
         ouch
         parallel
+        pkg-config
         pre-commit
         prettier
         process-compose
