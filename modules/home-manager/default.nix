@@ -40,6 +40,7 @@
         alejandra
         argocd
         asciidoctor
+        attic-client
         basedpyright
         bento
         bfs
@@ -115,8 +116,8 @@
         restic
         rsync
         ruff
-        rustfmt
         rustscan
+        rustup
         sd
         shellcheck
         sig

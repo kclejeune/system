@@ -2,17 +2,30 @@
   description = "nix system configurations";
 
   nixConfig = {
-    extra-substituters = ["https://kclejeune.cachix.org" "https://install.determinate.systems"];
-    extra-trusted-public-keys = ["kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=" "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="];
+    extra-substituters = [
+      "https://cache.kclj.io/kclejeune"
+      "https://kclejeune.cachix.org"
+      "https://install.determinate.systems"
+    ];
+    extra-trusted-public-keys = [
+      "kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk="
+      "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
+      "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
+    ];
   };
 
   inputs = {
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-    stable.url = "github:nixos/nixpkgs/nixos-25.05";
+    stable.url = "github:nixos/nixpkgs/nixos-25.11";
     unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.follows = "unstable";
+
+    # NOTE: Don't override ANY inputs for attic - it requires specific versions
+    # with compatible C++ bindings. nixpkgs-unstable has nix 2.31+ which has
+    # breaking API changes (nix::openStore, nix::settings removed).
+    attic.url = "github:kclejeune/attic?ref=kcl/worker-impl";
 
     nh.url = "github:nix-community/nh";
     nh.inputs.nixpkgs.follows = "unstable";
@@ -223,6 +236,7 @@
         };
         overlayAttrs = {
           inherit (inputs.stable.legacyPackages.${system}) teleport_16;
+          inherit (inputs.attic.packages.${system}) attic attic-client attic-server;
 
           sysdo = pkgs.callPackage ./pkgs/sysdo/package.nix {};
           cb = pkgs.callPackage ./pkgs/cb/package.nix {};

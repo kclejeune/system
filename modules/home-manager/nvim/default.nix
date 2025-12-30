@@ -30,7 +30,7 @@
       protols
       ruby-lsp
       ruff
-      rust-analyzer
+      rustup
       svelte-language-server
       systemd-language-server
       tailwindcss-language-server
