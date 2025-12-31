@@ -183,9 +183,11 @@ run = 'move-node-to-workspace T'
 if.app-id = 'net.kovidgoyal.kitty'
 run = 'move-node-to-workspace T'
 
+# Ghostty: tabs appear as separate windows to aerospace, causing phantom tiles.
+# No automatic workspace assignment - must be managed manually.
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'
-run = ['layout floating', 'move-node-to-workspace T']
+run = 'move-node-to-workspace T'
 
 # mnemonics B - browsers
 [[on-window-detected]]

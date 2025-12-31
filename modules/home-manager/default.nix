@@ -40,7 +40,7 @@
         alejandra
         argocd
         asciidoctor
-        attic-client
+        attic
         basedpyright
         bento
         bfs

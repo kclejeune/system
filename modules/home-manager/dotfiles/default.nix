@@ -3,17 +3,17 @@
   pkgs,
   lib,
   ...
-}: {
+}: let
+  dotfilesPath = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager/dotfiles";
+in {
   home.file = {
     hammerspoon = lib.mkIf pkgs.stdenvNoCC.isDarwin {
-      source = ./hammerspoon;
+      source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/hammerspoon";
       target = ".hammerspoon";
-      recursive = true;
     };
     raycast = lib.mkIf pkgs.stdenvNoCC.isDarwin {
-      source = ./raycast;
+      source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/raycast";
       target = ".local/bin/raycast";
-      recursive = true;
     };
     zfunc = {
       source = ./zfunc;
@@ -32,8 +32,9 @@
     enable = true;
     configFile = {
       aerospace = lib.mkIf pkgs.stdenvNoCC.isDarwin {
-        source = ./aerospace;
+        # source = ./aerospace;
         recursive = true;
+        source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/aerospace";
       };
       ghostty = {
         source = ./ghostty;
@@ -45,8 +46,9 @@
         '';
       };
       kitty = {
-        source = ./kitty;
-        recursive = true;
+        # source = ./kitty;
+        # recursive = true;
+        source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/kitty";
       };
       fd = {
         source = ./fd;

@@ -154,7 +154,7 @@ def bootstrap(
         typer.secho("missing configuration", fg=Colors.ERROR.value)
     elif cfg == FlakeOutputs.NIXOS:
         typer.secho(
-            "boostrap does not apply to nixos systems.",
+            "bootstrap does not apply to nixos systems.",
             fg=Colors.ERROR.value,
         )
         raise typer.Abort()
