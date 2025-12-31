@@ -1,4 +1,6 @@
 env:
+  ATTIC_AUTH_TOKEN: ENCRYPTED[83db2a3bb5f148a05d8f0eb472ab13ac80a25118b6e7d2cfaa4b187db1a916c9c4b4faacc5e292a9207a62c7b9feffb3]
+  ATTIC_USER: kclejeune
   CACHIX_AUTH_TOKEN: ENCRYPTED[!f0f7fdb6a0c000065b7755062731ff7916cee8f510c95478d629e76a2c03604cfe46fe2ec4e74a4128ad0a0aea6d57e7!]
   CACHIX_USER: kclejeune
   CIRRUS_SHELL: bash -il
@@ -8,19 +10,23 @@ env:
   NIX_INSTALLER_NO_CONFIRM: "true"
   NIX_INSTALLER_TAG: "v3.11.2"
   NIX_INSTALLER_EXTRA_CONF: |
-    access-tokens = github.com=${GITHUB_TOKEN}
-    extra-substituters = https://kclejeune.cachix.org
-    extra-trusted-public-keys = kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=
+    access-tokens = github.com=${GITHUB_TOKEN} cache.kclj.io=${ATTIC_AUTH_TOKEN}
+    extra-substituters = https://cache.kclj.io/kclejeune https://kclejeune.cachix.org
+    extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=
     trusted-users = root admin @sudo @wheel
 
 build_template: &BUILD_TEMPLATE
   name: build_${CIRRUS_OS}_${ARCH}
   only_if: $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH || $CIRRUS_TAG != "" || $CIRRUS_PR != "" || $CIRRUS_BUILD_SOURCE == ""
   timeout_in: 120m
-  configure_cachix_script:
-    - nix profile install --impure --accept-flake-config nixpkgs#cachix
+  configure_cache_script:
+    - nix profile install --impure --accept-flake-config .#attic .#cachix
+    - attic login worker https://cache.kclj.io $ATTIC_AUTH_TOKEN --set-default
+    - attic use $ATTIC_USER
     - cachix use $CACHIX_USER
-  flake_check_script: cachix watch-exec $CACHIX_USER -- nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --impure --show-trace --accept-flake-config
+  cachix_background_script: cachix watch-store $CACHIX_USER
+  attic_background_script: attic watch-store $ATTIC_USER
+  flake_check_script: nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --impure --show-trace --accept-flake-config
 
 build_darwin_task:
   macos_instance:
