@@ -28,7 +28,7 @@ build_template: &BUILD_TEMPLATE
     - attic login worker https://cache.kclj.io $ATTIC_AUTH_TOKEN --set-default
     - attic use $ATTIC_USER
   attic_background_script: attic watch-store $ATTIC_USER
-  flake_check_script: nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --verbose --impure --show-trace --accept-flake-config
+  flake_check_script: nix flake check -j auto --system ${ARCH//arm/aarch}-${CIRRUS_OS} --impure --show-trace --accept-flake-config
 
 build_darwin_task:
   macos_instance:
