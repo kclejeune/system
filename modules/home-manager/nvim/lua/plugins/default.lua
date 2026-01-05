@@ -86,10 +86,7 @@ return {
                     end
                 end,
                 -- Use the "*" filetype to run formatters on all filetypes.
-                ["*"] = { "codespell" },
-                -- Use the "_" filetype to run formatters on filetypes that don't
-                -- have other formatters configured.
-                ["_"] = { "trim_whitespace" },
+                ["*"] = { "trim_whitespace" },
             },
             -- Set this to change the default values when calling conform.format()
             -- This will also affect the default values for format_on_save/format_after_save
