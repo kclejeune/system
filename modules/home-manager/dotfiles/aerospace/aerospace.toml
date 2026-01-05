@@ -343,6 +343,23 @@ run = 'move-node-to-workspace Z'
 if.app-id = 'com.jetbrains.jbr.java'
 run = 'layout floating'
 
+# these window seem to disappear and cause confusing tiling behavior
+[[on-window-detected]]
+if.app-id = 'com.cyberark.CyberArkEPMUIAgent'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.LocalAuthentication.UIAgent'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.okta.mobile'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.jamf.selfserviceplus'
+run = 'layout floating'
+
 [workspace-to-monitor-force-assignment]
 B = [1, 'secondary', 'main']
 I = [3, 'secondary', 'main']
