@@ -106,6 +106,7 @@
         openldap
         openssl
         ouch
+        oxlint
         parallel
         pkg-config
         pre-commit

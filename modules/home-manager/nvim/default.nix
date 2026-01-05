@@ -27,7 +27,9 @@
       lua-language-server
       nil
       nixd
-      protols
+      opencode
+      oxlint
+      protols # codespell:ignore
       ruby-lsp
       ruff
       rustup
@@ -39,6 +41,7 @@
       textlsp
       tooling-language-server
       tree-sitter
+      ty
       typescript-language-server
       vim-language-server
       vscode-langservers-extracted

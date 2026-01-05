@@ -8,14 +8,24 @@ return {
             enable = true,
 
             disable = function(lang, buf)
-                local max_filesize = 1024 * 1024
+                -- disable for languages with TS highlight issues
+                local disabled_langs = {
+                    csv = true,
+                }
+                if disabled_langs[lang] then
+                    return true
+                end
+
+                -- disable for large files (1MB) that'll choke the treesitter parser
+                local max_filesize = math.pow(1024, 2)
                 local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
                 if ok and stats and stats.size > max_filesize then
                     return true
                 end
+                return false
             end,
 
-            additional_vim_regex_highlighting = false,
+            additional_vim_regex_highlighting = { "csv" },
         },
         incremental_selection = {
             enable = true,
@@ -29,7 +39,6 @@ return {
         indent = {
             enable = true,
         },
-
         textobjects = {
             select = {
                 enable = true,
