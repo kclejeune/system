@@ -1,0 +1,26 @@
+[project]
+name = "sysdo"
+version = "0.1.0"
+description = "A system configuration management CLI tool for NixOS, nix-darwin, and home-manager"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "colorama>=0.4.6",
+    "shellingham>=1.5.4",
+    "typer>=0.21.0",
+]
+
+[project.scripts]
+sysdo = "sysdo.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sysdo"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.10",
+    "ty>=0.0.9",
+]
