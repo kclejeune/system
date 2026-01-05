@@ -6,6 +6,9 @@
 }: let
   dotfilesPath = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager/dotfiles";
 in {
+  home.sessionVariables = {
+    K9S_SKIN = "one-dark";
+  };
   home.file = {
     hammerspoon = lib.mkIf pkgs.stdenvNoCC.isDarwin {
       source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/hammerspoon";
@@ -38,6 +41,10 @@ in {
       };
       ghostty = {
         source = ./ghostty;
+        recursive = true;
+      };
+      k9s = {
+        source = "${pkgs.k9s}/share/k9s";
         recursive = true;
       };
       "ghostty/macos.conf" = lib.mkIf pkgs.stdenvNoCC.isDarwin {

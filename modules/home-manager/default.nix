@@ -179,7 +179,12 @@
     btop.enable = true;
     htop.enable = true;
     jq.enable = true;
-    k9s.enable = true;
+    k9s = {
+      enable = true;
+      settings = {
+        refreshRate = 1;
+      };
+    };
     lazygit = {
       enable = true;
       settings = {
