@@ -57,7 +57,6 @@
         diffutils
         dive
         dix
-        dotenvx
         doxx
         dust
         fd
