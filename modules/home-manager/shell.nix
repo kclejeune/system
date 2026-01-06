@@ -25,6 +25,8 @@ in {
     };
     sessionPath = [
       "${homeDir}/.local/bin"
+      "${homeDir}/.rustup/bin"
+      "${homeDir}/.cargo/bin"
       "${homeDir}/.node/bin"
     ];
     shellAliases = {

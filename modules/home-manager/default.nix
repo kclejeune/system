@@ -40,6 +40,7 @@
         alejandra
         argocd
         asciidoctor
+        ast-grep
         attic
         basedpyright
         bento
