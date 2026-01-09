@@ -13,6 +13,8 @@
       awk-language-server
       basedpyright
       bash-language-server
+      clang-tools
+      clang
       claude-code
       cmake-language-server
       cuelsp
