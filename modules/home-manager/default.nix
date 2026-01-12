@@ -50,6 +50,9 @@
         cachix
         cb
         cirrus-cli
+        clang-tools
+        clang
+        cmake
         codespell
         coreutils-full
         curl
