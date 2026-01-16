@@ -105,6 +105,13 @@ return {
         },
     },
     config = function(_, opts)
+        vim.filetype.add({
+            extension = {
+                gotmpl = "gotmpl",
+                tmpl = "gotmpl",
+                tpl = "gotmpl",
+            },
+        })
         require("nvim-treesitter.configs").setup(opts)
     end,
     dependencies = {
