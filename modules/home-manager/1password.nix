@@ -3,10 +3,12 @@
   lib,
   pkgs,
   ...
-}: let
+}:
+let
   darwinSockPath = "${config.home.homeDirectory}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
   sockLink = ".1password/agent.sock";
-in {
+in
+{
   home.sessionVariables = {
     OP_PLUGIN_ALIASES_SOURCED = 1;
   };
@@ -31,9 +33,10 @@ in {
       key = null;
       format = "ssh";
       signer =
-        if pkgs.stdenvNoCC.isDarwin
-        then "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
-        else "${pkgs._1password-gui}/share/1password/op-ssh-sign";
+        if pkgs.stdenvNoCC.isDarwin then
+          "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+        else
+          "${pkgs._1password-gui}/share/1password/op-ssh-sign";
     };
   };
 }

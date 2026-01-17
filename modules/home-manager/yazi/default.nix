@@ -2,12 +2,12 @@
   pkgs,
   lib,
   ...
-}: {
+}:
+{
   programs.yazi = {
     enable = true;
     plugins = {
-      inherit
-        (pkgs.yaziPlugins)
+      inherit (pkgs.yaziPlugins)
         chmod
         diff
         full-border
@@ -25,7 +25,8 @@
         vcs-files
         ;
     };
-    extraPackages = with pkgs;
+    extraPackages =
+      with pkgs;
       [
         fd
         lazygit
@@ -33,7 +34,7 @@
         ripgrep
         rsync
       ]
-      ++ lib.optionals (pkgs.stdenvNoCC.isLinux) [util-linux];
+      ++ lib.optionals (pkgs.stdenvNoCC.isLinux) [ util-linux ];
     initLua = ./init.lua;
     theme = {
       mgr = {
@@ -94,7 +95,10 @@
     keymap = {
       mgr.prepend_keymap = [
         {
-          on = ["g" "r"];
+          on = [
+            "g"
+            "r"
+          ];
           run = "shell -- ya emit cd \"$(git rev-parse --show-toplevel)\"";
         }
         {
@@ -120,7 +124,7 @@
           desc = "Jump to char";
         }
         {
-          on = ["C"];
+          on = [ "C" ];
           run = "plugin ouch zst";
           desc = "Compress with ouch";
         }
@@ -145,7 +149,7 @@
           desc = "Paste into the hovered directory or CWD";
         }
         {
-          on = ["R"];
+          on = [ "R" ];
           run = "plugin rsync";
           desc = "Copy files using rsync";
         }

@@ -2,7 +2,8 @@
   lib,
   pkgs,
   ...
-}: {
+}:
+{
   targets.genericLinux.enable = pkgs.stdenvNoCC.isLinux;
   xdg.mime.enable = pkgs.stdenvNoCC.isLinux;
 
@@ -32,7 +33,9 @@
   };
 
   dconf.settings = lib.mkIf pkgs.stdenvNoCC.isLinux {
-    "org/gnome/desktop/datetime" = {automatic-timezone = true;};
+    "org/gnome/desktop/datetime" = {
+      automatic-timezone = true;
+    };
     "org/gnome/desktop/peripherals/keyboard" = {
       delay = "uint32 304";
       repeat-interval = "uint32 13";
@@ -40,6 +43,8 @@
     "org/gnome/desktop/peripherals/touchpad" = {
       two-finger-scrolling-enabled = true;
     };
-    "org/gnome/desktop/wm/keybindings" = {close = ["<Alt>w"];};
+    "org/gnome/desktop/wm/keybindings" = {
+      close = [ "<Alt>w" ];
+    };
   };
 }

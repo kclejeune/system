@@ -3,7 +3,8 @@
   config,
   pkgs,
   ...
-}: {
+}:
+{
   imports = [
     inputs.nix-index-database.homeModules.nix-index
     ./bat.nix
@@ -34,7 +35,8 @@
     stateVersion = "25.05";
 
     # define package definitions for current user environment
-    packages = with pkgs;
+    packages =
+      with pkgs;
       [
         age
         alejandra
@@ -102,7 +104,8 @@
         nix-output-monitor
         nix-tree
         nixd
-        nixfmt-rfc-style
+        nixfmt
+        nixfmt-tree
         nixpacks
         nmap
         nodejs_20
@@ -140,19 +143,18 @@
         zoxide
         # python with default packages
         (python3.withPackages (
-          ps:
-            with ps; [
-              httpx
-              matplotlib
-              networkx
-              numpy
-              polars
-              scipy
-            ]
+          ps: with ps; [
+            httpx
+            matplotlib
+            networkx
+            numpy
+            polars
+            scipy
+          ]
         ))
       ]
-      ++ lib.optionals (config.nix.package != null) [config.nix.package]
-      ++ lib.optionals pkgs.stdenvNoCC.isDarwin [iproute2mac]
+      ++ lib.optionals (config.nix.package != null) [ config.nix.package ]
+      ++ lib.optionals pkgs.stdenvNoCC.isDarwin [ iproute2mac ]
       ++ lib.optionals pkgs.stdenvNoCC.isLinux [
         systemctl-tui
         lazyjournal

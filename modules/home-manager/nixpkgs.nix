@@ -3,7 +3,8 @@
   config,
   lib,
   ...
-}: {
+}:
+{
   nix = {
     gc.automatic = false;
     registry = {

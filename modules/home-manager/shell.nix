@@ -3,10 +3,12 @@
   lib,
   pkgs,
   ...
-}: let
+}:
+let
   zshCustomPrefix = "oh-my-zsh";
   homeDir = config.home.homeDirectory;
-in {
+in
+{
   home = {
     preferXdgDirectories = true;
     sessionVariables = {
@@ -40,41 +42,43 @@ in {
     enable = true;
     package = pkgs.atuin;
     daemon.enable = false;
-    flags = [];
+    flags = [ ];
   };
   # configure zsh custom plugin directory
-  xdg = let
-    mkZshPlugin = {
-      pkg,
-      plugin ? pkg.pname,
-    }: {
-      "${zshCustomPrefix}/plugins/${plugin}" = {
-        source = "${pkg.src}";
-        recursive = true;
-      };
+  xdg =
+    let
+      mkZshPlugin =
+        {
+          pkg,
+          plugin ? pkg.pname,
+        }:
+        {
+          "${zshCustomPrefix}/plugins/${plugin}" = {
+            source = "${pkg.src}";
+            recursive = true;
+          };
+        };
+    in
+    {
+      enable = true;
+      dataFile = lib.mergeAttrsList [
+        (mkZshPlugin { pkg = pkgs.zsh-autopair; })
+        (mkZshPlugin { pkg = pkgs.zsh-completions; })
+        (mkZshPlugin { pkg = pkgs.zsh-autosuggestions; })
+        (mkZshPlugin {
+          pkg = pkgs.zsh-fast-syntax-highlighting;
+          plugin = "fast-syntax-highlighting";
+        })
+        (mkZshPlugin { pkg = pkgs.zsh-history-substring-search; })
+      ];
     };
-  in {
-    enable = true;
-    dataFile = lib.mergeAttrsList [
-      (mkZshPlugin {pkg = pkgs.zsh-autopair;})
-      (mkZshPlugin {pkg = pkgs.zsh-completions;})
-      (mkZshPlugin {pkg = pkgs.zsh-autosuggestions;})
-      (mkZshPlugin {
-        pkg = pkgs.zsh-fast-syntax-highlighting;
-        plugin = "fast-syntax-highlighting";
-      })
-      (mkZshPlugin {pkg = pkgs.zsh-history-substring-search;})
-    ];
-  };
   programs.zsh = {
     enable = true;
     autocd = true;
     dotDir = "${config.xdg.configHome}/zsh";
-    sessionVariables =
-      config.home.sessionVariables
-      // {
-        ZSH_CUSTOM = "${config.xdg.dataHome}/${zshCustomPrefix}";
-      };
+    sessionVariables = config.home.sessionVariables // {
+      ZSH_CUSTOM = "${config.xdg.dataHome}/${zshCustomPrefix}";
+    };
     initContent = ''
       unset RPS1
     '';
@@ -104,7 +108,7 @@ in {
 
   programs.bash = {
     enable = true;
-    sessionVariables = config.home.sessionVariables // {};
+    sessionVariables = config.home.sessionVariables // { };
     initExtra = ''
       eval "$(mise activate bash)"
     '';

@@ -1,8 +1,9 @@
-{...}: {
+{ ... }:
+{
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
-    includes = ["conf.d/*"];
+    includes = [ "conf.d/*" ];
     matchBlocks = {
       "ssh.github.com" = {
         hostname = "ssh.github.com";

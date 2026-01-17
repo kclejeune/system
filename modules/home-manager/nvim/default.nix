@@ -3,10 +3,10 @@
   pkgs,
   lib,
   ...
-}: let
+}:
+let
   extraPackages = builtins.attrValues {
-    inherit
-      (pkgs)
+    inherit (pkgs)
       angular-language-server
       astro-language-server
       autotools-language-server
@@ -82,13 +82,15 @@
     };
     meta.homepage = "https://github.com/NotAShelf/direnv.nvim";
   };
-  sanitizePluginName = input: let
-    name = lib.strings.getName input;
-    vimplugin_removed = lib.strings.removePrefix "vimplugin-" name;
-    luajit_removed = lib.strings.removePrefix "luajit2.1-" vimplugin_removed;
-    lua5_1_removed = lib.strings.removePrefix "lua5.1-" luajit_removed;
-    result = lib.strings.removeSuffix "-scm" lua5_1_removed;
-  in
+  sanitizePluginName =
+    input:
+    let
+      name = lib.strings.getName input;
+      vimplugin_removed = lib.strings.removePrefix "vimplugin-" name;
+      luajit_removed = lib.strings.removePrefix "luajit2.1-" vimplugin_removed;
+      lua5_1_removed = lib.strings.removePrefix "lua5.1-" luajit_removed;
+      result = lib.strings.removeSuffix "-scm" lua5_1_removed;
+    in
     result;
 
   nvim-treesitter = pkgs.vimPlugins.nvim-treesitter.withAllGrammars;
@@ -96,12 +98,13 @@
     name = "nvim-treesitter-grammars";
     paths = nvim-treesitter.dependencies;
   };
-  pluginList = plugins:
+  pluginList =
+    plugins:
     lib.strings.concatMapStrings (
       plugin: "  [\"${sanitizePluginName plugin.name}\"] = \"${plugin.outPath}\",\n"
-    )
-    plugins;
-in {
+    ) plugins;
+in
+{
   home.packages = extraPackages;
   xdg.configFile = {
     "nvim/lua" = {
@@ -132,9 +135,13 @@ in {
 
     # share vim plugins since nothing is specific to nvim
     plugins = lib.attrValues {
-      inherit lazy-nix-helper-nvim claudecode-nvim direnv-nvim nvim-treesitter;
       inherit
-        (pkgs.vimPlugins)
+        lazy-nix-helper-nvim
+        claudecode-nvim
+        direnv-nvim
+        nvim-treesitter
+        ;
+      inherit (pkgs.vimPlugins)
         # basics
         comment-nvim
         conform-nvim

@@ -2,12 +2,22 @@
   config,
   pkgs,
   ...
-}: {
+}:
+{
   # bundles essential nixos modules
-  imports = [./keybase.nix ../common.nix];
+  imports = [
+    ./keybase.nix
+    ../common.nix
+  ];
 
   nix.settings = {
-    extra-trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel"];
+    extra-trusted-users = [
+      "${config.user.name}"
+      "@admin"
+      "@root"
+      "@sudo"
+      "@wheel"
+    ];
     keep-outputs = true;
     keep-derivations = true;
   };
@@ -20,9 +30,17 @@
     dataDir = config.user.home;
   };
 
-  environment.systemPackages = with pkgs; [vscode brave gnome-tweaks];
+  environment.systemPackages = with pkgs; [
+    vscode
+    brave
+    gnome-tweaks
+  ];
 
-  hm = {...}: {imports = [../home-manager/gnome.nix];};
+  hm =
+    { ... }:
+    {
+      imports = [ ../home-manager/gnome.nix ];
+    };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users = {
@@ -31,7 +49,11 @@
     users = {
       "${config.user.name}" = {
         isNormalUser = true;
-        extraGroups = ["sudo" "wheel" "networkmanager"]; # Enable ‘sudo’ for the user.
+        extraGroups = [
+          "sudo"
+          "wheel"
+          "networkmanager"
+        ]; # Enable ‘sudo’ for the user.
         hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
       };
     };

@@ -1,9 +1,11 @@
 # This file provides backward compatibility to nix < 2.4 clients
-{system ? builtins.currentSystem}: let
+{
+  system ? builtins.currentSystem,
+}:
+let
   lock = builtins.fromJSON (builtins.readFile ./flake.lock);
 
-  inherit
-    (lock.nodes.flake-compat.locked)
+  inherit (lock.nodes.flake-compat.locked)
     owner
     repo
     rev
@@ -20,4 +22,4 @@
     src = ./.;
   };
 in
-  flake.defaultNix
+flake.defaultNix

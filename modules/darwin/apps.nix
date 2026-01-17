@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   homebrew = {
     casks = [
       "1password"
@@ -14,6 +15,6 @@
       "signal"
       "slack"
     ];
-    masApps = {};
+    masApps = { };
   };
 }

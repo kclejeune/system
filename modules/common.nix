@@ -4,7 +4,8 @@
   config,
   pkgs,
   ...
-}: {
+}:
+{
   imports = [
     ./primaryUser.nix
     ./nixpkgs.nix
@@ -18,11 +19,7 @@
 
   user = {
     description = "Kennan LeJeune";
-    home = "${
-      if pkgs.stdenvNoCC.isDarwin
-      then "/Users"
-      else "/home"
-    }/${config.user.name}";
+    home = "${if pkgs.stdenvNoCC.isDarwin then "/Users" else "/home"}/${config.user.name}";
     shell = pkgs.zsh;
   };
 
@@ -36,7 +33,7 @@
 
   # let nix manage home-manager profiles and use global nixpkgs
   home-manager = {
-    extraSpecialArgs = {inherit self inputs;};
+    extraSpecialArgs = { inherit self inputs; };
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";
@@ -67,10 +64,14 @@
       nixpkgs.source = "${inputs.nixpkgs}";
     };
     # list of acceptable shells in /etc/shells
-    shells = with pkgs; [bash zsh fish];
+    shells = with pkgs; [
+      bash
+      zsh
+      fish
+    ];
   };
 
   fonts = {
-    packages = with pkgs; [jetbrains-mono];
+    packages = with pkgs; [ jetbrains-mono ];
   };
 }

@@ -3,10 +3,11 @@
   lib,
   config,
   ...
-}: {
+}:
+{
   nixpkgs = {
     config = import ./config.nix;
-    overlays = [self.overlays.default];
+    overlays = [ self.overlays.default ];
   };
 
   home-manager.sharedModules = [
@@ -16,7 +17,7 @@
     }
   ];
   environment.etc."determinate/config.json".text = builtins.toJSON {
-    authentication.additionalNetrcSources = ["/etc/determinate/netrc"];
+    authentication.additionalNetrcSources = [ "/etc/determinate/netrc" ];
     garbageCollector.strategy = "automatic";
     builder = {
       state = "enabled";

@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   programs.nushell = {
     enable = true;
   };

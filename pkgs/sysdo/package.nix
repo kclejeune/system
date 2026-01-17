@@ -25,7 +25,7 @@ python3Packages.buildPythonPackage {
     description = "A system configuration management CLI tool for NixOS, nix-darwin, and home-manager";
     homepage = "https://github.com/kclejeune/system";
     license = licenses.mit;
-    maintainers = [];
+    maintainers = [ ];
     platforms = platforms.unix;
     mainProgram = "sysdo";
   };

@@ -3,9 +3,11 @@
   pkgs,
   lib,
   ...
-}: let
+}:
+let
   dotfilesPath = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager/dotfiles";
-in {
+in
+{
   home.sessionVariables = {
     K9S_SKIN = "one-dark";
   };

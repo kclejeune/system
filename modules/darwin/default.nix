@@ -3,7 +3,8 @@
   config,
   pkgs,
   ...
-}: {
+}:
+{
   imports = [
     ../common.nix
     ./brew.nix
@@ -15,16 +16,26 @@
   nix.enable = false;
   nix.package = pkgs.nix;
   determinate-nix.customSettings = {
-    extra-trusted-users = ["${config.user.name}" "@admin" "@root" "@sudo" "@wheel" "@staff"];
+    extra-trusted-users = [
+      "${config.user.name}"
+      "@admin"
+      "@root"
+      "@sudo"
+      "@wheel"
+      "@staff"
+    ];
     keep-outputs = true;
     keep-derivations = true;
     eval-cores = 0;
     extra-experimental-features = "external-builders nix-command flakes";
     external-builders = builtins.toJSON [
       {
-        systems = ["aarch64-linux" "x86_64-linux"];
+        systems = [
+          "aarch64-linux"
+          "x86_64-linux"
+        ];
         program = "/usr/local/bin/determinate-nixd";
-        args = ["builder"];
+        args = [ "builder" ];
       }
     ];
   };

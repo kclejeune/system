@@ -1,7 +1,7 @@
 return {
     settings = {
         formatting = {
-            command = "alejandra",
+            command = "nixfmt",
         },
         nix = {
             binary = "nix",

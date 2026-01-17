@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   system.defaults = {
     # login window settings
     loginwindow = {
