@@ -71,7 +71,7 @@ return {
                 lua = { "stylua" },
                 -- Conform will run multiple formatters sequentially
                 go = { "goimports", "gofmt" },
-                nix = { "nixfmt", "alejandra", stop_after_first = true },
+                nix = { "nixfmt", "alejandra", lsp_format = "fallback", stop_after_first = true },
                 -- You can also customize some of the format options for the filetype
                 rust = { "rustfmt", lsp_format = "fallback", stop_after_first = true },
                 javascript = { "prettier", stop_after_first = true },
