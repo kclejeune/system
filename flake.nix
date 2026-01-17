@@ -251,6 +251,7 @@
               determinate-nixd = inputs.determinate.packages.${system}.default;
               nix = inputs.determinate.inputs.nix.packages.${system}.default;
               nh = inputs.nh.packages.${system}.default;
+              prek = pkgs.callPackage ./pkgs/prek/package.nix { };
             };
             checks = lib.mergeAttrsList [
               # home-manager checks; add _home suffix to original config to avoid nixos coflict
@@ -302,7 +303,11 @@
             };
             pre-commit = {
               settings.package = pkgs.prek;
-              settings.hooks.treefmt.enable = true;
+              settings.hooks.treefmt = {
+                enable = true;
+                pass_filenames = false;
+                settings.no-cache = false;
+              };
             };
             devShells = {
               default = pkgs.mkShell {
