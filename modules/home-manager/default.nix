@@ -112,7 +112,7 @@
         oxlint
         parallel
         pkg-config
-        pre-commit
+        prek
         prettier
         process-compose
         procps

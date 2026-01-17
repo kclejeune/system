@@ -32,6 +32,7 @@ in {
     shellAliases = {
       neofetch = "fastfetch";
       ncdu = "gdu";
+      pre-commit = "prek";
     };
   };
 

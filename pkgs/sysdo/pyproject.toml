@@ -6,7 +6,7 @@ requires-python = ">=3.11,<3.14"
 dependencies = [
     "colorama>=0.4.6",
     "shellingham>=1.5.4",
-    "typer>=0.21.0",
+    "typer>=0.19.0",
 ]
 
 [project.scripts]

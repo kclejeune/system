@@ -39,6 +39,7 @@
 
     git-hooks.url = "github:cachix/git-hooks.nix";
     git-hooks.inputs.nixpkgs.follows = "nixpkgs";
+    git-hooks.inputs.flake-compat.follows = "flake-compat";
 
     nixGL.url = "github:nix-community/nixGL";
     nixGL.inputs.nixpkgs.follows = "nixpkgs";
@@ -295,6 +296,7 @@
           ];
         };
         pre-commit = {
+          settings.package = pkgs.prek;
           settings.hooks.treefmt.enable = true;
         };
         devShells = {
