@@ -15,7 +15,7 @@
 
   nix.enable = false;
   nix.package = pkgs.nix;
-  determinate-nix.customSettings = {
+  determinateNix.customSettings = {
     extra-trusted-users = [
       "${config.user.name}"
       "@admin"
@@ -28,16 +28,6 @@
     keep-derivations = true;
     eval-cores = 0;
     extra-experimental-features = "external-builders nix-command flakes";
-    external-builders = builtins.toJSON [
-      {
-        systems = [
-          "aarch64-linux"
-          "x86_64-linux"
-        ];
-        program = "/usr/local/bin/determinate-nixd";
-        args = [ "builder" ];
-      }
-    ];
   };
 
   hm.nix.registry = {
