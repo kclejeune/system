@@ -13,8 +13,6 @@ in
     preferXdgDirectories = true;
     sessionVariables = {
       GPG_TTY = "/dev/ttys000";
-      EDITOR = "nvim";
-      VISUAL = "nvim";
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
       NODE_PATH = "${homeDir}/.node";

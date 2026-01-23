@@ -127,6 +127,7 @@ in
     viAlias = true;
     vimAlias = true;
     vimdiffAlias = true;
+    defaultEditor = true;
 
     # nvim plugin providers
     withNodeJs = true;
