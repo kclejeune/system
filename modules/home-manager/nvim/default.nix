@@ -158,7 +158,6 @@ in
         vimtex
         nvim-lspconfig
         indent-blankline-nvim
-        nvim-treesitter-refactor
         nvim-treesitter-textobjects
         nvim-treesitter-context
         nvim-web-devicons

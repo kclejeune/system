@@ -78,31 +78,6 @@ return {
                 },
             },
         },
-        refactor = {
-            navigation = {
-                enable = true,
-                -- Assign keymaps to false to disable them, e.g. `goto_definition = false`.
-                keymaps = {
-                    goto_definition = "gnd",
-                    list_definitions = "gnD",
-                    list_definitions_toc = "gO",
-                    goto_next_usage = "<a-*>",
-                    goto_previous_usage = "<a-#>",
-                },
-            },
-            smart_rename = {
-                enable = true,
-                -- Assign keymaps to false to disable them, e.g. `smart_rename = false`.
-                keymaps = {
-                    smart_rename = "grr",
-                },
-            },
-            highlight_definitions = {
-                enable = true,
-                -- Set to false if you have an `updatetime` of ~100.
-                clear_on_cursor_move = true,
-            },
-        },
     },
     config = function(_, opts)
         vim.filetype.add({
@@ -115,10 +90,6 @@ return {
         require("nvim-treesitter.configs").setup(opts)
     end,
     dependencies = {
-        {
-            "nvim-treesitter/nvim-treesitter-refactor",
-            dir = require("lazy-nix-helper").get_plugin_path("nvim-treesitter-refactor"),
-        },
         {
             "nvim-treesitter/nvim-treesitter-textobjects",
             dir = require("lazy-nix-helper").get_plugin_path("nvim-treesitter-textobjects"),
