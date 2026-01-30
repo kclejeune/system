@@ -15,19 +15,26 @@
 
   nix.enable = false;
   nix.package = pkgs.nix;
-  determinateNix.customSettings = {
-    extra-trusted-users = [
-      "${config.user.name}"
-      "@admin"
-      "@root"
-      "@sudo"
-      "@wheel"
-      "@staff"
-    ];
-    keep-outputs = true;
-    keep-derivations = true;
-    eval-cores = 0;
-    extra-experimental-features = "external-builders nix-command flakes";
+  determinateNix = {
+    enable = true;
+    customSettings = {
+      extra-trusted-users = [
+        "${config.user.name}"
+        "@admin"
+        "@root"
+        "@sudo"
+        "@wheel"
+        "@staff"
+      ];
+      keep-outputs = true;
+      keep-derivations = true;
+      extra-experimental-features = "external-builders nix-command flakes";
+    };
+    determinateNixd = {
+      authentication.additionalNetrcSources = [ "/etc/nix/netrc" ];
+      garbageCollector.strategy = "automatic";
+      builder.state = "enabled";
+    };
   };
 
   hm.nix.registry = {
