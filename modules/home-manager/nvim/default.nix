@@ -180,7 +180,7 @@ in
       inherit (pkgs.stable.vimPlugins) lualine-nvim;
     };
 
-    extraLuaConfig = lib.mkBefore ''
+    initLua = lib.mkBefore ''
       local plugins = {
       ${pluginList config.programs.neovim.plugins}
       }
