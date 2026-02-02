@@ -2,6 +2,7 @@
   inputs,
   config,
   pkgs,
+  lib,
   ...
 }:
 {
@@ -35,6 +36,12 @@
       garbageCollector.strategy = "automatic";
       builder.state = "enabled";
     };
+  };
+
+  environment.variables = {
+    LIBRARY_PATH = lib.concatStringsSep ":" [
+      "${lib.removeSuffix "/bin" config.homebrew.brewPrefix}/lib"
+    ];
   };
 
   hm.nix.registry = {

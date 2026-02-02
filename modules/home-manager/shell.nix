@@ -15,19 +15,17 @@ in
       GPG_TTY = "/dev/ttys000";
       CLICOLOR = 1;
       LSCOLORS = "ExFxBxDxCxegedabagacad";
-      NODE_PATH = "${homeDir}/.node";
       LANG = "en_US.UTF-8";
       DEFAULT_USER = "${config.home.username}";
       LS_COLORS = "ExFxBxDxCxegedabagacad";
       TERM = "xterm-256color";
       MISE_ENV_FILE = ".env";
-      NH_HOST = "${config.home.username}@${pkgs.system}";
+      NH_HOST = "${config.home.username}@${pkgs.stdenvNoCC.hostPlatform.system}";
     };
     sessionPath = [
       "${homeDir}/.local/bin"
       "${homeDir}/.rustup/bin"
       "${homeDir}/.cargo/bin"
-      "${homeDir}/.node/bin"
     ];
     shellAliases = {
       neofetch = "fastfetch";

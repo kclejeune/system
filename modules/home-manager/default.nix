@@ -114,7 +114,6 @@
         ouch
         oxlint
         parallel
-        pkg-config
         prek
         prettier
         process-compose
