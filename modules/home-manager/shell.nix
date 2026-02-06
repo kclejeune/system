@@ -26,6 +26,7 @@ in
       "${homeDir}/.local/bin"
       "${homeDir}/.rustup/bin"
       "${homeDir}/.cargo/bin"
+      "${homeDir}/.krew/bin"
     ];
     shellAliases = {
       neofetch = "fastfetch";

@@ -90,6 +90,7 @@
         jnv
         kotlin
         kubectl
+        krew
         kubectx
         kubernetes-helm
         kustomize

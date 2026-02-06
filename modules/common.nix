@@ -11,6 +11,11 @@
     ./nixpkgs.nix
   ];
 
+  programs.bash = {
+    enable = true;
+    completion.enable = true;
+  };
+
   programs.zsh = {
     enable = true;
     enableCompletion = true;

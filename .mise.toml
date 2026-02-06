@@ -1,0 +1,5 @@
+[plugins]
+nix-env = "https://github.com/mise-plugins/mise-nix"
+
+[env]
+_.nix-env = true
