@@ -81,6 +81,10 @@ in
     '';
     oh-my-zsh = {
       enable = true;
+      # runs before initContent; allow ~/.local/bin for omz plugin init if needed
+      extraConfig = ''
+        export PATH="${homeDir}/.local/bin''${PATH:+:}''${PATH/~\/.local\/bin:/}"
+      '';
       plugins = [
         "1password"
         "argocd"
