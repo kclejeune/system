@@ -38,9 +38,14 @@
     };
   };
 
-  environment.variables = {
-    LIBRARY_PATH = lib.concatStringsSep ":" [
+  hm.home.sessionVariables = {
+    SDKROOT = "$(xcrun --show-sdk-path)";
+  };
+
+  hm.home.sessionSearchVariables = {
+    LIBRARY_PATH = [
       "${lib.removeSuffix "/bin" config.homebrew.brewPrefix}/lib"
+      "$(xcrun --show-sdk-path)"
     ];
   };
 
