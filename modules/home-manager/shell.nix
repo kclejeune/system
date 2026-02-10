@@ -7,6 +7,9 @@
 let
   zshCustomPrefix = "oh-my-zsh";
   homeDir = config.home.homeDirectory;
+  wtInstall = shell: ''
+    if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init ${shell})"; fi
+  '';
 in
 {
   home = {
@@ -32,6 +35,7 @@ in
       neofetch = "fastfetch";
       ncdu = "gdu";
       pre-commit = "prek";
+      lwt = "lazyworktree";
     };
   };
 
@@ -78,6 +82,7 @@ in
     };
     initContent = ''
       unset RPS1
+      ${wtInstall "zsh"}
     '';
     oh-my-zsh = {
       enable = true;
@@ -112,6 +117,7 @@ in
     sessionVariables = config.home.sessionVariables // { };
     initExtra = ''
       eval "$(mise activate bash)"
+      ${wtInstall "bash"}
     '';
   };
 }
