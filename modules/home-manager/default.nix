@@ -89,12 +89,13 @@
         jetbrains-mono
         jnv
         kotlin
-        kubectl
         krew
+        kubectl
         kubectx
         kubernetes-helm
         kustomize
         lazydocker
+        lazyworktree
         luajit
         mawk
         mise
