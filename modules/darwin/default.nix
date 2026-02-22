@@ -44,8 +44,16 @@
 
   hm.home.sessionSearchVariables = {
     LIBRARY_PATH = [
-      "${lib.removeSuffix "/bin" config.homebrew.brewPrefix}/lib"
-      "$(xcrun --show-sdk-path)"
+      "${config.homebrew.prefix}/lib"
+      "$SDKROOT/usr/lib"
+      "/usr/local/lib"
+      "/usr/lib"
+    ];
+    CPATH = [
+      "${config.homebrew.prefix}/include"
+      "$SDKROOT/usr/include"
+      "/usr/local/include"
+      "/usr/lib"
     ];
   };
 
