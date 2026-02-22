@@ -10,6 +10,10 @@ let
   wtInstall = shell: ''
     if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init ${shell})"; fi
   '';
+
+  slinkyInstall = shell: ''
+    if command -v slinky >/dev/null 2>&1; then eval "$(command slinky config hook ${shell})"; fi
+  '';
 in
 {
   home = {
@@ -83,6 +87,7 @@ in
     initContent = ''
       unset RPS1
       ${wtInstall "zsh"}
+      ${slinkyInstall "zsh"}
     '';
     oh-my-zsh = {
       enable = true;
@@ -95,11 +100,24 @@ in
         "argocd"
         "brew"
         "git"
+        "git-lfs"
+        "golang"
+        "jfrog"
+        "k9s"
         "kitty"
+        "kubectl"
+        "kubectx"
         "mise"
-        "poetry"
+        "mosh"
+        "rclone"
+        "ssh"
         "starship"
         "sudo"
+        "tailscale"
+        "task"
+        "terraform"
+        "ufw"
+        "uv"
         "zoxide"
 
         # order matters for these ones, probably
@@ -118,6 +136,7 @@ in
     initExtra = ''
       eval "$(mise activate bash)"
       ${wtInstall "bash"}
+      ${slinkyInstall "bash"}
     '';
   };
 }
