@@ -1,10 +1,10 @@
 {
   lib,
-  stdenv,
   fetchFromGitHub,
   rustPlatform,
   pkg-config,
   openssl,
+  perl,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -20,7 +20,10 @@ rustPlatform.buildRustPackage rec {
 
   cargoHash = "sha256-CG2TFLC+3sJqjmPaAF6bliURSvfmpicL1kTKNxv51hk=";
 
-  nativeBuildInputs = [ pkg-config ];
+  nativeBuildInputs = [
+    pkg-config
+    perl
+  ];
 
   buildInputs = [ openssl ];
 
