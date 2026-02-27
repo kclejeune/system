@@ -52,8 +52,8 @@
         cachix
         cb
         cirrus-cli
-        clang-tools
         clang
+        clang-tools
         cmake
         codespell
         coreutils-full
@@ -81,6 +81,8 @@
         gnupg
         gnused
         go-task
+        golangci-lint
+        goreleaser
         gotools
         grype
         helm-docs
@@ -115,6 +117,7 @@
         openldap
         openssl
         ouch
+        oxfmt
         oxlint
         parallel
         prek
