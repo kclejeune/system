@@ -247,6 +247,7 @@
 
               sysdo = pkgs.callPackage ./pkgs/sysdo/package.nix { };
               cb = pkgs.callPackage ./pkgs/cb/package.nix { };
+              fnox = pkgs.callPackage ./pkgs/fnox/package.nix { };
               stable = inputs.stable.legacyPackages.${system};
               determinate-nixd = inputs.determinate.packages.${system}.default;
               nix = inputs.determinate.inputs.nix.packages.${system}.default;

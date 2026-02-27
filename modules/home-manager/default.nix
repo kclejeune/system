@@ -72,15 +72,16 @@
         flamelens
         flawz
         flyctl
+        fnox
         fx
         gawk
         gdu
         git-absorb
-        gotools
         gnugrep
         gnupg
         gnused
         go-task
+        gotools
         grype
         helm-docs
         httpie
@@ -216,5 +217,6 @@
     ripgrep.enable = true;
     starship.enable = true;
     yt-dlp.enable = true;
+    yt-dlp.package = pkgs.stable.yt-dlp;
   };
 }
