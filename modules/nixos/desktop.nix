@@ -23,7 +23,10 @@
   hm =
     { ... }:
     {
-      imports = [ ../home-manager/gnome.nix ];
+      imports = [
+        ../home-manager/gnome.nix
+        ../home-manager/1password.nix
+      ];
     };
 
   # Define a user account. Don't forget to set a password with 'passwd'.

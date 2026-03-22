@@ -32,7 +32,6 @@
   hm = {
     imports = [
       ./home-manager
-      ./home-manager/1password.nix
     ];
   };
 
