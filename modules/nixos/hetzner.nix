@@ -30,6 +30,12 @@
   # Workaround for https://github.com/NixOS/nix/issues/8502
   services.logrotate.checkConfig = false;
 
+  # Limit nix to 1 core so builds don't starve the system on small VMs
+  nix.settings = {
+    max-jobs = 1;
+    cores = 1;
+  };
+
   # Networking via DHCP (Hetzner Cloud provides DHCPv4 and DHCPv6)
   networking.usePredictableInterfaceNames = lib.mkForce false;
   networking.useNetworkd = true;
