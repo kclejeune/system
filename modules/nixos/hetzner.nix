@@ -36,17 +36,63 @@
     cores = 1;
   };
 
-  # Networking via DHCP (Hetzner Cloud provides DHCPv4 and DHCPv6)
+  # Networking: DHCPv4 + static IPv6 (Hetzner doesn't provide DHCPv6 or RA)
   networking.usePredictableInterfaceNames = lib.mkForce false;
   networking.useNetworkd = true;
   systemd.network.networks."10-eth0" = {
     matchConfig.Name = "eth0";
     networkConfig = {
-      DHCP = "yes";
-      IPv6AcceptRA = true;
+      DHCP = "ipv4";
+      IPv6AcceptRA = false;
     };
     dhcpV4Config.UseDNS = true;
-    dhcpV6Config.UseDNS = true;
+  };
+
+  # Fetch IPv6 config from Hetzner metadata API at boot and apply via networkd drop-in
+  systemd.services.hetzner-ipv6 = {
+    description = "Configure IPv6 from Hetzner Cloud metadata";
+    wantedBy = [ "network-pre.target" ];
+    before = [ "systemd-networkd.service" ];
+    after = [ "network-pre.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    path = with pkgs; [
+      curl
+      jq
+      coreutils
+      gawk
+    ];
+    script = ''
+      set -euo pipefail
+      METADATA=$(curl -sf http://169.254.169.254/hetzner/v1/metadata)
+
+      # Parse IPv6 address and gateway from the YAML metadata
+      IPV6_ADDR=$(echo "$METADATA" | awk '/type: static/{found=1} found && /address:/{print $2; exit}')
+      IPV6_GW=$(echo "$METADATA" | awk '/type: static/{found=1} found && /gateway:/{print $2; exit}')
+      IPV6_DNS=$(echo "$METADATA" | awk '/type: static/{found=1} found && /dns_nameservers:/{dns=1; next} dns && /^ *-/{print $2; next} dns{exit}')
+
+      if [ -z "$IPV6_ADDR" ]; then
+        echo "No IPv6 address found in Hetzner metadata, skipping"
+        exit 0
+      fi
+
+      mkdir -p /etc/systemd/network/10-eth0.network.d
+      cat > /etc/systemd/network/10-eth0.network.d/ipv6.conf <<EOF
+      [Network]
+      Address=$IPV6_ADDR
+      DNS=$(echo "$IPV6_DNS" | head -1)
+      DNS=$(echo "$IPV6_DNS" | tail -1)
+
+      [Route]
+      Gateway=$IPV6_GW
+      Destination=::/0
+      EOF
+
+      # Remove leading whitespace from heredoc
+      sed -i 's/^[[:space:]]*//' /etc/systemd/network/10-eth0.network.d/ipv6.conf
+    '';
   };
 
   # Harden SSH for a public-facing server
