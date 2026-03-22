@@ -69,11 +69,6 @@
     logReversePathDrops = true;
     # Drop rather than reject to reduce information leakage
     rejectPackets = false;
-    # Rate-limit SSH via nftables (15 new connections per minute, burst of 5)
-    extraInputRules = ''
-      tcp dport 22 ct state new meter ssh-ratelimit { ip saddr limit rate 15/minute burst 5 packets } accept
-      tcp dport 22 ct state new drop
-    '';
   };
 
   # fail2ban

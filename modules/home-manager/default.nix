@@ -65,7 +65,7 @@
         doxx
         dust
         fd
-        ffmpeg-full
+        ffmpeg
         findutils
         flamegraph
         flamelens
