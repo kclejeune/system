@@ -38,6 +38,8 @@
     };
   };
 
+  hm.imports = [ ../home-manager/1password.nix ];
+
   hm.home.sessionVariables = {
     SDKROOT = "$(xcrun --show-sdk-path)";
   };

@@ -19,7 +19,6 @@
     ./tldr.nix
     ./tmux.nix
     ./yazi
-    ./gnome.nix
     ./nixpkgs.nix
   ];
 
@@ -66,7 +65,7 @@
         doxx
         dust
         fd
-        ffmpeg-full
+        ffmpeg
         findutils
         flamegraph
         flamelens

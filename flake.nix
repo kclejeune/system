@@ -196,7 +196,20 @@
                     ./modules/hardware/phil.nix
                     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
                   ];
-                  extraModules = [ ./profiles/personal ];
+                  extraModules = [
+                    ./modules/nixos/desktop.nix
+                    ./profiles/personal
+                  ];
+                };
+                gateway = mkNixosConfig {
+                  system = "x86_64-linux";
+                  hardwareModules = [
+                    ./modules/nixos/hetzner.nix
+                  ];
+                  extraModules = [
+                    ./modules/nixos/gateway.nix
+                    ./profiles/personal
+                  ];
                 };
               }
             ];
