@@ -36,7 +36,10 @@
     cores = 1;
   };
 
-  # Networking: DHCPv4 + static IPv6 (Hetzner doesn't provide DHCPv6 or RA)
+  # Networking: DHCPv4 + static IPv6 from metadata API
+  # Hetzner Cloud doesn't send Router Advertisements — the VM must configure
+  # IPv6 statically. The address/gateway are fetched from the metadata API at
+  # boot and written as a networkd drop-in before networkd starts.
   networking.usePredictableInterfaceNames = lib.mkForce false;
   networking.useNetworkd = true;
   systemd.network.networks."10-eth0" = {
@@ -48,7 +51,6 @@
     dhcpV4Config.UseDNS = true;
   };
 
-  # Fetch IPv6 config from Hetzner metadata API at boot and apply via networkd drop-in
   systemd.services.hetzner-ipv6 = {
     description = "Configure IPv6 from Hetzner Cloud metadata";
     wantedBy = [ "network-pre.target" ];
@@ -60,7 +62,6 @@
     };
     path = with pkgs; [
       curl
-      jq
       coreutils
       gawk
     ];
@@ -68,7 +69,6 @@
       set -euo pipefail
       METADATA=$(curl -sf http://169.254.169.254/hetzner/v1/metadata)
 
-      # Parse IPv6 address and gateway from the YAML metadata
       IPV6_ADDR=$(echo "$METADATA" | awk '/type: static/{found=1} found && /address:/{print $2; exit}')
       IPV6_GW=$(echo "$METADATA" | awk '/type: static/{found=1} found && /gateway:/{print $2; exit}')
       IPV6_DNS=$(echo "$METADATA" | awk '/type: static/{found=1} found && /dns_nameservers:/{dns=1; next} dns && /^ *-/{print $2; next} dns{exit}')
@@ -79,19 +79,17 @@
       fi
 
       mkdir -p /etc/systemd/network/10-eth0.network.d
-      cat > /etc/systemd/network/10-eth0.network.d/ipv6.conf <<EOF
-      [Network]
-      Address=$IPV6_ADDR
-      DNS=$(echo "$IPV6_DNS" | head -1)
-      DNS=$(echo "$IPV6_DNS" | tail -1)
-
-      [Route]
-      Gateway=$IPV6_GW
-      Destination=::/0
-      EOF
-
-      # Remove leading whitespace from heredoc
-      sed -i 's/^[[:space:]]*//' /etc/systemd/network/10-eth0.network.d/ipv6.conf
+      {
+        echo "[Network]"
+        echo "Address=$IPV6_ADDR"
+        echo "$IPV6_DNS" | while read -r dns; do
+          [ -n "$dns" ] && echo "DNS=$dns"
+        done
+        echo ""
+        echo "[Route]"
+        echo "Gateway=$IPV6_GW"
+        echo "Destination=::/0"
+      } > /etc/systemd/network/10-eth0.network.d/ipv6.conf
     '';
   };
 
@@ -150,7 +148,11 @@
   };
 
   # Tailscale
-  services.tailscale.enable = true;
+  services.tailscale = {
+    enable = true;
+    useRoutingFeatures = "both";
+    openFirewall = true;
+  };
 
   time.timeZone = "UTC";
 }
