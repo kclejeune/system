@@ -19,7 +19,6 @@
     ./tldr.nix
     ./tmux.nix
     ./yazi
-    ./gnome.nix
     ./nixpkgs.nix
   ];
 
