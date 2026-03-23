@@ -39,7 +39,6 @@
       [
         age
         alejandra
-        # argocd
         asciidoctor
         ast-grep
         attic
@@ -135,6 +134,7 @@
         shellcheck
         sig
         skopeo
+        sops
         ssh-to-age
         sshpass
         stylua

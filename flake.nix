@@ -52,6 +52,9 @@
 
     nix-index-database.url = "github:Mic92/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
+
+    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -207,6 +210,7 @@
                     ./modules/nixos/hetzner.nix
                   ];
                   extraModules = [
+                    inputs.sops-nix.nixosModules.sops
                     ./modules/nixos/gateway.nix
                     ./profiles/personal
                   ];
