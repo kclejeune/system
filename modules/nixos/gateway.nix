@@ -84,6 +84,7 @@ in
     settings = {
       theme = "auto";
       server.address = "tcp://127.0.0.1:${toString autheliaPort}/";
+      server.buffers.read = 16384;
       log.level = "info";
       log.file_path = autheliaLogFile;
       log.keep_stdout = true;
@@ -130,18 +131,18 @@ in
             client_id = "cloudflare-access";
             client_name = "Cloudflare Access";
             # pbkdf2 hash of the plaintext secret stored in sops at cloudflare/access_oidc_client_secret
-            client_secret = "$pbkdf2-sha512$310000$UcBA94MWgbcCZTrGyAvz7w$obl0Un6Ohiii0zeDCcpNF9bbBlwuRYGb.yo93yhLvOCDBmPJXQ4I8tIoO1C.gxZRRi6p2JG1JGICzudhtvgQWg";
+            client_secret = "$pbkdf2-sha512$310000$xnyghfozygQnVb0ytelIyQ$jti2tS0TS.3bCAoLOqNSxhKRtnJM9T/oeaV0f1buy2GmS/NJunNY0npb6ptAcRx4IpecQfOL.1Z.uTRtUqAvoQ";
             authorization_policy = "one_factor";
             claims_policy = "cloudflare";
             redirect_uris = [
-              "https://cloudflareaccess.com/cdn-cgi/access/callback"
+              "https://kclejeune.cloudflareaccess.com/cdn-cgi/access/callback"
             ];
             scopes = [
               "openid"
               "profile"
               "email"
             ];
-            token_endpoint_auth_method = "client_secret_post";
+            token_endpoint_auth_method = "client_secret_basic";
             require_pkce = true;
             pkce_challenge_method = "S256";
           }
