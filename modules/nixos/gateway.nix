@@ -17,6 +17,7 @@ let
   mkNginxJail = filter: maxretry: {
     settings = {
       inherit filter maxretry;
+      backend = "auto";
       logpath = "/var/log/nginx/access.log";
       findtime = 600;
     };
@@ -249,6 +250,7 @@ in
     nginx-bad-request = mkNginxJail "nginx-bad-request" 10;
     authelia.settings = {
       filter = "authelia";
+      backend = "auto";
       port = "http,https";
       logpath = autheliaLogFile;
       maxretry = 3;
