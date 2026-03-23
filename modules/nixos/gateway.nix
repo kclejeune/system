@@ -103,15 +103,18 @@ in
 
       storage.local.path = "${autheliaStateDir}/db.sqlite3";
 
-      session.cookies = [
-        {
-          inherit domain;
-          authelia_url = "https://auth.${domain}";
-          inactivity = "1M";
-          expiration = "3M";
-          remember_me = "1y";
-        }
-      ];
+      session = {
+        redis.host = config.services.redis.servers.authelia.unixSocket;
+        cookies = [
+          {
+            inherit domain;
+            authelia_url = "https://auth.${domain}";
+            inactivity = "1M";
+            expiration = "3M";
+            remember_me = "1y";
+          }
+        ];
+      };
 
       notifier.filesystem.filename = "${autheliaStateDir}/notifications.txt";
 
@@ -262,6 +265,13 @@ in
   #     ingress = { };
   #   };
   # };
+
+  # Redis for Authelia session storage
+  services.redis.servers.authelia = {
+    enable = true;
+    port = 0; # Unix socket only
+  };
+  users.users.${autheliaUser}.extraGroups = [ "redis-authelia" ];
 
   # Passwordless sudo via SSH agent forwarding
   security.pam.rssh.enable = true;
