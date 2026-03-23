@@ -95,6 +95,7 @@ in
       log.level = "info";
       log.file_path = autheliaLogFile;
       log.keep_stdout = true;
+      default_2fa_method = "webauthn";
 
       authentication_backend.file.path = config.sops.secrets."authelia/users".path;
 
@@ -102,8 +103,12 @@ in
         default_policy = "deny";
         rules = [
           {
-            domain = "*.${domain}";
-            policy = "one_factor";
+            domain = "*.kclj.io";
+            policy = "two_factor";
+          }
+          {
+            domain = "*.kclj.dev";
+            policy = "two_factor";
           }
         ];
       };
@@ -441,6 +446,13 @@ in
       security = {
         admin_user = "admin";
         secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
+      };
+      "auth.proxy" = {
+        enabled = true;
+        header_name = "cf-access-authenticated-user-email";
+        header_property = "email";
+        auto_sign_up = true;
+        enable_login_token = false;
       };
     };
     provision = {
