@@ -142,7 +142,7 @@ in
               "email"
             ];
             token_endpoint_auth_method = "client_secret_post";
-            enforce_pkce = true;
+            require_pkce = true;
             pkce_challenge_method = "S256";
           }
         ];
