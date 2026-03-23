@@ -55,7 +55,6 @@ in
       };
       "authelia/users" = {
         owner = autheliaUser;
-        path = "/var/lib/authelia-${autheliaInstance}/users.yaml";
       };
     };
   };
@@ -94,9 +93,9 @@ in
 
       notifier.filesystem.filename = "/var/lib/authelia-${autheliaInstance}/notifications.txt";
 
-      # Necessary for Caddy integration
-      # See https://www.authelia.com/integration/proxies/caddy/#implementation
-      server.endpoints.authz.forward-auth.implementation = "ForwardAuth";
+      # Necessary for nginx integration
+      # See https://www.authelia.com/integration/proxies/nginx/
+      server.endpoints.authz.auth-request.implementation = "AuthRequest";
     };
     secrets = {
       jwtSecretFile = config.sops.secrets."authelia/jwt_secret".path;
@@ -105,22 +104,52 @@ in
     };
   };
 
-  # Caddy - reverse proxy
-  services.caddy = {
+  # ACME / Let's Encrypt
+  security.acme = {
+    acceptTerms = true;
+    defaults.email = "kc.lejeune@gmail.com";
+  };
+
+  # Nginx - reverse proxy
+  services.nginx = {
     enable = true;
-    virtualHosts."auth.${domain}".extraConfig = ''
-      reverse_proxy localhost:${toString autheliaPort}
+    recommendedTlsSettings = true;
+    recommendedOptimisation = true;
+    recommendedGzipSettings = true;
+    recommendedBrotliSettings = true;
+    recommendedProxySettings = true;
+
+    commonHttpConfig = ''
+      # HTTP/3 / QUIC
+      quic_retry on;
+
+      # Rate limiting for auth endpoints: 10 req/s per IP with burst of 20
+      limit_req_zone $binary_remote_addr zone=authelia:10m rate=10r/s;
     '';
-    # Snippet for protecting other services with Authelia
-    # Import with: import auth
-    extraConfig = ''
-      (auth) {
-        forward_auth localhost:${toString autheliaPort} {
-          uri /api/authz/forward-auth
-          copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
-        }
-      }
-    '';
+
+    virtualHosts."auth.${domain}" = {
+      forceSSL = true;
+      enableACME = true;
+      http3 = true;
+      quic = true;
+      extraConfig = ''
+        add_header Alt-Svc 'h3=":443"; ma=86400';
+      '';
+
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString autheliaPort}";
+        proxyWebsockets = true;
+      };
+
+      # Stricter rate limit on login/auth API endpoints
+      locations."/api/" = {
+        proxyPass = "http://127.0.0.1:${toString autheliaPort}";
+        extraConfig = ''
+          limit_req zone=authelia burst=20 nodelay;
+          limit_req_status 429;
+        '';
+      };
+    };
   };
 
   # Passwordless sudo via SSH agent forwarding
