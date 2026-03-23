@@ -1,12 +1,23 @@
 {
   config,
+  lib,
   ...
 }:
 let
   autheliaInstance = "main";
   autheliaUser = "authelia-${autheliaInstance}";
+  autheliaStateDir = "/var/lib/authelia-${autheliaInstance}";
+  autheliaLogFile = "${autheliaStateDir}/authelia.log";
   domain = "kclj.io";
   autheliaPort = 9091;
+
+  mkNginxJail = filter: maxretry: {
+    settings = {
+      inherit filter maxretry;
+      logpath = "/var/log/nginx/access.log";
+      findtime = 600;
+    };
+  };
 in
 {
   networking.hostName = "gateway";
@@ -56,6 +67,14 @@ in
       "authelia/users" = {
         owner = autheliaUser;
       };
+      "authelia/oidc_hmac_secret" = {
+        owner = autheliaUser;
+      };
+      "authelia/oidc_jwks_key" = {
+        owner = autheliaUser;
+      };
+      "cloudflared/tunnel-credentials" = { };
+      "cloudflare/api-token" = { };
     };
   };
 
@@ -66,6 +85,8 @@ in
       theme = "auto";
       server.address = "tcp://127.0.0.1:${toString autheliaPort}/";
       log.level = "info";
+      log.file_path = autheliaLogFile;
+      log.keep_stdout = true;
 
       authentication_backend.file.path = config.sops.secrets."authelia/users".path;
 
@@ -79,7 +100,7 @@ in
         ];
       };
 
-      storage.local.path = "/var/lib/authelia-${autheliaInstance}/db.sqlite3";
+      storage.local.path = "${autheliaStateDir}/db.sqlite3";
 
       session.cookies = [
         {
@@ -91,26 +112,62 @@ in
         }
       ];
 
-      notifier.filesystem.filename = "/var/lib/authelia-${autheliaInstance}/notifications.txt";
+      notifier.filesystem.filename = "${autheliaStateDir}/notifications.txt";
 
       # Necessary for nginx integration
       # See https://www.authelia.com/integration/proxies/nginx/
       server.endpoints.authz.auth-request.implementation = "AuthRequest";
+
+      identity_providers.oidc = {
+        claims_policies.cloudflare.id_token = [
+          "email"
+          "email_verified"
+          "name"
+          "preferred_username"
+        ];
+        clients = [
+          {
+            client_id = "cloudflare-access";
+            client_name = "Cloudflare Access";
+            # pbkdf2 hash of the plaintext secret stored in sops at cloudflare/access_oidc_client_secret
+            client_secret = "$pbkdf2-sha512$310000$UcBA94MWgbcCZTrGyAvz7w$obl0Un6Ohiii0zeDCcpNF9bbBlwuRYGb.yo93yhLvOCDBmPJXQ4I8tIoO1C.gxZRRi6p2JG1JGICzudhtvgQWg";
+            authorization_policy = "one_factor";
+            claims_policy = "cloudflare";
+            redirect_uris = [
+              "https://cloudflareaccess.com/cdn-cgi/access/callback"
+            ];
+            scopes = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            token_endpoint_auth_method = "client_secret_post";
+            enforce_pkce = true;
+            pkce_challenge_method = "S256";
+          }
+        ];
+      };
     };
     secrets = {
       jwtSecretFile = config.sops.secrets."authelia/jwt_secret".path;
       sessionSecretFile = config.sops.secrets."authelia/session_secret".path;
       storageEncryptionKeyFile = config.sops.secrets."authelia/storage_encryption_key".path;
+      oidcHmacSecretFile = config.sops.secrets."authelia/oidc_hmac_secret".path;
+      oidcIssuerPrivateKeyFile = config.sops.secrets."authelia/oidc_jwks_key".path;
     };
   };
 
-  # ACME / Let's Encrypt
+  # ACME / Let's Encrypt via Cloudflare DNS-01 challenge
   security.acme = {
     acceptTerms = true;
-    defaults.email = "kc.lejeune@gmail.com";
+    defaults = {
+      email = "kc.lejeune@gmail.com";
+      dnsProvider = "cloudflare";
+      environmentFile = config.sops.secrets."cloudflare/api-token".path;
+    };
   };
 
-  # Nginx - reverse proxy
+  # Ensure nginx can read its own log files for fail2ban
   services.nginx = {
     enable = true;
     recommendedTlsSettings = true;
@@ -120,11 +177,14 @@ in
     recommendedProxySettings = true;
 
     commonHttpConfig = ''
-      # HTTP/3 / QUIC
       quic_retry on;
 
-      # Rate limiting for auth endpoints: 10 req/s per IP with burst of 20
-      limit_req_zone $binary_remote_addr zone=authelia:10m rate=10r/s;
+      limit_req_zone $binary_remote_addr zone=general:10m rate=30r/s;
+      limit_req_zone $binary_remote_addr zone=authelia_api:10m rate=10r/s;
+      limit_conn_zone $binary_remote_addr zone=per_ip:10m;
+
+      access_log /var/log/nginx/access.log;
+      error_log /var/log/nginx/error.log;
     '';
 
     virtualHosts."auth.${domain}" = {
@@ -134,23 +194,67 @@ in
       quic = true;
       extraConfig = ''
         add_header Alt-Svc 'h3=":443"; ma=86400';
+
+        limit_conn per_ip 50;
+        limit_conn_status 429;
       '';
 
       locations."/" = {
         proxyPass = "http://127.0.0.1:${toString autheliaPort}";
         proxyWebsockets = true;
+        extraConfig = ''
+          limit_req zone=general burst=60 nodelay;
+          limit_req_status 429;
+        '';
       };
 
-      # Stricter rate limit on login/auth API endpoints
       locations."/api/" = {
         proxyPass = "http://127.0.0.1:${toString autheliaPort}";
         extraConfig = ''
-          limit_req zone=authelia burst=20 nodelay;
+          limit_req zone=authelia_api burst=20 nodelay;
           limit_req_status 429;
         '';
       };
     };
   };
+
+  services.fail2ban.jails = {
+    nginx-http-auth = mkNginxJail "nginx-http-auth" 5;
+    nginx-botsearch = mkNginxJail "nginx-botsearch" 5;
+    nginx-bad-request = mkNginxJail "nginx-bad-request" 10;
+    authelia.settings = {
+      filter = "authelia";
+      port = "http,https";
+      logpath = autheliaLogFile;
+      maxretry = 3;
+      findtime = 300;
+    };
+  };
+
+  # Authelia fail2ban filter (matches JSON log format written to file)
+  environment.etc."fail2ban/filter.d/authelia.conf".text = ''
+    [Definition]
+    failregex = ^.*"remote_ip":"<HOST>".*"msg":"Unsuccessful .*authentication attempt.*$
+    ignoreregex =
+  '';
+
+  # Cloudflare Tunnel — exposes services without opening inbound HTTP/S ports
+  # To set up:
+  #   1. Create a tunnel: cloudflared tunnel create gateway
+  #   2. Copy the credentials JSON into sops: sops secrets/gateway.yaml
+  #      (add under cloudflared.tunnel-credentials as a string)
+  #   3. Configure DNS in Cloudflare dashboard: CNAME auth.kclj.io -> <tunnel-id>.cfargotunnel.com
+  # Once active, ports 80/443 can be removed from the firewall and ACME disabled,
+  # as Cloudflare terminates TLS at the edge.
+  # Disabled until tunnel is created and credentials are stored in sops.
+  # services.cloudflared = {
+  #   enable = true;
+  #   tunnels.gateway = {
+  #     credentialsFile = config.sops.secrets."cloudflared/tunnel-credentials".path;
+  #     default = "http_status:404";
+  #     ingress = { };
+  #   };
+  # };
 
   # Passwordless sudo via SSH agent forwarding
   security.pam.rssh.enable = true;

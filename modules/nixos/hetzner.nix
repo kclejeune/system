@@ -98,6 +98,9 @@
     PermitRootLogin = "prohibit-password";
     PasswordAuthentication = false;
     AllowAgentForwarding = true;
+    AllowTcpForwarding = false;
+    MaxAuthTries = 3;
+    LoginGraceTime = 30;
   };
 
   # Use nftables over iptables
@@ -135,8 +138,6 @@
     };
   };
 
-  # Logging: nftables connection tracking + journald for full audit trail
-  # Log new connections with source IP, destination port, and protocol
   networking.nftables.tables.audit = {
     family = "inet";
     content = ''
@@ -147,11 +148,44 @@
     '';
   };
 
+  networking.nftables.tables.rate-limit = {
+    family = "inet";
+    content = ''
+      chain input {
+        type filter hook input priority filter - 5; policy accept;
+
+        # Per-IP TCP SYN flood protection: 25 new connections/sec, burst of 50
+        tcp flags syn ct state new limit rate over 25/second burst 50 packets drop
+
+        # ICMP rate limiting: 5/sec with burst of 10
+        meta l4proto icmp limit rate over 5/second burst 10 packets drop
+        meta l4proto icmpv6 limit rate over 5/second burst 10 packets drop
+
+        # Global connection tracking limit
+        ct count over 500 drop
+      }
+    '';
+  };
+
   # Tailscale
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "both";
     openFirewall = true;
+  };
+
+  # Kernel hardening
+  boot.kernel.sysctl = {
+    "net.ipv4.conf.all.rp_filter" = 1;
+    "net.ipv4.conf.default.rp_filter" = 1;
+    "net.ipv4.conf.all.send_redirects" = 0;
+    "net.ipv4.conf.default.send_redirects" = 0;
+    "net.ipv4.conf.all.accept_redirects" = 0;
+    "net.ipv4.conf.default.accept_redirects" = 0;
+    "net.ipv6.conf.all.send_redirects" = 0;
+    "net.ipv6.conf.default.send_redirects" = 0;
+    "net.ipv6.conf.all.accept_redirects" = 0;
+    "net.ipv6.conf.default.accept_redirects" = 0;
   };
 
   time.timeZone = "UTC";
