@@ -10,6 +10,9 @@ let
   autheliaLogFile = "${autheliaStateDir}/authelia.log";
   domain = "kclj.io";
   autheliaPort = 9091;
+  lokiPort = 3100;
+  grafanaPort = 3000;
+  prometheusPort = 9090;
 
   mkNginxJail = filter: maxretry: {
     settings = {
@@ -75,6 +78,9 @@ in
       };
       "cloudflared/tunnel-credentials" = { };
       "cloudflare/api-token" = { };
+      "grafana/secret_key" = {
+        owner = "grafana";
+      };
     };
   };
 
@@ -121,6 +127,8 @@ in
       # Necessary for nginx integration
       # See https://www.authelia.com/integration/proxies/nginx/
       server.endpoints.authz.auth-request.implementation = "AuthRequest";
+      telemetry.metrics.enabled = true;
+      telemetry.metrics.address = "tcp://127.0.0.1:9959/";
 
       identity_providers.oidc = {
         claims_policies.cloudflare.id_token = [
@@ -272,6 +280,193 @@ in
     port = 0; # Unix socket only
   };
   users.users.${autheliaUser}.extraGroups = [ "redis-authelia" ];
+
+  # Loki - log aggregation
+  services.loki = {
+    enable = true;
+    configuration = {
+      auth_enabled = false;
+      server.http_listen_port = lokiPort;
+
+      common = {
+        path_prefix = "/var/lib/loki";
+        replication_factor = 1;
+        ring.kvstore.store = "inmemory";
+      };
+
+      schema_config.configs = [
+        {
+          from = "2024-01-01";
+          store = "tsdb";
+          object_store = "filesystem";
+          schema = "v13";
+          index = {
+            prefix = "index_";
+            period = "24h";
+          };
+        }
+      ];
+
+      storage_config.filesystem.directory = "/var/lib/loki/chunks";
+
+      limits_config = {
+        retention_period = "30d";
+        reject_old_samples = true;
+        reject_old_samples_max_age = "168h";
+      };
+
+      compactor = {
+        working_directory = "/var/lib/loki/compactor";
+        delete_request_store = "filesystem";
+        retention_enabled = true;
+      };
+    };
+  };
+
+  # Grafana Alloy - collects logs and metrics, ships to Loki
+  services.alloy = {
+    enable = true;
+    extraFlags = [ "--stability.level=generally-available" ];
+  };
+
+  environment.etc."alloy/config.alloy".text = ''
+    // Scrape journald logs (sshd, fail2ban, authelia, nginx, systemd)
+    loki.source.journal "journald" {
+      forward_to = [loki.write.local.receiver]
+      relabel_rules = loki.relabel.journal.rules
+    }
+
+    loki.relabel "journal" {
+      forward_to = []
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        target_label  = "unit"
+      }
+      rule {
+        source_labels = ["__journal__hostname"]
+        target_label  = "hostname"
+      }
+    }
+
+    // Scrape authelia JSON log file
+    local.file_match "authelia_log" {
+      path_targets = [{"__path__" = "${autheliaLogFile}"}]
+    }
+
+    loki.source.file "authelia" {
+      targets    = local.file_match.authelia_log.targets
+      forward_to = [loki.process.authelia.receiver]
+    }
+
+    loki.process "authelia" {
+      forward_to = [loki.write.local.receiver]
+
+      stage.json {
+        expressions = {
+          level      = "level",
+          msg        = "msg",
+          remote_ip  = "remote_ip",
+          method     = "method",
+          path       = "path",
+        }
+      }
+
+      stage.labels {
+        values = {
+          level     = "",
+          remote_ip = "",
+        }
+      }
+
+      stage.static_labels {
+        values = {
+          job = "authelia",
+        }
+      }
+    }
+
+    // Scrape nginx access log
+    local.file_match "nginx_log" {
+      path_targets = [
+        {"__path__" = "/var/log/nginx/access.log"},
+        {"__path__" = "/var/log/nginx/error.log"},
+      ]
+    }
+
+    loki.source.file "nginx" {
+      targets    = local.file_match.nginx_log.targets
+      forward_to = [loki.write.local.receiver]
+    }
+
+    // Write logs to Loki
+    loki.write "local" {
+      endpoint {
+        url = "http://127.0.0.1:${toString lokiPort}/loki/api/v1/push"
+      }
+    }
+  '';
+
+  # Prometheus - metrics scraping
+  services.prometheus = {
+    enable = true;
+    listenAddress = "127.0.0.1";
+    port = prometheusPort;
+    retentionTime = "30d";
+    scrapeConfigs = [
+      {
+        job_name = "authelia";
+        static_configs = [ { targets = [ "127.0.0.1:9959" ]; } ];
+      }
+    ];
+  };
+
+  # Grafana - dashboards and visualization
+  services.grafana = {
+    enable = true;
+    settings = {
+      server = {
+        http_addr = "127.0.0.1";
+        http_port = grafanaPort;
+        inherit domain;
+        root_url = "https://grafana.${domain}";
+      };
+      security = {
+        admin_user = "admin";
+        secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
+      };
+    };
+    provision = {
+      datasources.settings.datasources = [
+        {
+          name = "Loki";
+          type = "loki";
+          url = "http://127.0.0.1:${toString lokiPort}";
+          isDefault = true;
+        }
+        {
+          name = "Prometheus";
+          type = "prometheus";
+          url = "http://127.0.0.1:${toString prometheusPort}";
+        }
+      ];
+    };
+  };
+
+  # Expose Grafana via nginx
+  services.nginx.virtualHosts."grafana.${domain}" = {
+    forceSSL = true;
+    enableACME = true;
+    http3 = true;
+    quic = true;
+    extraConfig = ''
+      add_header Alt-Svc 'h3=":443"; ma=86400';
+    '';
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:${toString grafanaPort}";
+      proxyWebsockets = true;
+    };
+  };
 
   # Passwordless sudo via SSH agent forwarding
   security.pam.rssh.enable = true;
