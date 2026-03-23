@@ -195,6 +195,11 @@ in
       extraConfig = ''
         add_header Alt-Svc 'h3=":443"; ma=86400';
 
+        # Larger buffers for OIDC flows (cookies + auth headers)
+        large_client_header_buffers 4 32k;
+        proxy_buffer_size 16k;
+        proxy_buffers 4 16k;
+
         limit_conn per_ip 50;
         limit_conn_status 429;
       '';
