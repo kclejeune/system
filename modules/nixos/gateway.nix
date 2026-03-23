@@ -200,6 +200,13 @@ in
       error_log /var/log/nginx/error.log;
     '';
 
+    # Drop requests with unknown Host headers
+    virtualHosts."_" = {
+      default = true;
+      rejectSSL = true;
+      locations."/".return = "444";
+    };
+
     virtualHosts."auth.${domain}" = {
       forceSSL = true;
       enableACME = true;
@@ -264,15 +271,13 @@ in
   #   3. Configure DNS in Cloudflare dashboard: CNAME auth.kclj.io -> <tunnel-id>.cfargotunnel.com
   # Once active, ports 80/443 can be removed from the firewall and ACME disabled,
   # as Cloudflare terminates TLS at the edge.
-  # Disabled until tunnel is created and credentials are stored in sops.
-  # services.cloudflared = {
-  #   enable = true;
-  #   tunnels.gateway = {
-  #     credentialsFile = config.sops.secrets."cloudflared/tunnel-credentials".path;
-  #     default = "http_status:404";
-  #     ingress = { };
-  #   };
-  # };
+  services.cloudflared = {
+    enable = true;
+    tunnels.gateway = {
+      credentialsFile = config.sops.secrets."cloudflared/tunnel-credentials".path;
+      default = "http_status:404";
+    };
+  };
 
   # Redis for Authelia session storage
   services.redis.servers.authelia = {
@@ -453,7 +458,11 @@ in
     };
   };
 
-  # Expose Grafana via nginx
+  # Expose Grafana via nginx, restricted to Tailnet
+  services.nginx.tailscaleAuth = {
+    enable = true;
+    virtualHosts = [ "grafana.${domain}" ];
+  };
   services.nginx.virtualHosts."grafana.${domain}" = {
     forceSSL = true;
     enableACME = true;
