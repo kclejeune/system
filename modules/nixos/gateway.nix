@@ -133,6 +133,7 @@ in
             # pbkdf2 hash of the plaintext secret stored in sops at cloudflare/access_oidc_client_secret
             client_secret = "$pbkdf2-sha512$310000$xnyghfozygQnVb0ytelIyQ$jti2tS0TS.3bCAoLOqNSxhKRtnJM9T/oeaV0f1buy2GmS/NJunNY0npb6ptAcRx4IpecQfOL.1Z.uTRtUqAvoQ";
             authorization_policy = "one_factor";
+            consent_mode = "implicit";
             claims_policy = "cloudflare";
             redirect_uris = [
               "https://kclejeune.cloudflareaccess.com/cdn-cgi/access/callback"
