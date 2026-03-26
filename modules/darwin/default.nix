@@ -27,6 +27,7 @@
         "@wheel"
         "@staff"
       ];
+      lazy-trees = false;
       keep-outputs = true;
       keep-derivations = true;
       extra-experimental-features = "external-builders nix-command flakes";
