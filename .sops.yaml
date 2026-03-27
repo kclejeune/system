@@ -2,6 +2,8 @@ keys:
   - &kclejeune age16vnps5ues20fykepcjwr5zyvf5p7pzd3skdr4kh4hf9nxl38vfxq6vanlm
   # Derived from gateway SSH host key via ssh-to-age
   - &gateway age1xawelux9hmvjmq3ry9yu0uh0njyjx87hskdlnlknjh3ud2rm74fs5jc8vk
+  - &klejeune age10suv000jwsgzq546kmj5jxltmxawsx90nvdmyzc42nhsayyfa4rq720w54
+  - &standalone age17t0ghmx3ze62epewm9p5rdaywv9u6wjcjvrj5e734uqzkst6hvtqhwtdkz
 
 creation_rules:
   - path_regex: secrets/gateway\.yaml$

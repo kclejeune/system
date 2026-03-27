@@ -18,17 +18,24 @@ in
 {
   home = {
     preferXdgDirectories = true;
-    sessionVariables = {
-      GPG_TTY = "/dev/ttys000";
-      CLICOLOR = 1;
-      LSCOLORS = "ExFxBxDxCxegedabagacad";
-      LANG = "en_US.UTF-8";
-      DEFAULT_USER = "${config.home.username}";
-      LS_COLORS = "ExFxBxDxCxegedabagacad";
-      TERM = "xterm-256color";
-      MISE_ENV_FILE = ".env";
-      NH_HOST = "${config.home.username}@${pkgs.stdenvNoCC.hostPlatform.system}";
-    };
+    sessionVariables =
+      let
+        ageKey = "${config.xdg.configHome}/sops/age/keys.txt";
+      in
+      {
+        GPG_TTY = "/dev/ttys000";
+        CLICOLOR = 1;
+        LSCOLORS = "ExFxBxDxCxegedabagacad";
+        LANG = "en_US.UTF-8";
+        DEFAULT_USER = "${config.home.username}";
+        LS_COLORS = "ExFxBxDxCxegedabagacad";
+        TERM = "xterm-256color";
+        MISE_ENV_FILE = ".env";
+        NH_HOST = "${config.home.username}@${pkgs.stdenvNoCC.hostPlatform.system}";
+        AGE_KEY_FILE = ageKey;
+        MISE_AGE_KEY_FILE = ageKey;
+        SOPS_AGE_KEY_FILE = ageKey;
+      };
     sessionPath = [
       "${homeDir}/.local/bin"
       "${homeDir}/.rustup/bin"
