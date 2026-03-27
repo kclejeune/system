@@ -1,10 +1,12 @@
 {
   lib,
+  stdenv,
   fetchFromGitHub,
   rustPlatform,
   pkg-config,
   openssl,
   perl,
+  udev,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -25,7 +27,7 @@ rustPlatform.buildRustPackage rec {
     perl
   ];
 
-  buildInputs = [ openssl ];
+  buildInputs = [ openssl ] ++ lib.optionals stdenv.hostPlatform.isLinux [ udev ];
 
   # Some tests require network access or cloud credentials
   doCheck = false;
