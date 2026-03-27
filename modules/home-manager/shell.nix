@@ -35,6 +35,7 @@ in
         AGE_KEY_FILE = ageKey;
         MISE_AGE_KEY_FILE = ageKey;
         SOPS_AGE_KEY_FILE = ageKey;
+        FNOX_AGE_KEY_FILE = ageKey;
       };
     sessionPath = [
       "${homeDir}/.local/bin"
