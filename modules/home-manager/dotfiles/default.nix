@@ -57,6 +57,9 @@ in
         source = ./fd;
         recursive = true;
       };
+      "zed/keymap.json" = {
+        source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/zed/keymap.json";
+      };
     };
   };
 }
