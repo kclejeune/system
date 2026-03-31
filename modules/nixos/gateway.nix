@@ -1,6 +1,5 @@
 {
   config,
-  lib,
   ...
 }:
 let
@@ -102,6 +101,10 @@ in
       access_control = {
         default_policy = "deny";
         rules = [
+          {
+            domain = "auth.kclj.io";
+            policy = "one_factor";
+          }
           {
             domain = "*.kclj.io";
             policy = "two_factor";
@@ -419,6 +422,24 @@ in
     }
   '';
 
+  # Node exporter - system metrics
+  services.prometheus.exporters.node = {
+    enable = true;
+    listenAddress = "127.0.0.1";
+    enabledCollectors = [
+      "cpu"
+      "diskstats"
+      "filesystem"
+      "loadavg"
+      "meminfo"
+      "netdev"
+      "stat"
+      "time"
+      "uname"
+      "systemd"
+    ];
+  };
+
   # Prometheus - metrics scraping
   services.prometheus = {
     enable = true;
@@ -429,6 +450,16 @@ in
       {
         job_name = "authelia";
         static_configs = [ { targets = [ "127.0.0.1:9959" ]; } ];
+      }
+      {
+        job_name = "node";
+        static_configs = [
+          { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.node.port}" ]; }
+        ];
+      }
+      {
+        job_name = "cloudflared";
+        static_configs = [ { targets = [ "127.0.0.1:2000" ]; } ];
       }
     ];
   };
@@ -456,17 +487,43 @@ in
       };
     };
     provision = {
-      datasources.settings.datasources = [
+      datasources.settings = {
+        apiVersion = 1;
+        datasources = [
+          {
+            name = "Loki";
+            type = "loki";
+            uid = "loki";
+            access = "proxy";
+            url = "http://127.0.0.1:${toString lokiPort}";
+            isDefault = true;
+            jsonData = { };
+          }
+          {
+            name = "Prometheus";
+            type = "prometheus";
+            uid = "prometheus";
+            access = "proxy";
+            url = "http://127.0.0.1:${toString prometheusPort}";
+            jsonData = { };
+          }
+        ];
+        deleteDatasources = [
+          {
+            name = "Loki";
+            orgId = 1;
+          }
+          {
+            name = "Prometheus";
+            orgId = 1;
+          }
+        ];
+      };
+      dashboards.settings.providers = [
         {
-          name = "Loki";
-          type = "loki";
-          url = "http://127.0.0.1:${toString lokiPort}";
-          isDefault = true;
-        }
-        {
-          name = "Prometheus";
-          type = "prometheus";
-          url = "http://127.0.0.1:${toString prometheusPort}";
+          name = "default";
+          options.path = ./grafana-dashboards;
+          disableDeletion = true;
         }
       ];
     };
