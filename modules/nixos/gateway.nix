@@ -26,6 +26,20 @@ in
   networking.hostName = "gateway";
   networking.domain = "";
 
+  # Hetzner volume mounted early in initrd so that /nix is available before
+  # systemd starts — avoids a chicken-and-egg problem where systemd itself
+  # lives in /nix/store.
+  boot.initrd.availableKernelModules = [ "virtio_scsi" ];
+  fileSystems."/nix" = {
+    device = "/dev/disk/by-id/scsi-0HC_Volume_105289845";
+    fsType = "ext4";
+    options = [
+      "discard"
+      "defaults"
+    ];
+    neededForBoot = true;
+  };
+
   # Open additional ports beyond the SSH default from hetzner.nix
   networking.firewall = {
     allowedTCPPorts = [
