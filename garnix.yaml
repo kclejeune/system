@@ -1,7 +1,7 @@
 builds:
   exclude: []
   include:
-    - '*.x86_64-linux.*'
+    - "*.x86_64-linux.*"
     - packages.*.default
     - devShells.*.default
     - homeConfigurations.*

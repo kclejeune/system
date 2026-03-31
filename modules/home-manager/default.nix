@@ -142,6 +142,8 @@
         trivy
         usage
         uv
+        worktrunk
+        wrangler
         yadm
         yq-go
         zoxide

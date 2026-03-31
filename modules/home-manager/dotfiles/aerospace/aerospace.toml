@@ -42,11 +42,11 @@ default-root-container-orientation = 'auto'
 #                 Monitor pattern is the same as for 'workspace-to-monitor-force-assignment'.
 #                 See: https://nikitabobko.github.io/AeroSpace/guide.html#assign-workspaces-to-monitors
 gaps.inner.horizontal = 4
-gaps.inner.vertical =   4
-gaps.outer.left =       4
-gaps.outer.bottom =     4
-gaps.outer.top =        4
-gaps.outer.right =      4
+gaps.inner.vertical = 4
+gaps.outer.left = 4
+gaps.outer.bottom = 4
+gaps.outer.top = 4
+gaps.outer.right = 4
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide.html#binding-modes

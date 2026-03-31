@@ -53,4 +53,3 @@ build_linux_task:
     echo "experimental-features = nix-command flakes" | tee -a /etc/nix/nix.conf
     echo "$NIX_INSTALLER_EXTRA_CONF" | tee -a /etc/nix/nix.conf
   <<: *BUILD_TEMPLATE
-
