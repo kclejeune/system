@@ -74,4 +74,3 @@ nix run .#nh -- darwin switch .#kclejeune@aarch64-darwin
 ```
 
 This will attempt to detect the host system and install nix-darwin or home-manager, but this behavior can be overridden using the `--darwin` or `--home-manager` flags.
-
