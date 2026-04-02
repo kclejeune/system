@@ -90,6 +90,12 @@ in
       "authelia/oidc_jwks_key" = {
         owner = autheliaUser;
       };
+      "authelia/smtp_password" = {
+        owner = autheliaUser;
+      };
+      "authelia/smtp_username" = {
+        owner = autheliaUser;
+      };
       "cloudflared/tunnel-credentials" = { };
       "cloudflare/api-token" = { };
       "grafana/secret_key" = {
@@ -145,7 +151,13 @@ in
         ];
       };
 
-      notifier.filesystem.filename = "${autheliaStateDir}/notifications.txt";
+      notifier.smtp = {
+        address = "submissions://smtp.fastmail.com:465";
+        sender = "Authelia <noreply+auth@kclj.io>";
+        subject = "[Authelia] {title}";
+        disable_require_tls = false;
+        tls.minimum_version = "TLS1.2";
+      };
 
       # Necessary for nginx integration
       # See https://www.authelia.com/integration/proxies/nginx/
@@ -184,6 +196,10 @@ in
         ];
       };
     };
+    environmentVariables = {
+      AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE = config.sops.secrets."authelia/smtp_password".path;
+    };
+
     secrets = {
       jwtSecretFile = config.sops.secrets."authelia/jwt_secret".path;
       sessionSecretFile = config.sops.secrets."authelia/session_secret".path;
@@ -192,6 +208,18 @@ in
       oidcIssuerPrivateKeyFile = config.sops.secrets."authelia/oidc_jwks_key".path;
     };
   };
+
+  # Username injected via sops template env file — authelia has no _FILE support for smtp username
+  sops.templates."authelia-smtp.env" = {
+    owner = autheliaUser;
+    content = ''
+      AUTHELIA_NOTIFIER_SMTP_USERNAME=${config.sops.placeholder."authelia/smtp_username"}
+      AUTHELIA_NOTIFIER_SMTP_STARTUP_CHECK_ADDRESS=${config.sops.placeholder."authelia/smtp_username"}
+    '';
+  };
+  systemd.services."authelia-${autheliaInstance}".serviceConfig.EnvironmentFile = [
+    config.sops.templates."authelia-smtp.env".path
+  ];
 
   # ACME / Let's Encrypt via Cloudflare DNS-01 challenge
   security.acme = {
