@@ -122,10 +122,6 @@ in
         default_policy = "deny";
         rules = [
           {
-            domain = "auth.kclj.io";
-            policy = "one_factor";
-          }
-          {
             domain = "*.kclj.io";
             policy = "two_factor";
           }
