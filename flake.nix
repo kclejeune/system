@@ -262,7 +262,6 @@
               inherit (inputs.legacy.legacyPackages.${system}) teleport_16;
               inherit (inputs.attic.packages.${system}) attic attic-client attic-server;
 
-              sysdo = pkgs.callPackage ./pkgs/sysdo/package.nix { };
               cb = pkgs.callPackage ./pkgs/cb/package.nix { };
               fnox = pkgs.callPackage ./pkgs/fnox/package.nix { };
               weave = pkgs.callPackage ./pkgs/weave/package.nix { };
@@ -283,9 +282,6 @@
               ))
             ];
             legacyPackages = pkgs;
-            packages = {
-              inherit (pkgs) cb sysdo;
-            };
             treefmt = {
               programs = {
                 deadnix = {

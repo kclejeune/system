@@ -67,16 +67,11 @@ Clone this repository into `~/.nixpkgs` with
 git clone https://github.com/kclejeune/system ~/.nixpkgs
 ```
 
-You can bootstrap a new system with the `bootstrap` command:
+You can bootstrap a new system by using `nh` to activate the config, e.g:
 
 ```bash
-nix run .#sysdo bootstrap
+nix run .#nh -- darwin switch .#kclejeune@aarch64-darwin
 ```
 
 This will attempt to detect the host system and install nix-darwin or home-manager, but this behavior can be overridden using the `--darwin` or `--home-manager` flags.
 
-## `sysdo` CLI
-
-The `sysdo` utility is a python script that wraps `nix`, `darwin-rebuild`, `nixos-rebuild`,
-and `home-manager` commands to provide a consistent interface across multiple platforms. It has some dependencies which are defined in the `devShell`
-flake output. Source for this tool is found in [pkgs/sysdo/sysdo.py](./pkgs/sysdo/sysdo.py).
