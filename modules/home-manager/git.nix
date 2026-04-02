@@ -1,5 +1,7 @@
 { pkgs, ... }:
 {
+  imports = [ ./weave.nix ];
+
   home.packages = builtins.attrValues {
     inherit (pkgs)
       github-cli
