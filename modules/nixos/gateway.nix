@@ -152,7 +152,7 @@ in
       };
 
       notifier.smtp = {
-        address = "submissions://smtp.fastmail.com:465";
+        address = "submission://smtp.fastmail.com:587";
         sender = "Authelia <noreply+auth@kclj.io>";
         subject = "[Authelia] {title}";
         disable_require_tls = false;
@@ -217,9 +217,13 @@ in
       AUTHELIA_NOTIFIER_SMTP_STARTUP_CHECK_ADDRESS=${config.sops.placeholder."authelia/smtp_username"}
     '';
   };
-  systemd.services."authelia-${autheliaInstance}".serviceConfig.EnvironmentFile = [
-    config.sops.templates."authelia-smtp.env".path
-  ];
+  systemd.services."authelia-${autheliaInstance}" = {
+    after = [ "redis-authelia.service" ];
+    requires = [ "redis-authelia.service" ];
+    serviceConfig.EnvironmentFile = [
+      config.sops.templates."authelia-smtp.env".path
+    ];
+  };
 
   # ACME / Let's Encrypt via Cloudflare DNS-01 challenge
   security.acme = {
