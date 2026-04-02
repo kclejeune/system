@@ -259,7 +259,7 @@ in
     };
 
     virtualHosts."auth.${domain}" = {
-      forceSSL = true;
+      addSSL = true;
       enableACME = true;
       http3 = true;
       quic = true;
@@ -571,13 +571,8 @@ in
     };
   };
 
-  # Expose Grafana via nginx, restricted to Tailnet
-  services.nginx.tailscaleAuth = {
-    enable = true;
-    virtualHosts = [ "grafana.${domain}" ];
-  };
   services.nginx.virtualHosts."grafana.${domain}" = {
-    forceSSL = true;
+    addSSL = true;
     enableACME = true;
     http3 = true;
     quic = true;
