@@ -123,11 +123,14 @@ in
       log.keep_stdout = true;
       default_2fa_method = "webauthn";
 
-      authentication_backend.ldap = {
-        implementation = "lldap";
-        address = "ldap://127.0.0.1:${toString lldapPort}";
-        base_dn = baseDN;
-        user = "uid=authelia,ou=people,${baseDN}";
+      authentication_backend = {
+        password_reset.disable = true;
+        ldap = {
+          implementation = "lldap";
+          address = "ldap://127.0.0.1:${toString lldapPort}";
+          base_dn = baseDN;
+          user = "uid=authelia,ou=people,${baseDN}";
+        };
       };
 
       access_control = {
