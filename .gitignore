@@ -4,3 +4,4 @@
 .git/
 .devenv/
 .pre-commit-config.yaml
+.playwright-mcp/

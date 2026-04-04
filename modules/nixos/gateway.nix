@@ -9,6 +9,9 @@ let
   autheliaLogFile = "${autheliaStateDir}/authelia.log";
   domain = "kclj.io";
   autheliaPort = 9091;
+  lldapPort = 3890;
+  lldapHttpPort = 17170;
+  baseDN = "dc=kclj,dc=io";
   lokiPort = 3100;
   grafanaPort = 3000;
   prometheusPort = 9090;
@@ -81,7 +84,7 @@ in
       "authelia/storage_encryption_key" = {
         owner = autheliaUser;
       };
-      "authelia/users" = {
+      "authelia/ldap_password" = {
         owner = autheliaUser;
       };
       "authelia/oidc_hmac_secret" = {
@@ -95,6 +98,10 @@ in
       };
       "authelia/smtp_username" = {
         owner = autheliaUser;
+      };
+      "lldap/jwt_secret" = { };
+      "lldap/ldap_user_pass" = {
+        mode = "0444";
       };
       "cloudflared/tunnel-credentials" = { };
       "cloudflare/api-token" = { };
@@ -116,7 +123,12 @@ in
       log.keep_stdout = true;
       default_2fa_method = "webauthn";
 
-      authentication_backend.file.path = config.sops.secrets."authelia/users".path;
+      authentication_backend.ldap = {
+        implementation = "lldap";
+        address = "ldap://127.0.0.1:${toString lldapPort}";
+        base_dn = baseDN;
+        user = "uid=authelia,ou=people,${baseDN}";
+      };
 
       access_control = {
         default_policy = "deny";
@@ -194,6 +206,8 @@ in
     };
     environmentVariables = {
       AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE = config.sops.secrets."authelia/smtp_password".path;
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE =
+        config.sops.secrets."authelia/ldap_password".path;
     };
 
     secrets = {
@@ -214,8 +228,14 @@ in
     '';
   };
   systemd.services."authelia-${autheliaInstance}" = {
-    after = [ "redis-authelia.service" ];
-    requires = [ "redis-authelia.service" ];
+    after = [
+      "redis-authelia.service"
+      "lldap.service"
+    ];
+    wants = [
+      "redis-authelia.service"
+      "lldap.service"
+    ];
     serviceConfig.EnvironmentFile = [
       config.sops.templates."authelia-smtp.env".path
     ];
@@ -259,7 +279,7 @@ in
     };
 
     virtualHosts."auth.${domain}" = {
-      addSSL = true;
+      forceSSL = true;
       enableACME = true;
       http3 = true;
       quic = true;
@@ -330,6 +350,27 @@ in
       default = "http_status:404";
     };
   };
+
+  # LLDAP - lightweight LDAP server for user management
+  services.lldap = {
+    enable = true;
+    settings = {
+      ldap_host = "127.0.0.1";
+      ldap_port = lldapPort;
+      http_host = "127.0.0.1";
+      http_port = lldapHttpPort;
+      http_url = "https://lldap.${domain}";
+      ldap_base_dn = baseDN;
+      ldap_user_email = "admin@${domain}";
+      force_ldap_user_pass_reset = "always";
+    };
+    environment.LLDAP_LDAP_USER_PASS_FILE = config.sops.secrets."lldap/ldap_user_pass".path;
+    environmentFile = config.sops.templates."lldap.env".path;
+  };
+
+  sops.templates."lldap.env".content = ''
+    LLDAP_JWT_SECRET=${config.sops.placeholder."lldap/jwt_secret"}
+  '';
 
   # Redis for Authelia session storage
   services.redis.servers.authelia = {
@@ -571,8 +612,11 @@ in
     };
   };
 
+  # lldap web UI: not exposed via nginx — access via SSH tunnel (ssh -L 17170:127.0.0.1:17170)
+  # or add to cloudflared tunnel with Cloudflare Access protection before exposing publicly.
+
   services.nginx.virtualHosts."grafana.${domain}" = {
-    addSSL = true;
+    forceSSL = true;
     enableACME = true;
     http3 = true;
     quic = true;
