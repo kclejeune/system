@@ -735,6 +735,7 @@ in
 
     coturn = {
       enable = true;
+      useAcmeCertificates = true;
       passwordFile = config.sops.secrets."netbird/turn_password".path;
     };
 
@@ -793,7 +794,7 @@ in
       no-loopback-peers
       no-multicast-peers
       stale-nonce=600
-      user-quota=4
+      user-quota=16
       total-quota=56
       max-bps=1000000
       max-allocate-timeout=300
