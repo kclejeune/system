@@ -148,24 +148,11 @@
     '';
   };
 
-  networking.nftables.tables.rate-limit = {
-    family = "inet";
-    content = ''
-      chain input {
-        type filter hook input priority filter - 5; policy accept;
-
-        # Per-IP TCP SYN flood protection: 25 new connections/sec, burst of 50
-        tcp flags syn ct state new limit rate over 25/second burst 50 packets drop
-
-        # ICMP rate limiting: 5/sec with burst of 10
-        meta l4proto icmp limit rate over 5/second burst 10 packets drop
-        meta l4proto icmpv6 limit rate over 5/second burst 10 packets drop
-
-        # Global connection tracking limit
-        ct count over 500 drop
-      }
-    '';
-  };
+  # Per-host rate limiting is in gateway.nix extraInputRules.
+  # Removed the generic rate-limit table that had:
+  # - ct count over 500 (too low for a gateway running many services)
+  # - 25/s SYN limit (conflicts with gateway.nix's 200/s)
+  # - ICMPv6 blanket drop (breaks IPv6 neighbor discovery)
 
   # Tailscale
   services.tailscale = {

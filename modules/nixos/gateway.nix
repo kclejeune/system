@@ -76,6 +76,7 @@ in
       tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
       ip protocol icmp limit rate 10/second burst 20 packets accept
       ip protocol icmp drop
+      icmpv6 type { nd-neighbor-solicit, nd-neighbor-advert, nd-router-solicit, nd-router-advert } accept
       ip6 nexthdr icmpv6 limit rate 10/second burst 20 packets accept
       ip6 nexthdr icmpv6 drop
     '';
@@ -704,21 +705,12 @@ in
   # lldap web UI: not exposed via nginx — access via SSH tunnel (ssh -L 17170:127.0.0.1:17170)
   # or add to cloudflared tunnel with Cloudflare Access protection before exposing publicly.
 
-  services.nginx.virtualHosts."grafana.${domain}" =
-    mkHttpsVhost ''
-      limit_conn per_ip 30;
-      limit_conn_status 429;
-    ''
-    // {
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString grafanaPort}";
-        proxyWebsockets = true;
-        extraConfig = ''
-          limit_req zone=general burst=60 nodelay;
-          limit_req_status 429;
-        '';
-      };
+  services.nginx.virtualHosts."grafana.${domain}" = mkHttpsVhost "" // {
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:${toString grafanaPort}";
+      proxyWebsockets = true;
     };
+  };
 
   # Passwordless sudo via SSH agent forwarding
   security.pam.rssh.enable = true;
@@ -795,34 +787,25 @@ in
       no-multicast-peers
       stale-nonce=600
       user-quota=16
-      total-quota=56
-      max-bps=1000000
+      total-quota=100
+      max-bps=10000000
       max-allocate-timeout=300
     '';
   };
 
   # TLS/HTTP3 and OIDC callback fallbacks for the netbird dashboard SPA
-  services.nginx.virtualHosts.${netbirdDomain} =
-    mkHttpsVhost ''
-      limit_conn per_ip 20;
-      limit_conn_status 429;
-    ''
-    // {
-      locations."/auth" = {
-        tryFiles = "$uri /index.html";
-        extraConfig = ''
-          limit_req zone=general burst=30 nodelay;
-          limit_req_status 429;
-        '';
-      };
-      locations."/silent-auth" = {
-        tryFiles = "$uri /index.html";
-        extraConfig = ''
-          limit_req zone=general burst=30 nodelay;
-          limit_req_status 429;
-        '';
-      };
+  # Rate limiting on the HTTP layer is unreliable here because the stream
+  # block proxies all traffic from 127.0.0.1 — the real client IP is lost.
+  # DDoS protection is handled at the stream layer (limit_conn stream_per_ip)
+  # and nftables (SYN rate limiting).
+  services.nginx.virtualHosts.${netbirdDomain} = mkHttpsVhost "" // {
+    locations."/auth" = {
+      tryFiles = "$uri /index.html";
     };
+    locations."/silent-auth" = {
+      tryFiles = "$uri /index.html";
+    };
+  };
 
   # Netbird reverse proxy — runs as OCI container, handles its own TLS
   virtualisation.oci-containers.containers.netbird-proxy = {
@@ -876,7 +859,7 @@ in
       ssl_preread on;
       limit_conn stream_per_ip 20;
       proxy_connect_timeout 10s;
-      proxy_timeout 60s;
+      proxy_timeout 300s;
       proxy_pass $backend;
     }
   '';
