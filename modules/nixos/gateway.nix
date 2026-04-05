@@ -18,10 +18,12 @@ let
   autheliaMetricsPort = 9959;
   authDomain = "auth.${domain}";
   netbirdDomain = "netbird.${domain}";
-  netbirdProxyDomain = "proxy.${netbirdDomain}";
+  netbirdProxyDomain = "kclj.dev";
   netbirdProxyPort = 8443;
+  netbirdMgmtPort = 8011;
   netbirdMgmtMetricsPort = 9190;
   netbirdSignalMetricsPort = 9191;
+  nginxInternalSSLPort = 4443;
 
   mkHttpsVhost = extra: {
     forceSSL = true;
@@ -68,6 +70,15 @@ in
       443 # HTTPS
     ];
     allowedUDPPorts = [ ];
+    extraInputRules = ''
+      ct state invalid drop
+      tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
+      tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
+      ip protocol icmp limit rate 10/second burst 20 packets accept
+      ip protocol icmp drop
+      ip6 nexthdr icmpv6 limit rate 10/second burst 20 packets accept
+      ip6 nexthdr icmpv6 drop
+    '';
   };
 
   # User account
@@ -347,7 +358,7 @@ in
   # Ensure nginx can read its own log files for fail2ban
   services.nginx = {
     enable = true;
-    defaultSSLListenPort = 4443;
+    defaultSSLListenPort = nginxInternalSSLPort;
     recommendedTlsSettings = true;
     recommendedOptimisation = true;
     recommendedGzipSettings = true;
@@ -693,12 +704,21 @@ in
   # lldap web UI: not exposed via nginx — access via SSH tunnel (ssh -L 17170:127.0.0.1:17170)
   # or add to cloudflared tunnel with Cloudflare Access protection before exposing publicly.
 
-  services.nginx.virtualHosts."grafana.${domain}" = mkHttpsVhost "" // {
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:${toString grafanaPort}";
-      proxyWebsockets = true;
+  services.nginx.virtualHosts."grafana.${domain}" =
+    mkHttpsVhost ''
+      limit_conn per_ip 30;
+      limit_conn_status 429;
+    ''
+    // {
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString grafanaPort}";
+        proxyWebsockets = true;
+        extraConfig = ''
+          limit_req zone=general burst=60 nodelay;
+          limit_req_status 429;
+        '';
+      };
     };
-  };
 
   # Passwordless sudo via SSH agent forwarding
   security.pam.rssh.enable = true;
@@ -712,7 +732,6 @@ in
     enable = true;
     domain = netbirdDomain;
     enableNginx = true;
-    signal.enableNginx = true;
 
     coturn = {
       enable = true;
@@ -720,7 +739,6 @@ in
     };
 
     management = {
-      enableNginx = true;
       oidcConfigEndpoint = "https://${authDomain}/.well-known/openid-configuration";
       metricsPort = netbirdMgmtMetricsPort;
       settings = {
@@ -741,14 +759,17 @@ in
 
     signal.metricsPort = netbirdSignalMetricsPort;
 
-    dashboard.settings = {
-      AUTH_AUTHORITY = "https://${authDomain}";
-      AUTH_CLIENT_ID = "netbird";
-      AUTH_AUDIENCE = "netbird";
-      AUTH_SUPPORTED_SCOPES = "openid profile email offline_access";
-      AUTH_REDIRECT_URI = "/auth";
-      AUTH_SILENT_REDIRECT_URI = "/silent-auth";
-      USE_AUTH0 = "";
+    dashboard = {
+      enableNginx = true;
+      settings = {
+        AUTH_AUTHORITY = "https://${authDomain}";
+        AUTH_CLIENT_ID = "netbird";
+        AUTH_AUDIENCE = "netbird";
+        AUTH_SUPPORTED_SCOPES = "openid profile email offline_access";
+        AUTH_REDIRECT_URI = "/auth";
+        AUTH_SILENT_REDIRECT_URI = "/silent-auth";
+        USE_AUTH0 = "";
+      };
     };
   };
 
@@ -769,14 +790,38 @@ in
       denied-peer-ip=169.254.0.0-169.254.255.255
       denied-peer-ip=172.16.0.0-172.31.255.255
       denied-peer-ip=192.168.0.0-192.168.255.255
+      no-loopback-peers
+      no-multicast-peers
+      stale-nonce=600
+      user-quota=4
+      total-quota=56
+      max-bps=1000000
+      max-allocate-timeout=300
     '';
   };
 
   # TLS/HTTP3 and OIDC callback fallbacks for the netbird dashboard SPA
-  services.nginx.virtualHosts.${netbirdDomain} = mkHttpsVhost "" // {
-    locations."/auth".tryFiles = "$uri /index.html";
-    locations."/silent-auth".tryFiles = "$uri /index.html";
-  };
+  services.nginx.virtualHosts.${netbirdDomain} =
+    mkHttpsVhost ''
+      limit_conn per_ip 20;
+      limit_conn_status 429;
+    ''
+    // {
+      locations."/auth" = {
+        tryFiles = "$uri /index.html";
+        extraConfig = ''
+          limit_req zone=general burst=30 nodelay;
+          limit_req_status 429;
+        '';
+      };
+      locations."/silent-auth" = {
+        tryFiles = "$uri /index.html";
+        extraConfig = ''
+          limit_req zone=general burst=30 nodelay;
+          limit_req_status 429;
+        '';
+      };
+    };
 
   # Netbird reverse proxy — runs as OCI container, handles its own TLS
   virtualisation.oci-containers.containers.netbird-proxy = {
@@ -785,16 +830,21 @@ in
     volumes = [
       "netbird-proxy-certs:/certs"
     ];
-    ports = [
-      "127.0.0.1:${toString netbirdProxyPort}:8443"
+    extraOptions = [
+      "--network=host"
+      "--cap-drop=ALL"
+      "--cap-add=NET_BIND_SERVICE"
+      "--read-only"
+      "--tmpfs=/tmp:rw,noexec,nosuid,size=64m"
+      "--security-opt=no-new-privileges:true"
     ];
   };
 
   sops.templates."netbird-proxy.env".content = ''
     NB_PROXY_TOKEN=${config.sops.placeholder."netbird/proxy_token"}
     NB_PROXY_DOMAIN=${netbirdProxyDomain}
-    NB_PROXY_MANAGEMENT_ADDRESS=http://host.containers.internal:33073
-    NB_PROXY_ADDRESS=:8443
+    NB_PROXY_MANAGEMENT_ADDRESS=http://127.0.0.1:${toString netbirdMgmtPort}
+    NB_PROXY_ADDRESS=127.0.0.1:${toString netbirdProxyPort}
     NB_PROXY_ACME_CERTIFICATES=true
     NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
     NB_PROXY_ALLOW_INSECURE=true
@@ -804,9 +854,11 @@ in
   # *.proxy.netbird.kclj.io → TLS passthrough to netbird-proxy (handles its own TLS)
   # everything else → normal nginx HTTP block (TLS termination)
   services.nginx.streamConfig = ''
+    limit_conn_zone $remote_addr zone=stream_per_ip:10m;
+
     map $ssl_preread_server_name $backend {
-      ~\.proxy\.netbird\.kclj\.io$  netbird_proxy;
-      default                        nginx_https;
+      ~^[a-zA-Z0-9-]+\.proxy\.netbird\.kclj\.io$  netbird_proxy;
+      default                                       nginx_https;
     }
 
     upstream netbird_proxy {
@@ -814,13 +866,16 @@ in
     }
 
     upstream nginx_https {
-      server 127.0.0.1:4443;
+      server 127.0.0.1:${toString nginxInternalSSLPort};
     }
 
     server {
       listen 443;
       listen [::]:443;
       ssl_preread on;
+      limit_conn stream_per_ip 20;
+      proxy_connect_timeout 10s;
+      proxy_timeout 60s;
       proxy_pass $backend;
     }
   '';

@@ -95,7 +95,7 @@
 
   # Harden SSH for a public-facing server
   services.openssh.settings = {
-    PermitRootLogin = "prohibit-password";
+    PermitRootLogin = "no";
     PasswordAuthentication = false;
     AllowAgentForwarding = true;
     AllowTcpForwarding = false;
