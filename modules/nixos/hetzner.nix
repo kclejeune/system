@@ -123,6 +123,11 @@
     enable = true;
     maxretry = 5;
     bantime = "1h";
+    ignoreIP = [
+      "127.0.0.0/8"
+      "100.64.0.0/10" # Tailscale
+      "100.100.0.0/16" # Netbird
+    ];
     bantime-increment = {
       enable = true;
       maxtime = "48h";

@@ -768,8 +768,20 @@ in
 
   # Ensure netbird-management starts after authelia (OIDC discovery dependency)
   systemd.services.netbird-management = {
-    after = [ "authelia-${autheliaInstance}.service" ];
-    wants = [ "authelia-${autheliaInstance}.service" ];
+    after = [
+      "authelia-${autheliaInstance}.service"
+      "systemd-resolved.service"
+      "network-online.target"
+    ];
+    wants = [
+      "authelia-${autheliaInstance}.service"
+      "network-online.target"
+    ];
+    serviceConfig = {
+      RestartSec = "5s";
+      StartLimitIntervalSec = "60s";
+      StartLimitBurst = 10;
+    };
   };
 
   # Restrict coturn relay port range and block SSRF to internal networks
