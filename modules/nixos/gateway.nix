@@ -15,6 +15,24 @@ let
   lokiPort = 3100;
   grafanaPort = 3000;
   prometheusPort = 9090;
+  autheliaMetricsPort = 9959;
+  authDomain = "auth.${domain}";
+  netbirdDomain = "netbird.${domain}";
+  netbirdProxyDomain = "proxy.${netbirdDomain}";
+  netbirdProxyPort = 8443;
+  netbirdMgmtMetricsPort = 9190;
+  netbirdSignalMetricsPort = 9191;
+
+  mkHttpsVhost = extra: {
+    forceSSL = true;
+    enableACME = true;
+    extraConfig = extra;
+  };
+
+  mkScrapeConfig = job_name: target: {
+    inherit job_name;
+    static_configs = [ { targets = [ target ]; } ];
+  };
 
   mkNginxJail = filter: maxretry: {
     settings = {
@@ -49,9 +67,7 @@ in
       80 # HTTP
       443 # HTTPS
     ];
-    allowedUDPPorts = [
-      443 # QUIC / HTTP/3
-    ];
+    allowedUDPPorts = [ ];
   };
 
   # User account
@@ -108,6 +124,12 @@ in
       "grafana/secret_key" = {
         owner = "grafana";
       };
+      "netbird/datastore_encryption_key" = { };
+      "netbird/turn_password" = {
+        owner = "turnserver";
+      };
+      "netbird/proxy_token" = { };
+      "proxmox/oidc_client_secret" = { };
     };
   };
 
@@ -154,7 +176,7 @@ in
         cookies = [
           {
             inherit domain;
-            authelia_url = "https://auth.${domain}";
+            authelia_url = "https://${authDomain}";
             inactivity = "1M";
             expiration = "3M";
             remember_me = "1y";
@@ -174,16 +196,84 @@ in
       # See https://www.authelia.com/integration/proxies/nginx/
       server.endpoints.authz.auth-request.implementation = "AuthRequest";
       telemetry.metrics.enabled = true;
-      telemetry.metrics.address = "tcp://127.0.0.1:9959/";
+      telemetry.metrics.address = "tcp://127.0.0.1:${toString autheliaMetricsPort}/";
 
       identity_providers.oidc = {
+        cors = {
+          endpoints = [
+            "authorization"
+            "token"
+            "revocation"
+            "introspection"
+            "userinfo"
+          ];
+          allowed_origins_from_client_redirect_uris = true;
+        };
         claims_policies.cloudflare.id_token = [
           "email"
           "email_verified"
           "name"
           "preferred_username"
         ];
+        claims_policies.netbird.id_token = [
+          "email"
+          "name"
+          "preferred_username"
+          "groups"
+        ];
         clients = [
+          {
+            client_id = "proxmox";
+            client_name = "Proxmox";
+            # pbkdf2 hash of the plaintext secret stored in sops at proxmox/oidc_client_secret
+            client_secret = "$pbkdf2-sha512$310000$9fPLzfyYkz8dgfVewaw1yg$Z7Vj8UKPSqEou.1TMOElWKDB3zYWzNM0CJXXgOY71UZ/KVLG18Xb73L/Ra/1qGJvFnmtRtcdhX8IDpl4w5DgjA";
+            authorization_policy = "two_factor";
+            consent_mode = "implicit";
+            redirect_uris = [
+              "https://pve-01.lan.kclj.io:8006"
+              "https://pve-02.lan.kclj.io:8006"
+              "https://pve-03.lan.kclj.io:8006"
+              "https://pbs.lan.kclj.io:8007"
+              "https://pve-01.lan.kclj.io"
+              "https://pve-02.lan.kclj.io"
+              "https://pve-03.lan.kclj.io"
+              "https://pbs.kclj.io"
+              "https://pve.kclj.io"
+            ];
+            scopes = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            token_endpoint_auth_method = "client_secret_basic";
+            require_pkce = true;
+            pkce_challenge_method = "S256";
+          }
+          {
+            client_id = "netbird";
+            client_name = "Netbird";
+            public = true;
+            authorization_policy = "one_factor";
+            consent_mode = "implicit";
+            claims_policy = "netbird";
+            audience = [ "netbird" ];
+            response_types = [ "code" ];
+            redirect_uris = [
+              "http://localhost:53000"
+              "https://${netbirdDomain}/auth"
+              "https://${netbirdDomain}/silent-auth"
+            ];
+            scopes = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+              "offline_access"
+            ];
+            require_pkce = true;
+            pkce_challenge_method = "S256";
+            token_endpoint_auth_method = "none";
+          }
           {
             client_id = "cloudflare-access";
             client_name = "Cloudflare Access";
@@ -257,6 +347,7 @@ in
   # Ensure nginx can read its own log files for fail2ban
   services.nginx = {
     enable = true;
+    defaultSSLListenPort = 4443;
     recommendedTlsSettings = true;
     recommendedOptimisation = true;
     recommendedGzipSettings = true;
@@ -264,8 +355,6 @@ in
     recommendedProxySettings = true;
 
     commonHttpConfig = ''
-      quic_retry on;
-
       limit_req_zone $binary_remote_addr zone=general:10m rate=30r/s;
       limit_req_zone $binary_remote_addr zone=authelia_api:10m rate=10r/s;
       limit_conn_zone $binary_remote_addr zone=per_ip:10m;
@@ -281,14 +370,8 @@ in
       locations."/".return = "444";
     };
 
-    virtualHosts."auth.${domain}" = {
-      forceSSL = true;
-      enableACME = true;
-      http3 = true;
-      quic = true;
-      extraConfig = ''
-        add_header Alt-Svc 'h3=":443"; ma=86400';
-
+    virtualHosts."${authDomain}" =
+      mkHttpsVhost ''
         # Larger buffers for OIDC flows (cookies + auth headers)
         large_client_header_buffers 4 32k;
         proxy_buffer_size 16k;
@@ -296,25 +379,26 @@ in
 
         limit_conn per_ip 50;
         limit_conn_status 429;
-      '';
+      ''
+      // {
 
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString autheliaPort}";
-        proxyWebsockets = true;
-        extraConfig = ''
-          limit_req zone=general burst=60 nodelay;
-          limit_req_status 429;
-        '';
-      };
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${toString autheliaPort}";
+          proxyWebsockets = true;
+          extraConfig = ''
+            limit_req zone=general burst=60 nodelay;
+            limit_req_status 429;
+          '';
+        };
 
-      locations."/api/" = {
-        proxyPass = "http://127.0.0.1:${toString autheliaPort}";
-        extraConfig = ''
-          limit_req zone=authelia_api burst=20 nodelay;
-          limit_req_status 429;
-        '';
+        locations."/api/" = {
+          proxyPass = "http://127.0.0.1:${toString autheliaPort}";
+          extraConfig = ''
+            limit_req zone=authelia_api burst=20 nodelay;
+            limit_req_status 429;
+          '';
+        };
       };
-    };
   };
 
   services.fail2ban.jails = {
@@ -533,20 +617,11 @@ in
     port = prometheusPort;
     retentionTime = "30d";
     scrapeConfigs = [
-      {
-        job_name = "authelia";
-        static_configs = [ { targets = [ "127.0.0.1:9959" ]; } ];
-      }
-      {
-        job_name = "node";
-        static_configs = [
-          { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.node.port}" ]; }
-        ];
-      }
-      {
-        job_name = "cloudflared";
-        static_configs = [ { targets = [ "127.0.0.1:2000" ]; } ];
-      }
+      (mkScrapeConfig "authelia" "127.0.0.1:${toString autheliaMetricsPort}")
+      (mkScrapeConfig "node" "127.0.0.1:${toString config.services.prometheus.exporters.node.port}")
+      (mkScrapeConfig "cloudflared" "127.0.0.1:2000")
+      (mkScrapeConfig "netbird-management" "127.0.0.1:${toString netbirdMgmtMetricsPort}")
+      (mkScrapeConfig "netbird-signal" "127.0.0.1:${toString netbirdSignalMetricsPort}")
     ];
   };
 
@@ -618,14 +693,7 @@ in
   # lldap web UI: not exposed via nginx — access via SSH tunnel (ssh -L 17170:127.0.0.1:17170)
   # or add to cloudflared tunnel with Cloudflare Access protection before exposing publicly.
 
-  services.nginx.virtualHosts."grafana.${domain}" = {
-    forceSSL = true;
-    enableACME = true;
-    http3 = true;
-    quic = true;
-    extraConfig = ''
-      add_header Alt-Svc 'h3=":443"; ma=86400';
-    '';
+  services.nginx.virtualHosts."grafana.${domain}" = mkHttpsVhost "" // {
     locations."/" = {
       proxyPass = "http://127.0.0.1:${toString grafanaPort}";
       proxyWebsockets = true;
@@ -636,8 +704,126 @@ in
   security.pam.rssh.enable = true;
   security.pam.services.sudo.rssh = true;
 
-  # Netbird - mesh VPN
+  # Netbird - mesh VPN client
   services.netbird.enable = true;
+
+  # Netbird - self-hosted control server (management + signal + dashboard + TURN)
+  services.netbird.server = {
+    enable = true;
+    domain = netbirdDomain;
+    enableNginx = true;
+    signal.enableNginx = true;
+
+    coturn = {
+      enable = true;
+      passwordFile = config.sops.secrets."netbird/turn_password".path;
+    };
+
+    management = {
+      enableNginx = true;
+      oidcConfigEndpoint = "https://${authDomain}/.well-known/openid-configuration";
+      metricsPort = netbirdMgmtMetricsPort;
+      settings = {
+        DataStoreEncryptionKey._secret = config.sops.secrets."netbird/datastore_encryption_key".path;
+        TURNConfig.Secret._secret = config.sops.secrets."netbird/turn_password".path;
+        AuthCallbackURL = "https://${netbirdDomain}/api/reverse-proxy/callback";
+        PKCEAuthorizationFlow.ProviderConfig = {
+          Audience = "netbird";
+          ClientID = "netbird";
+          AuthorizationEndpoint = "https://${authDomain}/api/oidc/authorization";
+          TokenEndpoint = "https://${authDomain}/api/oidc/token";
+          Scope = "openid profile email offline_access";
+          RedirectURLs = [ "http://localhost:53000" ];
+          UseIDToken = true;
+        };
+      };
+    };
+
+    signal.metricsPort = netbirdSignalMetricsPort;
+
+    dashboard.settings = {
+      AUTH_AUTHORITY = "https://${authDomain}";
+      AUTH_CLIENT_ID = "netbird";
+      AUTH_AUDIENCE = "netbird";
+      AUTH_SUPPORTED_SCOPES = "openid profile email offline_access";
+      AUTH_REDIRECT_URI = "/auth";
+      AUTH_SILENT_REDIRECT_URI = "/silent-auth";
+      USE_AUTH0 = "";
+    };
+  };
+
+  # Ensure netbird-management starts after authelia (OIDC discovery dependency)
+  systemd.services.netbird-management = {
+    after = [ "authelia-${autheliaInstance}.service" ];
+    wants = [ "authelia-${autheliaInstance}.service" ];
+  };
+
+  # Restrict coturn relay port range and block SSRF to internal networks
+  services.coturn = {
+    min-port = 49152;
+    max-port = 49263;
+    extraConfig = ''
+      denied-peer-ip=0.0.0.0-0.255.255.255
+      denied-peer-ip=10.0.0.0-10.255.255.255
+      denied-peer-ip=127.0.0.0-127.255.255.255
+      denied-peer-ip=169.254.0.0-169.254.255.255
+      denied-peer-ip=172.16.0.0-172.31.255.255
+      denied-peer-ip=192.168.0.0-192.168.255.255
+    '';
+  };
+
+  # TLS/HTTP3 and OIDC callback fallbacks for the netbird dashboard SPA
+  services.nginx.virtualHosts.${netbirdDomain} = mkHttpsVhost "" // {
+    locations."/auth".tryFiles = "$uri /index.html";
+    locations."/silent-auth".tryFiles = "$uri /index.html";
+  };
+
+  # Netbird reverse proxy — runs as OCI container, handles its own TLS
+  virtualisation.oci-containers.containers.netbird-proxy = {
+    image = "netbirdio/reverse-proxy:latest";
+    environmentFiles = [ config.sops.templates."netbird-proxy.env".path ];
+    volumes = [
+      "netbird-proxy-certs:/certs"
+    ];
+    ports = [
+      "127.0.0.1:${toString netbirdProxyPort}:8443"
+    ];
+  };
+
+  sops.templates."netbird-proxy.env".content = ''
+    NB_PROXY_TOKEN=${config.sops.placeholder."netbird/proxy_token"}
+    NB_PROXY_DOMAIN=${netbirdProxyDomain}
+    NB_PROXY_MANAGEMENT_ADDRESS=http://host.containers.internal:33073
+    NB_PROXY_ADDRESS=:8443
+    NB_PROXY_ACME_CERTIFICATES=true
+    NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
+    NB_PROXY_ALLOW_INSECURE=true
+  '';
+
+  # Nginx stream block: SNI-based routing on port 443
+  # *.proxy.netbird.kclj.io → TLS passthrough to netbird-proxy (handles its own TLS)
+  # everything else → normal nginx HTTP block (TLS termination)
+  services.nginx.streamConfig = ''
+    map $ssl_preread_server_name $backend {
+      ~\.proxy\.netbird\.kclj\.io$  netbird_proxy;
+      default                        nginx_https;
+    }
+
+    upstream netbird_proxy {
+      server 127.0.0.1:${toString netbirdProxyPort};
+    }
+
+    upstream nginx_https {
+      server 127.0.0.1:4443;
+    }
+
+    server {
+      listen 443;
+      listen [::]:443;
+      ssl_preread on;
+      proxy_pass $backend;
+    }
+  '';
 
   system.stateVersion = "25.11";
 }

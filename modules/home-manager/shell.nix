@@ -54,7 +54,7 @@ in
   programs.atuin = {
     enable = true;
     package = pkgs.atuin;
-    daemon.enable = false;
+    daemon.enable = true;
     flags = [ ];
   };
   # configure zsh custom plugin directory
