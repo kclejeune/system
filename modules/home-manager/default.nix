@@ -43,6 +43,7 @@
         ast-grep
         attic
         basedpyright
+        beads
         bento
         bfs
         btop
