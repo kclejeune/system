@@ -16,7 +16,6 @@
 
   inputs = {
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-    legacy.url = "github:nixos/nixpkgs/nixos-25.05";
     stable.url = "github:nixos/nixpkgs/nixos-25.11";
     unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -259,7 +258,6 @@
               ];
             };
             overlayAttrs = {
-              inherit (inputs.legacy.legacyPackages.${system}) teleport_16;
               inherit (inputs.attic.packages.${system}) attic attic-client attic-server;
 
               cb = pkgs.callPackage ./pkgs/cb/package.nix { };
@@ -303,8 +301,7 @@
                 ".env"
                 ".vscode/*.json"
                 "**/Spoons/**/*.json"
-                ".zed/*.json"
-                "**/zed/*.json"
+                "**/zed/**/*.json"
               ];
               settings.on-unmatched = "info";
               settings.formatter.ruff-check.options = [
