@@ -695,7 +695,7 @@ in
         {
           name = "default";
           options.path = ./grafana-dashboards;
-          disableDeletion = true;
+          disableDeletion = false;
         }
       ];
     };

@@ -105,7 +105,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by(instance) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": session opened for\" | __error__=\"\" [$__interval]))",
+          "expr": "sum by(instance) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\": session opened for\" | __error__=\"\" [$__interval]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -180,7 +180,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by(instance) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |~\": Failed|: Invalid|: Connection closed by authenticating user\" | __error__=\"\" [$__interval]))",
+          "expr": "sum by(instance) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |~\"Failed|Invalid|Connection closed by authenticating user\" | __error__=\"\" [$__interval]))",
           "hide": false,
           "queryType": "range",
           "refId": "A"
@@ -258,7 +258,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |~\": Invalid|: Connection closed by authenticating user|: Failed\" |~\".* from .*\" | pattern `<_> from <ip> port` | __error__=\"\" [$__interval]))",
+          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |~\"Invalid|Connection closed by authenticating user|Failed\" |~\".* from .*\" | pattern `<_> from <ip> port` | __error__=\"\" [$__interval]))",
           "hide": false,
           "legendFormat": "{{ ip }}",
           "queryType": "range",
@@ -271,7 +271,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |~\": Invalid|: Connection closed by authenticating user|: Failed\" !~\".* from .*\" | pattern `<_> user <_> <ip> port` | __error__=\"\" [$__interval]))",
+          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |~\"Invalid|Connection closed by authenticating user|Failed\" !~\".* from .*\" | pattern `<_> user <_> <ip> port` | __error__=\"\" [$__interval]))",
           "hide": false,
           "legendFormat": "{{ ip }}",
           "queryType": "range",
@@ -383,7 +383,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" | __error__=\"\" [$__interval])",
+          "expr": "count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} | __error__=\"\" [$__interval])",
           "queryType": "range",
           "refId": "A"
         }
@@ -454,7 +454,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "bytes_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" | __error__=\"\" [$__interval])",
+          "expr": "bytes_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} | __error__=\"\" [$__interval])",
           "queryType": "range",
           "refId": "A"
         }
@@ -517,7 +517,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (username) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": session opened for\" | pattern `<_> session opened for user <username>(` | username !~\".* by \" | __error__=\"\" [$__interval]))",
+          "expr": "sum by (username) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\": session opened for\" | pattern `<_> session opened for user <username>(` | username !~\".* by \" | __error__=\"\" [$__interval]))",
           "hide": false,
           "legendFormat": "{{ username }}",
           "queryType": "range",
@@ -529,7 +529,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (username) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": session opened for\" | pattern `<_> session opened for user <username> <_>` | username !~\".*(uid=.*)\" | __error__=\"\" [$__interval]))",
+          "expr": "sum by (username) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\": session opened for\" | pattern `<_> session opened for user <username> <_>` | username !~\".*(uid=.*)\" | __error__=\"\" [$__interval]))",
           "hide": false,
           "legendFormat": "{{ username }}",
           "queryType": "range",
@@ -595,7 +595,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (username) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |~\": Invalid|: Connection closed by authenticating user|: Failed .* user\" | pattern `<_> user <username> <_> port` | __error__=\"\" [$__interval]))",
+          "expr": "sum by (username) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |~\"Invalid|Connection closed by authenticating user|Failed .* user\" | pattern `<_> user <username> <_> port` | __error__=\"\" [$__interval]))",
           "hide": false,
           "legendFormat": "{{ username }}",
           "queryType": "range",
@@ -607,7 +607,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (username) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": Failed\" !~\"invalid user\" | pattern `<_> for <username> from <_> port` | __error__=\"\" [$__interval]))",
+          "expr": "sum by (username) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\"Failed\" !~\"invalid user\" | pattern `<_> for <username> from <_> port` | __error__=\"\" [$__interval]))",
           "hide": false,
           "legendFormat": "{{ username }}",
           "queryType": "range",
@@ -654,7 +654,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" ",
+          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} ",
           "queryType": "range",
           "refId": "A"
         }
@@ -712,7 +712,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": Accepted\" | pattern `<_> Accepted <_> for <_> from <ip> port <_>` | __error__=\"\" [$__interval]))",
+          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\"Accepted\" | pattern `Accepted <_> for <_> from <ip> port <_>` | __error__=\"\" [$__interval]))",
           "hide": false,
           "legendFormat": "{{ ip }}",
           "queryType": "range",
@@ -797,7 +797,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |~\": Invalid|: Connection closed by authenticating user|: Failed\" |~\".* from .*\" | pattern `<_> from <ip> port` | __error__=\"\" [$__interval]))",
+          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |~\"Invalid|Connection closed by authenticating user|Failed\" |~\".* from .*\" | pattern `<_> from <ip> port` | __error__=\"\" [$__interval]))",
           "hide": false,
           "legendFormat": "{{ ip }}",
           "queryType": "range",
@@ -810,7 +810,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |~\": Invalid|: Connection closed by authenticating user|: Failed\" !~\".* from .*\" | pattern `<_> user <_> <ip> port` | __error__=\"\" [$__interval]))",
+          "expr": "count by (ip) (count_over_time({$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |~\"Invalid|Connection closed by authenticating user|Failed\" !~\".* from .*\" | pattern `<_> user <_> <ip> port` | __error__=\"\" [$__interval]))",
           "hide": false,
           "legendFormat": "{{ ip }}",
           "queryType": "range",
@@ -907,7 +907,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": Accepted\" | pattern `<_> Accepted <_> for <username> from <ip> port <_>` | __error__=\"\"",
+          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\"Accepted\" | pattern `Accepted <_> for <username> from <ip> port <_>` | __error__=\"\"",
           "hide": false,
           "legendFormat": "{{ ip }} {{ username }}",
           "queryType": "range",
@@ -1017,7 +1017,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |~\": Invalid|: Failed .* user\" | pattern `<_> user <username> from <ip> <_> port` | __error__=\"\"",
+          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |~\"Invalid|Failed .* user\" | pattern `<_> user <username> from <ip> <_> port` | __error__=\"\"",
           "hide": false,
           "queryType": "range",
           "refId": "A"
@@ -1028,7 +1028,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": Failed\" !~\"invalid user\" | pattern `<_> for <username> from <ip> port` | __error__=\"\"",
+          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\"Failed\" !~\"invalid user\" | pattern `<_> for <username> from <ip> port` | __error__=\"\"",
           "hide": false,
           "queryType": "range",
           "refId": "B"
@@ -1039,7 +1039,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": Connection closed by authenticating user\" | pattern `<_> user <username> <ip> port` | __error__=\"\"",
+          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\"Connection closed by authenticating user\" | pattern `<_> user <username> <ip> port` | __error__=\"\"",
           "hide": false,
           "queryType": "range",
           "refId": "C"
@@ -1148,7 +1148,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": session opened for\" | pattern `<_> session opened for user <username>(` | username !~\".* by \" | __error__=\"\"",
+          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\": session opened for\" | pattern `<_> session opened for user <username>(` | username !~\".* by \" | __error__=\"\"",
           "hide": false,
           "queryType": "range",
           "refId": "A"
@@ -1159,7 +1159,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": session opened for\" | pattern `<_> session opened for user <username> <_>` | username !~\".*(uid=.*)\" | __error__=\"\"",
+          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\": session opened for\" | pattern `<_> session opened for user <username> <_>` | username !~\".*(uid=.*)\" | __error__=\"\"",
           "hide": false,
           "queryType": "range",
           "refId": "B"
@@ -1268,7 +1268,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |~\": Invalid|: Connection closed by authenticating user|: Failed .* user\" | pattern `<_> user <username> <_> port` | __error__=\"\"",
+          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |~\"Invalid|Connection closed by authenticating user|Failed .* user\" | pattern `<_> user <username> <_> port` | __error__=\"\"",
           "hide": false,
           "queryType": "range",
           "refId": "A"
@@ -1279,7 +1279,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\"} |=\"sshd[\" |=\": Failed\" !~\"invalid user\" | pattern `<_> for <username> from <_> port` | __error__=\"\"",
+          "expr": "{$label_name=~\"$label_value\", job=~\"$job\", instance=~\"$instance\", unit=~\"sshd.*\"} |=\"Failed\" !~\"invalid user\" | pattern `<_> for <username> from <_> port` | __error__=\"\"",
           "hide": false,
           "queryType": "range",
           "refId": "B"
