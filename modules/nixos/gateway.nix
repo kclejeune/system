@@ -776,11 +776,9 @@ in
       "authelia-${autheliaInstance}.service"
       "network-online.target"
     ];
-    serviceConfig = {
-      RestartSec = "5s";
-      StartLimitIntervalSec = "60s";
-      StartLimitBurst = 10;
-    };
+    startLimitIntervalSec = 60;
+    startLimitBurst = 10;
+    serviceConfig.RestartSec = "5s";
   };
 
   # Restrict coturn relay port range and block SSRF to internal networks
