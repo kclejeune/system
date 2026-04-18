@@ -280,7 +280,6 @@ in
               "profile"
               "email"
               "groups"
-              "offline_access"
             ];
             require_pkce = true;
             pkce_challenge_method = "S256";
@@ -743,7 +742,7 @@ in
           ClientID = "netbird";
           AuthorizationEndpoint = "https://${authDomain}/api/oidc/authorization";
           TokenEndpoint = "https://${authDomain}/api/oidc/token";
-          Scope = "openid profile email offline_access";
+          Scope = "openid profile email groups";
           RedirectURLs = [ "http://localhost:53000" ];
           UseIDToken = true;
         };
@@ -758,7 +757,7 @@ in
         AUTH_AUTHORITY = "https://${authDomain}";
         AUTH_CLIENT_ID = "netbird";
         AUTH_AUDIENCE = "netbird";
-        AUTH_SUPPORTED_SCOPES = "openid profile email offline_access";
+        AUTH_SUPPORTED_SCOPES = "openid profile email groups";
         AUTH_REDIRECT_URI = "/auth";
         AUTH_SILENT_REDIRECT_URI = "/silent-auth";
         USE_AUTH0 = "";
@@ -777,11 +776,9 @@ in
       "authelia-${autheliaInstance}.service"
       "network-online.target"
     ];
-    serviceConfig = {
-      RestartSec = "5s";
-      StartLimitIntervalSec = "60s";
-      StartLimitBurst = 10;
-    };
+    startLimitIntervalSec = 60;
+    startLimitBurst = 10;
+    serviceConfig.RestartSec = "5s";
   };
 
   # Restrict coturn relay port range and block SSRF to internal networks
