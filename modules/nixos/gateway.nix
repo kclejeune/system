@@ -227,6 +227,12 @@ in
           "name"
           "preferred_username"
         ];
+        claims_policies.netbird.id_token = [
+          "email"
+          "name"
+          "preferred_username"
+          "groups"
+        ];
         clients = [
           {
             client_id = "proxmox";
@@ -262,6 +268,7 @@ in
             authorization_policy = "one_factor";
             consent_mode = "implicit";
             audience = [ "netbird" ];
+            claims_policy = "netbird";
             response_types = [ "code" ];
             redirect_uris = [
               "http://localhost:53000"
@@ -272,6 +279,7 @@ in
               "openid"
               "profile"
               "email"
+              "groups"
             ];
             require_pkce = true;
             pkce_challenge_method = "S256";
@@ -734,7 +742,7 @@ in
           ClientID = "netbird";
           AuthorizationEndpoint = "https://${authDomain}/api/oidc/authorization";
           TokenEndpoint = "https://${authDomain}/api/oidc/token";
-          Scope = "openid profile email";
+          Scope = "openid profile email groups";
           RedirectURLs = [ "http://localhost:53000" ];
           UseIDToken = true;
         };
@@ -749,7 +757,7 @@ in
         AUTH_AUTHORITY = "https://${authDomain}";
         AUTH_CLIENT_ID = "netbird";
         AUTH_AUDIENCE = "netbird";
-        AUTH_SUPPORTED_SCOPES = "openid profile email";
+        AUTH_SUPPORTED_SCOPES = "openid profile email groups";
         AUTH_REDIRECT_URI = "/auth";
         AUTH_SILENT_REDIRECT_URI = "/silent-auth";
         USE_AUTH0 = "";
