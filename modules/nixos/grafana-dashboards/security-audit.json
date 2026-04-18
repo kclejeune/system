@@ -496,7 +496,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(authelia_request_total[5m])) by (method)",
+          "expr": "sum(rate(authelia_request[5m])) by (method)",
           "legendFormat": "{{ method }}",
           "refId": "A"
         }
@@ -525,12 +525,12 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(authelia_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(authelia_request_duration_bucket[5m])) by (le))",
           "legendFormat": "p95",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.50, sum(rate(authelia_request_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(authelia_request_duration_bucket[5m])) by (le))",
           "legendFormat": "p50",
           "refId": "B"
         }
@@ -559,7 +559,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(authelia_authn_total[5m])) by (success)",
+          "expr": "sum(rate(authelia_authn[5m])) by (success)",
           "legendFormat": "success={{ success }}",
           "refId": "A"
         }
@@ -622,7 +622,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(authelia_request_total{code=~\"4..|5..\"}[5m])) by (code)",
+          "expr": "sum(rate(authelia_request{code=~\"4..|5..\"}[5m])) by (code)",
           "legendFormat": "{{ code }}",
           "refId": "A"
         }
@@ -710,7 +710,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "increase(authelia_authn_total{banned=\"true\"}[24h])",
+          "expr": "increase(authelia_authn{banned=\"true\"}[24h])",
           "refId": "A"
         }
       ],
@@ -867,7 +867,7 @@
       }
     },
     {
-      "title": "Authelia Authz Denials by Code",
+      "title": "Authelia OIDC Endpoint Activity",
       "type": "timeseries",
       "gridPos": {
         "h": 8,
@@ -885,17 +885,20 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (code) (rate(authelia_authz_total{code!~\"2..\"}[5m]))",
-          "refId": "A",
-          "legendFormat": "{{ code }}"
+          "expr": "sum by (endpoint) (rate(authelia_request_duration_openid_connect_count[5m]))",
+          "legendFormat": "{{ endpoint }}",
+          "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "unit": "reqps",
           "custom": {
-            "fillOpacity": 20
-          },
-          "unit": "reqps"
+            "fillOpacity": 20,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
         },
         "overrides": []
       }
@@ -975,7 +978,7 @@
       ]
     },
     {
-      "title": "Authelia 2FA by Method",
+      "title": "Authelia Auth Duration (p95)",
       "type": "timeseries",
       "gridPos": {
         "h": 8,
@@ -993,23 +996,23 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (type, success) (rate(authelia_authn_second_factor_total[5m]))",
-          "refId": "A",
-          "legendFormat": "{{ type }} success={{ success }}"
+          "expr": "histogram_quantile(0.95, sum by (le, success) (rate(authelia_authn_duration_bucket[5m])))",
+          "legendFormat": "success={{ success }}",
+          "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "unit": "s",
           "custom": {
-            "fillOpacity": 20
-          },
-          "unit": "reqps"
+            "fillOpacity": 15
+          }
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "webauthn success=true"
+              "options": "success=true"
             },
             "properties": [
               {
@@ -1024,73 +1027,13 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "totp success=true"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "duo success=true"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "webauthn success=false"
+              "options": "success=false"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "totp success=false"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "duo success=false"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
                   "mode": "fixed"
                 }
               }

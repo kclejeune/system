@@ -527,8 +527,10 @@ in
 
   environment.etc."alloy/config.alloy".text = ''
     // Scrape journald logs (sshd, fail2ban, authelia, nginx, systemd)
+    // Route authelia's JSON-on-stdout through a parser stage that extracts
+    // level/remote_ip as labels and tags the stream with job="authelia".
     loki.source.journal "journald" {
-      forward_to = [loki.write.local.receiver]
+      forward_to = [loki.process.journal.receiver]
       relabel_rules = loki.relabel.journal.rules
     }
 
@@ -545,39 +547,33 @@ in
       }
     }
 
-    // Scrape authelia JSON log file
-    local.file_match "authelia_log" {
-      path_targets = [{"__path__" = "${autheliaLogFile}"}]
-    }
-
-    loki.source.file "authelia" {
-      targets    = local.file_match.authelia_log.targets
-      forward_to = [loki.process.authelia.receiver]
-    }
-
-    loki.process "authelia" {
+    loki.process "journal" {
       forward_to = [loki.write.local.receiver]
 
-      stage.json {
-        expressions = {
-          level      = "level",
-          msg        = "msg",
-          remote_ip  = "remote_ip",
-          method     = "method",
-          path       = "path",
-        }
-      }
+      stage.match {
+        selector = "{unit=\"authelia-main.service\"}"
 
-      stage.labels {
-        values = {
-          level     = "",
-          remote_ip = "",
+        stage.json {
+          expressions = {
+            level      = "level",
+            msg        = "msg",
+            remote_ip  = "remote_ip",
+            method     = "method",
+            path       = "path",
+          }
         }
-      }
 
-      stage.static_labels {
-        values = {
-          job = "authelia",
+        stage.labels {
+          values = {
+            level     = "",
+            remote_ip = "",
+          }
+        }
+
+        stage.static_labels {
+          values = {
+            job = "authelia",
+          }
         }
       }
     }
@@ -628,7 +624,11 @@ in
     port = prometheusPort;
     retentionTime = "30d";
     scrapeConfigs = [
-      (mkScrapeConfig "authelia" "127.0.0.1:${toString autheliaMetricsPort}")
+      {
+        job_name = "authelia";
+        metrics_path = "/";
+        static_configs = [ { targets = [ "127.0.0.1:${toString autheliaMetricsPort}" ]; } ];
+      }
       (mkScrapeConfig "node" "127.0.0.1:${toString config.services.prometheus.exporters.node.port}")
       (mkScrapeConfig "cloudflared" "127.0.0.1:2000")
       (mkScrapeConfig "netbird-management" "127.0.0.1:${toString netbirdMgmtMetricsPort}")
