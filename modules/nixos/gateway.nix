@@ -267,8 +267,8 @@ in
             public = true;
             authorization_policy = "one_factor";
             consent_mode = "implicit";
-            audience = [ "netbird" ];
             claims_policy = "netbird";
+            audience = [ "netbird" ];
             response_types = [ "code" ];
             redirect_uris = [
               "http://localhost:53000"
