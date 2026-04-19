@@ -844,14 +844,14 @@ in
   '';
 
   # Nginx stream block: SNI-based routing on port 443
-  # *.proxy.netbird.kclj.io → TLS passthrough to netbird-proxy (handles its own TLS)
+  # *.kclj.dev → TLS passthrough to netbird-proxy (handles its own TLS)
   # everything else → normal nginx HTTP block (TLS termination)
   services.nginx.streamConfig = ''
     limit_conn_zone $remote_addr zone=stream_per_ip:10m;
 
     map $ssl_preread_server_name $backend {
-      ~^[a-zA-Z0-9-]+\.proxy\.netbird\.kclj\.io$  netbird_proxy;
-      default                                       nginx_https;
+      ~^[a-zA-Z0-9-]+\.kclj\.dev$  netbird_proxy;
+      default                       nginx_https;
     }
 
     upstream netbird_proxy {
