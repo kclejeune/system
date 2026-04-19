@@ -795,9 +795,9 @@ in
       no-loopback-peers
       no-multicast-peers
       stale-nonce=600
-      user-quota=16
-      total-quota=100
-      max-bps=10000000
+      user-quota=100
+      total-quota=500
+      max-bps=50000000
       max-allocate-timeout=300
     '';
   };
