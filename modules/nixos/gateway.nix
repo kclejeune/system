@@ -274,6 +274,7 @@ in
               "http://localhost:53000"
               "https://${netbirdDomain}/auth"
               "https://${netbirdDomain}/silent-auth"
+              "https://${netbirdDomain}/api/reverse-proxy/callback"
             ];
             scopes = [
               "openid"
@@ -736,7 +737,12 @@ in
       settings = {
         DataStoreEncryptionKey._secret = config.sops.secrets."netbird/datastore_encryption_key".path;
         TURNConfig.Secret._secret = config.sops.secrets."netbird/turn_password".path;
-        AuthCallbackURL = "https://${netbirdDomain}/api/reverse-proxy/callback";
+        HttpConfig = {
+          AuthIssuer = "https://${authDomain}";
+          AuthAudience = "netbird";
+          AuthClientID = "netbird";
+          AuthCallbackURL = "https://${netbirdDomain}/api/reverse-proxy/callback";
+        };
         PKCEAuthorizationFlow.ProviderConfig = {
           Audience = "netbird";
           ClientID = "netbird";
