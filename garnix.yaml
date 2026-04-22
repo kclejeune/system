@@ -1,14 +1,11 @@
 builds:
   exclude: []
   include:
-    - "*.x86_64-linux.*"
-    - "*.aarch64-linux.*"
-    - "*.aarch64-darwin.*"
-    - packages.*.default
-    - devShells.*.default
-    - homeConfigurations.*
-    - darwinConfigurations.*
-    - nixosConfigurations.*
+    - "packages.*.*"
+    - "devShells.*.default"
+    - "homeConfigurations.*"
+    - "darwinConfigurations.*"
+    - "nixosConfigurations.*"
 remoteCache:
   enabled: true
   caches:
