@@ -2,6 +2,7 @@
   inputs,
   config,
   pkgs,
+  lib,
   ...
 }:
 {
@@ -213,7 +214,7 @@
     };
     nh = {
       enable = true;
-      flake = "${config.home.homeDirectory}/.nixpkgs";
+      flake = lib.mkDefault "${config.home.homeDirectory}/.nixpkgs";
     };
     nix-index.enable = true;
     nix-index-database.comma.enable = true;

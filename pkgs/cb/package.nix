@@ -22,6 +22,7 @@ pkgs.writeShellScriptBin "cb" ''
   is_tux() { [ ''${TUX_OS-0} -ne 0 ]; }
   is_mac() { [ ''${MAC_OS-0} -ne 0 ]; }
   is_win() { [ ''${WIN_OS-0} -ne 0 ]; }
+  is_wayland() { [ "$XDG_SESSION_TYPE" = 'wayland' ]; }
 
   # ------------------------------------------------------------------------------
   # copy and paste
@@ -32,9 +33,12 @@ pkgs.writeShellScriptBin "cb" ''
   elif is_win; then
     alias cbcopy=putclip
     alias cbpaste=getclip
+  elif is_tux && is_wayland; then
+    alias cbcopy='${pkgs.wl-clipboard-rs}/bin/wl-copy'
+    alias cbpaste='${pkgs.wl-clipboard-rs}/bin/wl-paste'
   else
-    alias cbcopy='${pkgs.xclip}/bin/xclip -sel c'
-    alias cbpaste='${pkgs.xclip}/bin/xclip -sel c -o'
+    alias cbcopy='${pkgs.xclip}/bin/xclip -selection clipboard'
+    alias cbpaste='${pkgs.xclip}/bin/xclip -selection clipboard -out'
   fi
 
   # ------------------------------------------------------------------------------

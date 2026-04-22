@@ -1,10 +1,17 @@
+# Personal desktop (Phil / Lenovo ThinkPad T460s) — layered on top of gnome-desktop.nix.
 {
   config,
-  pkgs,
+  lib,
+  modulesPath,
   ...
 }:
 {
-  imports = [ ./keybase.nix ];
+  imports = [
+    (modulesPath + "/installer/scan/not-detected.nix")
+    ./keybase.nix
+    ./gnome.nix
+    ./hyprland.nix
+  ];
 
   services.syncthing = {
     enable = true;
@@ -14,61 +21,76 @@
     dataDir = config.user.home;
   };
 
-  environment.systemPackages = with pkgs; [
-    vscode
-    brave
-    gnome-tweaks
-  ];
-
-  hm =
-    { ... }:
-    {
-      imports = [
-        ../home-manager/gnome.nix
-        ../home-manager/1password.nix
-      ];
-    };
-
-  # Define a user account. Don't forget to set a password with 'passwd'.
   users = {
     mutableUsers = false;
-    users = {
-      "${config.user.name}" = {
-        isNormalUser = true;
-        extraGroups = [
-          "sudo"
-          "wheel"
-          "networkmanager"
-        ];
-        hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
-      };
+    users."${config.user.name}" = {
+      isNormalUser = true;
+      extraGroups = [
+        "wheel"
+        "networkmanager"
+        "docker"
+      ];
+      hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
     };
   };
 
   networking.hostName = "Phil";
-  networking.networkmanager.enable = true;
 
-  # Use the GRUB 2 boot loader.
-  boot.loader.grub.enable = true;
-  boot.loader.grub.device = "/dev/sda";
+  # Hardware
+  boot.initrd.availableKernelModules = [
+    "xhci_pci"
+    "ahci"
+    "usb_storage"
+    "sd_mod"
+    "rtsx_pci_sdmmc"
+  ];
+  boot.kernelModules = [ "kvm-intel" ];
 
-  networking.useDHCP = false;
-  networking.interfaces.enp0s31f6.useDHCP = true;
-  networking.interfaces.wlp4s0.useDHCP = true;
+  boot.loader.grub = {
+    enable = true;
+    device = "nodev";
+    efiSupport = true;
+  };
+  boot.loader.efi.canTouchEfiVariables = true;
 
-  services.geoclue2.enable = true;
-  services.localtimed.enable = true;
+  disko.devices = {
+    disk.main = {
+      device = "/dev/sda";
+      type = "disk";
+      content = {
+        type = "gpt";
+        partitions = {
+          esp = {
+            size = "512M";
+            type = "EF00";
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot/efi";
+              mountOptions = [ "umask=0077" ];
+            };
+          };
+          swap = {
+            size = "4G";
+            content = {
+              type = "swap";
+            };
+          };
+          root = {
+            size = "100%";
+            content = {
+              type = "filesystem";
+              format = "ext4";
+              mountpoint = "/";
+              mountOptions = [ "errors=remount-ro" ];
+            };
+          };
+        };
+      };
+    };
+  };
 
-  programs.gnupg.agent.pinentryPackage = pkgs.pinentry-gnome3;
-
-  services.printing.enable = true;
-  services.pulseaudio.enable = false;
-  services.libinput.enable = true;
-
-  services.xserver.enable = true;
-  services.xserver.xkb.layout = "us";
-  services.desktopManager.gnome.enable = true;
-  services.displayManager.gdm.enable = true;
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
   system.stateVersion = "24.11";
 }

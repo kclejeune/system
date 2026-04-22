@@ -12,9 +12,6 @@
   nix.settings = {
     extra-trusted-users = [
       "${config.user.name}"
-      "@admin"
-      "@root"
-      "@sudo"
       "@wheel"
     ];
     keep-outputs = true;
@@ -32,6 +29,5 @@
     enableSSHSupport = true;
   };
 
-  # Enable the OpenSSH daemon.
   services.openssh.enable = true;
 }

@@ -1,0 +1,68 @@
+// This configuration is merged with the default vicinae configuration file, which you can obtain by running the `vicinae config default` command.
+// Every item defined in this file takes precedence over the values defined in the default config or any other imported file.
+//
+// You can make manual edits to this file, however you should keep in mind that this file may be written to by vicinae when a configuration change is made through the GUI.
+// When that happens, any custom comments or formatting will be lost.
+//
+// If you want to maintain a configuration file with your own comments and formatting, you should create a separate file and add it to the 'imports' array.
+//
+// Learn more about configuration at https://docs.vicinae.com/config
+
+{
+  "$schema": "https://vicinae.com/schemas/config.json",
+  "pop_to_root_on_close": false,
+  "pop_on_backspace": true,
+  "escape_key_behavior": "navigate_back",
+  "favicon_service": "twenty",
+  "pixmap_cache_mb": 50,
+  "search_files_in_root": false,
+  "font": {
+    "rendering": "native",
+    "normal": {
+      "family": "JetBrains Mono",
+      "size": 11
+    }
+  },
+  "theme": {
+    "light": {
+      "name": "catppuccin-latte",
+      "icon_theme": "Papirus-Dark"
+    },
+    "dark": {
+      "name": "catppuccin-mocha",
+      "icon_theme": "Papirus"
+    }
+  },
+  "telemetry": {
+    "system_info": false
+  },
+  "launcher_window": {
+    "opacity": 0.98,
+    "client_side_decorations": {
+      "enabled": true,
+      "rounding": 10,
+      "border_width": 1
+    },
+    "dim_around": true,
+    "blur": {
+      "enabled": true
+    },
+    "layer_shell": {
+      "layer": "top",
+      "keyboard_interactivity": "exclusive",
+      "enabled": true
+    }
+  },
+  "favorites": ["clipboard:history"],
+  "fallbacks": ["files:search"],
+  "providers": {
+    "clipboard": {
+      "preferences": {
+        "encryption": true,
+        "eraseOnStartup": false,
+        "ignorePasswords": true,
+        "monitoring": true
+      }
+    }
+  }
+}
