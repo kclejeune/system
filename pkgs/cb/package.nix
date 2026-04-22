@@ -9,6 +9,7 @@ pkgs.writeShellApplication {
     pkgs.wl-clipboard-rs
     pkgs.xclip
   ];
+  excludeShellChecks = [ "SC2317" ];
   text = ''
     # universal clipboard, stephen@niedzielski.com
 
