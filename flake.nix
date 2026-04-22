@@ -54,6 +54,9 @@
 
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -68,10 +71,10 @@
     let
       inherit (inputs.nixpkgs) lib;
 
-      defaultSystems = lib.intersectLists (lib.platforms.linux ++ lib.platforms.darwin) (
-        lib.platforms.x86_64 ++ lib.platforms.aarch64
-      );
-      darwinSystems = lib.intersectLists defaultSystems lib.platforms.darwin;
+      defaultSystems =
+        (lib.intersectLists lib.platforms.linux (lib.platforms.x86_64 ++ lib.platforms.aarch64))
+        ++ (lib.intersectLists lib.platforms.aarch64 lib.platforms.darwin);
+      darwinSystems = lib.intersectLists lib.platforms.aarch64 lib.platforms.darwin;
 
       homePrefix = system: if (lib.elem system darwinSystems) then "/Users" else "/home";
 
@@ -104,6 +107,8 @@
           baseModules ? [
             determinate.nixosModules.default
             home-manager.nixosModules.home-manager
+            inputs.disko.nixosModules.disko
+            inputs.sops-nix.nixosModules.sops
             ./modules/nixos
           ],
           extraModules ? [ ],
@@ -165,6 +170,27 @@
           lib.platforms.x86_64 ++ lib.platforms.aarch64
         );
         flake = {
+          nixosModules = {
+            default = ./modules/nixos;
+            gnome = ./modules/nixos/gnome.nix;
+            hyprland = ./modules/nixos/hyprland.nix;
+            desktop = ./modules/nixos/desktop.nix;
+            desktopBase = ./modules/nixos/desktop-base.nix;
+            hetzner = ./modules/nixos/hetzner.nix;
+            gateway = ./modules/nixos/gateway.nix;
+            keybase = ./modules/nixos/keybase.nix;
+          };
+
+          darwinModules = {
+            default = ./modules/darwin;
+            apps = ./modules/darwin/apps.nix;
+          };
+
+          homeModules = {
+            default = ./modules/home-manager;
+            onepassword = ./modules/home-manager/1password.nix;
+          };
+
           darwinConfigurations =
             # generate darwin configs for each supported platform
             lib.mergeAttrsList (
@@ -175,12 +201,6 @@
                   extraModules = [
                     ./profiles/personal
                     ./modules/darwin/apps.nix
-                  ];
-                };
-                "klejeune@${system}" = mkDarwinConfig {
-                  inherit system;
-                  extraModules = [
-                    ./profiles/work
                   ];
                 };
               }) darwinSystems)
@@ -195,7 +215,6 @@
                 "kclejeune@x86_64-linux" = mkNixosConfig {
                   system = "x86_64-linux";
                   hardwareModules = [
-                    ./modules/hardware/phil.nix
                     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
                   ];
                   extraModules = [
@@ -209,7 +228,6 @@
                     ./modules/nixos/hetzner.nix
                   ];
                   extraModules = [
-                    inputs.sops-nix.nixosModules.sops
                     ./modules/nixos/gateway.nix
                     ./profiles/personal
                   ];
@@ -225,13 +243,6 @@
                   inherit system;
                   username = "kclejeune";
                   extraModules = [ ./profiles/personal/home-manager ];
-                };
-                "klejeune@${system}" = mkHomeConfig {
-                  inherit system;
-                  username = "klejeune";
-                  extraModules = [
-                    ./profiles/work/home-manager
-                  ];
                 };
               }) defaultSystems)
               # and "custom" ones that aren't universal

@@ -47,7 +47,6 @@ let
 in
 {
   networking.hostName = "gateway";
-  networking.domain = "";
 
   # Hetzner volume mounted early in initrd so that /nix is available before
   # systemd starts — avoids a chicken-and-egg problem where systemd itself
@@ -69,7 +68,6 @@ in
       80 # HTTP
       443 # HTTPS
     ];
-    allowedUDPPorts = [ ];
     extraInputRules = ''
       ct state invalid drop
       tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
@@ -712,9 +710,7 @@ in
     };
   };
 
-  # Passwordless sudo via SSH agent forwarding
-  security.pam.rssh.enable = true;
-  security.pam.services.sudo.rssh = true;
+  security.pam.services.sudo.rssh.enable = true;
 
   # Netbird - mesh VPN client
   services.netbird.enable = true;

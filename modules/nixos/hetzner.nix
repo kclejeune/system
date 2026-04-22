@@ -27,9 +27,6 @@
 
   zramSwap.enable = true;
 
-  # Workaround for https://github.com/NixOS/nix/issues/8502
-  services.logrotate.checkConfig = false;
-
   # Limit nix to 1 core so builds don't starve the system on small VMs
   nix.settings = {
     max-jobs = 1;
