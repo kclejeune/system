@@ -71,10 +71,10 @@
     let
       inherit (inputs.nixpkgs) lib;
 
-      defaultSystems = lib.intersectLists (lib.platforms.linux ++ lib.platforms.darwin) (
-        lib.platforms.x86_64 ++ lib.platforms.aarch64
-      );
-      darwinSystems = lib.intersectLists defaultSystems lib.platforms.darwin;
+      defaultSystems =
+        (lib.intersectLists lib.platforms.linux (lib.platforms.x86_64 ++ lib.platforms.aarch64))
+        ++ (lib.intersectLists lib.platforms.aarch64 lib.platforms.darwin);
+      darwinSystems = lib.intersectLists lib.platforms.aarch64 lib.platforms.darwin;
 
       homePrefix = system: if (lib.elem system darwinSystems) then "/Users" else "/home";
 
