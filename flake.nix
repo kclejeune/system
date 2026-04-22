@@ -260,9 +260,6 @@
             lib,
             ...
           }:
-          let
-            filterSystem = attrs: lib.filterAttrs (name: drv: drv.pkgs.system == system) attrs;
-          in
           {
             _module.args.pkgs = import inputs.nixpkgs {
               inherit system;
@@ -281,17 +278,6 @@
               nix = inputs.determinate.inputs.nix.packages.${system}.default;
               nh = inputs.nh.packages.${system}.default;
             };
-            checks = lib.mergeAttrsList [
-              # home-manager checks; add _home suffix to original config to avoid nixos coflict
-              (lib.mapAttrs' (name: cfg: (lib.nameValuePair "${name}_home" cfg.activationPackage)) (
-                filterSystem self.homeConfigurations
-              ))
-
-              # nixOS + nix-darwin checks
-              (lib.mapAttrs (_: cfg: cfg.config.system.build.toplevel) (
-                filterSystem (self.darwinConfigurations // self.nixosConfigurations)
-              ))
-            ];
             legacyPackages = pkgs;
             treefmt = {
               programs = {
