@@ -5,11 +5,13 @@
     extra-substituters = [
       # "https://cache.kclj.io/kclejeune"
       "https://kclejeune.cachix.org"
+      "https://cache.garnix.io"
       "https://install.determinate.systems"
     ];
     extra-trusted-public-keys = [
       # "kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk="
       "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
+      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
     ];
   };

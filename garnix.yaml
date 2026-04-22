@@ -2,8 +2,17 @@ builds:
   exclude: []
   include:
     - "*.x86_64-linux.*"
+    - "*.aarch64-linux.*"
+    - "*.aarch64-darwin.*"
     - packages.*.default
     - devShells.*.default
     - homeConfigurations.*
     - darwinConfigurations.*
     - nixosConfigurations.*
+remoteCache:
+  enabled: true
+  caches:
+    - url: "https://cache.garnix.io"
+      publicKey: "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+    - url: "https://install.determinate.systems"
+      publicKey: "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
