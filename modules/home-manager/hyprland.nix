@@ -750,6 +750,9 @@ in
       waybar = ''
         pkill -SIGUSR2 waybar || true
       '';
+      swaync = ''
+        swaync-client --reload-css || true
+      '';
       wallpaper = ''
         ln -sf ${config.home.homeDirectory}/.config/hypr/wallpaper-dark.png ${config.home.homeDirectory}/.config/hypr/wallpaper.png
         systemctl --user restart hyprpaper.service
@@ -772,6 +775,9 @@ in
       '';
       waybar = ''
         pkill -SIGUSR2 waybar || true
+      '';
+      swaync = ''
+        swaync-client --reload-css || true
       '';
       wallpaper = ''
         ln -sf ${config.home.homeDirectory}/.config/hypr/wallpaper-light.png ${config.home.homeDirectory}/.config/hypr/wallpaper.png
