@@ -710,8 +710,7 @@ in
     };
   };
 
-  security.pam.rssh.enable = true;
-  security.pam.services.sudo.rssh = true;
+  security.pam.services.sudo.rssh.enable = true;
 
   # Netbird - mesh VPN client
   services.netbird.enable = true;
