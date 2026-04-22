@@ -59,6 +59,9 @@
 
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
+
+    deploy-rs.url = "github:serokell/deploy-rs";
+    deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -237,6 +240,13 @@
               }
             ];
 
+          deploy.nodes.gateway = {
+            hostname = "gateway.kclj.io";
+            sshUser = "kclejeune";
+            user = "root";
+            profiles.system.path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.gateway;
+          };
+
           homeConfigurations =
             # generate home-manager configs for each supported platform
             lib.mergeAttrsList (
@@ -279,6 +289,8 @@
               nh = inputs.nh.packages.${system}.default;
             };
             legacyPackages = pkgs;
+            packages.deploy-rs = inputs.deploy-rs.packages.${system}.default;
+            checks = inputs.deploy-rs.lib.${system}.deployChecks self.deploy;
             treefmt = {
               programs = {
                 deadnix = {
