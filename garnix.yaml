@@ -1,8 +1,9 @@
 builds:
   exclude: []
   include:
+    - "checks.*.*"
     - "packages.*.*"
-    - "devShells.*.default"
+    - "devShells.*.*"
     - "homeConfigurations.*"
     - "darwinConfigurations.*"
     - "nixosConfigurations.*"
