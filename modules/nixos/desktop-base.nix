@@ -162,7 +162,7 @@
 
           echo ""
           echo "=== Step 1: Partitioning and formatting with disko ==="
-          disko --mode destroy,format,mount
+          ${config.system.build.diskoScript}
 
           echo ""
           echo "=== Step 2: Installing NixOS (offline) ==="
