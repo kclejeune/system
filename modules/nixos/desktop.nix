@@ -46,12 +46,22 @@
   ];
   boot.kernelModules = [ "kvm-intel" ];
 
-  boot.loader.grub = {
-    enable = true;
-    device = "nodev";
-    efiSupport = true;
+  boot.loader = {
+    timeout = 0;
+    grub = {
+      enable = true;
+      device = "nodev";
+      efiSupport = true;
+      extraConfig = ''
+        if keystatus --shift ; then
+          set timeout=-1
+        else
+          set timeout=0
+        fi
+      '';
+    };
+    efi.canTouchEfiVariables = true;
   };
-  boot.loader.efi.canTouchEfiVariables = true;
 
   disko.devices = {
     disk.main = {
