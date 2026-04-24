@@ -97,6 +97,17 @@
   services.fprintd.enable = true;
   security.pam.services.sudo.fprintAuth = true;
 
+  # Firmware updates via LVFS (Dell BIOS/EC, Thunderbolt controllers, etc.)
+  services.fwupd.enable = true;
+
+  # Thunderbolt device authorization daemon. Pairs with BIOS security level
+  # "User Authorization" so new devices must be approved via boltctl / GNOME.
+  services.hardware.bolt.enable = true;
+
+  # Intel thermal daemon — improves sustained perf/thermals on Alder Lake
+  # and later. No-op on non-Intel hardware.
+  services.thermald.enable = true;
+
   # hyprlock claims the fingerprint reader via before_sleep_cmd; after resume
   # the USB device re-enumerates and fprintd's handle goes stale, so the
   # fingerprint prompt silently never fires. Restart fprintd on resume.
