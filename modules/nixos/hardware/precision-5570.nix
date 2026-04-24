@@ -93,5 +93,19 @@
     };
   };
 
+  # Power management: prefer power-profiles-daemon (GNOME-integrated, adjusts
+  # CPU EPP + Dell's firmware platform profile). nixos-hardware's common/pc/laptop
+  # enables TLP only when PPD is off, so enabling PPD here flips TLP off.
+  services.power-profiles-daemon.enable = true;
+
+  # Suspend the NVIDIA dGPU when idle. PRIME render offload is already on via
+  # nixos-hardware's dell-precision-5570 module; finegrained adds per-engine D3
+  # suspend (Turing+, fine on the 5570's Ampere).
+  hardware.nvidia.powerManagement.enable = true;
+  hardware.nvidia.powerManagement.finegrained = true;
+
+  # Offer a "battery-saver" grub entry that boots with the dGPU fully disabled.
+  hardware.nvidia.primeBatterySaverSpecialisation = true;
+
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 }
