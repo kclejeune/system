@@ -159,6 +159,11 @@
   # Build: nh os build-image --image-variant=iso-installer -H "<hostname>"
   image.modules.iso-installer =
     let
+      # The target system closure — the non-installer config. At this scope
+      # `config` is the outer (base) evaluation, before iso-image.nix layers on
+      # the live-ISO root filesystem and strips the target bootloader, so
+      # toplevel/diskoScript here describe the system we want on disk.
+      targetToplevel = config.system.build.toplevel;
       installScript = pkgs.writeShellApplication {
         name = "install-image";
         runtimeInputs = with pkgs; [
@@ -167,17 +172,17 @@
           lvm2
         ];
         text = ''
-          # Only run from a live ISO (squashfs root) — refuse on installed systems
-          if ! findmnt -n -o FSTYPE / | grep -q squashfs; then
+          # Live ISOs mount / as tmpfs and expose the source medium at /iso.
+          # Refuse to run anywhere else so we don't clobber an installed system.
+          if ! mountpoint -q /iso; then
             echo "ERROR: install-image should only be run from a live ISO environment."
             echo "       Refusing to run on an installed system to prevent data loss."
             exit 1
           fi
 
-          TOPLEVEL=$(readlink -f /run/current-system)
           echo "NixOS Offline Installer"
           echo "======================="
-          echo "System closure: $TOPLEVEL"
+          echo "System closure: ${targetToplevel}"
           echo ""
           echo "WARNING: This will format disks according to the disko configuration."
           read -rp "Type YES to continue: " confirm
@@ -190,7 +195,7 @@
           echo ""
           echo "=== Step 2: Installing NixOS (offline) ==="
           nixos-install \
-            --system "$TOPLEVEL" \
+            --system ${targetToplevel} \
             --no-root-passwd \
             --no-channel-copy \
             --option substituters ""
