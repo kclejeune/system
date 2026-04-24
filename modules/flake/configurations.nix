@@ -1,10 +1,13 @@
 {
   self,
   inputs,
+  config,
   lib,
   ...
 }:
 let
+  fp = config;
+
   defaultSystems =
     (lib.intersectLists lib.platforms.linux (lib.platforms.x86_64 ++ lib.platforms.aarch64))
     ++ (lib.intersectLists lib.platforms.aarch64 lib.platforms.darwin);
@@ -16,16 +19,15 @@ let
     {
       system ? "aarch64-darwin",
       nixpkgs ? inputs.nixpkgs,
-      baseModules ? [
-        inputs.determinate.darwinModules.default
-        inputs.home-manager.darwinModules.home-manager
-        ../darwin
-      ],
       extraModules ? [ ],
     }:
     inputs.darwin.lib.darwinSystem {
       inherit system;
-      modules = baseModules ++ extraModules;
+      modules = [
+        inputs.determinate.darwinModules.default
+        inputs.home-manager.darwinModules.home-manager
+        fp.flake.darwinModules.default
+      ] ++ extraModules;
       specialArgs = { inherit self inputs nixpkgs; };
     };
 
@@ -34,18 +36,19 @@ let
       system ? "x86_64-linux",
       nixpkgs ? inputs.nixos-unstable,
       hardwareModules,
-      baseModules ? [
-        inputs.determinate.nixosModules.default
-        inputs.home-manager.nixosModules.home-manager
-        inputs.disko.nixosModules.disko
-        inputs.sops-nix.nixosModules.sops
-        ../nixos
-      ],
       extraModules ? [ ],
     }:
     nixpkgs.lib.nixosSystem {
       inherit system;
-      modules = baseModules ++ hardwareModules ++ extraModules;
+      modules = [
+        inputs.determinate.nixosModules.default
+        inputs.home-manager.nixosModules.home-manager
+        inputs.disko.nixosModules.disko
+        inputs.sops-nix.nixosModules.sops
+        fp.flake.nixosModules.default
+      ]
+      ++ hardwareModules
+      ++ extraModules;
       specialArgs = { inherit self inputs nixpkgs; };
     };
 
@@ -54,8 +57,21 @@ let
       username,
       system ? "x86_64-linux",
       nixpkgs ? inputs.nixpkgs,
-      baseModules ? [
-        ../home-manager
+      extraModules ? [ ],
+    }:
+    inputs.home-manager.lib.homeManagerConfiguration {
+      pkgs = import nixpkgs {
+        inherit system;
+        config = {
+          allowUnsupportedSystem = true;
+          allowUnfree = true;
+          allowBroken = false;
+        };
+        overlays = [ self.overlays.default ];
+      };
+      extraSpecialArgs = { inherit self inputs nixpkgs; };
+      modules = [
+        fp.flake.homeModules.default
         (
           { pkgs, ... }:
           {
@@ -66,49 +82,19 @@ let
             };
           }
         )
-      ],
-      extraModules ? [ ],
-    }:
-    inputs.home-manager.lib.homeManagerConfiguration {
-      pkgs = import nixpkgs {
-        inherit system;
-        config = import ../config.nix;
-        overlays = [ self.overlays.default ];
-      };
-      extraSpecialArgs = { inherit self inputs nixpkgs; };
-      modules = baseModules ++ extraModules;
+      ]
+      ++ extraModules;
     };
 in
 {
   flake = {
-    nixosModules = {
-      default = ../nixos;
-      gnome = ../nixos/gnome.nix;
-      hyprland = ../nixos/hyprland.nix;
-      desktop = ../nixos/desktop.nix;
-      desktopBase = ../nixos/desktop-base.nix;
-      hetzner = ../nixos/hetzner.nix;
-      gateway = ../nixos/gateway.nix;
-      keybase = ../nixos/keybase.nix;
-    };
-
-    darwinModules = {
-      default = ../darwin;
-      apps = ../darwin/apps.nix;
-    };
-
-    homeModules = {
-      default = ../home-manager;
-      onepassword = ../home-manager/1password.nix;
-    };
-
     darwinConfigurations = lib.mergeAttrsList (
       lib.map (system: {
         "kclejeune@${system}" = mkDarwinConfig {
           inherit system;
           extraModules = [
-            ../../profiles/personal
-            ../darwin/apps.nix
+            fp.flake.darwinModules.profile-personal
+            fp.flake.darwinModules.apps
           ];
         };
       }) darwinSystems
@@ -119,11 +105,11 @@ in
         system = "x86_64-linux";
         hardwareModules = [
           inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
-          ../nixos/hardware/thinkpad-t460s.nix
+          fp.flake.nixosModules.hardware-thinkpad-t460s
         ];
         extraModules = [
-          ../nixos/desktop.nix
-          ../../profiles/personal
+          fp.flake.nixosModules.desktop
+          fp.flake.nixosModules.profile-personal
           { networking.hostName = "phil"; }
         ];
       };
@@ -131,22 +117,22 @@ in
         system = "x86_64-linux";
         hardwareModules = [
           inputs.nixos-hardware.nixosModules.dell-precision-5570
-          ../nixos/hardware/precision-5570.nix
+          fp.flake.nixosModules.hardware-precision-5570
         ];
         extraModules = [
-          ../nixos/desktop.nix
-          ../../profiles/personal
+          fp.flake.nixosModules.desktop
+          fp.flake.nixosModules.profile-personal
           { networking.hostName = "wally"; }
         ];
       };
       gateway = mkNixosConfig {
         system = "x86_64-linux";
         hardwareModules = [
-          ../nixos/hetzner.nix
+          fp.flake.nixosModules.hetzner
         ];
         extraModules = [
-          ../nixos/gateway.nix
-          ../../profiles/personal
+          fp.flake.nixosModules.gateway
+          fp.flake.nixosModules.profile-personal
         ];
       };
     };
@@ -156,7 +142,7 @@ in
         "kclejeune@${system}" = mkHomeConfig {
           inherit system;
           username = "kclejeune";
-          extraModules = [ ../../profiles/personal/home-manager ];
+          extraModules = [ fp.flake.homeModules.profile-personal ];
         };
       }) defaultSystems
     );
