@@ -8,61 +8,95 @@ conventions.
 ## Top-level structure
 
 - `flake.nix` — inputs, `nixConfig`, and a one-line `outputs` that hands
-  everything under `./modules/flake` to `flake-parts.lib.mkFlake` via
-  `import-tree`. Do **not** add logic here; add a new file under
-  `./modules/flake/` instead.
-- `modules/flake/` — the dendritic root. Every `.nix` file here is a
-  flake-parts module. `import-tree` discovers them recursively, so new files
-  are auto-registered.
-- `modules/` (sibling to `flake/`) — the legacy module bodies. Regular
-  NixOS / nix-darwin / home-manager modules. Wrappers in `modules/flake/`
-  path-import these.
-- `profiles/` — legacy per-identity modules (personal, work). Wrapped into
-  `flake.{nixos,darwin,home}Modules.profile-{personal,work}` by
-  `modules/flake/profiles/*.nix`.
+  everything under `./modules` to `flake-parts.lib.mkFlake` via
+  `import-tree`. Do **not** add logic here; add a new file under `./modules/`
+  instead.
+- `modules/` — the dendritic root. Every `.nix` file here is a flake-parts
+  module. `import-tree` discovers them recursively, so new files are
+  auto-registered.
+- `modules/{nixos,darwin,home}/` — reusable class-specific modules. Each
+  file registers `flake.<class>Modules.<name>` with the full body inlined.
+- `modules/shared/` — option modules and wiring shared across classes
+  (`primary-user`, `nixpkgs-wiring`).
+- `modules/profiles/` — per-identity modules (personal, work) that declare
+  `flake.{nixos,darwin,home}Modules.profile-<name>` in one file.
+- `modules/hosts/` — one file per concrete top-level config
+  (`flake.nixosConfigurations.<name>`, etc.).
+- `modules/home-manager/{dotfiles,nvim,yazi}/` — **asset dirs only** (lua
+  files, dotfiles, themes). Referenced from the corresponding `modules/home/*.nix`
+  via relative paths. The `.nix` files are gone; only asset subdirs remain.
 - `pkgs/` — custom package definitions (cb, fnox, weave). Wired into
-  `overlays.default` by `modules/flake/overlays.nix`.
+  `overlays.default` by `modules/overlays.nix`.
+- `secrets/` — sops-encrypted per-host secrets.
 
-## The wrapper pattern
 
-Every reusable module under `modules/flake/{nixos,darwin,home}/<name>.nix` is
-a three-line flake-parts module that registers a legacy body as a first-class
-flake output. Example — `modules/flake/nixos/hyprland.nix`:
+## The inlined-module pattern
+
+Every reusable module lives in one file that both registers itself as a
+flake-parts output AND contains the full body. Example —
+`modules/nixos/hyprland.nix`:
 
 ```nix
-_: {
-  flake.nixosModules.hyprland = ../../nixos/hyprland.nix;
+{ config, ... }:
+let
+  flakeCfg = config;
+in
+{
+  flake.nixosModules.hyprland =
+    { pkgs, ... }:
+    {
+      programs.hyprland.enable = true;
+      # … full body …
+      hm.imports = [ flakeCfg.flake.homeModules.hyprland ];
+    };
 }
 ```
 
-That's the whole file. The actual Hyprland config is in
-`modules/nixos/hyprland.nix` (a regular NixOS module). The wrapper
-deliberately holds no logic — it only makes the legacy body visible to
-flake-parts and any host that wants it.
+The outer `{ config, ... }` binding captures flake-parts' config (aliased as
+`flakeCfg`) so the nixos module body — which would otherwise shadow `config`
+with the NixOS config — can still reach sibling modules via
+`flakeCfg.flake.<class>Modules.<name>`. This is the convention throughout.
 
-This two-layer structure exists because the refactor kept ~5k lines of
-working module code untouched. If you add a new feature, mirror the pattern:
-write the body in the legacy location, add a wrapper.
+Modules with no cross-class or sibling references skip the alias:
+
+```nix
+_: {
+  flake.homeModules.bat = _: {
+    programs.bat = { enable = true; config.theme = "TwoDark"; };
+  };
+}
+```
 
 ## Adding a new reusable module
 
-1. Write the module body at `modules/<class>/<name>.nix` as a normal module:
+1. Pick a class (`nixos`, `darwin`, `home`) and a short name.
+2. Create `modules/<class>/<name>.nix`:
    ```nix
-   { config, pkgs, ... }: { programs.foo.enable = true; }
+   _: {
+     flake.<class>Modules.<name> = { config, pkgs, lib, ... }: {
+       programs.foo.enable = true;
+     };
+   }
    ```
-2. Add a wrapper at `modules/flake/<class>/<name>.nix`:
+   (The `home` directory registers under `flake.homeModules`, matching
+   flake-parts convention.)
+3. If the body needs to reference sibling modules, switch to the closure
+   form:
    ```nix
-   _: { flake.<class>Modules.<name> = ../../<class>/<name>.nix; }
+   { config, ... }:
+   let flakeCfg = config; in {
+     flake.<class>Modules.<name> = _: {
+       imports = [ flakeCfg.flake.<class>Modules.<sibling> ];
+     };
+   }
    ```
-   Where `<class>` is `nixos`, `darwin`, or `home`. (The `home` directory
-   registers under `flake.homeModules`, matching flake-parts convention.)
-3. Enroll it into whichever host needs it by adding a line in
-   `modules/flake/hosts/<host>.nix`:
+4. Enroll in whichever host wants it by adding to `modules/hosts/<host>.nix`:
    ```nix
-   modules = [ ... config.flake.nixosModules.<name> ... ];
+   modules = [ … config.flake.nixosModules.<name> … ];
    ```
-   Or for home-manager features on nixos/darwin hosts, extend the host body's
-   `hm.imports`.
+   For home-manager features on a nixos/darwin host, add to the `hm.imports`
+   list inside the relevant aggregator (e.g.
+   `flake.nixosModules.default`'s `hm.imports`).
 
 ## Adding a new host
 
@@ -78,8 +112,8 @@ still use the `user@system` form because they fan out across multiple systems.
 
 ## Key non-obvious conventions
 
-- **`config.hm` shorthand**: `modules/primaryUser.nix` declares a `hm`
-  option that `mkAliasDefinitions`-forwards to
+- **`config.hm` shorthand**: `modules/shared/primary-user.nix` declares a
+  `hm` option that `mkAliasDefinitions`-forwards to
   `home-manager.users.${config.user.name}`. So a nixos/darwin module can
   write `hm.programs.foo.enable = true;` and it will land on the primary
   user's home-manager config. There's a matching `user` option for
@@ -93,12 +127,21 @@ still use the `user@system` form because they fan out across multiple systems.
 - **`nixConfig` stays in `flake.nix`**: it's evaluated pre-`mkFlake`, so it
   cannot move to a flake-parts module.
 - **Underscore-prefixed files are excluded** from `import-tree`. Use this
-  escape hatch for any `.nix` file under `./modules/flake` that should not
-  register as a flake-parts module (none exist today, but it's available).
+  escape hatch for any `.nix` file under `./modules` that should not
+  register as a flake-parts module.
 - **`flake.darwinModules` option** is declared in
-  `modules/flake/options.nix` because upstream flake-parts does not declare
-  it. Don't delete that file — without the declaration, multiple wrappers
-  contributing to `darwinModules` collide on evaluation.
+  `modules/options.nix` because upstream flake-parts does not declare it.
+  Don't delete that file — without the declaration, files under
+  `modules/darwin/` that each contribute a named module collide on
+  evaluation.
+- **Double-importing the same module is a trap.** Flake-parts wraps module
+  values with unique `_file` annotations each time they're referenced, so
+  Nix's identity-based import dedup DOES NOT work — two transitive
+  references to `flakeCfg.flake.<class>Modules.foo` from different paths
+  cause option conflicts for any scalar option `foo` sets. Structure
+  imports so each reusable module is pulled in exactly once per host — e.g.
+  `desktop` imports `desktop-base`, but `gnome` and `hyprland` do NOT (they
+  assume `desktop` already enrolled it).
 
 ## Commands
 
