@@ -5,3 +5,4 @@
 .devenv/
 .pre-commit-config.yaml
 .playwright-mcp/
+.claude/
