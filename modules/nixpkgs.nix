@@ -1,19 +1,11 @@
+{ inputs, self, ... }:
 {
-  self,
-  lib,
-  config,
-  ...
-}:
-{
-  nixpkgs = {
-    config = import ./config.nix;
-    overlays = [ self.overlays.default ];
-  };
-
-  home-manager.sharedModules = [
+  perSystem =
+    { system, ... }:
     {
-      nix.enable = lib.mkForce true;
-      nix.package = lib.mkForce config.nix.package;
-    }
-  ];
+      _module.args.pkgs = import inputs.nixpkgs {
+        inherit system;
+        overlays = [ self.overlays.default ];
+      };
+    };
 }

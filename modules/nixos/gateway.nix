@@ -1,3 +1,5 @@
+_: {
+  flake.nixosModules.gateway =
 {
   config,
   ...
@@ -876,4 +878,6 @@ in
   '';
 
   system.stateVersion = "25.11";
+}
+;
 }

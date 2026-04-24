@@ -1,23 +1,20 @@
-# GNOME desktop session — GDM + GNOME Shell.
-# Imports desktop-base.nix for compositor-agnostic config.
-{ pkgs, ... }:
+{ config, ... }:
+let
+  flakeCfg = config;
+in
 {
-  imports = [
-    ./desktop-base.nix
-  ];
-
-  services.xserver.enable = true;
-  services.xserver.xkb.layout = "us";
-  services.desktopManager.gnome.enable = true;
-  services.displayManager.gdm.enable = true;
-
-  programs.gnupg.agent.pinentryPackage = pkgs.pinentry-gnome3;
-
-  hm =
-    { ... }:
+  # GNOME desktop session — GDM + GNOME Shell. Assumes desktop-base is
+  # enrolled separately (the `desktop` module does so).
+  flake.nixosModules.gnome =
+    { pkgs, ... }:
     {
-      imports = [
-        ../home-manager/gnome.nix
-      ];
+      services.xserver.enable = true;
+      services.xserver.xkb.layout = "us";
+      services.desktopManager.gnome.enable = true;
+      services.displayManager.gdm.enable = true;
+
+      programs.gnupg.agent.pinentryPackage = pkgs.pinentry-gnome3;
+
+      hm.imports = [ flakeCfg.flake.homeModules.gnome ];
     };
 }
