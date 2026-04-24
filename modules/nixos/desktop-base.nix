@@ -58,7 +58,8 @@
   boot.kernelModules = [ "kvm-intel" ];
 
   # Hold shift during POST to reveal the otherwise-hidden boot menu.
-  boot.loader.timeout = 0;
+  # mkDefault so the ISO installer image variant can override with its own timeout.
+  boot.loader.timeout = lib.mkDefault 0;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot/efi";
   boot.loader.grub = {
