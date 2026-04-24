@@ -9,59 +9,62 @@ Linux machines.
 
 The flake follows the **dendritic pattern**: [`flake.nix`](./flake.nix) is a
 tiny entry point that hands a [`flake-parts`](https://flake.parts) orchestrator
-the recursively-discovered tree under [`./modules/flake`](./modules/flake) via
+the recursively-discovered tree under [`./modules`](./modules) via
 [`vic/import-tree`](https://github.com/vic/import-tree). Every `.nix` file
-under `./modules/flake` is a flake-parts module that self-registers a piece of
-the flake output: a reusable module, a host configuration, an overlay, a
-devShell, etc. There is no central file that imports everything.
+under `./modules` is a flake-parts module that self-registers a piece of the
+flake output: a reusable module, a host configuration, an overlay, a devShell,
+etc. There is no central file that imports everything.
 
 ```
-modules/flake/
+modules/
 ├── imports.nix, systems.nix, options.nix    # flake-parts plumbing
 ├── nixpkgs.nix, overlays.nix, packages.nix  # per-system package wiring
 ├── devshell.nix, treefmt.nix, pre-commit.nix
-├── hosts/      # one file per concrete config output
+├── hosts/      # one file per concrete config output (phil, wally, gateway, …)
+├── shared/     # cross-class option modules (primary-user, nixpkgs-wiring)
 ├── nixos/      # flake.nixosModules.<name>
 ├── darwin/     # flake.darwinModules.<name>
 ├── home/       # flake.homeModules.<name>
 └── profiles/   # personal/work profiles, declared across all three classes
 ```
 
-The module bodies (the actual NixOS / nix-darwin / home-manager logic) live at
-their legacy locations under `./modules/{common,nixos,darwin,home-manager}/`
-and `./profiles/`. Each wrapper in `./modules/flake/` is a three-line
-flake-parts module that registers one of those bodies under its proper flake
-output — for example, `modules/flake/nixos/hyprland.nix` is just
-`flake.nixosModules.hyprland = ../../nixos/hyprland.nix`. This keeps module
-implementation decoupled from flake plumbing.
+Each module file inlines its body directly — a file like `modules/nixos/hyprland.nix`
+both registers `flake.nixosModules.hyprland` and contains the full compositor
+configuration. Cross-module references go through `config.flake.<class>Modules.<name>`
+so `hm.imports = [ config.flake.homeModules.hyprland ]` in the NixOS module is
+how the home-manager side of Hyprland is pulled in when Hyprland is enabled.
+
+Non-Nix assets that aren't flake-parts modules live in `secrets/`,
+`pkgs/{cb,fnox,weave}/` (custom package sources), and
+`modules/home/assets/{dotfiles,nvim,yazi}/` (source-path references for
+the corresponding home modules).
 
 ### Overlapping nix-darwin and NixOS
 
-nix-darwin and NixOS share as much overlap as possible in
-[`./modules/common.nix`](./modules/common.nix) (primary-user plumbing, shells,
-shared package set, fonts). Platform-specific modules add onto it in
-[`./modules/nixos/default.nix`](./modules/nixos/default.nix) and
-[`./modules/darwin/default.nix`](./modules/darwin/default.nix).
+nix-darwin and NixOS share identical shell/user/fonts/packages setup via
+[`modules/nixos/default.nix`](./modules/nixos/default.nix) and
+[`modules/darwin/default.nix`](./modules/darwin/default.nix), with shared
+option declarations (`user`, `hm`) and nixpkgs wiring factored into
+[`modules/shared/`](./modules/shared).
 
 ### Decoupled home-manager configuration
 
 The home-manager configuration is entirely decoupled from NixOS and
-nix-darwin. All modules live in
-[`./modules/home-manager`](./modules/home-manager). For each host they are
-pulled in via the flake-parts `hm` alias (see
-[`./modules/primaryUser.nix`](./modules/primaryUser.nix)), which forwards
-`config.hm.*` to `home-manager.users.${config.user.name}.*`. The same module
-tree is also exposed as [`homeConfigurations`](./modules/flake/hosts/home-standalone.nix)
-so it is fully usable as a standalone configuration on any Linux system via
-the `home-manager` CLI.
+nix-darwin. All modules live in [`modules/home/`](./modules/home). For each
+NixOS/darwin host they are pulled in via the flake-parts `hm` alias (see
+[`modules/shared/primary-user.nix`](./modules/shared/primary-user.nix)),
+which forwards `config.hm.*` to `home-manager.users.${config.user.name}.*`.
+The same module tree is also exposed as
+[`homeConfigurations`](./modules/hosts/home-standalone.nix) so it is fully
+usable as a standalone configuration on any Linux system via the
+`home-manager` CLI.
 
 ### User profiles
 
-User "profiles" live in [`./profiles`](./profiles); these modules configure
-contextual, identity-specific settings such as SSL certificates or
-work-vs-personal email addresses. Each profile is declared across all three
-module classes in
-[`./modules/flake/profiles`](./modules/flake/profiles).
+User "profiles" live in [`modules/profiles`](./modules/profiles); these
+modules configure contextual, identity-specific settings such as SSL
+certificates or work-vs-personal email addresses. Each profile is declared
+across all three module classes in a single file (`personal.nix`, `work.nix`).
 
 ## Installing a configuration
 
