@@ -97,6 +97,38 @@
   services.fprintd.enable = true;
   security.pam.services.sudo.fprintAuth = true;
 
+  # Firmware updates via LVFS (Dell BIOS/EC, Thunderbolt controllers, etc.)
+  services.fwupd.enable = true;
+
+  # Thunderbolt device authorization daemon. Pairs with BIOS security level
+  # "User Authorization" so new devices must be approved via boltctl / GNOME.
+  services.hardware.bolt.enable = true;
+
+  # Intel thermal daemon — improves sustained perf/thermals on Alder Lake
+  # and later. No-op on non-Intel hardware.
+  services.thermald.enable = true;
+
+  # hyprlock claims the fingerprint reader via before_sleep_cmd; after resume
+  # the USB device re-enumerates and fprintd's handle goes stale, so the
+  # fingerprint prompt silently never fires. Restart fprintd on resume.
+  powerManagement.resumeCommands = ''
+    ${pkgs.systemd}/bin/systemctl try-restart fprintd.service || true
+  '';
+
+  # fprintd's default polkit policy is allow_active=yes, but after a
+  # suspend/lock cycle polkit doesn't reliably treat the relocked session
+  # as active for the user-space D-Bus caller (hyprlock), which shows up as
+  # "Not Authorized: net.reactivated.fprint.device.verify" in the journal.
+  # Grant the owner the fprint actions unconditionally.
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (action.id.indexOf("net.reactivated.fprint.") == 0 &&
+          subject.user == "${config.user.name}") {
+        return polkit.Result.YES;
+      }
+    });
+  '';
+
   # Passwordless sudo via SSH agent forwarding
   security.pam.services.sudo.rssh.enable = true;
   services.openssh.settings.StreamLocalBindUnlink = true;
