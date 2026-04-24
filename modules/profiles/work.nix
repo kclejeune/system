@@ -1,18 +1,15 @@
 { config, ... }:
 let
   flakeCfg = config;
-
-  osBody = _: {
+in
+(import ../_lib.nix).mkAspect {
+  name = "profile-work";
+  os = _: {
     user.name = "klejeune";
     hm.imports = [ flakeCfg.flake.homeModules.profile-work ];
     security.pki.installCACerts = false;
   };
-in
-{
-  flake.nixosModules.profile-work = osBody;
-  flake.darwinModules.profile-work = osBody;
-
-  flake.homeModules.profile-work =
+  home =
     { pkgs, lib, ... }:
     {
       imports = [ flakeCfg.flake.homeModules.onepassword ];

@@ -1,17 +1,14 @@
 { config, ... }:
 let
   flakeCfg = config;
-
-  osBody = _: {
+in
+(import ../_lib.nix).mkAspect {
+  name = "profile-personal";
+  os = _: {
     user.name = "kclejeune";
     hm.imports = [ flakeCfg.flake.homeModules.profile-personal ];
   };
-in
-{
-  flake.nixosModules.profile-personal = osBody;
-  flake.darwinModules.profile-personal = osBody;
-
-  flake.homeModules.profile-personal = _: {
+  home = _: {
     programs.git = {
       settings.user.email = "kennan@case.edu";
       settings.user.name = "Kennan LeJeune";

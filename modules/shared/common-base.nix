@@ -1,12 +1,14 @@
+# Shared shell / user / fonts / packages / home-manager wiring that applies
+# equally to NixOS and nix-darwin. Registered under both
+# flake.nixosModules.common-base and flake.darwinModules.common-base so each
+# class's default module can import one name.
 { config, ... }:
 let
   flakeCfg = config;
-
-  # Shared shell / user / fonts / packages / home-manager wiring that
-  # applies equally to NixOS and nix-darwin. Registered under both
-  # flake.nixosModules.common-base and flake.darwinModules.common-base
-  # so each class's default module can import one name.
-  body =
+in
+(import ../_lib.nix).mkAspect {
+  name = "common-base";
+  os =
     {
       self,
       inputs,
@@ -71,8 +73,4 @@ let
         nerd-fonts.jetbrains-mono
       ];
     };
-in
-{
-  flake.nixosModules.common-base = body;
-  flake.darwinModules.common-base = body;
 }

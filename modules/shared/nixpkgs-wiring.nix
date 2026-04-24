@@ -1,9 +1,10 @@
+# System-side nixpkgs wiring: applies overlays and nixpkgs.config, and
+# makes home-manager share the system's nix package so `nix.package` is
+# consistent across the two evaluations.
 { self, ... }:
-let
-  # System-side nixpkgs wiring: applies overlays and nixpkgs.config, and
-  # makes home-manager share the system's nix package so `nix.package` is
-  # consistent across the two evaluations.
-  body =
+(import ../_lib.nix).mkAspect {
+  name = "nixpkgs-wiring";
+  os =
     { config, lib, ... }:
     {
       nixpkgs = {
@@ -22,8 +23,4 @@ let
         }
       ];
     };
-in
-{
-  flake.nixosModules.nixpkgs-wiring = body;
-  flake.darwinModules.nixpkgs-wiring = body;
 }

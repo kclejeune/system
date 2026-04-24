@@ -18,6 +18,9 @@ conventions.
   file registers `flake.<class>Modules.<name>` with the full body inlined.
 - `modules/shared/` — option modules and wiring shared across classes
   (`primary-user`, `nixpkgs-wiring`, `common-base`).
+- `modules/_lib.nix` — `mkAspect` helper for declaring multi-class
+  modules. Underscore-prefixed so `import-tree` skips it; imported
+  explicitly via `import ../_lib.nix`.
 - `modules/profiles/` — per-identity modules (personal, work) that declare
   `flake.{nixos,darwin,home}Modules.profile-<name>` in one file.
 - `modules/hosts/` — one file per concrete top-level config
@@ -65,6 +68,38 @@ _: {
   };
 }
 ```
+
+## Multi-class modules: `mkAspect`
+
+For a feature whose body applies to more than one class (e.g. registers
+under both `nixosModules.X` and `darwinModules.X`, or adds a `homeModules`
+companion), use the `mkAspect` helper in `modules/_lib.nix`. It collapses
+the "define body once, register under N classes" pattern:
+
+```nix
+{ config, ... }:
+let
+  flakeCfg = config;
+in
+(import ../_lib.nix).mkAspect {
+  name = "profile-personal";
+  os = _: {
+    # shared body for nixos + darwin
+    user.name = "kclejeune";
+    hm.imports = [ flakeCfg.flake.homeModules.profile-personal ];
+  };
+  home = _: {
+    programs.git.settings.user.email = "kennan@case.edu";
+  };
+}
+```
+
+`os` is shorthand for "same body in `nixos` and `darwin`". Use
+`nixos = …` / `darwin = …` explicitly when the class bodies diverge.
+`home = …` registers under `flake.homeModules.<name>`. Any key you omit
+doesn't register. See `modules/shared/common-base.nix`,
+`modules/shared/primary-user.nix`, and
+`modules/profiles/{personal,work}.nix` for live examples.
 
 ## Adding a new reusable module
 
