@@ -6,6 +6,8 @@
   ...
 }:
 let
+  inherit (import ../_lib.nix) mkNixpkgsArgs;
+
   darwinSystems = lib.intersectLists lib.platforms.aarch64 lib.platforms.darwin;
   defaultSystems =
     (lib.intersectLists lib.platforms.linux (lib.platforms.x86_64 ++ lib.platforms.aarch64))
@@ -13,20 +15,14 @@ let
 
   homePrefix = system: if (lib.elem system darwinSystems) then "/Users" else "/home";
   username = "kclejeune";
+
+  nixpkgsArgs = mkNixpkgsArgs { inherit self; };
 in
 {
   flake.homeConfigurations = lib.mergeAttrsList (
     lib.map (system: {
       "kclejeune@${system}" = inputs.home-manager.lib.homeManagerConfiguration {
-        pkgs = import inputs.nixpkgs {
-          inherit system;
-          config = {
-            allowUnsupportedSystem = true;
-            allowUnfree = true;
-            allowBroken = false;
-          };
-          overlays = [ self.overlays.default ];
-        };
+        pkgs = import inputs.nixpkgs (nixpkgsArgs // { inherit system; });
         extraSpecialArgs = {
           inherit self inputs;
           nixpkgs = inputs.nixpkgs;

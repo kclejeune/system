@@ -1,4 +1,17 @@
 rec {
+  # Common args for `import inputs.nixpkgs { … }` — used both by the
+  # nixos/darwin `nixpkgs-wiring` module and by standalone home-manager
+  # hosts that import their own pkgs. Centralizes allow-* flags and the
+  # project overlay so they can't drift between the two.
+  mkNixpkgsArgs = { self }: {
+    config = {
+      allowUnsupportedSystem = true;
+      allowUnfree = true;
+      allowBroken = false;
+    };
+    overlays = [ self.overlays.default ];
+  };
+
   # Register a "feature" (aspect) under one or more flake.<class>Modules
   # attributes in a single call. Returns a flake-parts config fragment —
   # use it as the return value of a module file.

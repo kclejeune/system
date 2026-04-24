@@ -6,5 +6,4 @@
     inputs.flake-parts.flakeModules.easyOverlay
     inputs.git-hooks.flakeModule
   ];
-  debug = true;
 }
