@@ -47,14 +47,6 @@ in
       boot.kernel.sysctl."net.core.rmem_max" = 2097152;
       boot.kernel.sysctl."net.core.rmem_default" = 1048576;
 
-      boot.initrd.availableKernelModules = [
-        "xhci_pci"
-        "usb_storage"
-        "sd_mod"
-        "rtsx_pci_sdmmc"
-      ];
-      boot.kernelModules = [ "kvm-intel" ];
-
       # Hold shift during POST to reveal the otherwise-hidden boot menu.
       # mkDefault so the ISO installer image variant can override with its own timeout.
       boot.loader.timeout = lib.mkDefault 0;

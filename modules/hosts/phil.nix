@@ -12,11 +12,7 @@
       nixpkgs = inputs.nixos-unstable;
     };
     modules = [
-      inputs.determinate.nixosModules.default
-      inputs.home-manager.nixosModules.home-manager
-      inputs.disko.nixosModules.disko
-      inputs.sops-nix.nixosModules.sops
-
+      config.flake.nixosModules.host-baseline
       config.flake.nixosModules.default
 
       inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s

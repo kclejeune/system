@@ -17,7 +17,7 @@ conventions.
 - `modules/{nixos,darwin,home}/` — reusable class-specific modules. Each
   file registers `flake.<class>Modules.<name>` with the full body inlined.
 - `modules/shared/` — option modules and wiring shared across classes
-  (`primary-user`, `nixpkgs-wiring`).
+  (`primary-user`, `nixpkgs-wiring`, `common-base`).
 - `modules/profiles/` — per-identity modules (personal, work) that declare
   `flake.{nixos,darwin,home}Modules.profile-<name>` in one file.
 - `modules/hosts/` — one file per concrete top-level config
@@ -28,7 +28,6 @@ conventions.
 - `pkgs/` — custom package definitions (cb, fnox, weave). Wired into
   `overlays.default` by `modules/overlays.nix`.
 - `secrets/` — sops-encrypted per-host secrets.
-
 
 ## The inlined-module pattern
 
@@ -175,20 +174,25 @@ still use the `user@system` form because they fan out across multiple systems.
 
 - **`flake.nix` uncommitted changes** are not picked up until `git add`ed —
   nix flakes only see the git index. If you see `flake ... does not provide
-attribute ...` after creating new files, run `git add` and retry.
+  attribute ...` after creating new files, run `git add` and retry.
 - **Dotfiles hardcoded path**: `modules/home-manager/dotfiles/default.nix`
   defines `config.dotfiles.path` defaulting to
   `${homeDirectory}/.nixpkgs/modules/home-manager/dotfiles`. If you ever
   move that directory, both the default and the `./asset` relative paths
   inside must be updated in lockstep.
 - **Home-manager enrollment**: on nixos/darwin hosts, home-manager is
-  pulled in via `hm.imports = [ ./home-manager ]` inside
-  `modules/common.nix`. Headless hosts don't get home-manager by default;
-  the `gateway` host works fine because common.nix's `hm.imports` only
-  matters when `home-manager.users.<name>` is reachable. Do not replicate
-  the `hm.imports` line in a new headless host.
+  pulled in via `hm.imports = [ flakeCfg.flake.homeModules.default ]`
+  inside `modules/shared/common-base.nix`. Headless hosts like `gateway`
+  still import common-base (via `nixos/default.nix`) but don't receive
+  desktop-only HM modules because those are enrolled inside
+  `nixos/desktop-base.nix`.
+- **`host-baseline`** (`modules/nixos/host-baseline.nix`) bundles the
+  third-party modules every NixOS host uses: `determinate`,
+  `home-manager`, `disko`, `sops-nix`. Each host file imports
+  `config.flake.nixosModules.host-baseline` instead of listing them
+  individually. If you need to add another cross-host third-party
+  module, add it there — not in the per-host file.
 - **`determinate` input**: provides `nixosModules.default` /
-  `darwinModules.default` pulled in explicitly by each host file. It
-  replaces the stock Nix package and manages its own substitute/trust
-  config; don't also set `nix.settings.*` from elsewhere unless you know
-  what you're doing.
+  `darwinModules.default`. It replaces the stock Nix package and manages
+  its own substitute/trust config; don't also set `nix.settings.*` from
+  elsewhere unless you know what you're doing.
