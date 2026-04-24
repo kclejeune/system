@@ -110,11 +110,11 @@ _: {
       home.packages = extraPackages;
       xdg.configFile = {
         "nvim/lua" = {
-          source = ../home-manager/nvim/lua;
+          source = ./assets/nvim/lua;
           recursive = true;
         };
         "nvim/lsp" = {
-          source = ../home-manager/nvim/lsp;
+          source = ./assets/nvim/lsp;
           recursive = true;
         };
         "nvim/parser" = {
@@ -188,7 +188,7 @@ _: {
           }
           local lazy_nix_helper_path = "${lazy-nix-helper-nvim}"
 
-          ${builtins.readFile ../home-manager/nvim/lua/init.lua}
+          ${builtins.readFile ./assets/nvim/lua/init.lua}
         '';
       };
     };

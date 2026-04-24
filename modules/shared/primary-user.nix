@@ -5,7 +5,12 @@ _:
 (import ../_lib.nix).mkAspect {
   name = "primary-user";
   os =
-    { config, lib, options, ... }:
+    {
+      config,
+      lib,
+      options,
+      ...
+    }:
     let
       inherit (lib) mkAliasDefinitions mkOption types;
     in

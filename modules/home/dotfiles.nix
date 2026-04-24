@@ -12,7 +12,7 @@ _: {
     {
       options.dotfiles.path = lib.mkOption {
         type = lib.types.str;
-        default = "${config.home.homeDirectory}/.nixpkgs/modules/home-manager/dotfiles";
+        default = "${config.home.homeDirectory}/.nixpkgs/modules/home/assets/dotfiles";
         description = "Path to the dotfiles directory in the checked-out repository";
       };
 
@@ -28,7 +28,7 @@ _: {
             target = ".local/bin/raycast";
           };
           zfunc = {
-            source = ../home-manager/dotfiles/zfunc;
+            source = ./assets/dotfiles/zfunc;
             target = ".zfunc";
             recursive = true;
           };
@@ -42,7 +42,7 @@ _: {
               source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/aerospace";
             };
             ghostty = {
-              source = ../home-manager/dotfiles/ghostty;
+              source = ./assets/dotfiles/ghostty;
               recursive = true;
             };
             k9s = {
@@ -58,7 +58,7 @@ _: {
               source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/kitty";
             };
             fd = {
-              source = ../home-manager/dotfiles/fd;
+              source = ./assets/dotfiles/fd;
               recursive = true;
             };
             "zed/keymap.json" = {

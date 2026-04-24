@@ -25,9 +25,9 @@ conventions.
   `flake.{nixos,darwin,home}Modules.profile-<name>` in one file.
 - `modules/hosts/` — one file per concrete top-level config
   (`flake.nixosConfigurations.<name>`, etc.).
-- `modules/home-manager/{dotfiles,nvim,yazi}/` — **asset dirs only** (lua
-  files, dotfiles, themes). Referenced from the corresponding `modules/home/*.nix`
-  via relative paths. The `.nix` files are gone; only asset subdirs remain.
+- `modules/home/assets/{dotfiles,nvim,yazi}/` — **asset dirs only** (lua
+  files, dotfiles, themes). Referenced from the corresponding
+  `modules/home/*.nix` via relative paths (`./assets/<name>/...`).
 - `pkgs/` — custom package definitions (cb, fnox, weave). Wired into
   `overlays.default` by `modules/overlays.nix`.
 - `secrets/` — sops-encrypted per-host secrets.
@@ -209,12 +209,12 @@ still use the `user@system` form because they fan out across multiple systems.
 
 - **`flake.nix` uncommitted changes** are not picked up until `git add`ed —
   nix flakes only see the git index. If you see `flake ... does not provide
-  attribute ...` after creating new files, run `git add` and retry.
-- **Dotfiles hardcoded path**: `modules/home-manager/dotfiles/default.nix`
-  defines `config.dotfiles.path` defaulting to
-  `${homeDirectory}/.nixpkgs/modules/home-manager/dotfiles`. If you ever
-  move that directory, both the default and the `./asset` relative paths
-  inside must be updated in lockstep.
+attribute ...` after creating new files, run `git add` and retry.
+- **Dotfiles hardcoded path**: `modules/home/dotfiles.nix` defines
+  `config.dotfiles.path` defaulting to
+  `${homeDirectory}/.nixpkgs/modules/home/assets/dotfiles`. If you ever
+  move that directory, both the default and the `./assets/...` relative
+  paths inside must be updated in lockstep.
 - **Home-manager enrollment**: on nixos/darwin hosts, home-manager is
   pulled in via `hm.imports = [ flakeCfg.flake.homeModules.default ]`
   inside `modules/shared/common-base.nix`. Headless hosts like `gateway`

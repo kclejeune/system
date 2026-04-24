@@ -34,10 +34,10 @@ configuration. Cross-module references go through `config.flake.<class>Modules.<
 so `hm.imports = [ config.flake.homeModules.hyprland ]` in the NixOS module is
 how the home-manager side of Hyprland is pulled in when Hyprland is enabled.
 
-Non-Nix assets that aren't flake-parts modules live outside `modules/`:
-`secrets/`, `pkgs/{cb,fnox,weave}/` (custom package sources), and the
-`modules/home-manager/{dotfiles,nvim,yazi}/` asset subdirs (kept for the
-source-path references in the corresponding home modules).
+Non-Nix assets that aren't flake-parts modules live in `secrets/`,
+`pkgs/{cb,fnox,weave}/` (custom package sources), and
+`modules/home/assets/{dotfiles,nvim,yazi}/` (source-path references for
+the corresponding home modules).
 
 ### Overlapping nix-darwin and NixOS
 
