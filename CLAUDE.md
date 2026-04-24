@@ -132,7 +132,7 @@ still use the `user@system` form because they fan out across multiple systems.
 
 - **`flake.nix` uncommitted changes** are not picked up until `git add`ed —
   nix flakes only see the git index. If you see `flake ... does not provide
-  attribute ...` after creating new files, run `git add` and retry.
+attribute ...` after creating new files, run `git add` and retry.
 - **Dotfiles hardcoded path**: `modules/home-manager/dotfiles/default.nix`
   defines `config.dotfiles.path` defaulting to
   `${homeDirectory}/.nixpkgs/modules/home-manager/dotfiles`. If you ever
