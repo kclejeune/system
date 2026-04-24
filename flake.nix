@@ -218,10 +218,24 @@
                   system = "x86_64-linux";
                   hardwareModules = [
                     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
+                    ./modules/nixos/hardware/thinkpad-t460s.nix
                   ];
                   extraModules = [
                     ./modules/nixos/desktop.nix
                     ./profiles/personal
+                    { networking.hostName = "phil"; }
+                  ];
+                };
+                wally = mkNixosConfig {
+                  system = "x86_64-linux";
+                  hardwareModules = [
+                    inputs.nixos-hardware.nixosModules.dell-precision-5570
+                    ./modules/nixos/hardware/precision-5570.nix
+                  ];
+                  extraModules = [
+                    ./modules/nixos/desktop.nix
+                    ./profiles/personal
+                    { networking.hostName = "wally"; }
                   ];
                 };
                 gateway = mkNixosConfig {

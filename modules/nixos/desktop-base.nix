@@ -49,6 +49,33 @@
   boot.kernel.sysctl."net.core.rmem_max" = 2097152;
   boot.kernel.sysctl."net.core.rmem_default" = 1048576;
 
+  boot.initrd.availableKernelModules = [
+    "xhci_pci"
+    "usb_storage"
+    "sd_mod"
+    "rtsx_pci_sdmmc"
+  ];
+  boot.kernelModules = [ "kvm-intel" ];
+
+  # Hold shift during POST to reveal the otherwise-hidden boot menu.
+  boot.loader.timeout = 0;
+  boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.efiSysMountPoint = "/boot/efi";
+  boot.loader.grub = {
+    enable = true;
+    device = "nodev";
+    efiSupport = true;
+    extraConfig = ''
+      if keystatus --shift ; then
+        set timeout=-1
+      else
+        set timeout=0
+      fi
+    '';
+  };
+
+  hardware.enableAllFirmware = true;
+
   networking.networkmanager.enable = true;
   networking.firewall.trustedInterfaces = [
     "CloudflareWARP"
@@ -68,11 +95,6 @@
 
   services.fprintd.enable = true;
   security.pam.services.sudo.fprintAuth = true;
-
-  # Keep fprintd running so lock screen fingerprint auth is instant
-  # (default behavior auto-deactivates after idle, causing 30s+ cold start)
-  systemd.services.fprintd.serviceConfig.TimeoutStopSec = "infinity";
-  systemd.services.fprintd.wantedBy = [ "multi-user.target" ];
 
   # Passwordless sudo via SSH agent forwarding
   security.pam.services.sudo.rssh.enable = true;
