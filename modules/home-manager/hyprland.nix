@@ -56,8 +56,10 @@ in
       # -- Monitors (fallback; kanshi handles runtime) --
       # Monitor positions are managed by kanshi at runtime.
       # These fallbacks ensure a usable layout before kanshi applies a profile.
+      # Keep the eDP-1 mode identical to kanshi's undocked profile (59.95 Hz,
+      # scale 1.0) so wake doesn't force a second modeset after kanshi fires.
       monitor = [
-        "eDP-1, 1920x1200@60, 0x0, 1"
+        "eDP-1, 1920x1200@59.95Hz, 0x0, 1"
         ", preferred, auto, 1.5"
       ];
 

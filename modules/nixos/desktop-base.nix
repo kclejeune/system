@@ -97,6 +97,27 @@
   services.fprintd.enable = true;
   security.pam.services.sudo.fprintAuth = true;
 
+  # hyprlock claims the fingerprint reader via before_sleep_cmd; after resume
+  # the USB device re-enumerates and fprintd's handle goes stale, so the
+  # fingerprint prompt silently never fires. Restart fprintd on resume.
+  powerManagement.resumeCommands = ''
+    ${pkgs.systemd}/bin/systemctl try-restart fprintd.service || true
+  '';
+
+  # fprintd's default polkit policy is allow_active=yes, but after a
+  # suspend/lock cycle polkit doesn't reliably treat the relocked session
+  # as active for the user-space D-Bus caller (hyprlock), which shows up as
+  # "Not Authorized: net.reactivated.fprint.device.verify" in the journal.
+  # Grant the owner the fprint actions unconditionally.
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (action.id.indexOf("net.reactivated.fprint.") == 0 &&
+          subject.user == "${config.user.name}") {
+        return polkit.Result.YES;
+      }
+    });
+  '';
+
   # Passwordless sudo via SSH agent forwarding
   security.pam.services.sudo.rssh.enable = true;
   services.openssh.settings.StreamLocalBindUnlink = true;

@@ -30,7 +30,8 @@ in
   programs.git = {
     signing = {
       signByDefault = true;
-      key = null;
+      # Identity (signingkey, user.email) lives in the per-profile
+      # home-manager config — see profiles/<identity>/home-manager.
       format = "ssh";
       signer =
         if pkgs.stdenvNoCC.isDarwin then

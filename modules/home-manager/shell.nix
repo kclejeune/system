@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  osConfig ? null,
   ...
 }:
 let
@@ -21,6 +22,11 @@ in
     sessionVariables =
       let
         ageKey = "${config.xdg.configHome}/sops/age/keys.txt";
+        # On NixOS, nh os defaults to the system hostname (e.g. "wally"),
+        # which matches nixosConfigurations.<host> — so leave NH_HOST unset
+        # there. For standalone HM and nix-darwin we still want the
+        # hardware-independent "<user>@<system>" scheme.
+        onNixos = osConfig != null && pkgs.stdenvNoCC.hostPlatform.isLinux;
       in
       {
         GPG_TTY = "/dev/ttys000";
@@ -31,11 +37,13 @@ in
         LS_COLORS = "ExFxBxDxCxegedabagacad";
         TERM = "xterm-256color";
         MISE_ENV_FILE = ".env";
-        NH_HOST = "${config.home.username}@${pkgs.stdenvNoCC.hostPlatform.system}";
         AGE_KEY_FILE = ageKey;
         MISE_AGE_KEY_FILE = ageKey;
         SOPS_AGE_KEY_FILE = ageKey;
         FNOX_AGE_KEY_FILE = ageKey;
+      }
+      // lib.optionalAttrs (!onNixos) {
+        NH_HOST = "${config.home.username}@${pkgs.stdenvNoCC.hostPlatform.system}";
       };
     sessionPath = [
       "${homeDir}/.local/bin"
