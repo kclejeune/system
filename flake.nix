@@ -35,6 +35,8 @@
     flake-compat.url = "github:nix-community/flake-compat";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
+    import-tree.url = "github:vic/import-tree";
+
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -153,203 +155,97 @@
           modules = baseModules ++ extraModules;
         };
     in
-    flake-parts.lib.mkFlake { inherit inputs; } (
-      {
-        config,
-        withSystem,
-        moduleWithSystem,
-        ...
-      }:
-      {
-        debug = true;
-        imports = [
-          inputs.home-manager.flakeModules.home-manager
-          inputs.treefmt-nix.flakeModule
-          inputs.flake-parts.flakeModules.easyOverlay
-          inputs.git-hooks.flakeModule
-        ];
-        systems = lib.intersectLists (lib.platforms.linux ++ lib.platforms.darwin) (
-          lib.platforms.x86_64 ++ lib.platforms.aarch64
-        );
-        flake = {
-          nixosModules = {
-            default = ./modules/nixos;
-            gnome = ./modules/nixos/gnome.nix;
-            hyprland = ./modules/nixos/hyprland.nix;
-            desktop = ./modules/nixos/desktop.nix;
-            desktopBase = ./modules/nixos/desktop-base.nix;
-            hetzner = ./modules/nixos/hetzner.nix;
-            gateway = ./modules/nixos/gateway.nix;
-            keybase = ./modules/nixos/keybase.nix;
-          };
-
-          darwinModules = {
-            default = ./modules/darwin;
-            apps = ./modules/darwin/apps.nix;
-          };
-
-          homeModules = {
-            default = ./modules/home-manager;
-            onepassword = ./modules/home-manager/1password.nix;
-          };
-
-          darwinConfigurations =
-            # generate darwin configs for each supported platform
-            lib.mergeAttrsList (
-              # arch-independent configs that can operate on both x86_64-darwin and aarch64-darwin
-              (lib.map (system: {
-                "kclejeune@${system}" = mkDarwinConfig {
-                  inherit system;
-                  extraModules = [
-                    ./profiles/personal
-                    ./modules/darwin/apps.nix
-                  ];
-                };
-              }) darwinSystems)
-              # and "custom" ones that aren't universal
-              ++ [ ]
-            );
-
-          nixosConfigurations =
-            # generate nixos configs, if these are ever applicable
-            lib.mergeAttrsList [
-              {
-                "kclejeune@x86_64-linux" = mkNixosConfig {
-                  system = "x86_64-linux";
-                  hardwareModules = [
-                    inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
-                    ./modules/nixos/hardware/thinkpad-t460s.nix
-                  ];
-                  extraModules = [
-                    ./modules/nixos/desktop.nix
-                    ./profiles/personal
-                    { networking.hostName = "phil"; }
-                  ];
-                };
-                wally = mkNixosConfig {
-                  system = "x86_64-linux";
-                  hardwareModules = [
-                    inputs.nixos-hardware.nixosModules.dell-precision-5570
-                    ./modules/nixos/hardware/precision-5570.nix
-                  ];
-                  extraModules = [
-                    ./modules/nixos/desktop.nix
-                    ./profiles/personal
-                    { networking.hostName = "wally"; }
-                  ];
-                };
-                gateway = mkNixosConfig {
-                  system = "x86_64-linux";
-                  hardwareModules = [
-                    ./modules/nixos/hetzner.nix
-                  ];
-                  extraModules = [
-                    ./modules/nixos/gateway.nix
-                    ./profiles/personal
-                  ];
-                };
-              }
-            ];
-
-          homeConfigurations =
-            # generate home-manager configs for each supported platform
-            lib.mergeAttrsList (
-              (lib.map (system: {
-                "kclejeune@${system}" = mkHomeConfig {
-                  inherit system;
-                  username = "kclejeune";
-                  extraModules = [ ./profiles/personal/home-manager ];
-                };
-              }) defaultSystems)
-              # and "custom" ones that aren't universal
-              ++ [ ]
-            );
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ (inputs.import-tree ./modules/flake) ];
+      flake = {
+        nixosModules = {
+          default = ./modules/nixos;
+          gnome = ./modules/nixos/gnome.nix;
+          hyprland = ./modules/nixos/hyprland.nix;
+          desktop = ./modules/nixos/desktop.nix;
+          desktopBase = ./modules/nixos/desktop-base.nix;
+          hetzner = ./modules/nixos/hetzner.nix;
+          gateway = ./modules/nixos/gateway.nix;
+          keybase = ./modules/nixos/keybase.nix;
         };
 
-        perSystem =
-          {
-            config,
-            pkgs,
-            system,
-            lib,
-            ...
-          }:
-          {
-            _module.args.pkgs = import inputs.nixpkgs {
-              inherit system;
-              overlays = [
-                self.overlays.default
-              ];
-            };
-            overlayAttrs = {
-              inherit (inputs.attic.packages.${system}) attic attic-client attic-server;
+        darwinModules = {
+          default = ./modules/darwin;
+          apps = ./modules/darwin/apps.nix;
+        };
 
-              cb = pkgs.callPackage ./pkgs/cb/package.nix { };
-              fnox = pkgs.callPackage ./pkgs/fnox/package.nix { };
-              weave = pkgs.callPackage ./pkgs/weave/package.nix { };
-              stable = inputs.stable.legacyPackages.${system};
-              determinate-nixd = inputs.determinate.packages.${system}.default;
-              nix = inputs.determinate.inputs.nix.packages.${system}.default;
-              nh = inputs.nh.packages.${system}.default;
-            };
-            legacyPackages = pkgs;
-            treefmt = {
-              programs = {
-                deadnix = {
-                  enable = true;
-                  no-lambda-arg = true;
-                  no-lambda-pattern-names = true;
-                };
-                nixfmt.enable = true;
-                oxfmt.enable = true;
-                ruff-check.enable = true;
-                ruff-format.enable = true;
-                shellcheck.enable = true;
-                shfmt.enable = true;
-                stylua.enable = true;
-              };
+        homeModules = {
+          default = ./modules/home-manager;
+          onepassword = ./modules/home-manager/1password.nix;
+        };
 
-              settings.excludes = [
-                ".envrc"
-                ".env"
-                ".vscode/*.json"
-                "**/Spoons/**/*.json"
-                "**/zed/**/*.json"
-              ];
-              settings.on-unmatched = "info";
-              settings.formatter.ruff-check.options = [
-                # sort imports
-                "--extend-select"
-                "I"
-              ];
-            };
-            pre-commit = {
-              settings.package = pkgs.prek;
-              settings.hooks.treefmt = {
-                enable = true;
-                pass_filenames = false;
-                settings.no-cache = false;
+        darwinConfigurations =
+          # generate darwin configs for each supported platform
+          lib.mergeAttrsList (
+            # arch-independent configs that can operate on both x86_64-darwin and aarch64-darwin
+            (lib.map (system: {
+              "kclejeune@${system}" = mkDarwinConfig {
+                inherit system;
+                extraModules = [
+                  ./profiles/personal
+                  ./modules/darwin/apps.nix
+                ];
               };
-            };
-            devShells = {
-              default = pkgs.mkShell {
-                packages =
-                  (builtins.attrValues {
-                    inherit (pkgs)
-                      bashInteractive
-                      fd
-                      ripgrep
-                      uv
-                      nh
-                      ;
-                  })
-                  ++ config.pre-commit.settings.enabledPackages
-                  ++ (lib.attrValues config.treefmt.build.programs)
-                  ++ (lib.mapAttrsToList (name: value: value) config.packages);
-                shellHook = config.pre-commit.installationScript;
-              };
-            };
+            }) darwinSystems)
+            # and "custom" ones that aren't universal
+            ++ [ ]
+          );
+
+        nixosConfigurations = {
+          phil = mkNixosConfig {
+            system = "x86_64-linux";
+            hardwareModules = [
+              inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
+              ./modules/nixos/hardware/thinkpad-t460s.nix
+            ];
+            extraModules = [
+              ./modules/nixos/desktop.nix
+              ./profiles/personal
+              { networking.hostName = "phil"; }
+            ];
           };
-      }
-    );
+          wally = mkNixosConfig {
+            system = "x86_64-linux";
+            hardwareModules = [
+              inputs.nixos-hardware.nixosModules.dell-precision-5570
+              ./modules/nixos/hardware/precision-5570.nix
+            ];
+            extraModules = [
+              ./modules/nixos/desktop.nix
+              ./profiles/personal
+              { networking.hostName = "wally"; }
+            ];
+          };
+          gateway = mkNixosConfig {
+            system = "x86_64-linux";
+            hardwareModules = [
+              ./modules/nixos/hetzner.nix
+            ];
+            extraModules = [
+              ./modules/nixos/gateway.nix
+              ./profiles/personal
+            ];
+          };
+        };
+
+        homeConfigurations =
+          # generate home-manager configs for each supported platform
+          lib.mergeAttrsList (
+            (lib.map (system: {
+              "kclejeune@${system}" = mkHomeConfig {
+                inherit system;
+                username = "kclejeune";
+                extraModules = [ ./profiles/personal/home-manager ];
+              };
+            }) defaultSystems)
+            # and "custom" ones that aren't universal
+            ++ [ ]
+          );
+      };
+    };
 }
