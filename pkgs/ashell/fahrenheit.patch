@@ -1,0 +1,37 @@
+Show weather temperatures in Fahrenheit instead of Celsius.
+
+ashell 0.8.0 hardcodes the Open-Meteo URL and the °C labels — the
+TempoModuleConfig has no temperature_unit option. Patch the URL to ask
+the API for Fahrenheit and flip the three display labels to match.
+
+--- a/src/modules/tempo.rs
++++ b/src/modules/tempo.rs
+@@ -222,7 +222,7 @@
+                     .push_maybe(
+                         (self.config.weather_indicator == WeatherIndicator::IconAndTemperature)
+                             .then(|| {
+-                                text(format!("{}°C", data.current.temperature_2m))
++                                text(format!("{}°F", data.current.temperature_2m))
+                                     .align_y(Vertical::Center)
+                                     .size(theme.font_size.sm)
+                             }),
+@@ -468,9 +468,9 @@
+                                 .size(theme.font_size.sm),
+                                 text(weather_description(data.current.weather_code)),
+                                 row!(
+-                                    text(format!("{} °C", data.current.temperature_2m)),
++                                    text(format!("{} °F", data.current.temperature_2m)),
+                                     text(format!(
+-                                        "Feels like {}°C",
++                                        "Feels like {}°F",
+                                         data.current.apparent_temperature
+                                     ))
+                                     .style(|theme: &Theme| text::Style {
+@@ -984,6 +984,7 @@
+         &current=weather_code,apparent_temperature,relative_humidity_2m,temperature_2m,is_day,wind_speed_10m,wind_direction_10m\
+         &hourly=weather_code,temperature_2m,is_day\
+         &daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant\
++        &temperature_unit=fahrenheit\
+         &forecast_days=7",
+         lat, lon
+     )).send().await?;

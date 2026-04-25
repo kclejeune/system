@@ -531,7 +531,11 @@ _: {
             };
             secondary_color = {
               base = "#${dark.blue}";
-              strong = "#${dark.lavender}";
+              # Card backgrounds inside menus (Tempo weather rows, the
+              # MediaPlayer card, and one Settings indicator) read from
+              # secondary.strong. Mocha surface1 keeps them as subtle
+              # raised tiles instead of bright lavender pills.
+              strong = "#45475a";
             };
             success_color = "#${dark.green}";
             danger_color = {

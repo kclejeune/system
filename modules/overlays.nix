@@ -30,13 +30,16 @@
               hash = "sha256-X9TU866PAzaf52qKsCpeJvwE0suu1lJndHNQdPg51HM=";
             };
           in
-          pkgs.ashell.overrideAttrs (_: {
+          pkgs.ashell.overrideAttrs (prev: {
             inherit version src;
             cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
               inherit src;
               name = "ashell-${version}-vendor";
               hash = "sha256-nhYbehlgB8pzMoj39G0BHRca9mIT+0QjUaebCx+DDE0=";
             };
+            # Tempo's Open-Meteo URL and °C labels are hardcoded; the
+            # TempoModuleConfig has no temperature_unit option upstream.
+            patches = (prev.patches or [ ]) ++ [ ../pkgs/ashell/fahrenheit.patch ];
           });
       };
     };
