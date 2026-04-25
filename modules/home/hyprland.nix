@@ -1,7 +1,7 @@
 _: {
   flake.homeModules.hyprland =
     # Hyprland home-manager configuration — compositor settings, keybindings,
-    # companion tools (waybar, swaync, vicinae, hyprlock, hypridle, kanshi),
+    # companion tools (ashell, swaync, vicinae, hyprlock, hypridle, kanshi),
     # and Catppuccin Mocha theming.
     {
       config,
@@ -49,7 +49,7 @@ _: {
 
     in
     {
-      # Scope HM Wayland services (waybar, swaync, hyprpaper, swayosd,
+      # Scope HM Wayland services (ashell, swaync, hyprpaper, swayosd,
       # hyprsunset, hypridle, kanshi, ...) to hyprland-session.target so
       # they only start under Hyprland. The default binds to
       # graphical-session.target, which any Wayland session satisfies, so
@@ -172,7 +172,7 @@ _: {
           };
 
           # -- Startup --
-          # waybar, mako, hypridle, hyprpaper, kanshi are started via their
+          # ashell, mako, hypridle, hyprpaper, kanshi are started via their
           # respective HM systemd services — only list things without a service here.
           exec-once = [
             "wl-paste --type text --watch cliphist store"
@@ -236,9 +236,10 @@ _: {
             "$mod CTRL, q, exec, pidof hyprlock || hyprlock"
             "SUPER, l, exec, pidof hyprlock || hyprlock"
 
-            # Screenshots
-            ", Print, exec, grim -g \"$(slurp)\" - | wl-copy"
-            "SHIFT, Print, exec, grim - | wl-copy"
+            # Screenshots — grimblast handles slurp area selection and the
+            # wl-copy clipboard write itself, plus a libnotify toast.
+            ", Print, exec, grimblast --notify copy area"
+            "SHIFT, Print, exec, grimblast --notify copy screen"
 
             # Power menu
             "$mod SHIFT, e, exec, power-menu"
@@ -415,186 +416,140 @@ _: {
         '';
       };
 
-      # -- Waybar --
-      programs.waybar = {
+      # -- Ashell --
+      # Replaces waybar. ashell's Settings module already covers the audio /
+      # bluetooth / network / battery indicators that we wired up by hand in
+      # waybar; the Tray module picks up StatusNotifierItems (1Password,
+      # nm-applet, etc.). Power-menu commands in `settings.settings` mirror
+      # the power-menu shellscript so the bar's Settings panel and the
+      # vicinae power provider stay consistent.
+      programs.ashell = {
         enable = true;
         systemd.enable = true;
+        settings = {
+          log_level = "warn";
+          position = "Top";
+          enable_esc_key = true;
 
-        settings = [
-          {
-            layer = "top";
-            position = "top";
-            height = 30;
-            spacing = 4;
-
-            modules-left = [
-              "hyprland/workspaces"
-              "hyprland/submap"
+          modules = {
+            left = [
+              "Workspaces"
+              "KeyboardSubmap"
             ];
-            modules-center = [ "clock" ];
-            modules-right = [
-              "tray"
-              "custom/darkman"
-              "pulseaudio"
-              "bluetooth"
-              "network"
-              "battery"
-              "custom/notification"
-              "custom/power"
+            center = [ "Tempo" ];
+            right = [
+              [
+                "MediaPlayer"
+                "SystemInfo"
+                "Tray"
+                "Privacy"
+                "Settings"
+              ]
             ];
+          };
 
-            "custom/notification" = {
-              tooltip = false;
-              format = "{icon}";
-              format-icons = {
-                notification = "󰂚";
-                none = "󰂜";
-                dnd-notification = "󰂛";
-                dnd-none = "󰪑";
-              };
-              return-type = "json";
-              exec-if = "which swaync-client";
-              exec = "swaync-client -swb";
-              on-click = "swaync-client -t -sw";
-              on-click-right = "swaync-client -d -sw";
-              escape = true;
+          workspaces = {
+            # Show every workspace (like waybar's default). With
+            # MonitorSpecific the bar would only list the active monitor's.
+            visibility_mode = "All";
+            # Sort workspaces by monitor first, then by id — stops them
+            # jumping order as windows move between outputs.
+            group_by_monitor = true;
+          };
+
+          # Tempo replaces the deprecated Clock module: format stays the
+          # same, plus a calendar / weather popover. weather_location =
+          # "Current" uses ip-api for geolocation — may resolve oddly
+          # while WARP is active.
+          tempo = {
+            clock_format = "%a %b %d  %I:%M %p";
+            weather_location = "Current";
+            weather_indicator = "IconAndTemperature";
+          };
+
+          # Auto-appears in the bar when any MPRIS player is active;
+          # menu has prev/play/pause/next + volume.
+          media_player = {
+            max_title_length = 60;
+            indicator_format = "Icon";
+          };
+
+          settings = {
+            lock_cmd = "loginctl lock-session";
+            shutdown_cmd = "hyprshutdown -t 'Shutting down...' -p 'systemctl poweroff'";
+            reboot_cmd = "hyprshutdown -t 'Rebooting...' -p 'systemctl reboot'";
+            logout_cmd = "hyprshutdown -t 'Logging out...'";
+            suspend_cmd = "systemctl suspend";
+            hibernate_cmd = "systemctl hibernate";
+            audio_sinks_more_cmd = "pwvucontrol";
+            bluetooth_more_cmd = "overskride";
+            wifi_more_cmd = "nm-connection-editor";
+            indicators = [
+              "Audio"
+              "Bluetooth"
+              "Network"
+              "Battery"
+            ];
+            # Tray-style toggle for darkman lives inside the Settings
+            # menu. The icon must be a Nerd Font codepoint that ashell
+            # included in its bundled subset (it scrapes ../icons.rs at
+            # build time) — `` (U+F00E0, brightness) is one of those.
+            # Other safe picks: any glyph wired to a StaticIcon variant.
+            CustomButton = [
+              {
+                name = "Toggle theme";
+                icon = "";
+                command = "darkman toggle";
+                tooltip = "Toggle dark/light mode";
+              }
+            ];
+          };
+
+          # Catppuccin Mocha. ashell's config is static at the nix-store
+          # path, so the bar stays Mocha across darkman switches. The rest
+          # of the desktop (gtk, hyprland borders, hyprlock, wallpaper)
+          # still follows the theme.
+          # Catppuccin Mocha. Structured colors expose Mocha's surface
+          # ramp so empty/hover/strong states track the official palette
+          # instead of generated tints. Reference:
+          # https://catppuccin.com/palette#flavor-mocha
+          appearance = {
+            # Non-icon text uses JetBrains Mono Nerd Font; ashell's
+            # bundled "Symbols Nerd Font" subset still handles icons.
+            font_name = "JetBrains Mono Nerd Font";
+            scale_factor = 1.1;
+            style = "Islands";
+            opacity = 0.92;
+            background_color = {
+              base = "#${dark.base}"; # base
+              weak = "#${dark.surface0}"; # surface0 — empty workspace fill
+              strong = "#45475a"; # surface1 — hover state
             };
-
-            "custom/darkman" = {
-              exec = ''sh -c 'while true; do if [ "$(darkman get)" = "dark" ]; then echo "󰖔"; else echo "󰖙"; fi; sleep 1; done' '';
-              on-click = "darkman toggle";
-              tooltip-format = "Toggle dark/light mode";
-              return-type = "";
+            primary_color = {
+              base = "#${dark.lavender}"; # accent
+              text = "#${dark.base}"; # high-contrast on accent
             };
-
-            "custom/power" = {
-              format = "⏻";
-              tooltip-format = "Power menu";
-              on-click = "power-menu";
+            secondary_color = {
+              base = "#${dark.blue}";
+              strong = "#${dark.lavender}";
             };
-
-            "hyprland/workspaces" = {
-              format = "{name}";
-              on-click = "activate";
-              sort-by-name = true;
-              persistent-workspaces = {
-                "B" = [ ];
-                "T" = [ ];
-                "V" = [ ];
-                "S" = [ ];
-              };
+            success_color = "#${dark.green}";
+            danger_color = {
+              base = "#${dark.red}";
+              weak = "#${dark.yellow}"; # warning tint
             };
-
-            clock = {
-              format = "{:%a %b %d  %I:%M %p}";
-              tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-            };
-
-            battery = {
-              states = {
-                warning = 30;
-                critical = 15;
-              };
-              format = "{icon}  {capacity}%";
-              format-icons = [
-                "󰁺"
-                "󰁼"
-                "󰁾"
-                "󰂀"
-                "󰁹"
-              ];
-              format-charging = "󰂄  {capacity}%";
-              format-plugged = "󰚥  {capacity}%";
-              tooltip-format = "{timeTo} ({power:.1f}W)";
-            };
-
-            network = {
-              format-wifi = "󰖩  {essid}";
-              format-ethernet = "󰈀  {ifname}";
-              format-disconnected = "󰖪  disconnected";
-              tooltip-format = "{ifname}: {ipaddr}/{cidr}\n{signalStrength}% signal";
-              on-click = "nm-connection-editor";
-            };
-
-            bluetooth = {
-              format = "󰂯";
-              format-connected = "󰂱  {device_alias}";
-              format-disabled = "󰂲";
-              tooltip-format = "{controller_alias}\n{num_connections} connected";
-              on-click = "overskride";
-            };
-
-            pulseaudio = {
-              format = "{icon}  {volume}%";
-              format-muted = "󰝟  muted";
-              format-icons.default = [
-                "󰕿"
-                "󰖀"
-                "󰕾"
-              ];
-              on-click = "pwvucontrol";
-              on-click-right = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-              tooltip-format = "{desc}: {volume}%";
-            };
-
-            tray.spacing = 10;
-          }
-        ];
-
-        style = ''
-          * {
-            font-family: JetBrains Mono Nerd Font, JetBrains Mono, sans-serif;
-            font-size: 12px;
-            min-height: 0;
-          }
-          window#waybar {
-            background-color: alpha(@theme_base_color, 0.92);
-            color: @theme_text_color;
-            border-bottom: 1px solid alpha(@borders, 0.4);
-          }
-          #workspaces button {
-            padding: 0 8px;
-            background-color: transparent;
-            color: @theme_unfocused_text_color;
-            border-bottom: 2px solid transparent;
-          }
-          #workspaces button.active {
-            color: @theme_text_color;
-            border-bottom: 2px solid @theme_selected_bg_color;
-          }
-          #workspaces button.urgent {
-            color: @error_color;
-          }
-          #clock, #battery, #network, #pulseaudio, #bluetooth, #tray {
-            padding: 0 12px;
-            color: @theme_text_color;
-          }
-          #battery.warning { color: @warning_color; }
-          #battery.critical { color: @error_color; }
-          #custom-darkman {
-            padding: 0 8px;
-            color: @theme_unfocused_text_color;
-          }
-          #custom-power {
-            padding: 0 16px 0 8px;
-            color: @theme_unfocused_text_color;
-          }
-          #custom-power:hover {
-            color: @error_color;
-          }
-          #custom-notification {
-            padding: 0 8px;
-            color: @theme_unfocused_text_color;
-          }
-        '';
+            text_color = "#${dark.text}";
+            # Workspace pills cycle by monitor index. Mocha accent trio
+            # (blue / lavender / mauve) replaces the default peach so it
+            # lines up with the rest of the theme.
+            workspace_colors = [
+              "#${dark.blue}"
+              "#${dark.lavender}"
+              "#${dark.mauve}"
+            ];
+          };
+        };
       };
-
-      # Skip restart attempts when the Wayland session is gone. Without this,
-      # logging out triggers a "Broken pipe" exit and systemd retries waybar
-      # 6× in <1s (each failing with "cannot open display: :0"), hits the
-      # start-rate limit, and leaves the unit in `failed` across the next
-      # login. swayosd uses the same guard.
-      systemd.user.services.waybar.Unit.ConditionEnvironment = "WAYLAND_DISPLAY";
 
       # -- SwayNC (notification center with history panel) --
       services.swaync = {
@@ -805,9 +760,6 @@ _: {
             hyprctl keyword general:col.inactive_border "rgba(${dark.overlay0}aa)"
             hyprctl keyword decoration:shadow:color "rgba(${dark.crust}ee)"
           '';
-          waybar = ''
-            pkill -SIGUSR2 waybar || true
-          '';
           swaync = ''
             swaync-client --reload-css || true
           '';
@@ -830,9 +782,6 @@ _: {
             hyprctl keyword general:col.active_border "rgba(${light.lavender}ff) rgba(${light.blue}ff) 45deg"
             hyprctl keyword general:col.inactive_border "rgba(${light.overlay0}aa)"
             hyprctl keyword decoration:shadow:color "rgba(${light.crust}ee)"
-          '';
-          waybar = ''
-            pkill -SIGUSR2 waybar || true
           '';
           swaync = ''
             swaync-client --reload-css || true
@@ -1178,6 +1127,12 @@ _: {
         grim
         slurp
         grimblast
+        # wl-clipboard-rs: provides wl-copy / wl-paste used by exec-once
+        # cliphist watchers and by the Alt+c clipboard-history binding.
+        # libnotify: provides notify-send (grimblast's --notify toast,
+        # ad-hoc notifications from scripts).
+        wl-clipboard-rs
+        libnotify
         pwvucontrol
         overskride
         gnome-bluetooth
