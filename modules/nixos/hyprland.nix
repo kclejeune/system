@@ -14,12 +14,6 @@ in
         xwayland.enable = true;
       };
 
-      # Backlight control for Hyprland brightness binds. The brightnessctl
-      # package ships udev rules giving the `video` group write access to
-      # /sys/class/backlight/*/brightness.
-      environment.systemPackages = [ pkgs.brightnessctl ];
-      services.udev.packages = [ pkgs.brightnessctl ];
-
       programs.hyprlock.enable = true;
       # Disable fprintd in PAM -- hyprlock handles fingerprint natively in
       # parallel with password (see auth block in HM hyprlock config)

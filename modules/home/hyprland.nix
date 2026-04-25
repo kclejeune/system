@@ -54,6 +54,15 @@ _: {
         xwayland.enable = true;
         systemd.enable = true;
 
+        # hyprbars and hyprgrass are intentionally NOT here: nixpkgs's
+        # hyprland-plugins lag the bundled hyprland API, so both fail to
+        # compile (SCallbackInfo / m_lastMonitor mismatches). The proper
+        # fix is to switch hyprland to the upstream flake input where
+        # plugins ship in lockstep with the compositor.
+        plugins = with pkgs.hyprlandPlugins; [
+          hypr-dynamic-cursors
+        ];
+
         settings = {
           # -- Monitors (fallback; kanshi handles runtime) --
           # Monitor positions are managed by kanshi at runtime.
@@ -298,19 +307,21 @@ _: {
             "$mod SHIFT, semicolon, submap, service"
             "$mod SHIFT, slash, submap, join"
 
-            # Audio mute (one-shot; binde would re-toggle on key repeat)
-            ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-            ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+            # Audio mute (one-shot; binde would re-toggle on key repeat).
+            # swayosd-client renders the OSD slider in addition to applying
+            # the change.
+            ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
+            ", XF86AudioMicMute, exec, swayosd-client --input-volume mute-toggle"
           ];
 
           # Resize + brightness + volume (repeatable on hold)
           binde = [
             "$mod SHIFT, minus, resizeactive, -50 0"
             "$mod SHIFT, equal, resizeactive, 50 0"
-            ", XF86MonBrightnessUp, exec, brightnessctl set 5%+"
-            ", XF86MonBrightnessDown, exec, brightnessctl set 5%-"
-            ", XF86AudioRaiseVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"
-            ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%-"
+            ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
+            ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
+            ", XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise"
+            ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
           ];
         };
 
@@ -563,6 +574,13 @@ _: {
         '';
       };
 
+      # Skip restart attempts when the Wayland session is gone. Without this,
+      # logging out triggers a "Broken pipe" exit and systemd retries waybar
+      # 6× in <1s (each failing with "cannot open display: :0"), hits the
+      # start-rate limit, and leaves the unit in `failed` across the next
+      # login. swayosd uses the same guard.
+      systemd.user.services.waybar.Unit.ConditionEnvironment = "WAYLAND_DISPLAY";
+
       # -- SwayNC (notification center with history panel) --
       services.swaync = {
         enable = true;
@@ -740,6 +758,19 @@ _: {
         '';
       };
 
+      # The HM darkman module only wires its config.yaml into restart
+      # triggers — script edits don't bump the unit, so sd-switch leaves
+      # the long-running daemon stale and over time it stops exec'ing
+      # scripts altogether. Fingerprint the script content too.
+      systemd.user.services.darkman.Unit.X-Restart-Triggers = [
+        (pkgs.writeText "darkman-scripts-fingerprint" (
+          builtins.toJSON {
+            dark = config.services.darkman.darkModeScripts;
+            light = config.services.darkman.lightModeScripts;
+          }
+        ))
+      ];
+
       # -- Vicinae (app launcher) --
       # -- Darkman (dark/light mode toggle, no automatic transitions) --
       services.darkman = {
@@ -757,7 +788,7 @@ _: {
           hyprland = ''
             hyprctl keyword general:col.active_border "rgba(${dark.lavender}ff) rgba(${dark.blue}ff) 45deg"
             hyprctl keyword general:col.inactive_border "rgba(${dark.overlay0}aa)"
-            hyprctl keyword decoration:col.shadow "rgba(${dark.crust}ee)"
+            hyprctl keyword decoration:shadow:color "rgba(${dark.crust}ee)"
           '';
           waybar = ''
             pkill -SIGUSR2 waybar || true
@@ -783,7 +814,7 @@ _: {
           hyprland = ''
             hyprctl keyword general:col.active_border "rgba(${light.lavender}ff) rgba(${light.blue}ff) 45deg"
             hyprctl keyword general:col.inactive_border "rgba(${light.overlay0}aa)"
-            hyprctl keyword decoration:col.shadow "rgba(${light.crust}ee)"
+            hyprctl keyword decoration:shadow:color "rgba(${light.crust}ee)"
           '';
           waybar = ''
             pkill -SIGUSR2 waybar || true
@@ -918,6 +949,31 @@ _: {
           ];
         };
       };
+
+      # -- Hyprsunset (blue-light filter, time-based) --
+      # 06:30 → identity (no tint, daytime); 20:00 → 3500K (warm,
+      # evening). Adjust temperatures to taste.
+      services.hyprsunset = {
+        enable = true;
+        settings = {
+          profile = [
+            {
+              time = "6:30";
+              identity = true;
+            }
+            {
+              time = "20:00";
+              temperature = 3500;
+              gamma = 1.0;
+            }
+          ];
+        };
+      };
+
+      # -- SwayOSD (volume/brightness/capslock OSD slider) --
+      # Started with the wayland session; bound to via swayosd-client in
+      # the Hyprland keybinds above.
+      services.swayosd.enable = true;
 
       # -- Hypridle (idle management) --
       services.hypridle = {
@@ -1059,14 +1115,18 @@ _: {
 
       # -- Packages --
       home.packages = with pkgs; [
+        # Logout/Reboot/Shutdown go through hyprshutdown so apps get a
+        # chance to exit gracefully (save unsaved work) before Hyprland
+        # tears down. Suspend stays direct — apps resume on wake.
+        hyprshutdown
         (writeShellScriptBin "power-menu" ''
           choice=$(printf "Lock\nLogout\nSuspend\nReboot\nShutdown" | vicinae dmenu)
           case "$choice" in
             Lock) pidof hyprlock || hyprlock ;;
-            Logout) hyprctl dispatch exit ;;
+            Logout) hyprshutdown -t "Logging out..." ;;
             Suspend) systemctl suspend ;;
-            Reboot) systemctl reboot ;;
-            Shutdown) systemctl poweroff ;;
+            Reboot) hyprshutdown -t "Rebooting..." -p "systemctl reboot" ;;
+            Shutdown) hyprshutdown -t "Shutting down..." -p "systemctl poweroff" ;;
           esac
         '')
         xdg-desktop-portal-gtk
