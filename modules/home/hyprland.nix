@@ -49,6 +49,16 @@ _: {
 
     in
     {
+      # Scope HM Wayland services (waybar, swaync, hyprpaper, swayosd,
+      # hyprsunset, hypridle, kanshi, ...) to hyprland-session.target so
+      # they only start under Hyprland. The default binds to
+      # graphical-session.target, which any Wayland session satisfies, so
+      # adding a second compositor (e.g. cosmic, plasma) would otherwise
+      # drag all of these along too. darkman keeps its own
+      # graphical-session.target default — theme switching is useful
+      # regardless of compositor.
+      wayland.systemd.target = "hyprland-session.target";
+
       wayland.windowManager.hyprland = {
         enable = true;
         xwayland.enable = true;
@@ -168,6 +178,10 @@ _: {
             "wl-paste --type text --watch cliphist store"
             "wl-paste --type image --watch cliphist store"
             "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
+            # 1Password tray-only; kitty lands on workspace T via the
+            # match:class kitty rule.
+            "1password --silent"
+            "kitty"
           ];
 
           # -- Named workspaces with monitor pinning --
@@ -307,21 +321,22 @@ _: {
             "$mod SHIFT, semicolon, submap, service"
             "$mod SHIFT, slash, submap, join"
 
-            # Audio mute (one-shot; binde would re-toggle on key repeat).
-            # swayosd-client renders the OSD slider in addition to applying
-            # the change.
-            ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
-            ", XF86AudioMicMute, exec, swayosd-client --input-volume mute-toggle"
+            # Audio (one-shot; binde would re-trigger on key repeat).
+            # vol-* wrappers play the freedesktop volume-change sound to
+            # match the GNOME / COSMIC feedback behavior.
+            ", XF86AudioMute, exec, vol-mute"
+            ", XF86AudioMicMute, exec, mic-mute"
+            ", XF86AudioRaiseVolume, exec, vol-up"
+            ", XF86AudioLowerVolume, exec, vol-down"
           ];
 
-          # Resize + brightness + volume (repeatable on hold)
+          # Resize + brightness (repeatable on hold). --min-brightness 1
+          # lets the slider go to 1% instead of swayosd's 5% default floor.
           binde = [
             "$mod SHIFT, minus, resizeactive, -50 0"
             "$mod SHIFT, equal, resizeactive, 50 0"
-            ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
-            ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
-            ", XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise"
-            ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
+            ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise --min-brightness 1"
+            ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower --min-brightness 1"
           ];
         };
 
@@ -604,7 +619,7 @@ _: {
         };
         style = ''
           * {
-            font-family: JetBrains Mono Nerd Font, JetBrains Mono, sans-serif;
+            font-family: Open Sans, JetBrains Mono Nerd Font, sans-serif;
             font-size: 13px;
             color: @theme_text_color;
           }
@@ -839,6 +854,8 @@ _: {
         enable = true;
         useLayerShell = true;
         systemd.enable = true;
+        # Vicinae doesn't follow wayland.systemd.target — set explicitly.
+        systemd.target = "hyprland-session.target";
       };
 
       # -- Hyprlock (screen locker) --
@@ -931,7 +948,7 @@ _: {
               text = "cmd[update:3600000] getent passwd $USER | cut -d: -f5 | cut -d, -f1";
               color = "$text";
               font_size = 20;
-              font_family = "JetBrains Mono";
+              font_family = "Open Sans";
               position = "0, 30";
               halign = "center";
               valign = "center";
@@ -941,7 +958,7 @@ _: {
               text = "<i>Scan fingerprint or type password to unlock</i>";
               color = "$subtext";
               font_size = 10;
-              font_family = "JetBrains Mono";
+              font_family = "Open Sans";
               position = "0, -70";
               halign = "center";
               valign = "center";
@@ -1092,9 +1109,9 @@ _: {
           package = pkgs.papirus-icon-theme;
         };
         font = {
-          name = "Inter";
+          name = "Open Sans";
           size = 13;
-          package = pkgs.inter;
+          package = pkgs.open-sans;
         };
         gtk3.extraConfig.gtk-application-prefer-dark-theme = 1;
         gtk4.extraConfig.gtk-application-prefer-dark-theme = 1;
@@ -1113,62 +1130,6 @@ _: {
         size = 24;
       };
 
-      # -- Vicinae script commands (system actions in the launcher) --
-      # Mirror the dmenu power-menu choices so the same actions are
-      # accessible directly from the vicinae root search without going
-      # through dmenu first. silent mode = no output panel; vicinae
-      # closes after dispatch and hyprshutdown takes over the screen.
-      xdg.dataFile = {
-        "vicinae/scripts/shutdown.sh" = {
-          executable = true;
-          text = ''
-            #!/usr/bin/env bash
-            # @vicinae.schemaVersion 1
-            # @vicinae.title Shutdown
-            # @vicinae.description Gracefully exit apps then power off
-            # @vicinae.mode silent
-            # @vicinae.icon system-shutdown
-            exec hyprshutdown -t "Shutting down..." -p "systemctl poweroff"
-          '';
-        };
-        "vicinae/scripts/reboot.sh" = {
-          executable = true;
-          text = ''
-            #!/usr/bin/env bash
-            # @vicinae.schemaVersion 1
-            # @vicinae.title Reboot
-            # @vicinae.description Gracefully exit apps then reboot
-            # @vicinae.mode silent
-            # @vicinae.icon system-reboot
-            exec hyprshutdown -t "Rebooting..." -p "systemctl reboot"
-          '';
-        };
-        "vicinae/scripts/logout.sh" = {
-          executable = true;
-          text = ''
-            #!/usr/bin/env bash
-            # @vicinae.schemaVersion 1
-            # @vicinae.title Logout
-            # @vicinae.description Gracefully exit apps and end the session
-            # @vicinae.mode silent
-            # @vicinae.icon system-log-out
-            exec hyprshutdown -t "Logging out..."
-          '';
-        };
-        "vicinae/scripts/suspend.sh" = {
-          executable = true;
-          text = ''
-            #!/usr/bin/env bash
-            # @vicinae.schemaVersion 1
-            # @vicinae.title Suspend
-            # @vicinae.description Suspend the system (apps resume on wake)
-            # @vicinae.mode silent
-            # @vicinae.icon system-suspend
-            exec systemctl suspend
-          '';
-        };
-      };
-
       # -- Packages --
       home.packages = with pkgs; [
         # Logout/Reboot/Shutdown go through hyprshutdown so apps get a
@@ -1185,6 +1146,29 @@ _: {
             Shutdown) hyprshutdown -t "Shutting down..." -p "systemctl poweroff" ;;
           esac
         '')
+        # Volume-key wrappers — paplay the Yaru drip (recognizable Ubuntu
+        # cue), then dispatch to swayosd-client. paplay over canberra so
+        # the sample is pinned to the file path, not theme lookup.
+        (
+          let
+            sound = "${pkgs.yaru-theme}/share/sounds/Yaru/stereo/audio-volume-change.oga";
+            mkVol =
+              name: cmd:
+              writeShellScriptBin name ''
+                ${pkgs.pulseaudio}/bin/paplay ${sound} >/dev/null 2>&1 &
+                exec swayosd-client ${cmd}
+              '';
+          in
+          symlinkJoin {
+            name = "vol-wrappers";
+            paths = [
+              (mkVol "vol-up" "--output-volume raise")
+              (mkVol "vol-down" "--output-volume lower")
+              (mkVol "vol-mute" "--output-volume mute-toggle")
+              (mkVol "mic-mute" "--input-volume mute-toggle")
+            ];
+          }
+        )
         xdg-desktop-portal-gtk
         cliphist
         (catppuccin-gtk.override {
