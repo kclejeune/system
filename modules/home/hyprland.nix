@@ -1113,6 +1113,62 @@ _: {
         size = 24;
       };
 
+      # -- Vicinae script commands (system actions in the launcher) --
+      # Mirror the dmenu power-menu choices so the same actions are
+      # accessible directly from the vicinae root search without going
+      # through dmenu first. silent mode = no output panel; vicinae
+      # closes after dispatch and hyprshutdown takes over the screen.
+      xdg.dataFile = {
+        "vicinae/scripts/shutdown.sh" = {
+          executable = true;
+          text = ''
+            #!/usr/bin/env bash
+            # @vicinae.schemaVersion 1
+            # @vicinae.title Shutdown
+            # @vicinae.description Gracefully exit apps then power off
+            # @vicinae.mode silent
+            # @vicinae.icon system-shutdown
+            exec hyprshutdown -t "Shutting down..." -p "systemctl poweroff"
+          '';
+        };
+        "vicinae/scripts/reboot.sh" = {
+          executable = true;
+          text = ''
+            #!/usr/bin/env bash
+            # @vicinae.schemaVersion 1
+            # @vicinae.title Reboot
+            # @vicinae.description Gracefully exit apps then reboot
+            # @vicinae.mode silent
+            # @vicinae.icon system-reboot
+            exec hyprshutdown -t "Rebooting..." -p "systemctl reboot"
+          '';
+        };
+        "vicinae/scripts/logout.sh" = {
+          executable = true;
+          text = ''
+            #!/usr/bin/env bash
+            # @vicinae.schemaVersion 1
+            # @vicinae.title Logout
+            # @vicinae.description Gracefully exit apps and end the session
+            # @vicinae.mode silent
+            # @vicinae.icon system-log-out
+            exec hyprshutdown -t "Logging out..."
+          '';
+        };
+        "vicinae/scripts/suspend.sh" = {
+          executable = true;
+          text = ''
+            #!/usr/bin/env bash
+            # @vicinae.schemaVersion 1
+            # @vicinae.title Suspend
+            # @vicinae.description Suspend the system (apps resume on wake)
+            # @vicinae.mode silent
+            # @vicinae.icon system-suspend
+            exec systemctl suspend
+          '';
+        };
+      };
+
       # -- Packages --
       home.packages = with pkgs; [
         # Logout/Reboot/Shutdown go through hyprshutdown so apps get a
