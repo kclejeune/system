@@ -3,26 +3,19 @@ let
   flakeCfg = config;
 in
 {
-  # Personal desktop shared across machines. Composes GNOME + Hyprland
-  # sessions on top of desktop-base and sets up the primary user account.
+  # Shared desktop. Composes the Hyprland session on top of desktop-base
+  # and sets up the primary user account. Identity-specific things
+  # (keybase, syncthing, personal-only apps) live in profile-personal so
+  # a future work machine can opt out by enrolling `desktop` without
+  # `profile-personal`.
   # Per-machine hardware (disko, boot, hostname) lives in hardware.nix.
   flake.nixosModules.desktop =
     { config, ... }:
     {
       imports = [
         flakeCfg.flake.nixosModules.desktop-base
-        flakeCfg.flake.nixosModules.keybase
-        flakeCfg.flake.nixosModules.gnome
         flakeCfg.flake.nixosModules.hyprland
       ];
-
-      services.syncthing = {
-        enable = true;
-        user = config.user.name;
-        group = "users";
-        openDefaultPorts = true;
-        dataDir = config.user.home;
-      };
 
       users = {
         mutableUsers = false;

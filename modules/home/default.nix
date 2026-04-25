@@ -17,6 +17,9 @@ in
       imports = [
         inputs.nix-index-database.homeModules.nix-index
         flakeCfg.flake.homeModules.bat
+        flakeCfg.flake.homeModules.desktop-flag
+        flakeCfg.flake.homeModules.dev
+        flakeCfg.flake.homeModules.dev-interactive
         flakeCfg.flake.homeModules.direnv
         flakeCfg.flake.homeModules.dotfiles
         flakeCfg.flake.homeModules.fzf
@@ -31,148 +34,11 @@ in
         flakeCfg.flake.homeModules.nixpkgs
       ];
 
-      home = {
-        # This value determines the Home Manager release that your
-        # configuration is compatible with. This helps avoid breakage
-        # when a new Home Manager release introduces backwards
-        # incompatible changes.
-        #
-        # You can update Home Manager without changing this value. See
-        # the Home Manager release notes for a list of state version
-        # changes in each release.
-        stateVersion = "26.05";
-
-        packages =
-          with pkgs;
-          [
-            age
-            alejandra
-            asciidoctor
-            ast-grep
-            attic
-            basedpyright
-            beads
-            bento
-            bfs
-            btop
-            cacert
-            cachix
-            cb
-            cirrus-cli
-            clang
-            clang-tools
-            cmake
-            codespell
-            coreutils-full
-            curl
-            curlie
-            d2
-            diffutils
-            dive
-            dix
-            doxx
-            dust
-            fd
-            ffmpeg
-            findutils
-            flamegraph
-            flamelens
-            flawz
-            flyctl
-            fnox
-            fx
-            gawk
-            gdu
-            git-absorb
-            gnugrep
-            gnupg
-            gnused
-            go-task
-            golangci-lint
-            goreleaser
-            gotools
-            grype
-            helm-docs
-            httpie
-            hyperfine
-            iperf
-            jetbrains-mono
-            jnv
-            kotlin
-            krew
-            kubectl
-            kubectx
-            kubernetes-helm
-            kustomize
-            lazydocker
-            lazyworktree
-            luajit
-            mawk
-            mise
-            mmv
-            mosh
-            nil
-            nix-inspect
-            nix-output-monitor
-            nix-tree
-            nixd
-            nixfmt
-            nixfmt-tree
-            nixpacks
-            nmap
-            nodejs_20
-            openldap
-            openssl
-            ouch
-            oxfmt
-            oxlint
-            parallel
-            prek
-            prettier
-            process-compose
-            procps
-            pv
-            pyright
-            rclone
-            restic
-            rsync
-            ruff
-            rustscan
-            rustup
-            sd
-            shellcheck
-            sig
-            skopeo
-            sops
-            ssh-to-age
-            sshpass
-            stylua
-            tree
-            trivy
-            usage
-            uv
-            worktrunk
-            yadm
-            yq-go
-            zoxide
-            (python3.withPackages (
-              ps: with ps; [
-                httpx
-                matplotlib
-                networkx
-                numpy
-                polars
-                scipy
-              ]
-            ))
-          ]
-          ++ lib.optionals (config.nix.package != null) [ config.nix.package ]
-          ++ lib.optionals pkgs.stdenvNoCC.isDarwin [ iproute2mac ]
-          ++ lib.optionals pkgs.stdenvNoCC.isLinux [
-            systemctl-tui
-            lazyjournal
-          ];
-      };
+      # Package lists live in `homeModules.dev` (always-on) and
+      # `homeModules.dev-interactive` (desktop-only, gated on
+      # `desktop.enable`). Imports above pull both in; only the
+      # interactive set's body is no-op'd on headless hosts.
+      home.stateVersion = "26.05";
 
       fonts.fontconfig.enable = true;
 

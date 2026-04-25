@@ -37,34 +37,39 @@ _: {
         xdg = {
           enable = true;
           configFile = {
-            aerospace = lib.mkIf pkgs.stdenvNoCC.isDarwin {
-              recursive = true;
-              source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/aerospace";
-            };
-            ghostty = {
-              source = ./assets/dotfiles/ghostty;
-              recursive = true;
-            };
+            # Always-useful CLI dotfiles — fine on headless hosts too.
             k9s = {
               source = "${pkgs.k9s}/share/k9s";
               recursive = true;
-            };
-            "ghostty/macos.conf" = lib.mkIf pkgs.stdenvNoCC.isDarwin {
-              text = ''
-                font-size = 14
-              '';
-            };
-            kitty = {
-              source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/kitty";
             };
             fd = {
               source = ./assets/dotfiles/fd;
               recursive = true;
             };
-            "zed/keymap.json" = {
+
+            # Darwin-only window manager configs.
+            aerospace = lib.mkIf pkgs.stdenvNoCC.isDarwin {
+              recursive = true;
+              source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/aerospace";
+            };
+
+            # Desktop-only: terminals, GUI editor keymap, Linux launcher.
+            ghostty = lib.mkIf config.desktop.enable {
+              source = ./assets/dotfiles/ghostty;
+              recursive = true;
+            };
+            "ghostty/macos.conf" = lib.mkIf (config.desktop.enable && pkgs.stdenvNoCC.isDarwin) {
+              text = ''
+                font-size = 14
+              '';
+            };
+            kitty = lib.mkIf config.desktop.enable {
+              source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/kitty";
+            };
+            "zed/keymap.json" = lib.mkIf config.desktop.enable {
               source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/zed/keymap.json";
             };
-            vicinae = lib.mkIf pkgs.stdenvNoCC.isLinux {
+            vicinae = lib.mkIf (config.desktop.enable && pkgs.stdenvNoCC.isLinux) {
               source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/vicinae";
             };
           };

@@ -19,6 +19,7 @@
       config.flake.nixosModules.hardware-precision-5570
 
       config.flake.nixosModules.desktop
+      config.flake.nixosModules.personal-apps
       config.flake.nixosModules.profile-personal
 
       { networking.hostName = "wally"; }

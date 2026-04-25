@@ -12,6 +12,10 @@ in
       ...
     }:
     {
+      imports = [ flakeCfg.flake.nixosModules.fonts ];
+
+      hm.desktop.enable = true;
+
       services.libinput.enable = true;
       services.printing.enable = true;
 

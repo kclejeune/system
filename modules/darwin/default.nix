@@ -20,9 +20,13 @@ in
         flakeCfg.flake.darwinModules.nixpkgs-wiring
         flakeCfg.flake.darwinModules.brew
         flakeCfg.flake.darwinModules.preferences
+        # Every darwin host is GUI, so fonts go here. NixOS hosts get
+        # them via desktop-base so headless `gateway` stays clean.
+        flakeCfg.flake.darwinModules.fonts
       ];
 
       hm.imports = [ flakeCfg.flake.homeModules.onepassword ];
+      hm.desktop.enable = true;
 
       system.primaryUser = config.user.name;
 

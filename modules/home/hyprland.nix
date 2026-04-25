@@ -1,16 +1,22 @@
 _: {
   flake.homeModules.hyprland =
     # Hyprland home-manager configuration — compositor settings, keybindings,
-    # companion tools (ashell, swaync, vicinae, hyprlock, hypridle, kanshi),
-    # and Catppuccin Mocha theming.
+    # kanshi for monitor management, and noctalia-shell for the desktop shell
+    # (bar, notifications, launcher, lock, idle, OSD, wallpaper, night-light).
     {
       config,
       lib,
       pkgs,
+      inputs,
       ...
     }:
     let
-      # Catppuccin Mocha (dark)
+      # Catppuccin Mocha (dark) — used for hyprland borders + shadow.
+      # Noctalia handles the rest of the theme via its built-in Catppuccin
+      # color scheme (predefinedScheme = "Catppuccin"), which already covers
+      # the bar, panels, lock screen, OSD, and notifications. dconf + GTK
+      # theme name are still tracked in lockstep via the noctalia darkMode
+      # hook below so Mocha (dark) ↔ Latte (light) swaps stay in sync.
       dark = {
         base = "1e1e2e";
         mantle = "181825";
@@ -27,7 +33,6 @@ _: {
         red = "f38ba8";
         mauve = "cba6f7";
       };
-      # Catppuccin Latte (light)
       light = {
         base = "eff1f5";
         mantle = "e6e9ef";
@@ -44,19 +49,87 @@ _: {
         red = "d20f39";
         mauve = "8839ef";
       };
-      # Default to dark
       c = dark;
+
+      noctaliaBin = lib.getExe inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
+
+      # Catppuccin border / shadow values per palette. Used by the static
+      # `general/decoration` blocks below and by the `darkModeChange` hook
+      # so a runtime toggle swaps the same fields the eval-time defaults
+      # set, with no drift between them.
+      hyprThemeCmds = palette: ''
+        ${hyprctl} keyword general:col.active_border "rgba(${palette.lavender}ff) rgba(${palette.blue}ff) 45deg"
+        ${hyprctl} keyword general:col.inactive_border "rgba(${palette.overlay0}aa)"
+        ${hyprctl} keyword decoration:shadow:color "rgba(${palette.crust}ee)"
+      '';
+
+      # Letters bound to named workspaces (matching aerospace 1:1). Skipped:
+      # c (reserved for clipboard), h/j/k/l (movefocus), w (killactive).
+      wsLetters = lib.stringToCharacters "abdefgimnopqrstuvxyz";
+      wsBinds = builtins.concatLists (
+        map (k: [
+          "$mod, ${k}, workspace, name:${lib.toUpper k}"
+          "$mod SHIFT, ${k}, movetoworkspace, name:${lib.toUpper k}"
+        ]) wsLetters
+      );
+      # 4 and 5 skip the SHIFT variant — those are reclaimed by the
+      # macOS-style screenshot bindings below ($mod SHIFT 4 = region,
+      # $mod SHIFT 5 = full).
+      numBinds = builtins.concatLists (
+        map (
+          n:
+          [ "$mod, ${toString n}, workspace, ${toString n}" ]
+          ++ lib.optional (n != 4 && n != 5) "$mod SHIFT, ${toString n}, movetoworkspace, ${toString n}"
+        ) (lib.range 1 9)
+      );
+
+      # Bootstrap template for ~/.config/noctalia/settings.json. Source of
+      # truth is `./assets/noctalia/settings.json` — refresh it from the
+      # running shell with `jq 'del(.hooks.darkModeChange) | del(.settingsVersion)'
+      # ~/.config/noctalia/settings.json > modules/home/assets/noctalia/settings.json`.
+      # We re-inject `hooks.darkModeChange` here so the rendered hook tracks
+      # current store paths.
+      #
+      # Why a writable copy and not `programs.noctalia-shell.settings`: the
+      # latter symlinks to /nix/store, which causes runtime toggles like
+      # darkMode to flash and revert — noctalia writes a fresh colors.json on
+      # toggle, the parent-dir watcher in Commons/Settings.qml fires, and the
+      # next reload restores the symlinked settings.json over the in-memory
+      # toggle. Nix updates apply on fresh installs only; to refresh after
+      # rebuilds, `rm ~/.config/noctalia/settings.json && home-manager switch`.
+      #
+      # OS dark/light propagation: `colorSchemes.syncGsettings = true` runs
+      # `gtk-refresh.py --appearance-only` which `gsettings set`s
+      # org.gnome.desktop.interface/color-scheme. xdg-desktop-portal-gtk
+      # watches that and emits the freedesktop appearance SettingChanged
+      # signal that kitty / Zed / Electron subscribe to. The hook only owns
+      # hyprland border colors (no portal involvement).
+      noctaliaSettings = (pkgs.formats.json { }).generate "noctalia-settings.json" (
+        (builtins.fromJSON (builtins.readFile ./assets/noctalia/settings.json))
+        // {
+          hooks = {
+            enabled = true;
+            # `$1` is text-substituted with "true"/"false" before `sh -lc`
+            # — must be a shell command string, not a script path.
+            darkModeChange = ''
+              if [ "$1" = "true" ]; then
+                ${hyprThemeCmds dark}
+              else
+                ${hyprThemeCmds light}
+              fi
+            '';
+          };
+        }
+      );
 
     in
     {
-      # Scope HM Wayland services (ashell, swaync, hyprpaper, swayosd,
-      # hyprsunset, hypridle, kanshi, ...) to hyprland-session.target so
-      # they only start under Hyprland. The default binds to
-      # graphical-session.target, which any Wayland session satisfies, so
-      # adding a second compositor (e.g. cosmic, plasma) would otherwise
-      # drag all of these along too. darkman keeps its own
-      # graphical-session.target default — theme switching is useful
-      # regardless of compositor.
+      imports = [ inputs.noctalia.homeModules.default ];
+
+      # Scope HM Wayland services (kanshi, ...) to hyprland-session.target so
+      # they only start under Hyprland. Default binds to graphical-session.target,
+      # which any Wayland session satisfies.
       wayland.systemd.target = "hyprland-session.target";
 
       wayland.windowManager.hyprland = {
@@ -85,8 +158,10 @@ _: {
           ];
 
           general = {
-            gaps_in = 4;
-            gaps_out = 4;
+            # noctalia's recommended values — wider gaps + larger rounding
+            # make blurred panels look intentional rather than cramped.
+            gaps_in = 5;
+            gaps_out = 10;
             border_size = 2;
             "col.active_border" = "rgba(${c.lavender}ff) rgba(${c.blue}ff) 45deg";
             "col.inactive_border" = "rgba(${c.overlay0}aa)";
@@ -95,16 +170,18 @@ _: {
           };
 
           decoration = {
-            rounding = 8;
+            rounding = 20;
+            rounding_power = 2;
             blur = {
               enabled = true;
-              size = 6;
+              size = 3;
               passes = 2;
+              vibrancy = 0.1696;
               new_optimizations = true;
             };
             shadow = {
               enabled = true;
-              range = 10;
+              range = 4;
               render_power = 3;
               color = "rgba(${c.crust}ee)";
             };
@@ -172,16 +249,13 @@ _: {
           };
 
           # -- Startup --
-          # ashell, mako, hypridle, hyprpaper, kanshi are started via their
-          # respective HM systemd services — only list things without a service here.
           exec-once = [
-            "wl-paste --type text --watch cliphist store"
-            "wl-paste --type image --watch cliphist store"
             "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
             # 1Password tray-only; kitty lands on workspace T via the
             # match:class kitty rule.
             "1password --silent"
             "kitty"
+            "noctalia-shell"
           ];
 
           # -- Named workspaces with monitor pinning --
@@ -199,10 +273,9 @@ _: {
             "name:M"
           ];
 
-          # Window rules use block syntax in Hyprland 0.54+
-
           # -- Keybindings --
           "$mod" = "ALT";
+          "$ipc" = "${noctaliaBin} ipc call";
 
           bind = [
             # Focus (alt-hjkl)
@@ -225,119 +298,74 @@ _: {
             "$mod, Tab, workspace, previous"
             "$mod SHIFT, Tab, movecurrentworkspacetomonitor, +1"
 
-            # Launch
+            # Launch — Super+Space mirrors GNOME; Alt+Space stays on
+            # vicinae (kept for its dmenu mode used by ad-hoc scripts).
             "$mod, Return, exec, kitty"
+            "SUPER, Space, exec, $ipc launcher toggle"
             "$mod, Space, exec, vicinae toggle"
 
-            # Dark/light mode toggle
-            "SUPER, d, exec, darkman toggle"
+            # Dark/light mode toggle — fires the darkModeChange hook.
+            "SUPER, d, exec, $ipc darkMode toggle"
 
             # Lock screen
-            "$mod CTRL, q, exec, pidof hyprlock || hyprlock"
-            "SUPER, l, exec, pidof hyprlock || hyprlock"
+            "$mod CTRL, q, exec, $ipc lockScreen lock"
+            "SUPER, l, exec, $ipc lockScreen lock"
 
-            # Screenshots — grimblast handles slurp area selection and the
-            # wl-copy clipboard write itself, plus a libnotify toast.
-            ", Print, exec, grimblast --notify copy area"
-            "SHIFT, Print, exec, grimblast --notify copy screen"
+            # Screenshots via noctalia screen-shot-and-record plugin: opens
+            # an overlay where you pick area / window / screen and copy /
+            # save / edit. SHIFT+Print swaps to OCR (image → text).
+            ", Print, exec, $ipc plugin:screen-shot-and-record screenshot"
+            "SHIFT, Print, exec, $ipc plugin:screen-shot-and-record ocr"
 
-            # Power menu
-            "$mod SHIFT, e, exec, power-menu"
+            # macOS-style direct capture (no overlay UI). $mod is ALT, so
+            # alt-shift-4 / alt-shift-5 mirror Cmd+Shift+4 / Cmd+Shift+5 with
+            # CTRL toggling clipboard mode (matches macOS Cmd+Shift+Ctrl+4).
+            "$mod SHIFT, 4, exec, screenshot region file"
+            "$mod SHIFT CTRL, 4, exec, screenshot region clipboard"
+            "$mod SHIFT, 5, exec, screenshot screen file"
+            "$mod SHIFT CTRL, 5, exec, screenshot screen clipboard"
 
-            # Clipboard history
-            "$mod, c, exec, cliphist list | vicinae dmenu | cliphist decode | wl-copy"
+            # Power / clipboard menus
+            "$mod SHIFT, e, exec, $ipc sessionMenu toggle"
+            "$mod, c, exec, $ipc launcher clipboard"
 
-            # Named workspaces (alt-{letter}, matching aerospace 1:1)
-            "$mod, a, workspace, name:A"
-            "$mod, b, workspace, name:B"
-            # alt-c reserved
-            "$mod, d, workspace, name:D"
-            "$mod, e, workspace, name:E"
-            "$mod, f, workspace, name:F"
-            "$mod, g, workspace, name:G"
-            "$mod, i, workspace, name:I"
-            "$mod, m, workspace, name:M"
-            "$mod, n, workspace, name:N"
-            "$mod, o, workspace, name:O"
-            "$mod, p, workspace, name:P"
-            "$mod, q, workspace, name:Q"
-            "$mod, r, workspace, name:R"
-            "$mod, s, workspace, name:S"
-            "$mod, t, workspace, name:T"
-            "$mod, u, workspace, name:U"
-            "$mod, v, workspace, name:V"
+            # Kill active window (alt-w; alt-c reserved for clipboard).
             "$mod, w, killactive"
-            "$mod, x, workspace, name:X"
-            "$mod, y, workspace, name:Y"
-            "$mod, z, workspace, name:Z"
-
-            # Move window to named workspace (alt-shift-{letter})
-            "$mod SHIFT, a, movetoworkspace, name:A"
-            "$mod SHIFT, b, movetoworkspace, name:B"
-            # alt-shift-c reserved
-            "$mod SHIFT, d, movetoworkspace, name:D"
-            "$mod SHIFT, e, movetoworkspace, name:E"
-            "$mod SHIFT, f, movetoworkspace, name:F"
-            "$mod SHIFT, g, movetoworkspace, name:G"
-            "$mod SHIFT, i, movetoworkspace, name:I"
-            "$mod SHIFT, m, movetoworkspace, name:M"
-            "$mod SHIFT, n, movetoworkspace, name:N"
-            "$mod SHIFT, o, movetoworkspace, name:O"
-            "$mod SHIFT, p, movetoworkspace, name:P"
-            "$mod SHIFT, q, movetoworkspace, name:Q"
-            "$mod SHIFT, r, movetoworkspace, name:R"
-            "$mod SHIFT, s, movetoworkspace, name:S"
-            "$mod SHIFT, t, movetoworkspace, name:T"
-            "$mod SHIFT, u, movetoworkspace, name:U"
-            "$mod SHIFT, v, movetoworkspace, name:V"
-            # alt-shift-w unbound (alt-w = killactive)"
-            "$mod SHIFT, x, movetoworkspace, name:X"
-            "$mod SHIFT, y, movetoworkspace, name:Y"
-            "$mod SHIFT, z, movetoworkspace, name:Z"
-
-            # Numeric workspaces
-            "$mod, 0, workspace, name:0"
-            "$mod, 1, workspace, 1"
-            "$mod, 2, workspace, 2"
-            "$mod, 3, workspace, 3"
-            "$mod, 4, workspace, 4"
-            "$mod, 5, workspace, 5"
-            "$mod, 6, workspace, 6"
-            "$mod, 7, workspace, 7"
-            "$mod, 8, workspace, 8"
-            "$mod, 9, workspace, 9"
-
-            "$mod SHIFT, 0, movetoworkspace, name:0"
-            "$mod SHIFT, 1, movetoworkspace, 1"
-            "$mod SHIFT, 2, movetoworkspace, 2"
-            "$mod SHIFT, 3, movetoworkspace, 3"
-            "$mod SHIFT, 4, movetoworkspace, 4"
-            "$mod SHIFT, 5, movetoworkspace, 5"
-            "$mod SHIFT, 6, movetoworkspace, 6"
-            "$mod SHIFT, 7, movetoworkspace, 7"
-            "$mod SHIFT, 8, movetoworkspace, 8"
-            "$mod SHIFT, 9, movetoworkspace, 9"
 
             # Submaps (alt-shift-semicolon = service, alt-shift-slash = join)
             "$mod SHIFT, semicolon, submap, service"
             "$mod SHIFT, slash, submap, join"
 
-            # Audio (one-shot; binde would re-trigger on key repeat).
-            # vol-* wrappers play the freedesktop volume-change sound to
-            # match the GNOME / COSMIC feedback behavior.
-            ", XF86AudioMute, exec, vol-mute"
-            ", XF86AudioMicMute, exec, mic-mute"
-            ", XF86AudioRaiseVolume, exec, vol-up"
-            ", XF86AudioLowerVolume, exec, vol-down"
+            # Workspace 0 is named "0"; 1–9 use Hyprland's numeric id.
+            "$mod, 0, workspace, name:0"
+            "$mod SHIFT, 0, movetoworkspace, name:0"
+          ]
+          # Named-letter workspaces (alt-{letter}, alt-shift-{letter}).
+          ++ wsBinds
+          # Numeric workspaces 1–9 (alt-{n}, alt-shift-{n}).
+          ++ numBinds;
+
+          # Audio and media via noctalia IPC. bindl = work while locked,
+          # bindel = repeat on hold.
+          bindl = [
+            ", XF86AudioMute, exec, $ipc volume muteOutput"
+            ", XF86AudioMicMute, exec, $ipc volume muteInput"
           ];
 
-          # Resize + brightness (repeatable on hold). --min-brightness 1
-          # lets the slider go to 1% instead of swayosd's 5% default floor.
+          # Tap-Super-alone opens the launcher, GNOME-style. bindr fires
+          # on key release so chords like Super+L (lock) don't also pop
+          # the launcher when the chord ends.
+          bindr = [
+            "SUPER, SUPER_L, exec, $ipc launcher toggle"
+          ];
+
           binde = [
             "$mod SHIFT, minus, resizeactive, -50 0"
             "$mod SHIFT, equal, resizeactive, 50 0"
-            ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise --min-brightness 1"
-            ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower --min-brightness 1"
+            ", XF86AudioRaiseVolume, exec, $ipc volume increase"
+            ", XF86AudioLowerVolume, exec, $ipc volume decrease"
+            ", XF86MonBrightnessUp, exec, $ipc brightness increase"
+            ", XF86MonBrightnessDown, exec, $ipc brightness decrease"
           ];
         };
 
@@ -393,6 +421,18 @@ _: {
           windowrule = match:class io.github.kaii_lb.Overskride, float true, size 600 500
           windowrule = match:title Picture-in-Picture, float true
 
+          # -- Noctalia layer rules --
+          # Blur the bar/panel/launcher backgrounds. Block syntax — fields
+          # use underscores (per the Layer Rules table in the Hyprland wiki)
+          # and `match:namespace` selects the noctalia surfaces.
+          layerrule {
+            name = noctalia
+            match:namespace = noctalia-background-.*$
+            ignore_alpha = 0.5
+            blur = true
+            blur_popups = true
+          }
+
           # -- Service submap (alt-shift-semicolon) --
           submap = service
           bind = ALT, r, exec, hyprctl dispatch workspaceopt allfloat
@@ -416,580 +456,39 @@ _: {
         '';
       };
 
-      # -- Ashell --
-      # Replaces waybar. ashell's Settings module already covers the audio /
-      # bluetooth / network / battery indicators that we wired up by hand in
-      # waybar; the Tray module picks up StatusNotifierItems (1Password,
-      # nm-applet, etc.). Power-menu commands in `settings.settings` mirror
-      # the power-menu shellscript so the bar's Settings panel and the
-      # vicinae power provider stay consistent.
-      programs.ashell = {
-        enable = true;
-        systemd.enable = true;
-        settings = {
-          log_level = "warn";
-          position = "Top";
-          enable_esc_key = true;
+      # -- Noctalia shell --
+      # Launched via hyprland's exec-once above; upstream deprecated systemd
+      # startup over IPC / start-order issues. See `noctaliaSettings` (let
+      # block) for why settings.json is bootstrapped instead of symlinked.
+      programs.noctalia-shell.enable = true;
 
-          modules = {
-            left = [
-              "Workspaces"
-              "KeyboardSubmap"
-            ];
-            center = [ "Tempo" ];
-            right = [
-              [
-                "MediaPlayer"
-                "SystemInfo"
-                "Tray"
-                "Privacy"
-                "Settings"
-              ]
-            ];
-          };
-
-          workspaces = {
-            # Show every workspace (like waybar's default). With
-            # MonitorSpecific the bar would only list the active monitor's.
-            visibility_mode = "All";
-            # Sort workspaces by monitor first, then by id — stops them
-            # jumping order as windows move between outputs.
-            group_by_monitor = true;
-          };
-
-          # Tempo replaces the deprecated Clock module: format stays the
-          # same, plus a calendar / weather popover. weather_location =
-          # "Current" uses ip-api for geolocation — may resolve oddly
-          # while WARP is active.
-          tempo = {
-            clock_format = "%a %b %d  %I:%M %p";
-            weather_location = "Current";
-            weather_indicator = "IconAndTemperature";
-          };
-
-          # Auto-appears in the bar when any MPRIS player is active;
-          # menu has prev/play/pause/next + volume.
-          media_player = {
-            max_title_length = 60;
-            indicator_format = "Icon";
-          };
-
-          settings = {
-            lock_cmd = "loginctl lock-session";
-            shutdown_cmd = "hyprshutdown -t 'Shutting down...' -p 'systemctl poweroff'";
-            reboot_cmd = "hyprshutdown -t 'Rebooting...' -p 'systemctl reboot'";
-            logout_cmd = "hyprshutdown -t 'Logging out...'";
-            suspend_cmd = "systemctl suspend";
-            hibernate_cmd = "systemctl hibernate";
-            audio_sinks_more_cmd = "pwvucontrol";
-            bluetooth_more_cmd = "overskride";
-            wifi_more_cmd = "nm-connection-editor";
-            indicators = [
-              "Audio"
-              "Bluetooth"
-              "Network"
-              "Battery"
-            ];
-            # Tray-style toggle for darkman lives inside the Settings
-            # menu. The icon must be a Nerd Font codepoint that ashell
-            # included in its bundled subset (it scrapes ../icons.rs at
-            # build time) — `` (U+F00E0, brightness) is one of those.
-            # Other safe picks: any glyph wired to a StaticIcon variant.
-            CustomButton = [
-              {
-                name = "Toggle theme";
-                icon = "";
-                command = "darkman toggle";
-                tooltip = "Toggle dark/light mode";
-              }
-            ];
-          };
-
-          # Catppuccin Mocha. ashell's config is static at the nix-store
-          # path, so the bar stays Mocha across darkman switches. The rest
-          # of the desktop (gtk, hyprland borders, hyprlock, wallpaper)
-          # still follows the theme.
-          # Catppuccin Mocha. Structured colors expose Mocha's surface
-          # ramp so empty/hover/strong states track the official palette
-          # instead of generated tints. Reference:
-          # https://catppuccin.com/palette#flavor-mocha
-          appearance = {
-            # Non-icon text uses JetBrains Mono Nerd Font; ashell's
-            # bundled "Symbols Nerd Font" subset still handles icons.
-            font_name = "JetBrains Mono Nerd Font";
-            scale_factor = 1.1;
-            style = "Islands";
-            opacity = 0.92;
-            background_color = {
-              base = "#${dark.base}"; # base
-              weak = "#${dark.surface0}"; # surface0 — empty workspace fill
-              strong = "#45475a"; # surface1 — hover state
-            };
-            primary_color = {
-              base = "#${dark.lavender}"; # accent
-              text = "#${dark.base}"; # high-contrast on accent
-            };
-            secondary_color = {
-              base = "#${dark.blue}";
-              # Card backgrounds inside menus (Tempo weather rows, the
-              # MediaPlayer card, and one Settings indicator) read from
-              # secondary.strong. Mocha surface1 keeps them as subtle
-              # raised tiles instead of bright lavender pills.
-              strong = "#45475a";
-            };
-            success_color = "#${dark.green}";
-            danger_color = {
-              base = "#${dark.red}";
-              weak = "#${dark.yellow}"; # warning tint
-            };
-            text_color = "#${dark.text}";
-            # Workspace pills cycle by monitor index. Mocha accent trio
-            # (blue / lavender / mauve) replaces the default peach so it
-            # lines up with the rest of the theme.
-            workspace_colors = [
-              "#${dark.blue}"
-              "#${dark.lavender}"
-              "#${dark.mauve}"
-            ];
-          };
-        };
-      };
-
-      # -- SwayNC (notification center with history panel) --
-      services.swaync = {
-        enable = true;
-        settings = {
-          positionX = "right";
-          positionY = "top";
-          control-center-margin-right = 8;
-          control-center-margin-top = 8;
-          control-center-margin-bottom = 8;
-          control-center-width = 420;
-          notification-window-width = 420;
-          notification-icon-size = 48;
-          notification-body-image-height = 100;
-          timeout = 5;
-          timeout-low = 3;
-          timeout-critical = 0;
-          fit-to-screen = true;
-          keyboard-shortcuts = true;
-          hide-on-action = true;
-          notification-spacing = 0;
-        };
-        style = ''
-          * {
-            font-family: Open Sans, JetBrains Mono Nerd Font, sans-serif;
-            font-size: 13px;
-            color: @theme_text_color;
-          }
-
-          /* Popup notifications */
-          .floating-notifications {
-            padding-top: 4px;
-          }
-          .floating-notifications .notification-row,
-          .floating-notifications .notification-row .notification-background .notification-content,
-          .floating-notifications .notification-row .notification-background .notification-default-action,
-          .notification-row {
-            margin: 0;
-            padding: 0;
-            background: transparent;
-            border: none;
-          }
-          .floating-notifications .notification-row .notification-background {
-            margin: 0 8px 0 0;
-            padding: 0;
-            background: transparent;
-            border: none;
-          }
-          .notification {
-            background: alpha(shade(@theme_base_color, 0.92), 0.95);
-            border: 1px solid alpha(@borders, 0.6);
-            border-radius: 8px;
-            margin: 4px 8px;
-            padding: 8px;
-            box-shadow: none;
-            transition: border 200ms ease;
-          }
-          .notification:hover {
-            border: 1px solid @theme_selected_bg_color;
-          }
-          .notification .body,
-          .notification .time {
-            color: @theme_unfocused_text_color;
-          }
-
-          /* Sidebar panel */
-          .control-center {
-            background: alpha(shade(@theme_base_color, 0.9), 0.98);
-            border: 1px solid @theme_selected_bg_color;
-            border-radius: 8px;
-            box-shadow: none;
-            padding: 6px;
-          }
-
-          /* Reset all wrapper elements inside the panel */
-          .control-center .notification-row,
-          .control-center .notification-row:hover,
-          .control-center .notification-row:focus,
-          .control-center .notification-row:active,
-          .control-center .notification-background,
-          .control-center .notification-background:hover,
-          .control-center .notification-background:focus,
-          .control-center .notification-background:active,
-          .control-center .notification-content,
-          .control-center .notification-content:hover,
-          .control-center .notification-content:focus,
-          .control-center .notification-content:active,
-          .control-center .notification-default-action,
-          .control-center .notification-default-action:hover,
-          .control-center .notification-default-action:focus,
-          .control-center .notification-action {
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            margin: 0;
-            padding: 0;
-            min-height: 0;
-            min-width: 0;
-          }
-          .close-button {
-            background: alpha(@borders, 0.2);
-            border: none;
-            box-shadow: none;
-            min-height: 24px;
-            min-width: 24px;
-            margin: 4px;
-            padding: 2px;
-            border-radius: 50%;
-          }
-          .close-button:hover {
-            background: alpha(@borders, 0.4);
-          }
-          .floating-notifications .close-button {
-            opacity: 0;
-            min-height: 0;
-            min-width: 0;
-          }
-          .control-center .close-button {
-            margin: 8px 4px 0 0;
-          }
-
-          /* Cards inside the panel */
-          .control-center .notification {
-            background: alpha(@theme_base_color, 0.9);
-            border: 1px solid alpha(@borders, 0.4);
-            border-radius: 8px;
-            margin: 3px 0;
-            padding: 8px;
-            box-shadow: none;
-            transition: border 200ms ease;
-          }
-          .control-center .notification:hover {
-            border: 1px solid @theme_selected_bg_color;
-          }
-
-          /* Grouped notifications */
-          .control-center .notification-group,
-          .control-center .notification-group-headers {
-            background: transparent;
-          }
-          .control-center .notification-group-header {
-            background: alpha(@theme_bg_color, 0.3);
-            border: 1px solid alpha(@borders, 0.3);
-            border-radius: 8px;
-            margin: 3px 0;
-            padding: 6px 8px;
-          }
-
-          .control-center-list {
-            margin: 0;
-            padding: 0;
-          }
-
-          /* Header widgets -- 12px horizontal margin to align with cards */
-          .widget-title {
-            font-weight: bold;
-            color: @theme_unfocused_text_color;
-            margin: 4px 12px 2px 12px;
-          }
-          .widget-title button {
-            background: alpha(@theme_base_color, 0.9);
-            border: 1px solid alpha(@borders, 0.4);
-            border-radius: 6px;
-            padding: 4px 10px;
-          }
-          .widget-dnd {
-            margin: 0 12px 4px 12px;
-          }
-          .widget-dnd slider:checked {
-            background: @theme_selected_bg_color;
-            border-radius: 10px;
-          }
-          .control-center-list-placeholder {
-            color: @theme_unfocused_text_color;
-          }
-        '';
-      };
-
-      # The HM darkman module only wires its config.yaml into restart
-      # triggers — script edits don't bump the unit, so sd-switch leaves
-      # the long-running daemon stale and over time it stops exec'ing
-      # scripts altogether. Fingerprint the script content too.
-      systemd.user.services.darkman.Unit.X-Restart-Triggers = [
-        (pkgs.writeText "darkman-scripts-fingerprint" (
-          builtins.toJSON {
-            dark = config.services.darkman.darkModeScripts;
-            light = config.services.darkman.lightModeScripts;
-          }
-        ))
-      ];
-
-      # -- Vicinae (app launcher) --
-      # -- Darkman (dark/light mode toggle, no automatic transitions) --
-      services.darkman = {
-        enable = true;
-        settings = {
-          usegeoclue = false;
-        };
-        darkModeScripts = {
-          gtk-theme = ''
-            ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
-            ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/gtk-theme "'catppuccin-mocha-blue-standard'"
-            ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'"
-            ${pkgs.dconf}/bin/dconf write /org/freedesktop/appearance/color-scheme "1"
-          '';
-          hyprland = ''
-            hyprctl keyword general:col.active_border "rgba(${dark.lavender}ff) rgba(${dark.blue}ff) 45deg"
-            hyprctl keyword general:col.inactive_border "rgba(${dark.overlay0}aa)"
-            hyprctl keyword decoration:shadow:color "rgba(${dark.crust}ee)"
-          '';
-          swaync = ''
-            swaync-client --reload-css || true
-          '';
-          wallpaper = ''
-            ln -sf ${config.home.homeDirectory}/.config/hypr/wallpaper-dark.png ${config.home.homeDirectory}/.config/hypr/wallpaper.png
-            systemctl --user restart hyprpaper.service
-          '';
-          hyprlock = ''
-            ln -sf ${config.home.homeDirectory}/.config/hypr/hyprlock-colors-dark.conf ${config.home.homeDirectory}/.config/hypr/hyprlock-colors.conf
-          '';
-        };
-        lightModeScripts = {
-          gtk-theme = ''
-            ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-light'"
-            ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/gtk-theme "'catppuccin-latte-blue-standard'"
-            ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Light'"
-            ${pkgs.dconf}/bin/dconf write /org/freedesktop/appearance/color-scheme "2"
-          '';
-          hyprland = ''
-            hyprctl keyword general:col.active_border "rgba(${light.lavender}ff) rgba(${light.blue}ff) 45deg"
-            hyprctl keyword general:col.inactive_border "rgba(${light.overlay0}aa)"
-            hyprctl keyword decoration:shadow:color "rgba(${light.crust}ee)"
-          '';
-          swaync = ''
-            swaync-client --reload-css || true
-          '';
-          wallpaper = ''
-            ln -sf ${config.home.homeDirectory}/.config/hypr/wallpaper-light.png ${config.home.homeDirectory}/.config/hypr/wallpaper.png
-            systemctl --user restart hyprpaper.service
-          '';
-          hyprlock = ''
-            ln -sf ${config.home.homeDirectory}/.config/hypr/hyprlock-colors-light.conf ${config.home.homeDirectory}/.config/hypr/hyprlock-colors.conf
-          '';
-        };
-      };
+      home.activation.noctaliaSettingsBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        cfg="$HOME/.config/noctalia/settings.json"
+        $DRY_RUN_CMD mkdir -p "$(dirname "$cfg")"
+        # Replace if missing, or if it's still a read-only symlink from a
+        # previous build that used `programs.noctalia-shell.settings`.
+        # Do not overwrite an existing regular file — that's where noctalia
+        # persists runtime mutations (darkMode toggles, wallpaper picks).
+        if [ ! -e "$cfg" ] || [ -L "$cfg" ]; then
+          $DRY_RUN_CMD rm -f "$cfg"
+          $DRY_RUN_CMD install -m 644 ${noctaliaSettings} "$cfg"
+        fi
+      '';
 
       programs.ghostty.enable = true;
 
-      # Settings managed in dotfiles/vicinae/settings.json via mkOutOfStoreSymlink
+      # Vicinae kept alongside noctalia for its dmenu mode (used by ad-hoc
+      # scripts) and as a fallback launcher. noctalia handles the primary
+      # launcher / clipboard / session-menu keybinds.
       programs.vicinae = {
         enable = true;
         useLayerShell = true;
         systemd.enable = true;
-        # Vicinae doesn't follow wayland.systemd.target — set explicitly.
         systemd.target = "hyprland-session.target";
       };
 
-      # -- Hyprlock (screen locker) --
-      # Colors are sourced from a file that darkman swaps for light/dark mode
-      xdg.configFile."hypr/hyprlock-colors-dark.conf".text = ''
-        $text = rgba(${dark.text}ff)
-        $subtext = rgba(${dark.subtext1}cc)
-        $mantle = rgba(${dark.mantle}66)
-        $overlay = rgba(${dark.overlay0}88)
-        $green = rgb(${dark.green})
-        $red = rgb(${dark.red})
-      '';
-      xdg.configFile."hypr/hyprlock-colors-light.conf".text = ''
-        $text = rgba(${light.text}ff)
-        $subtext = rgba(${light.subtext1}cc)
-        $mantle = rgba(${light.mantle}66)
-        $overlay = rgba(${light.overlay0}88)
-        $green = rgb(${light.green})
-        $red = rgb(${light.red})
-      '';
-
-      programs.hyprlock = {
-        enable = true;
-        importantPrefixes = [ "source" ];
-        settings = {
-          source = "${config.home.homeDirectory}/.config/hypr/hyprlock-colors.conf";
-          auth = {
-            fingerprint = {
-              enabled = true;
-              ready_message = "Scan fingerprint to unlock";
-              present_message = "Scanning...";
-              retry_delay = 250;
-            };
-            pam = {
-              enabled = true;
-              module = "hyprlock";
-            };
-          };
-          background = [
-            {
-              path = "${config.home.homeDirectory}/.config/hypr/wallpaper.png";
-              blur_passes = 3;
-              blur_size = 8;
-            }
-          ];
-          input-field = [
-            {
-              size = "250, 45";
-              position = "0, -30";
-              monitor = "";
-              dots_center = true;
-              fade_on_empty = false;
-              font_color = "$text";
-              inner_color = "$mantle";
-              outer_color = "$overlay";
-              check_color = "$green";
-              fail_color = "$red";
-              outline_thickness = 1;
-              placeholder_text = "Password";
-              placeholder_color = "$overlay";
-              rounding = 12;
-            }
-          ];
-          # Layout (top to bottom, centered): clock → name → password → hint
-          # Matches GNOME lock screen style: avatar → name → password
-          label = [
-            # Status bar (top-right): battery + wifi
-            {
-              monitor = "";
-              text = ''cmd[update:5000] bat=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo 0); status=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo Unknown); if [ "$status" = "Charging" ]; then icon="󰂄"; elif [ "$bat" -ge 80 ]; then icon="󰁹"; elif [ "$bat" -ge 60 ]; then icon="󰂀"; elif [ "$bat" -ge 40 ]; then icon="󰁾"; elif [ "$bat" -ge 20 ]; then icon="󰁼"; else icon="󰁺"; fi; printf "%s %s%%" "$icon" "$bat"'';
-              color = "$subtext";
-              font_size = 12;
-              font_family = "JetBrains Mono Nerd Font";
-              position = "-20, -15";
-              halign = "right";
-              valign = "top";
-            }
-            {
-              monitor = "";
-              text = ''cmd[update:1000] echo "$(date +"%I:%M:%S %p")"'';
-              color = "$text";
-              font_size = 64;
-              font_family = "JetBrains Mono";
-              position = "0, 160";
-              halign = "center";
-              valign = "center";
-            }
-            {
-              monitor = "";
-              text = "cmd[update:3600000] getent passwd $USER | cut -d: -f5 | cut -d, -f1";
-              color = "$text";
-              font_size = 20;
-              font_family = "Open Sans";
-              position = "0, 30";
-              halign = "center";
-              valign = "center";
-            }
-            {
-              monitor = "";
-              text = "<i>Scan fingerprint or type password to unlock</i>";
-              color = "$subtext";
-              font_size = 10;
-              font_family = "Open Sans";
-              position = "0, -70";
-              halign = "center";
-              valign = "center";
-            }
-          ];
-        };
-      };
-
-      # -- Hyprsunset (blue-light filter, time-based) --
-      # 06:30 → identity (no tint, daytime); 20:00 → 3500K (warm,
-      # evening). Adjust temperatures to taste.
-      services.hyprsunset = {
-        enable = true;
-        settings = {
-          profile = [
-            {
-              time = "6:30";
-              identity = true;
-            }
-            {
-              time = "20:00";
-              temperature = 3500;
-              gamma = 1.0;
-            }
-          ];
-        };
-      };
-
-      # -- SwayOSD (volume/brightness/capslock OSD slider) --
-      # Started with the wayland session; bound to via swayosd-client in
-      # the Hyprland keybinds above.
-      services.swayosd.enable = true;
-
-      # -- Hypridle (idle management) --
-      services.hypridle = {
-        enable = true;
-        settings = {
-          general = {
-            before_sleep_cmd = "loginctl lock-session";
-            after_sleep_cmd = "hyprctl dispatch dpms on";
-            ignore_dbus_inhibit = false;
-            lock_cmd = "pidof hyprlock || hyprlock";
-          };
-          listener = [
-            {
-              timeout = 300;
-              on-timeout = "pidof hyprlock || hyprlock";
-            }
-            {
-              # Turn off screens 10s after lock
-              timeout = 310;
-              on-timeout = "hyprctl dispatch dpms off";
-              on-resume = "hyprctl dispatch dpms on";
-            }
-            {
-              timeout = 900;
-              on-timeout = "systemctl suspend";
-            }
-          ];
-        };
-      };
-
-      # -- Hyprpaper (wallpaper) --
-      services.hyprpaper = {
-        enable = true;
-        settings = {
-          splash = false;
-          wallpaper = [
-            {
-              monitor = "";
-              path = "${config.home.homeDirectory}/.config/hypr/wallpaper.png";
-              fit_mode = "cover";
-            }
-          ];
-        };
-      };
-
       # -- Kanshi (monitor management, wlroots protocol) --
+      # Outside noctalia's scope (compositor-level).
       services.kanshi = {
         enable = true;
         systemdTarget = "hyprland-session.target";
@@ -1048,6 +547,9 @@ _: {
       };
 
       # -- GTK/Qt theming (Catppuccin Mocha) --
+      # Theme-name swap is driven by the noctalia darkModeChange hook
+      # above (Mocha ↔ Latte). dconf color-scheme is handled by
+      # noctalia's `colorSchemes.syncGsettings`.
       gtk = {
         enable = true;
         theme = {
@@ -1085,67 +587,83 @@ _: {
 
       # -- Packages --
       home.packages = with pkgs; [
-        # Logout/Reboot/Shutdown go through hyprshutdown so apps get a
-        # chance to exit gracefully (save unsaved work) before Hyprland
-        # tears down. Suspend stays direct — apps resume on wake.
-        hyprshutdown
-        (writeShellScriptBin "power-menu" ''
-          choice=$(printf "Lock\nLogout\nSuspend\nReboot\nShutdown" | vicinae dmenu)
-          case "$choice" in
-            Lock) pidof hyprlock || hyprlock ;;
-            Logout) hyprshutdown -t "Logging out..." ;;
-            Suspend) systemctl suspend ;;
-            Reboot) hyprshutdown -t "Rebooting..." -p "systemctl reboot" ;;
-            Shutdown) hyprshutdown -t "Shutting down..." -p "systemctl poweroff" ;;
-          esac
-        '')
-        # Volume-key wrappers — paplay the Yaru drip (recognizable Ubuntu
-        # cue), then dispatch to swayosd-client. paplay over canberra so
-        # the sample is pinned to the file path, not theme lookup.
-        (
-          let
-            sound = "${pkgs.yaru-theme}/share/sounds/Yaru/stereo/audio-volume-change.oga";
-            mkVol =
-              name: cmd:
-              writeShellScriptBin name ''
-                ${pkgs.pulseaudio}/bin/paplay ${sound} >/dev/null 2>&1 &
-                exec swayosd-client ${cmd}
-              '';
-          in
-          symlinkJoin {
-            name = "vol-wrappers";
-            paths = [
-              (mkVol "vol-up" "--output-volume raise")
-              (mkVol "vol-down" "--output-volume lower")
-              (mkVol "vol-mute" "--output-volume mute-toggle")
-              (mkVol "mic-mute" "--input-volume mute-toggle")
-            ];
-          }
-        )
-        xdg-desktop-portal-gtk
-        cliphist
+        # Catppuccin Latte GTK theme used by the darkModeChange hook when
+        # switching to light mode.
         (catppuccin-gtk.override {
           accents = [ "blue" ];
           variant = "latte";
         })
+
+        # Screenshot capture / OCR / record tooling. The noctalia
+        # screen-shot-and-record plugin shells out to `grim` + `slurp` for
+        # capture, `wl-copy` for clipboard, `swappy` as the optional editor,
+        # `tesseract` for OCR mode, `wf-recorder` for screen recording, and
+        # `notify-send` for toast feedback.
         grim
         slurp
-        grimblast
-        # wl-clipboard-rs: provides wl-copy / wl-paste used by exec-once
-        # cliphist watchers and by the Alt+c clipboard-history binding.
-        # libnotify: provides notify-send (grimblast's --notify toast,
-        # ad-hoc notifications from scripts).
+        swappy
+        tesseract
+        wf-recorder
+
+        # Wayland clipboard tools used by noctalia's built-in clipboard
+        # watcher (`appLauncher.clipboardWatchTextCommand`) and ad-hoc
+        # scripts. libnotify gives notify-send for the screenshot/recording
+        # toasts emitted by the plugin.
         wl-clipboard-rs
         libnotify
+
+        # Audio / Bluetooth GUIs that noctalia surfaces via the bar's
+        # "more" buttons (controlCenter audio + bluetooth panels open
+        # these). Optional — noctalia's built-in panels are usually enough.
         pwvucontrol
         overskride
-        gnome-bluetooth
-        (writeShellScriptBin "gnome-settings" ''
-          export XDG_CURRENT_DESKTOP=GNOME
-          exec gnome-control-center "$@"
+
+        # Direct (no-overlay) screenshot wrapper for the macOS-style
+        # alt-shift-4 / alt-shift-5 keybinds. Mode = region|screen,
+        # target = file|clipboard. "screen" captures the focused monitor
+        # only (vanilla `grim` would concatenate every output, which on
+        # multi-monitor setups produces an unusable wide image).
+        (writeShellScriptBin "screenshot" ''
+          set -eu
+          mode=''${1:-region}
+          target=''${2:-clipboard}
+
+          case "$mode" in
+            region)
+              geom=$(${pkgs.slurp}/bin/slurp) || exit 0
+              args=(-g "$geom")
+              ;;
+            screen)
+              output=$(${config.wayland.windowManager.hyprland.package}/bin/hyprctl monitors -j \
+                | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
+              args=(-o "$output")
+              ;;
+            *) echo "usage: screenshot {region|screen} {file|clipboard}" >&2; exit 2 ;;
+          esac
+
+          case "$target" in
+            clipboard)
+              ${pkgs.grim}/bin/grim "''${args[@]}" - \
+                | ${pkgs.wl-clipboard-rs}/bin/wl-copy --type image/png
+              ${pkgs.libnotify}/bin/notify-send -a Screenshot \
+                "Screenshot copied" "$mode → clipboard"
+              ;;
+            file)
+              dir="$HOME/Pictures/Screenshots"
+              mkdir -p "$dir"
+              dest="$dir/$(date +%Y-%m-%d_%H-%M-%S).png"
+              ${pkgs.grim}/bin/grim "''${args[@]}" "$dest"
+              ${pkgs.libnotify}/bin/notify-send -a Screenshot \
+                "Screenshot saved" "$dest"
+              ;;
+            *) echo "usage: screenshot {region|screen} {file|clipboard}" >&2; exit 2 ;;
+          esac
         '')
+
         (writeShellScriptBin "sync-wallpaper" ''
-          # Sync GNOME wallpaper to hyprpaper location, converting SVG if needed
+          # Sync GNOME wallpaper to noctalia's directory, converting SVG if needed.
+          # noctalia picks them up via `wallpaper.directory` + the
+          # linkLightAndDarkWallpapers pairing on basename match.
           for variant in dark light; do
             if [ "$variant" = "dark" ]; then
               uri=$(${pkgs.dconf}/bin/dconf read /org/gnome/desktop/background/picture-uri-dark | tr -d "'")
@@ -1164,15 +682,17 @@ _: {
                 ;;
             esac
           done
-          ln -sf "$HOME/.config/hypr/wallpaper-dark.png" "$HOME/.config/hypr/wallpaper.png"
-          systemctl --user restart hyprpaper.service 2>/dev/null || true
+          ${noctaliaBin} ipc call wallpaper refresh || true
         '')
-        gnome-control-center
+
+        # nm-connection-editor (advanced VPN/Wi-Fi config — noctalia opens
+        # the bar's Wi-Fi panel, but for VPN/802.1x you still want this).
         networkmanagerapplet
+        # wdisplays for ad-hoc monitor positioning (kanshi profiles cover
+        # the routine docked/undocked layouts).
         wdisplays
       ];
 
-      # Hide the original GNOME Settings entry; our gnome-settings wrapper works under Hyprland
       # VS Code: use desktop entry override instead of argv.json
       # (argv.json is managed by VS Code itself and conflicts with HM)
       xdg.desktopEntries.code = {
@@ -1227,16 +747,12 @@ _: {
         ];
       };
 
-      xdg.desktopEntries."org.gnome.Settings" = {
-        name = "Settings";
-        exec = "gnome-settings";
-        icon = "org.gnome.Settings";
-        comment = "System Settings";
-        categories = [ "Settings" ];
-      };
-
       # -- Wayland environment variables --
       home.sessionVariables = {
+        # Pin noctalia's lock-screen PAM stack to the dedicated service
+        # (security.pam.services.noctalia in modules/nixos/hyprland.nix).
+        # Default would be /etc/pam.d/login, which has no fprintd.
+        NOCTALIA_PAM_SERVICE = "noctalia";
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
         NIXOS_OZONE_WL = "1";
         QT_QPA_PLATFORM = "wayland;xcb";
@@ -1251,9 +767,19 @@ _: {
 
       xdg.mime.enable = true;
 
-      # Portal routing: gtk portal handles Settings (color-scheme for Zed, Electron),
-      # hyprland portal handles screencasting/screenshots.
-      xdg.configFile."xdg-desktop-portal/portals.conf".text = ''
+      # Portal routing: gtk portal handles Settings (color-scheme for kitty,
+      # Zed, Electron); hyprland portal handles screencasting/screenshots.
+      #
+      # Filename matters. xdg-desktop-portal-hyprland and the hyprland package
+      # both ship `hyprland-portals.conf` system-wide containing only
+      # `default=hyprland;gtk`, with no Settings entry. Per portals.conf(5), a
+      # desktop-specific file (matched against XDG_CURRENT_DESKTOP) overrides
+      # the generic `portals.conf` ENTIRELY — so our old `portals.conf` was
+      # silently shadowed, leaving the portal frontend with no Settings
+      # backend at all (`Settings.Read` errors with "No such interface"). Use
+      # the desktop-specific name so the user-level file takes priority over
+      # the system one.
+      xdg.configFile."xdg-desktop-portal/hyprland-portals.conf".text = ''
         [preferred]
         default=gtk
         org.freedesktop.impl.portal.Settings=gtk
@@ -1262,7 +788,9 @@ _: {
         org.freedesktop.impl.portal.GlobalShortcuts=hyprland
       '';
 
-      # Set dark color scheme via dconf (read by xdg-desktop-portal-gtk)
+      # Initial dark color scheme for portal-Settings consumers (Zed,
+      # Electron, etc.). noctalia keeps this in sync at runtime via
+      # `colorSchemes.syncGsettings = true`.
       dconf.settings."org/freedesktop/appearance" = {
         color-scheme = 1; # 0=default, 1=dark, 2=light
       };

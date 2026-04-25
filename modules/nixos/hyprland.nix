@@ -3,21 +3,19 @@ let
   flakeCfg = config;
 in
 {
-  # Hyprland desktop session — tiling Wayland compositor. Assumes
-  # desktop-base is enrolled separately (the `desktop` module does so).
-  # Coexists with gnome — GDM shows both sessions at login.
   flake.nixosModules.hyprland =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     {
       programs.hyprland = {
         enable = true;
         xwayland.enable = true;
       };
 
-      programs.hyprlock.enable = true;
-      # Disable fprintd in PAM -- hyprlock handles fingerprint natively in
-      # parallel with password (see auth block in HM hyprlock config)
-      security.pam.services.hyprlock.fprintAuth = false;
+      services.xserver.enable = true;
+      services.xserver.xkb.layout = "us";
+      services.displayManager.gdm.enable = true;
+
+      programs.gnupg.agent.pinentryPackage = pkgs.pinentry-gnome3;
 
       xdg.portal = {
         enable = true;
@@ -41,9 +39,19 @@ in
 
       hardware.bluetooth.enable = true;
 
-      # GNOME Keyring for libsecret (used by Signal, Electron apps, etc.)
       services.gnome.gnome-keyring.enable = true;
-      security.pam.services.hyprlock.enableGnomeKeyring = true;
+
+      # Dedicated PAM service for noctalia's lock screen. Selected via the
+      # `NOCTALIA_PAM_SERVICE` env var on the home side; without this,
+      # noctalia falls back to /etc/pam.d/login, which has no fprintAuth
+      # and so password is the only path. Mirrors the pattern hyprlock used.
+      security.pam.services.noctalia = {
+        fprintAuth = true;
+        enableGnomeKeyring = true;
+      };
+
+      services.upower.enable = true;
+      services.power-profiles-daemon.enable = lib.mkDefault true;
 
       hm.imports = [ flakeCfg.flake.homeModules.hyprland ];
     };

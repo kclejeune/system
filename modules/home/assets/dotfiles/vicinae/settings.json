@@ -56,6 +56,13 @@
   "favorites": ["clipboard:history"],
   "fallbacks": ["files:search"],
   "providers": {
+    "applications": {
+      "entrypoints": {
+        "nvidia-settings": {
+          "enabled": false
+        }
+      }
+    },
     "clipboard": {
       "preferences": {
         "encryption": true,

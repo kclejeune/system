@@ -7,30 +7,47 @@ _: {
       ...
     }:
     let
-      extraPackages = builtins.attrValues {
+      # Always-on: LSPs and tools that make nvim usable on a headless host
+      # (editing nix / yaml / shell / unit files), plus plugin infra used
+      # by lazy-nix-helper / direnv-nvim / treesitter / blink. Missing
+      # binaries are logged-and-skipped by `vim.lsp.enable`, so the gated
+      # set below is safe to omit on gateway.
+      coreExtraPackages = builtins.attrValues {
+        inherit (pkgs)
+          bash-language-server
+          direnv
+          fzf
+          git
+          nil
+          nixd
+          systemd-language-server
+          tree-sitter
+          yaml-language-server
+          ;
+      };
+
+      # Desktop-only: heavy compilers / language toolchains pulled in only
+      # to feed LSPs (clang, rustup, gopls, jdtls, ts-ls, basedpyright, ...).
+      # Gated on `config.desktop.enable` — gateway sheds ~5 GiB of LSP
+      # closure by skipping these.
+      desktopExtraPackages = builtins.attrValues {
         inherit (pkgs)
           angular-language-server
           astro-language-server
           autotools-language-server
           awk-language-server
           basedpyright
-          bash-language-server
           clang-tools
           clang
           claude-code
           cmake-language-server
           cuelsp
           diagnostic-languageserver
-          direnv
           docker-compose-language-service
           docker-language-server
-          fzf
-          git
           gopls
           jdt-language-server
           lua-language-server
-          nil
-          nixd
           opencode
           oxlint
           protols # codespell:ignore
@@ -38,19 +55,16 @@ _: {
           ruff
           rustup
           svelte-language-server
-          systemd-language-server
           tailwindcss-language-server
           terraform-ls
           texlab
           textlsp
           tooling-language-server
-          tree-sitter
           ty
           typescript-language-server
           vim-language-server
           vscode-langservers-extracted
           vue-language-server
-          yaml-language-server
           zls
           ;
       };
@@ -105,8 +119,13 @@ _: {
         lib.strings.concatMapStrings (
           plugin: "  [\"${sanitizePluginName plugin.name}\"] = \"${plugin.outPath}\",\n"
         ) plugins;
+
+      extraPackages = coreExtraPackages ++ lib.optionals config.desktop.enable desktopExtraPackages;
     in
     {
+      # Same list used for both home.packages (so the binaries land on
+      # the user PATH) and programs.neovim.extraPackages (so the wrapped
+      # nvim launcher sees them too even without a shell context).
       home.packages = extraPackages;
       xdg.configFile = {
         "nvim/lua" = {

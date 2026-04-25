@@ -202,6 +202,13 @@ still use the `user@system` form because they fan out across multiple systems.
   nix eval --json --accept-flake-config \
     '.#nixosConfigurations.phil.config.system.build.toplevel.drvPath'
   ```
+- Build the home-manager generation for a host without activating
+  (useful for reading rendered `xdg.configFile` / `home.activation`
+  output from /nix/store):
+  ```bash
+  nix build --no-link --print-out-paths \
+    '.#nixosConfigurations.phil.config.home-manager.users.kclejeune.home.activationPackage'
+  ```
 - Cross-eval a darwin config from a Linux box: add `--impure` and use
   `builtins.getFlake` so `pkgs` imports work without system-matching.
 
@@ -231,3 +238,20 @@ attribute ...` after creating new files, run `git add` and retry.
   `darwinModules.default`. It replaces the stock Nix package and manages
   its own substitute/trust config; don't also set `nix.settings.*` from
   elsewhere unless you know what you're doing.
+- **Check every host that enrolls a module you touch.** Especially:
+  `gateway` enrolls `profile-personal` for the user identity but NOT
+  `desktop`, so anything piled into `profile-personal` ships to the
+  Hetzner server. Personal-only GUI apps go in
+  `flake.nixosModules.personal-apps`, enrolled per-host in `wally.nix` /
+  `phil.nix`, **not** via `profile-personal` — that keeps headless
+  personal hosts (gateway) and a future work-desktop host clean. Quick
+  blast-radius check: `nix eval --json --no-warn-dirty
+'.#nixosConfigurations.<host>.config.environment.systemPackages'`
+  piped through jq/python to spot pollution.
+- **`nixos-rebuild switch` does not refresh the systemd-user manager
+  environment** for an already-running session. Profile-relative env
+  vars (e.g. `NIX_XDG_DESKTOP_PORTAL_DIR`, `XDG_DATA_DIRS`) keep their
+  login-time values, which means a service started by systemd-user can
+  silently read the wrong path post-rebuild. Workaround:
+  `systemctl --user set-environment KEY=VALUE && systemctl --user
+restart <unit>`, or log out / reboot for a clean slate.

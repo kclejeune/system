@@ -58,6 +58,9 @@ _: {
           ncdu = "gdu";
           pre-commit = "prek";
           lwt = "lazyworktree";
+          # nixpkgs renames Zed's binary to avoid colliding with the
+          # nodePackages.zed CLI; alias back so muscle memory works.
+          zed = "zeditor";
         };
       };
 
