@@ -32,6 +32,7 @@ in
             "wheel"
             "networkmanager"
             "docker"
+            "video"
           ];
           hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
         };

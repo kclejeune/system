@@ -297,12 +297,20 @@ _: {
             # Submaps (alt-shift-semicolon = service, alt-shift-slash = join)
             "$mod SHIFT, semicolon, submap, service"
             "$mod SHIFT, slash, submap, join"
+
+            # Audio mute (one-shot; binde would re-toggle on key repeat)
+            ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+            ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
           ];
 
-          # Resize (repeatable)
+          # Resize + brightness + volume (repeatable on hold)
           binde = [
             "$mod SHIFT, minus, resizeactive, -50 0"
             "$mod SHIFT, equal, resizeactive, 50 0"
+            ", XF86MonBrightnessUp, exec, brightnessctl set 5%+"
+            ", XF86MonBrightnessDown, exec, brightnessctl set 5%-"
+            ", XF86AudioRaiseVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"
+            ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%-"
           ];
         };
 
