@@ -22,7 +22,12 @@
       config.flake.nixosModules.personal-apps
       config.flake.nixosModules.profile-personal
 
-      { networking.hostName = "phil"; }
+      {
+        networking.hostName = "phil";
+        # Host-level: pin phil's Hyprland panel/kanshi overlay. The hardware
+        # module stays generic so any T460s could reuse it.
+        hm.imports = [ config.flake.homeModules.hyprland-host-phil ];
+      }
     ];
   };
 }

@@ -22,7 +22,13 @@
       config.flake.nixosModules.personal-apps
       config.flake.nixosModules.profile-personal
 
-      { networking.hostName = "wally"; }
+      {
+        networking.hostName = "wally";
+        # Host-level: pin wally's Hyprland panel/kanshi/workspace overlay
+        # (eDP-1 1920x1200 + the home Dell U2718Q kanshi profiles + Dell
+        # workspace pinning). The hardware module stays generic.
+        hm.imports = [ config.flake.homeModules.hyprland-host-wally ];
+      }
     ];
   };
 }

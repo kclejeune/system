@@ -147,13 +147,12 @@ _: {
         ];
 
         settings = {
-          # -- Monitors (fallback; kanshi handles runtime) --
-          # Monitor positions are managed by kanshi at runtime.
-          # These fallbacks ensure a usable layout before kanshi applies a profile.
-          # Keep the eDP-1 mode identical to kanshi's undocked profile (59.95 Hz,
-          # scale 1.0) so wake doesn't force a second modeset after kanshi fires.
-          monitor = [
-            "eDP-1, 1920x1200@59.95Hz, 0x0, 1"
+          # -- Monitors --
+          # Per-host eDP-1 + external rules live in hyprland-host-<name>
+          # modules and prepend via `lib.mkBefore`. This catch-all is the
+          # fallback for any monitor not covered by a per-host rule and
+          # always sorts last via `lib.mkAfter`.
+          monitor = lib.mkAfter [
             ", preferred, auto, 1.5"
           ];
 
@@ -266,10 +265,11 @@ _: {
           ];
 
           # -- Named workspaces with monitor pinning --
+          # Workspaces pinned to specific external monitors live in the
+          # per-host hyprland-host-<name> module; this list keeps only
+          # eDP-1 pins (every host has a laptop panel) and the unpinned
+          # workspaces.
           workspace = [
-            "name:B, monitor:desc:Dell Inc. DELL U2718Q 4K8X779B03VL, default:true"
-            "name:V, monitor:desc:Dell Inc. DELL U2718Q 4K8X77950L3L"
-            "name:I, monitor:desc:Dell Inc. DELL U2718Q 4K8X77950L3L"
             "name:T, monitor:eDP-1"
             "name:S, monitor:eDP-1"
             "name:Z, monitor:eDP-1"
@@ -495,62 +495,12 @@ _: {
       };
 
       # -- Kanshi (monitor management, wlroots protocol) --
-      # Outside noctalia's scope (compositor-level).
+      # Outside noctalia's scope (compositor-level). Per-host profiles
+      # (eDP-1 mode + external monitors) are declared in the matching
+      # hyprland-host-<name> module enrolled by each host's hardware file.
       services.kanshi = {
         enable = true;
         systemdTarget = "hyprland-session.target";
-        settings = [
-          {
-            profile.name = "home";
-            profile.outputs = [
-              {
-                criteria = "Dell Inc. DELL U2718Q 4K8X779B03VL";
-                mode = "3840x2160@60Hz";
-                scale = 1.5;
-                position = "0,0";
-              }
-              {
-                criteria = "Dell Inc. DELL U2718Q 4K8X77950L3L";
-                mode = "3840x2160@60Hz";
-                scale = 1.5;
-                position = "2560,0";
-              }
-              {
-                criteria = "eDP-1";
-                mode = "1920x1200@59.95Hz";
-                scale = 1.0;
-                position = "1600,1440";
-              }
-            ];
-          }
-          {
-            profile.name = "home-clamshell";
-            profile.outputs = [
-              {
-                criteria = "Dell Inc. DELL U2718Q 4K8X779B03VL";
-                mode = "3840x2160@60Hz";
-                scale = 1.5;
-                position = "0,0";
-              }
-              {
-                criteria = "Dell Inc. DELL U2718Q 4K8X77950L3L";
-                mode = "3840x2160@60Hz";
-                scale = 1.5;
-                position = "2560,0";
-              }
-            ];
-          }
-          {
-            profile.name = "undocked";
-            profile.outputs = [
-              {
-                criteria = "eDP-1";
-                mode = "1920x1200@59.95Hz";
-                scale = 1.0;
-              }
-            ];
-          }
-        ];
       };
 
       # -- GTK/Qt theming (Catppuccin Mocha) --
