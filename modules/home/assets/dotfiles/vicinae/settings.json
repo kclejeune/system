@@ -70,58 +70,6 @@
         "ignorePasswords": true,
         "monitoring": true
       }
-    },
-    "power": {
-      "entrypoints": {
-        "hibernate": {
-          "preferences": {
-            "confirm": true,
-            "customProgram": "systemctl hibernate"
-          }
-        },
-        "lock": {
-          "preferences": {
-            "confirm": false,
-            "customProgram": "loginctl lock-session"
-          }
-        },
-        "logout": {
-          "preferences": {
-            "confirm": true,
-            "customProgram": "hyprshutdown -t 'Logging out...'"
-          }
-        },
-        "power-off": {
-          "preferences": {
-            "confirm": true,
-            "customProgram": "hyprshutdown -t 'Shutting down...' -p 'systemctl poweroff'"
-          }
-        },
-        "reboot": {
-          "preferences": {
-            "confirm": true,
-            "customProgram": "hyprshutdown -t 'Rebooting...' -p 'systemctl reboot'"
-          }
-        },
-        "sleep": {
-          "preferences": {
-            "confirm": true,
-            "customProgram": "systemctl suspend"
-          }
-        },
-        "soft-reboot": {
-          "preferences": {
-            "confirm": true,
-            "customProgram": "systemctl soft-reboot"
-          }
-        },
-        "suspend": {
-          "preferences": {
-            "confirm": true,
-            "customProgram": "systemctl suspend"
-          }
-        }
-      }
     }
   }
 }

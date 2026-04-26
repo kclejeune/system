@@ -185,7 +185,7 @@
           "unreadBadgeColor": "primary"
         },
         {
-          "displayMode": "onhover",
+          "displayMode": "alwaysShow",
           "iconColor": "none",
           "id": "Volume",
           "middleClickCommand": "pwvucontrol || pavucontrol",
@@ -193,7 +193,7 @@
         },
         {
           "applyToAllMonitors": false,
-          "displayMode": "onhover",
+          "displayMode": "alwaysShow",
           "iconColor": "none",
           "id": "Brightness",
           "textColor": "none"
