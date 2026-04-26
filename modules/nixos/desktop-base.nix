@@ -12,7 +12,10 @@ in
       ...
     }:
     {
-      imports = [ flakeCfg.flake.nixosModules.fonts ];
+      imports = [
+        flakeCfg.flake.nixosModules.fonts
+        flakeCfg.flake.nixosModules.keyd
+      ];
 
       hm.desktop.enable = true;
 
@@ -77,12 +80,6 @@ in
         "wt0"
         "docker0"
       ];
-
-      # Caps Lock -> Esc on tap, Ctrl on hold
-      services.keyd = {
-        enable = true;
-        keyboards.default.settings.main.capslock = "overload(control, esc)";
-      };
 
       services.pcscd.enable = true;
 
