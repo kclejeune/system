@@ -228,18 +228,19 @@ in
 
       environment.systemPackages = [
         pkgs.brave
+        pkgs.dmidecode
         pkgs.firefox-devedition
         pkgs.kitty
+        pkgs.localsend
+        pkgs.obsidian
+        pkgs.pulseaudio
+        pkgs.signal-desktop
+        pkgs.slack
+        pkgs.vscode
         pkgs.yubikey-manager
         pkgs.yubioath-flutter
-        pkgs.vscode
         pkgs.zed-editor
-        pkgs.slack
-        pkgs.signal-desktop
-        pkgs.obsidian
         pkgs.zoom-us
-        pkgs.dmidecode
-        pkgs.pulseaudio
 
         # Standalone GNOME apps — usable without gnome-shell. Picked to
         # complement noctalia, which already provides bar / notifications /

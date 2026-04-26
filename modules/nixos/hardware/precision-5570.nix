@@ -101,6 +101,16 @@ _: {
       # enables TLP only when PPD is off, so enabling PPD here flips TLP off.
       services.power-profiles-daemon.enable = true;
 
+      # The Goodix fingerprint reader (27c6:63ac) autosuspends after 2 s of
+      # inactivity and doesn't reliably wake when fprintd tries to claim it,
+      # causing auth failures after idle periods. Disabling USB runtime PM
+      # keeps the device always powered; the power cost is negligible.
+      services.udev.extraRules = ''
+        ACTION=="add", SUBSYSTEM=="usb", \
+          ATTR{idVendor}=="27c6", ATTR{idProduct}=="63ac", \
+          ATTR{power/control}="on"
+      '';
+
       # Touchpad palm rejection.
       #   `clickMethod = "clickfinger"` — clicks are finger-count-based
       #     instead of zone-based, so palm-on-corner stops registering as
