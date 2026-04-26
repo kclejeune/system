@@ -101,6 +101,19 @@ _: {
       # enables TLP only when PPD is off, so enabling PPD here flips TLP off.
       services.power-profiles-daemon.enable = true;
 
+      # Touchpad palm rejection.
+      #   `clickMethod = "clickfinger"` — clicks are finger-count-based
+      #     instead of zone-based, so palm-on-corner stops registering as
+      #     a click. 1 finger = left, 2 = right, 3 = middle.
+      #   `tapping = false` — no tap-to-click, anywhere. Approximates
+      #     "click only in the bottom half" since the diving-board hinge
+      #     is the only spot a palm can't physically depress. libinput
+      #     does not expose tap zones, so this is the closest equivalent.
+      # Hyprland's matching `clickfinger_behavior` / `tap-to-click` are
+      # set in modules/home/hyprland.nix.
+      services.libinput.touchpad.clickMethod = "clickfinger";
+      # services.libinput.touchpad.tapping = false;
+
       # Suspend the NVIDIA dGPU when idle. PRIME render offload is already on via
       # nixos-hardware's dell-precision-5570 module; finegrained adds per-engine D3
       # suspend (Turing+, fine on the 5570's Ampere).
