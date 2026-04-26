@@ -243,7 +243,31 @@ in
         pkgs.zoom-us
         pkgs.dmidecode
         pkgs.pulseaudio
+
+        # Standalone GNOME apps — usable without gnome-shell. Picked to
+        # complement noctalia, which already provides bar / notifications /
+        # launcher / lock / OSD / wallpaper / night-light.
+        pkgs.gnome-disk-utility
+        pkgs.nautilus
+        pkgs.baobab
+        pkgs.file-roller
+        pkgs.loupe
+        pkgs.evince
+        pkgs.gnome-calculator
+        pkgs.mission-center
+
+        # Per-app audio routing UI; not GNOME, but the standard companion
+        # for pipewire/pulse on a non-GNOME session.
+        pkgs.pavucontrol
       ];
+
+      # Backing services for nautilus + gnome-disk-utility on a non-GNOME
+      # session. gvfs powers trash, mounted volumes, and network shares;
+      # tumbler renders thumbnails; udisks2 backs gnome-disks.
+      services.gvfs.enable = true;
+      services.tumbler.enable = true;
+      services.udisks2.enable = true;
+      programs.dconf.enable = true;
 
       hm.imports = [ flakeCfg.flake.homeModules.onepassword ];
     };

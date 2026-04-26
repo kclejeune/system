@@ -2,6 +2,7 @@ _: {
   flake.homeModules.nixpkgs =
     {
       inputs,
+      nixpkgs,
       config,
       lib,
       ...
@@ -11,7 +12,7 @@ _: {
         gc.automatic = false;
         registry = {
           home-manager.flake = inputs.home-manager;
-          nixpkgs.flake = inputs.nixpkgs;
+          nixpkgs.flake = nixpkgs;
           stable.flake = inputs.stable;
           unstable.flake = inputs.unstable;
         };

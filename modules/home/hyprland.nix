@@ -768,11 +768,25 @@ _: {
         CLUTTER_BACKEND = "wayland";
         SDL_VIDEODRIVER = "wayland";
         XDG_SESSION_TYPE = "wayland";
-        XDG_CURRENT_DESKTOP = "Hyprland:GNOME";
+        XDG_CURRENT_DESKTOP = "Hyprland";
         XDG_SESSION_DESKTOP = "Hyprland";
       };
 
       xdg.mime.enable = true;
+
+      # The HM hyprland module auto-enables `xdg.portal` with only
+      # `xdg-desktop-portal-hyprland` in extraPortals, and emits an
+      # `~/.config/environment.d/10-home-manager.conf` line that pins
+      # `NIX_XDG_DESKTOP_PORTAL_DIR` to the user-profile portal dir. That
+      # value wins over the system-level one set by `/etc/set-environment`,
+      # so the portal frontend never finds `gtk.portal` even though the
+      # NixOS xdg.portal module installs it system-wide. Without the gtk
+      # backend, `org.freedesktop.portal.Settings` is missing entirely and
+      # noctalia's color-scheme dconf writes never reach kitty / libadwaita
+      # subscribers. Re-add gtk here so the user profile aggregates both
+      # portals and the env-var-pinned dir contains what the routing
+      # config below expects.
+      xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
       # Portal routing: gtk portal handles Settings (color-scheme for kitty,
       # Zed, Electron); hyprland portal handles screencasting/screenshots.

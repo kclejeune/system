@@ -12,6 +12,7 @@ in
     {
       self,
       inputs,
+      nixpkgs,
       config,
       pkgs,
       ...
@@ -37,7 +38,7 @@ in
       hm.imports = [ flakeCfg.flake.homeModules.default ];
 
       home-manager = {
-        extraSpecialArgs = { inherit self inputs; };
+        extraSpecialArgs = { inherit self inputs nixpkgs; };
         useGlobalPkgs = true;
         useUserPackages = true;
         backupFileExtension = "backup";
@@ -59,7 +60,7 @@ in
         ];
         etc = {
           home-manager.source = "${inputs.home-manager}";
-          nixpkgs.source = "${inputs.nixpkgs}";
+          nixpkgs.source = "${nixpkgs}";
         };
         shells = with pkgs; [
           bash
