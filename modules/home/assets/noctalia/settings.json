@@ -331,7 +331,7 @@
     "dockType": "floating",
     "enabled": true,
     "floatingRatio": 1,
-    "groupApps": false,
+    "groupApps": true,
     "groupClickAction": "cycle",
     "groupContextMenuMode": "extended",
     "groupIndicatorStyle": "dots",
@@ -348,7 +348,7 @@
     "pinnedApps": [],
     "pinnedStatic": false,
     "position": "bottom",
-    "showDockIndicator": false,
+    "showDockIndicator": true,
     "showLauncherIcon": false,
     "sitOnFrame": false,
     "size": 1
@@ -577,6 +577,7 @@
     "showHeader": true,
     "showKeybinds": true
   },
+  "settingsVersion": 59,
   "systemMonitor": {
     "batteryCriticalThreshold": 5,
     "batteryWarningThreshold": 20,
