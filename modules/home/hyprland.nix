@@ -732,30 +732,6 @@ _: {
         XDG_SESSION_DESKTOP = "Hyprland";
       };
 
-      # Lock the screen before any system sleep (suspend, lid close, power key).
-      # noctalia's `lockOnSuspend` setting only fires for noctalia's own
-      # idle-triggered suspend path; external suspend triggers (logind lid-close
-      # handler, `loginctl suspend`, etc.) bypass it entirely.  This one-shot
-      # user service is pulled in by sleep.target and fires first, sending a
-      # lockScreen IPC to the running noctalia-shell, then waits 1 s for the
-      # WlSessionLock surface to render before logind cuts power.
-      systemd.user.services.lock-before-sleep = {
-        Unit = {
-          Description = "Lock noctalia before system sleep";
-          Before = [ "sleep.target" ];
-        };
-        Service = {
-          Type = "oneshot";
-          ExecStart = "${pkgs.writeShellScript "lock-before-sleep" ''
-            ${noctaliaBin} ipc call lockScreen lock
-            sleep 1
-          ''}";
-        };
-        Install = {
-          WantedBy = [ "sleep.target" ];
-        };
-      };
-
       xdg.mime.enable = true;
 
       # The HM hyprland module auto-enables `xdg.portal` with only

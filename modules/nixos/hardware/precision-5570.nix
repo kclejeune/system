@@ -111,6 +111,29 @@ _: {
           ATTR{power/control}="on"
       '';
 
+      # Disable LID0 as an ACPI wakeup source. The 5570's lid switch is flagged
+      # by the kernel as "not compliant to SW_LID" and fires a spurious "lid
+      # opened" event the instant the system enters s2idle, immediately waking
+      # it back up — so closing the lid suspends for ~3 s and then resumes.
+      # Logind still sees the close (it watches the input device, not the
+      # ACPI wake source) and triggers suspend; we just don't want the same
+      # device to *also* be the wake reason. Trade-off: opening the lid no
+      # longer auto-wakes; press the power button or any key.
+      systemd.services.disable-lid-wakeup = {
+        description = "Disable LID0 ACPI wakeup (Precision 5570 quirk)";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "sysinit.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = pkgs.writeShellScript "disable-lid-wakeup" ''
+            if ${pkgs.gnugrep}/bin/grep -q '^LID0.*\*enabled' /proc/acpi/wakeup; then
+              echo LID0 > /proc/acpi/wakeup
+            fi
+          '';
+        };
+      };
+
       # Touchpad palm rejection.
       #   `clickMethod = "clickfinger"` — clicks are finger-count-based
       #     instead of zone-based, so palm-on-corner stops registering as

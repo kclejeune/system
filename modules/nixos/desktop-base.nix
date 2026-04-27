@@ -96,12 +96,6 @@ in
       # and later. No-op on non-Intel hardware.
       services.thermald.enable = true;
 
-      # hyprlock claims the fingerprint reader via before_sleep_cmd; after resume
-      # the USB device re-enumerates and fprintd's handle goes stale. Restart on resume.
-      powerManagement.resumeCommands = ''
-        ${pkgs.systemd}/bin/systemctl try-restart fprintd.service || true
-      '';
-
       # fprintd's default polkit policy is allow_active=yes, but after a
       # suspend/lock cycle polkit doesn't reliably treat the relocked session
       # as active. Grant the owner the fprint actions unconditionally.
