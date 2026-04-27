@@ -148,9 +148,10 @@ _: {
 
         settings = {
           # -- Monitors --
-          # Per-host eDP-1 + external rules live in hyprland-host-<name>
-          # modules and prepend via `lib.mkBefore`. This catch-all is the
-          # fallback for any monitor not covered by a per-host rule and
+          # Per-host eDP-1 + external rules live in separate overlay
+          # modules (hyprland-host-<name> or displays-<hardware>-<loc>)
+          # and prepend via `lib.mkBefore`. This catch-all is the
+          # fallback for any monitor not covered by such a rule and
           # always sorts last via `lib.mkAfter`.
           monitor = lib.mkAfter [
             ", preferred, auto, 1.5"
@@ -266,9 +267,9 @@ _: {
 
           # -- Named workspaces with monitor pinning --
           # Workspaces pinned to specific external monitors live in the
-          # per-host hyprland-host-<name> module; this list keeps only
-          # eDP-1 pins (every host has a laptop panel) and the unpinned
-          # workspaces.
+          # overlay module for that hardware+location (e.g.
+          # displays-5570-home); this list keeps only eDP-1 pins (every
+          # host has a laptop panel) and the unpinned workspaces.
           workspace = [
             "name:T, monitor:eDP-1"
             "name:S, monitor:eDP-1"
@@ -495,9 +496,10 @@ _: {
       };
 
       # -- Kanshi (monitor management, wlroots protocol) --
-      # Outside noctalia's scope (compositor-level). Per-host profiles
-      # (eDP-1 mode + external monitors) are declared in the matching
-      # hyprland-host-<name> module enrolled by each host's hardware file.
+      # Outside noctalia's scope (compositor-level). Profiles (eDP-1
+      # mode + external monitors) are declared in the overlay module
+      # enrolled by each host (hyprland-host-<name> or
+      # displays-<hardware>-<loc>).
       services.kanshi = {
         enable = true;
         systemdTarget = "hyprland-session.target";

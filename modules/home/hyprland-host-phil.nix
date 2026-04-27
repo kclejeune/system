@@ -5,7 +5,7 @@ _: {
     { lib, ... }:
     {
       wayland.windowManager.hyprland.settings.monitor = lib.mkBefore [
-        "eDP-1, 1920x1080@60Hz, 0x0, 1"
+        "eDP-1, 1920x1080@60Hz, 0x0, 1.25"
       ];
 
       services.kanshi.settings = [
@@ -15,7 +15,7 @@ _: {
             {
               criteria = "eDP-1";
               mode = "1920x1080@60Hz";
-              scale = 1.0;
+              scale = 1.25;
             }
           ];
         }

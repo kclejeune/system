@@ -24,10 +24,9 @@
 
       {
         networking.hostName = "wally";
-        # Host-level: pin wally's Hyprland panel/kanshi/workspace overlay
-        # (eDP-1 1920x1200 + the home Dell U2718Q kanshi profiles + Dell
-        # workspace pinning). The hardware module stays generic.
-        hm.imports = [ config.flake.homeModules.hyprland-host-wally ];
+        # Host-level: pin the precision-5570 + home Dell U2718Q panel /
+        # kanshi / workspace overlay. Hardware module stays generic.
+        hm.imports = [ config.flake.homeModules.displays-5570-home ];
       }
     ];
   };

@@ -1,9 +1,10 @@
 _: {
-  # Wally-specific Hyprland overlay: built-in 1920x1200 OLED panel + the
-  # two Dell U2718Q 4Ks at home + workspace pinning. Enrolled by
-  # `hardware-precision-5570` so adding/removing a wally host swaps
-  # everything in lockstep.
-  flake.homeModules.hyprland-host-wally =
+  # Display layout for the precision-5570 + the two Dell U2718Q 4Ks at
+  # home: eDP-1 panel rule, monitor-pinned workspaces, and kanshi
+  # profiles for docked/clamshell/undocked. Same laptop and monitors are
+  # used by the personal `wally` host and the work `klejeune@x86_64-linux`
+  # NixOS config, so both pull this in directly.
+  flake.homeModules.displays-5570-home =
     { lib, ... }:
     {
       wayland.windowManager.hyprland.settings = {
@@ -11,7 +12,7 @@ _: {
         # gets the right mode + scale on first frame and external rules
         # match before the unmatched-monitor fallback applies.
         monitor = lib.mkBefore [
-          "eDP-1, 1920x1200@59.95Hz, 0x0, 1"
+          "eDP-1, 1920x1200@59.95Hz, 0x0, 1.25"
         ];
 
         workspace = [
@@ -22,7 +23,7 @@ _: {
       };
 
       # Kanshi profiles. Keep the eDP-1 entry's mode identical to the
-      # static hyprland fallback above (59.95 Hz, scale 1.0) so wake
+      # static hyprland fallback above (59.95 Hz, scale 1.25) so wake
       # doesn't trigger a redundant modeset after kanshi fires.
       services.kanshi.settings = [
         {
@@ -43,7 +44,7 @@ _: {
             {
               criteria = "eDP-1";
               mode = "1920x1200@59.95Hz";
-              scale = 1.0;
+              scale = 1.25;
               position = "1600,1440";
             }
           ];
@@ -71,7 +72,7 @@ _: {
             {
               criteria = "eDP-1";
               mode = "1920x1200@59.95Hz";
-              scale = 1.0;
+              scale = 1.25;
             }
           ];
         }
