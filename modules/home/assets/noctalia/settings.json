@@ -218,6 +218,52 @@
           "id": "Battery",
           "showNoctaliaPerformance": true,
           "showPowerProfiles": true
+        },
+        {
+          "defaultSettings": {
+            "activeColor": "primary",
+            "camFilterRegex": "",
+            "enableToast": true,
+            "hideInactive": false,
+            "iconSpacing": 4,
+            "inactiveColor": "none",
+            "micFilterRegex": "",
+            "removeMargins": false
+          },
+          "id": "plugin:privacy-indicator"
+        },
+        {
+          "defaultSettings": {
+            "audioCodec": "opus",
+            "audioSource": "default_output",
+            "colorRange": "limited",
+            "copyToClipboard": false,
+            "customReplayDuration": "30",
+            "directory": "",
+            "filenamePattern": "recording_yyyyMMdd_HHmmss",
+            "frameRate": "60",
+            "hideInactive": false,
+            "iconColor": "none",
+            "quality": "very_high",
+            "replayDuration": "30",
+            "replayEnabled": false,
+            "replayStorage": "ram",
+            "resolution": "original",
+            "restorePortalSession": false,
+            "showCursor": true,
+            "videoCodec": "h264",
+            "videoSource": "portal"
+          },
+          "id": "plugin:screen-recorder"
+        },
+        {
+          "defaultSettings": {
+            "compactMode": false,
+            "defaultDuration": 0,
+            "iconColor": "none",
+            "textColor": "none"
+          },
+          "id": "plugin:timer"
         }
       ]
     }
@@ -362,8 +408,8 @@
     "avatarImage": "/home/kclejeune/slurp.jpg",
     "boxRadiusRatio": 1,
     "clockFormat": "hh\\nmm",
-    "clockStyle": "custom",
-    "compactLockScreen": false,
+    "clockStyle": "digital",
+    "compactLockScreen": true,
     "dimmerOpacity": 0.2,
     "enableBlurBehind": true,
     "enableLockScreenCountdown": true,
@@ -382,9 +428,9 @@
     },
     "language": "",
     "lockOnSuspend": true,
-    "lockScreenAnimations": false,
-    "lockScreenBlur": 0,
-    "lockScreenCountdownDuration": 10000,
+    "lockScreenAnimations": true,
+    "lockScreenBlur": 0.9,
+    "lockScreenCountdownDuration": 5000,
     "lockScreenMonitors": [],
     "lockScreenTint": 0,
     "passwordChars": false,
@@ -470,16 +516,16 @@
     "backgroundOpacity": 0.95,
     "clearDismissed": true,
     "criticalUrgencyDuration": 0,
-    "density": "default",
+    "density": "compact",
     "enableBatteryToast": true,
     "enableKeyboardLayoutToast": true,
     "enableMarkdown": false,
     "enableMediaToast": false,
     "enabled": true,
     "location": "top_right",
-    "lowUrgencyDuration": 3,
+    "lowUrgencyDuration": 2,
     "monitors": [],
-    "normalUrgencyDuration": 5,
+    "normalUrgencyDuration": 3,
     "overlayLayer": true,
     "respectExpireTimeout": false,
     "saveToHistory": {
@@ -577,7 +623,6 @@
     "showHeader": true,
     "showKeybinds": true
   },
-  "settingsVersion": 59,
   "systemMonitor": {
     "batteryCriticalThreshold": 5,
     "batteryWarningThreshold": 20,

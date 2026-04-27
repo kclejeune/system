@@ -616,15 +616,16 @@
         "noctalia-qs": "noctalia-qs"
       },
       "locked": {
-        "lastModified": 1777079905,
-        "narHash": "sha256-TvYEXwkZnRFQRuFyyqTNSfPnU2tMdhtiBOXSk2AWLJA=",
-        "owner": "noctalia-dev",
+        "lastModified": 1777318657,
+        "narHash": "sha256-45GHs3iHFjyE3dKHDJcAAwgLr+0wsaX3W0axXS5PAaM=",
+        "owner": "kclejeune",
         "repo": "noctalia-shell",
-        "rev": "a50c92167c8d438000270f7eca36f6eea74f388e",
+        "rev": "6025619d56f51df1c1d186050ebe5a1bb49a3892",
         "type": "github"
       },
       "original": {
-        "owner": "noctalia-dev",
+        "owner": "kclejeune",
+        "ref": "kcl/restart-auth-support",
         "repo": "noctalia-shell",
         "type": "github"
       }

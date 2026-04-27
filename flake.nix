@@ -67,7 +67,14 @@
     # Noctalia Wayland desktop shell (bar, notifications, launcher, lock,
     # idle, OSD, wallpaper, night-light). Tracks nixos-unstable since it
     # depends on the latest Quickshell.
-    noctalia.url = "github:noctalia-dev/noctalia-shell";
+    #
+    # Pinned to our fork's `kcl/restart-auth-support` branch for the
+    # `lockScreen.restartAuth` IPC handler used by `lock-before-sleep`'s
+    # ExecStop in modules/nixos/hyprland.nix — required so pam_fprintd's
+    # stale Verify session (post-USB-resume) gets restarted and fingerprint
+    # scanning works on the first try after suspend. Revert to upstream
+    # once the change is merged.
+    noctalia.url = "github:kclejeune/noctalia-shell/kcl/restart-auth-support";
     noctalia.inputs.nixpkgs.follows = "nixos-unstable";
   };
 

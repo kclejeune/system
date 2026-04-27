@@ -22,6 +22,16 @@ _: {
 
       boot.loader.grub.enableCryptodisk = true;
 
+      # Pin the iGPU to i915. nixos-hardware's dell-precision-5570 defaults
+      # to the experimental `xe` KMD on kernels ≥ 6.8, which on this box
+      # produces "Tile0: GT0: Timedout job" GPU resets that kill the
+      # WlSessionLock client (quickshell), leaving Hyprland's fallback
+      # "lockscreen process has crashed" screen on resume. Mesa itself
+      # prints `Support for this platform is experimental with Xe KMD`.
+      # Reverting to i915 also drops the matching `*.force_probe=` params
+      # the upstream module gates on `intelgpu.driver == "xe"`.
+      hardware.intelgpu.driver = lib.mkForce "i915";
+
       # Boot splash screen (themed LUKS prompt + boot animation)
       boot.plymouth.enable = true;
       boot.plymouth.theme = "nixos-bgrt";
