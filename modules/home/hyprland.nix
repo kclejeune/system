@@ -255,6 +255,14 @@ _: {
             no_update_news = true;
           };
 
+          # NOCTALIA_PAM_SERVICE must reach noctalia-shell's process environment.
+          # home.sessionVariables go to login-shell profile files only; Hyprland
+          # runs as a systemd user service and its exec-once children inherit its
+          # environment, not the shell profile.  Setting it here via Hyprland's
+          # `env` directive guarantees delivery without a separate environment.d
+          # entry.
+          env = [ "NOCTALIA_PAM_SERVICE,noctalia" ];
+
           # -- Startup --
           exec-once = [
             "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
@@ -708,9 +716,9 @@ _: {
 
       # -- Wayland environment variables --
       home.sessionVariables = {
-        # Pin noctalia's lock-screen PAM stack to the dedicated service
-        # (security.pam.services.noctalia in modules/nixos/hyprland.nix).
-        # Default would be /etc/pam.d/login, which has no fprintd.
+        # NOCTALIA_PAM_SERVICE is also injected via Hyprland's `env` directive
+        # above so that noctalia-shell (an exec-once child of Hyprland, not a
+        # login shell) sees it.  Keeping it here ensures login shells do too.
         NOCTALIA_PAM_SERVICE = "noctalia";
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
         NIXOS_OZONE_WL = "1";
@@ -722,6 +730,30 @@ _: {
         XDG_SESSION_TYPE = "wayland";
         XDG_CURRENT_DESKTOP = "Hyprland";
         XDG_SESSION_DESKTOP = "Hyprland";
+      };
+
+      # Lock the screen before any system sleep (suspend, lid close, power key).
+      # noctalia's `lockOnSuspend` setting only fires for noctalia's own
+      # idle-triggered suspend path; external suspend triggers (logind lid-close
+      # handler, `loginctl suspend`, etc.) bypass it entirely.  This one-shot
+      # user service is pulled in by sleep.target and fires first, sending a
+      # lockScreen IPC to the running noctalia-shell, then waits 1 s for the
+      # WlSessionLock surface to render before logind cuts power.
+      systemd.user.services.lock-before-sleep = {
+        Unit = {
+          Description = "Lock noctalia before system sleep";
+          Before = [ "sleep.target" ];
+        };
+        Service = {
+          Type = "oneshot";
+          ExecStart = "${pkgs.writeShellScript "lock-before-sleep" ''
+            ${noctaliaBin} ipc call lockScreen lock
+            sleep 1
+          ''}";
+        };
+        Install = {
+          WantedBy = [ "sleep.target" ];
+        };
       };
 
       xdg.mime.enable = true;
