@@ -62,9 +62,11 @@ in
       # idle/lockOnSuspend is disabled in settings.json so hypridle
       # (configured in the home module) is the single coordinator for
       # both idle timeouts and logind PrepareForSleep hooks.
-      services.logind.lidSwitch = "suspend";
-      services.logind.lidSwitchDocked = "ignore";
-      services.logind.powerKey = "suspend";
+      services.logind.settings.Login = {
+        HandleLidSwitch = "suspend";
+        HandleLidSwitchDocked = "ignore";
+        HandlePowerKey = "suspend";
+      };
 
       hm.imports = [ flakeCfg.flake.homeModules.hyprland ];
     };
