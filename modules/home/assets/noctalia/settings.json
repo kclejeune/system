@@ -222,7 +222,7 @@
         {
           "defaultSettings": {
             "activeColor": "primary",
-            "camFilterRegex": "",
+            "camFilterRegex": "pipewire",
             "enableToast": true,
             "hideInactive": false,
             "iconSpacing": 4,
