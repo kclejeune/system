@@ -27,7 +27,7 @@ _: {
           coreutils-full
           curl
           curlie
-          d2
+          stable.d2
           diffutils
           doxx
           dust
