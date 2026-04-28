@@ -30,7 +30,7 @@ _: {
       # prints `Support for this platform is experimental with Xe KMD`.
       # Reverting to i915 also drops the matching `*.force_probe=` params
       # the upstream module gates on `intelgpu.driver == "xe"`.
-      hardware.intelgpu.driver = lib.mkForce "i915";
+      # hardware.intelgpu.driver = lib.mkForce "i915";
 
       # Boot splash screen (themed LUKS prompt + boot animation)
       boot.plymouth.enable = true;
@@ -155,7 +155,7 @@ _: {
       # Hyprland's matching `clickfinger_behavior` / `tap-to-click` are
       # set in modules/home/hyprland.nix.
       services.libinput.touchpad.clickMethod = "clickfinger";
-      # services.libinput.touchpad.tapping = false;
+      services.libinput.touchpad.tapping = false;
 
       # Suspend the NVIDIA dGPU when idle. PRIME render offload is already on via
       # nixos-hardware's dell-precision-5570 module; finegrained adds per-engine D3
