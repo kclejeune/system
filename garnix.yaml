@@ -2,11 +2,11 @@ builds:
   exclude: []
   include:
     - "checks.*.*"
-    - "packages.*.*"
-    - "devShells.*.*"
-    - "homeConfigurations.*"
-    - "darwinConfigurations.*"
-    - "nixosConfigurations.*"
+  #   - "packages.*.*"
+  #   - "devShells.*.*"
+  #   - "homeConfigurations.*"
+  #   - "darwinConfigurations.*"
+  #   - "nixosConfigurations.*"
 remoteCache:
   enabled: true
   caches:
