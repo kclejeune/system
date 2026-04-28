@@ -1,0 +1,53 @@
+name: build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: build (${{ matrix.system }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-latest
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+          - system: aarch64-darwin
+            runner: macos-14
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v21
+        with:
+          determinate: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          extra-conf: |
+            accept-flake-config = true
+            extra-substituters = https://kclejeune.cachix.org
+            extra-trusted-public-keys = kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=
+
+      - name: Set up Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: kclejeune
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Run flake checks
+        run: |
+          nix flake check \
+            --system ${{ matrix.system }} \
+            --show-trace \
+            --accept-flake-config \
+            -j auto
