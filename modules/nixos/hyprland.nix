@@ -54,6 +54,17 @@ in
         enableGnomeKeyring = true;
       };
 
+      # Force-stop fprintd before s2idle so its in-flight Verify session
+      # (bound to the pre-suspend Goodix USB handle) is torn down cleanly.
+      # Without this, the kernel re-enumerates the device on resume but
+      # fprintd keeps the stale handle, and noctalia's next Claim returns
+      # "Device was already claimed". fprintd is dbus-activated, so the
+      # first call after resume auto-launches a fresh instance.
+      systemd.services.fprintd.unitConfig = {
+        Conflicts = [ "sleep.target" ];
+        Before = [ "sleep.target" ];
+      };
+
       services.upower.enable = true;
       services.power-profiles-daemon.enable = lib.mkDefault true;
 

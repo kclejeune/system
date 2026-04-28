@@ -552,11 +552,10 @@ _: {
           general = {
             lock_cmd = "${noctaliaIpc} call lockScreen lock";
             before_sleep_cmd = "${noctaliaIpc} call lockScreen lock";
-            # Restart pam_fprintd after resume: the fingerprint Verify
-            # session is bound to the pre-suspend Goodix USB handle,
-            # which is invalidated when the device re-enumerates.
-            # Requires the lockScreen.restartAuth IPC handler in our
-            # noctalia fork (flake.nix pin).
+            # Re-arm noctalia's PAM session after resume. fprintd is
+            # stopped before s2idle by the system-level Conflicts=sleep.target
+            # rule (modules/nixos/hyprland.nix), so this restartAuth runs
+            # pam.start() against a freshly auto-launched fprintd.
             after_sleep_cmd = "${noctaliaIpc} call lockScreen restartAuth";
             inhibit_sleep = 3;
           };

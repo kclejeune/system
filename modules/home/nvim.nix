@@ -69,7 +69,8 @@ _: {
           ;
       };
       lazy-nix-helper-nvim = pkgs.vimUtils.buildVimPlugin {
-        name = "lazy-nix-helper.nvim";
+        pname = "lazy-nix-helper.nvim";
+        version = "0.7.0";
         src = pkgs.fetchFromGitHub {
           owner = "b-src";
           repo = "lazy-nix-helper.nvim";
@@ -89,7 +90,8 @@ _: {
         meta.homepage = "https://github.com/coder/claudecode.nvim";
       };
       direnv-nvim = pkgs.vimUtils.buildVimPlugin {
-        name = "direnv.nvim";
+        pname = "direnv.nvim";
+        version = "unstable-2025-04-28";
         src = pkgs.fetchFromGitHub {
           owner = "NotAShelf";
           repo = "direnv.nvim";

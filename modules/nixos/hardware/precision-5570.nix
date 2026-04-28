@@ -46,6 +46,13 @@ _: {
         # triggered by lock-before-sleep. Logging only — no behavior
         # change. Remove once the reset trigger is identified.
         "xe.guc_log_level=4"
+        # Disable Panel Self Refresh on the eDP. PSR re-negotiates with
+        # the source GPU on suspend/resume and can show one stale frame
+        # (typically black) during the handoff — visible as a brief
+        # black flash on the lock screen after wake. Trade-off: small
+        # battery hit during long display-idle periods when the panel
+        # would otherwise hold its own framebuffer.
+        "xe.enable_psr=0"
       ];
 
       disko.devices = {
