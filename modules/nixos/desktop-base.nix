@@ -54,22 +54,70 @@ in
       boot.kernel.sysctl."net.core.rmem_max" = 2097152;
       boot.kernel.sysctl."net.core.rmem_default" = 1048576;
 
-      # Hold shift during POST to reveal the otherwise-hidden boot menu.
-      # mkDefault so the ISO installer image variant can override with its own timeout.
+      # Plymouth + quiet boot. Covers the gap between bootloader and
+      # greeter so the user doesn't watch kernel/systemd unit logs
+      # scroll past on every boot. Mocha theme keeps the visual
+      # consistent with the rest of the session (greeter + noctalia
+      # lock + GTK theme are all Catppuccin Mocha).
+      boot.plymouth = {
+        enable = true;
+        theme = "catppuccin-mocha";
+        themePackages = [ (pkgs.catppuccin-plymouth.override { variant = "mocha"; }) ];
+      };
+
+      # `quiet`            — kernel-level message suppression
+      # `splash`           — tells initrd to start plymouth
+      # `loglevel=3`       — only KERN_ERR and worse
+      # `rd.systemd.*` / `rd.udev.*` — same, but inside the initrd
+      # `udev.log_priority=3` — quiet udev once we're past initrd
+      # `vt.global_cursor_default=0` — no blinking VT cursor peeking
+      #                       through plymouth or between greeter/
+      #                       compositor handoffs
+      boot.kernelParams = [
+        "quiet"
+        "splash"
+        "loglevel=3"
+        "systemd.show_status=false"
+        "rd.systemd.show_status=false"
+        "rd.udev.log_level=3"
+        "udev.log_priority=3"
+        "vt.global_cursor_default=0"
+      ];
+      boot.consoleLogLevel = 0;
+      boot.initrd.verbose = false;
+
+      # Smooth plymouth → greeter handoff. The upstream
+      # `plymouth-quit.service` calls `plymouth quit` (no
+      # `--retain-splash`), so plymouth releases the framebuffer
+      # immediately and the kernel fbcon flashes underneath for the
+      # split second before cage grabs the framebuffer for the greeter.
+      # `--retain-splash` keeps the splash image painted until
+      # something else draws over it — cage's first frame.
+      # Leading `-` (matches the upstream unit) makes systemd treat a
+      # non-zero exit as success — necessary because the service has
+      # `RemainAfterExit=yes`, so a config switch restarts it after
+      # plymouth has long since exited and the second `plymouth quit`
+      # would otherwise fail activation.
+      systemd.services.plymouth-quit.serviceConfig.ExecStart =
+        lib.mkForce "-${lib.getExe' pkgs.plymouth "plymouth"} quit --retain-splash";
+
+      # systemd-boot. Kernel + initrd land on the ESP (vfat, 512M);
+      # the separate /boot ext4 partition that GRUB used is left
+      # untouched and effectively unused — not worth reformatting.
+      # `configurationLimit` caps generations so the ESP doesn't fill
+      # (each generation is ~80–130 MB of kernel + initrd).
+      # `editor = false` blocks kernel-cmdline editing at the boot
+      # menu, which would otherwise be a way to bypass disk encryption.
+      # mkDefault on `timeout` so the ISO installer image can override.
+      # Boot menu reveal: tap Space (or any key) during the brief flash
+      # — systemd-boot's equivalent of GRUB's hold-shift trick.
       boot.loader.timeout = lib.mkDefault 0;
       boot.loader.efi.canTouchEfiVariables = true;
       boot.loader.efi.efiSysMountPoint = "/boot/efi";
-      boot.loader.grub = {
+      boot.loader.systemd-boot = {
         enable = true;
-        device = "nodev";
-        efiSupport = true;
-        extraConfig = ''
-          if keystatus --shift ; then
-            set timeout=-1
-          else
-            set timeout=0
-          fi
-        '';
+        configurationLimit = 10;
+        editor = false;
       };
 
       hardware.enableAllFirmware = true;
@@ -85,12 +133,10 @@ in
 
       services.fprintd.enable = true;
       # `fprintAuth` defaults to `services.fprintd.enable` for every PAM
-      # service, so sudo / su / polkit / etc. inherit it for free. The
-      # `login` service is the exception: nixos's gdm module force-disables
-      # fprintAuth on it (assuming nobody uses the TTY login). Noctalia
-      # *does* authenticate against /etc/pam.d/login per upstream's FAQ,
-      # so we re-enable with mkForce to win over gdm's override.
-      security.pam.services.login.fprintAuth = lib.mkForce true;
+      # service, so sudo / su / polkit / login / etc. inherit it for free.
+      # GDM used to force-disable it on `login` (we kept an mkForce to win
+      # over that override so noctalia's PAM auth against /etc/pam.d/login
+      # would work); SDDM doesn't, so the default is correct as-is.
 
       # Firmware updates via LVFS (Dell BIOS/EC, Thunderbolt controllers, etc.)
       services.fwupd.enable = true;

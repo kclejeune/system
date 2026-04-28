@@ -20,8 +20,6 @@ _: {
       ];
       boot.kernelModules = [ "kvm-intel" ];
 
-      boot.loader.grub.enableCryptodisk = true;
-
       # Pin the iGPU to i915. nixos-hardware's dell-precision-5570 defaults
       # to the experimental `xe` KMD on kernels ≥ 6.8, which on this box
       # produces "Tile0: GT0: Timedout job" GPU resets that kill the
@@ -32,17 +30,12 @@ _: {
       # the upstream module gates on `intelgpu.driver == "xe"`.
       # hardware.intelgpu.driver = lib.mkForce "i915";
 
-      # Boot splash screen (themed LUKS prompt + boot animation)
-      boot.plymouth.enable = true;
-      boot.plymouth.theme = "nixos-bgrt";
-      boot.plymouth.themePackages = [ pkgs.nixos-bgrt-plymouth ];
+      # initrd-side systemd is required for the FIDO2-unlocked LUKS
+      # prompt the disko config below relies on. Plymouth + quiet boot
+      # / kernel params are owned by desktop-base.nix so the theme
+      # stays in lockstep with the rest of the desktop visual.
       boot.initrd.systemd.enable = true;
       boot.initrd.systemd.fido2.enable = true;
-      boot.consoleLogLevel = 0;
-      boot.kernelParams = [
-        "quiet"
-        "splash"
-      ];
 
       disko.devices = {
         disk.main = {
