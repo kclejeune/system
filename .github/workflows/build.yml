@@ -48,6 +48,7 @@ jobs:
         run: |
           nix flake check \
             --system ${{ matrix.system }} \
+            --print-build-logs \
             --show-trace \
             --accept-flake-config \
             -j auto
