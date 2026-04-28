@@ -30,7 +30,7 @@ _: {
           flyctl
           golangci-lint
           goreleaser
-          gotools
+          (lib.hiPrio gotools)
           go-task
           grype
           jetbrains-mono
