@@ -278,14 +278,6 @@ _: {
             no_update_news = true;
           };
 
-          # NOCTALIA_PAM_SERVICE must reach noctalia-shell's process environment.
-          # home.sessionVariables go to login-shell profile files only; Hyprland
-          # runs as a systemd user service and its exec-once children inherit its
-          # environment, not the shell profile.  Setting it here via Hyprland's
-          # `env` directive guarantees delivery without a separate environment.d
-          # entry.
-          env = [ "NOCTALIA_PAM_SERVICE,noctalia" ];
-
           # -- Startup --
           exec-once = [
             "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
@@ -783,10 +775,6 @@ _: {
 
       # -- Wayland environment variables --
       home.sessionVariables = {
-        # NOCTALIA_PAM_SERVICE is also injected via Hyprland's `env` directive
-        # above so that noctalia-shell (an exec-once child of Hyprland, not a
-        # login shell) sees it.  Keeping it here ensures login shells do too.
-        NOCTALIA_PAM_SERVICE = "noctalia";
         ELECTRON_OZONE_PLATFORM_HINT = "auto";
         NIXOS_OZONE_WL = "1";
         QT_QPA_PLATFORM = "wayland;xcb";

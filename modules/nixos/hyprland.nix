@@ -45,15 +45,6 @@ in
 
       services.gnome.gnome-keyring.enable = true;
 
-      # Dedicated PAM service for noctalia's lock screen. Selected via the
-      # `NOCTALIA_PAM_SERVICE` env var on the home side; without this,
-      # noctalia falls back to /etc/pam.d/login, which has no fprintAuth
-      # and so password is the only path. Mirrors the pattern hyprlock used.
-      security.pam.services.noctalia = {
-        fprintAuth = true;
-        enableGnomeKeyring = true;
-      };
-
       # Force-stop fprintd before s2idle so its in-flight Verify session
       # (bound to the pre-suspend Goodix USB handle) is torn down cleanly.
       # Without this, the kernel re-enumerates the device on resume but

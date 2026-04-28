@@ -84,7 +84,13 @@ in
       services.pcscd.enable = true;
 
       services.fprintd.enable = true;
-      security.pam.services.sudo.fprintAuth = true;
+      # `fprintAuth` defaults to `services.fprintd.enable` for every PAM
+      # service, so sudo / su / polkit / etc. inherit it for free. The
+      # `login` service is the exception: nixos's gdm module force-disables
+      # fprintAuth on it (assuming nobody uses the TTY login). Noctalia
+      # *does* authenticate against /etc/pam.d/login per upstream's FAQ,
+      # so we re-enable with mkForce to win over gdm's override.
+      security.pam.services.login.fprintAuth = lib.mkForce true;
 
       # Firmware updates via LVFS (Dell BIOS/EC, Thunderbolt controllers, etc.)
       services.fwupd.enable = true;
