@@ -54,6 +54,14 @@ _: {
       noctaliaBin = lib.getExe inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
       hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
 
+      # noctalia-shell IPC invocation. The default config-path discovery
+      # hits a quickshell upstream bug (returns "No running instances"
+      # even on exact match), so we pass `--pid` explicitly. The nixpkgs
+      # wrapper chain also renames the running binary to
+      # `.quickshell-wrapped`, so `pgrep -x quickshell` finds nothing —
+      # match cmdline endings against `*/bin/quickshell` instead.
+      noctaliaIpc = "noctalia-shell ipc --pid $(pgrep -fxo '.*/bin/quickshell')";
+
       # Catppuccin border / shadow values per palette. Used by the static
       # `general/decoration` blocks below and by the `darkModeChange` hook
       # so a runtime toggle swaps the same fields the eval-time defaults
@@ -511,6 +519,51 @@ _: {
       services.kanshi = {
         enable = true;
         systemdTarget = "hyprland-session.target";
+      };
+
+      # -- Hypridle: single coordinator for idle + sleep hooks --
+      # Noctalia's built-in idle watcher (`idle.enabled`) and
+      # `lockOnSuspend` are disabled in settings.json; hypridle owns
+      # both paths here for consistency and — more importantly — gives
+      # us a logind sleep-inhibitor (`inhibit_sleep = 3`) that delays
+      # `sleep.target` until `before_sleep_cmd` returns. Without the
+      # inhibitor the lock-screen quickshell is mid-draw when the GPU
+      # starts quiescing for s2idle, which reproduces an xe KMD GT0
+      # Timedout job that leaves the compositor with a broken render
+      # state on resume.
+      services.hypridle = {
+        enable = true;
+        settings = {
+          general = {
+            lock_cmd = "${noctaliaIpc} call lockScreen lock";
+            before_sleep_cmd = "${noctaliaIpc} call lockScreen lock";
+            # Restart pam_fprintd after resume: the fingerprint Verify
+            # session is bound to the pre-suspend Goodix USB handle,
+            # which is invalidated when the device re-enumerates.
+            # Requires the lockScreen.restartAuth IPC handler in our
+            # noctalia fork (flake.nix pin).
+            after_sleep_cmd = "${noctaliaIpc} call lockScreen restartAuth";
+            inhibit_sleep = 3;
+          };
+          # Idle thresholds ported verbatim from the old noctalia
+          # `idle` settings: lock at 5m, screen off at 5m10s, suspend
+          # at 15m.
+          listener = [
+            {
+              timeout = 300;
+              on-timeout = "${noctaliaIpc} call lockScreen lock";
+            }
+            {
+              timeout = 310;
+              on-timeout = "hyprctl dispatch dpms off";
+              on-resume = "hyprctl dispatch dpms on";
+            }
+            {
+              timeout = 900;
+              on-timeout = "systemctl suspend";
+            }
+          ];
+        };
       };
 
       # -- GTK/Qt theming (Catppuccin Mocha) --

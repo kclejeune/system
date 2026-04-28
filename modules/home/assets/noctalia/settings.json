@@ -427,7 +427,7 @@
       "keyUp": ["Up"]
     },
     "language": "",
-    "lockOnSuspend": true,
+    "lockOnSuspend": false,
     "lockScreenAnimations": true,
     "lockScreenBlur": 0.9,
     "lockScreenCountdownDuration": 5000,
@@ -461,7 +461,7 @@
   },
   "idle": {
     "customCommands": "[]",
-    "enabled": true,
+    "enabled": false,
     "fadeDuration": 5,
     "lockCommand": "",
     "lockTimeout": 300,

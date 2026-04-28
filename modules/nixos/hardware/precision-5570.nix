@@ -42,6 +42,10 @@ _: {
       boot.kernelParams = [
         "quiet"
         "splash"
+        # xe KMD diagnostics for the reproducible GT0 Timedout job reset
+        # triggered by lock-before-sleep. Logging only — no behavior
+        # change. Remove once the reset trigger is identified.
+        "xe.guc_log_level=4"
       ];
 
       disko.devices = {
