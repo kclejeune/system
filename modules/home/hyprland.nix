@@ -56,11 +56,26 @@ _: {
 
       # noctalia-shell IPC invocation. The default config-path discovery
       # hits a quickshell upstream bug (returns "No running instances"
-      # even on exact match), so we pass `--pid` explicitly. The nixpkgs
-      # wrapper chain also renames the running binary to
-      # `.quickshell-wrapped`, so `pgrep -x quickshell` finds nothing —
-      # match cmdline endings against `*/bin/quickshell` instead.
-      noctaliaIpc = "noctalia-shell ipc --pid $(pgrep -fxo '.*/bin/quickshell')";
+      # even on exact match), so we pass `--pid` explicitly. Two quirks
+      # to work around:
+      #
+      #   1. The nixpkgs wrapper sets `QS_CONFIG_PATH` by default, which
+      #      noctalia-shell's ipc CLI picks up as an implicit
+      #      `--config-path` and then rejects because `--pid` and
+      #      `--config-path` are mutually exclusive. Exporting the var
+      #      as empty (but defined) suppresses the wrapper's set-default.
+      #
+      #   2. The nixpkgs wrapper chain renames the running binary to
+      #      `.quickshell-wrapped`, so `pgrep -x quickshell` finds
+      #      nothing — match cmdline endings against `*/bin/quickshell`.
+      #
+      # Invoked by hypridle (which execs commands directly, no shell);
+      # the writeShellScript gives us the shell context needed for both
+      # the env override and the pid lookup.
+      noctaliaIpc = pkgs.writeShellScript "noctalia-ipc" ''
+        export QS_CONFIG_PATH=
+        exec noctalia-shell ipc --pid "$(pgrep -fxo '.*/bin/quickshell')" "$@"
+      '';
 
       # Catppuccin border / shadow values per palette. Used by the static
       # `general/decoration` blocks below and by the `darkModeChange` hook
