@@ -254,13 +254,17 @@ _: {
             touchpad = {
               natural_scroll = true;
               disable_while_typing = true;
-              # Finger-count clicks instead of zone clicks (palm-on-corner
-              # stops triggering left/middle/right) and no tap-to-click
-              # (only the physically depressible bottom-half acts as a
-              # click). Mirrors NixOS-side libinput options set in
-              # modules/nixos/hardware/precision-5570.nix.
+              # Finger-count clicks instead of zone clicks — palm-on-corner
+              # stops triggering left/middle/right. 1 finger = left, 2 =
+              # right, 3 = middle.
               clickfinger_behavior = true;
-              # tap-to-click = false;
+              # Palm-rejection without disabling tap-to-click: stray palm
+              # taps can't initiate a drag, drags don't latch after the
+              # finger lifts, and simultaneous palm+finger contact no
+              # longer fabricates a middle-click.
+              "tap-and-drag" = false;
+              drag_lock = false;
+              middle_button_emulation = false;
             };
           };
 

@@ -137,18 +137,12 @@ _: {
         };
       };
 
-      # Touchpad palm rejection.
-      #   `clickMethod = "clickfinger"` — clicks are finger-count-based
-      #     instead of zone-based, so palm-on-corner stops registering as
-      #     a click. 1 finger = left, 2 = right, 3 = middle.
-      #   `tapping = false` — no tap-to-click, anywhere. Approximates
-      #     "click only in the bottom half" since the diving-board hinge
-      #     is the only spot a palm can't physically depress. libinput
-      #     does not expose tap zones, so this is the closest equivalent.
-      # Hyprland's matching `clickfinger_behavior` / `tap-to-click` are
-      # set in modules/home/hyprland.nix.
-      services.libinput.touchpad.clickMethod = "clickfinger";
-      services.libinput.touchpad.tapping = false;
+      # Touchpad palm rejection lives in modules/home/hyprland.nix —
+      # Hyprland reads its own libinput config and ignores
+      # services.libinput.*, so setting it here only affects X11 / a
+      # fallback display manager session. Left unset to avoid giving the
+      # impression that changes here influence the running Wayland
+      # session.
 
       # Suspend the NVIDIA dGPU when idle. PRIME render offload is already on via
       # nixos-hardware's dell-precision-5570 module; finegrained adds per-engine D3
