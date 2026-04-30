@@ -713,7 +713,11 @@ _: {
         };
       };
 
-      security.pam.services.sudo.rssh.enable = true;
+      # Passwordless sudo via SSH agent forwarding. Both flags are required:
+      # the first activates the PAM rssh module; the second (a bare bool, not
+      # an attrset) wires it into sudo.
+      security.pam.rssh.enable = true;
+      security.pam.services.sudo.rssh = true;
 
       # Gateway acts as a Tailscale subnet router / exit node, not just a client.
       services.tailscale.useRoutingFeatures = lib.mkForce "both";
