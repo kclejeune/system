@@ -22,6 +22,9 @@
       config.flake.nixosModules.personal-apps
       config.flake.nixosModules.profile-personal
 
+      config.flake.nixosModules.tailscale
+      config.flake.nixosModules.netbird
+
       {
         networking.hostName = "phil";
         # Host-level: pin phil's Hyprland panel/kanshi overlay. The hardware

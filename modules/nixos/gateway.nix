@@ -2,6 +2,7 @@ _: {
   flake.nixosModules.gateway =
     {
       config,
+      lib,
       ...
     }:
     let
@@ -714,8 +715,8 @@ _: {
 
       security.pam.services.sudo.rssh.enable = true;
 
-      # Netbird - mesh VPN client
-      services.netbird.enable = true;
+      # Gateway acts as a Tailscale subnet router / exit node, not just a client.
+      services.tailscale.useRoutingFeatures = lib.mkForce "both";
 
       # Netbird - self-hosted control server (management + signal + dashboard + TURN)
       services.netbird.server = {

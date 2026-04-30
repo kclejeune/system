@@ -22,6 +22,9 @@
       config.flake.nixosModules.personal-apps
       config.flake.nixosModules.profile-personal
 
+      config.flake.nixosModules.tailscale
+      config.flake.nixosModules.netbird
+
       {
         networking.hostName = "wally";
         # Host-level: pin the precision-5570 + home Dell U2718Q panel /

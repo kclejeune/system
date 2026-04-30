@@ -19,6 +19,9 @@
 
       config.flake.nixosModules.gateway
       config.flake.nixosModules.profile-personal
+
+      config.flake.nixosModules.tailscale
+      config.flake.nixosModules.netbird
     ];
   };
 }
