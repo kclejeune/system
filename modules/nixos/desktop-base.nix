@@ -302,6 +302,7 @@ in
         pkgs.evince
         pkgs.gnome-calculator
         pkgs.mission-center
+        pkgs.snapshot
 
         # Per-app audio routing UI; not GNOME, but the standard companion
         # for pipewire/pulse on a non-GNOME session.
