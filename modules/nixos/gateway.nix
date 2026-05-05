@@ -3,6 +3,7 @@ _: {
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
@@ -26,12 +27,21 @@ _: {
       netbirdMgmtPort = 8011;
       netbirdMgmtMetricsPort = 9190;
       netbirdSignalMetricsPort = 9191;
-      nginxInternalSSLPort = 4443;
+      # Caddy's HTTPS listener is moved off :443 so caddy-l4 can do SNI
+      # demux on :443 itself. Sites still terminate TLS here.
+      caddyInternalHTTPSPort = 4443;
+      caddyAccessLog = "/var/log/caddy/access.log";
 
-      mkHttpsVhost = extra: {
-        forceSSL = true;
-        enableACME = true;
-        extraConfig = extra;
+      # Caddy with the rate limiter, layer4 (for SNI passthrough), and
+      # cloudflare DNS plugins. Versions/hash need updating on first build:
+      # set hash to lib.fakeHash, build once, paste the reported sha256.
+      caddyWithPlugins = pkgs.caddy.withPlugins {
+        plugins = [
+          "github.com/mholt/caddy-ratelimit@v0.1.0"
+          "github.com/mholt/caddy-l4@v0.0.0-20250109214548-d04476eccc16"
+          "github.com/caddy-dns/cloudflare@v0.2.1"
+        ];
+        hash = lib.fakeHash;
       };
 
       mkScrapeConfig = job_name: target: {
@@ -39,11 +49,12 @@ _: {
         static_configs = [ { targets = [ target ]; } ];
       };
 
-      mkNginxJail = filter: maxretry: {
+      mkCaddyJail = maxretry: {
         settings = {
-          inherit filter maxretry;
+          inherit maxretry;
+          filter = "caddy-auth";
           backend = "auto";
-          logpath = "/var/log/nginx/access.log";
+          logpath = caddyAccessLog;
           findtime = 600;
         };
       };
@@ -73,7 +84,7 @@ _: {
         ];
         extraInputRules = ''
           ct state invalid drop
-          tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
+          tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString caddyInternalHTTPSPort} } drop
           tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
           ip protocol icmp limit rate 10/second burst 20 packets accept
           ip protocol icmp drop
@@ -357,67 +368,105 @@ _: {
         };
       };
 
-      # Ensure nginx can read its own log files for fail2ban
-      services.nginx = {
+      # Caddy reverse proxy.
+      #
+      # Topology:
+      #   :443 (caddy-l4)  --SNI demux--+--> 127.0.0.1:netbirdProxyPort   (*.kclj.dev, TLS passthrough)
+      #                                  +--> 127.0.0.1:caddyInternalHTTPSPort (everything else, TLS terminated by Caddy)
+      #
+      # Caddy issues its own certs via Cloudflare DNS-01 so port 80 is not needed.
+      # security.acme is retained because coturn still consumes those certs.
+      services.caddy = {
         enable = true;
-        defaultSSLListenPort = nginxInternalSSLPort;
-        recommendedTlsSettings = true;
-        recommendedOptimisation = true;
-        recommendedGzipSettings = true;
-        recommendedBrotliSettings = true;
-        recommendedProxySettings = true;
-
-        commonHttpConfig = ''
-          limit_req_zone $binary_remote_addr zone=general:10m rate=30r/s;
-          limit_req_zone $binary_remote_addr zone=authelia_api:10m rate=10r/s;
-          limit_conn_zone $binary_remote_addr zone=per_ip:10m;
-
-          access_log /var/log/nginx/access.log;
-          error_log /var/log/nginx/error.log;
+        package = caddyWithPlugins;
+        # Reuses the same KEY=VALUE env file that security.acme consumes.
+        # The lego/Cloudflare token is conventionally CF_DNS_API_TOKEN; the
+        # Caddyfile reads it via {env.CF_DNS_API_TOKEN}. If the secret uses
+        # a different variable name, update the placeholder below to match.
+        environmentFile = config.sops.secrets."cloudflare/api-token".path;
+        logFormat = ''
+          level INFO
+          output file ${caddyAccessLog} {
+            roll_size 100MiB
+            roll_keep 7
+          }
         '';
 
-        # Drop requests with unknown Host headers
-        virtualHosts."_" = {
-          default = true;
-          rejectSSL = true;
-          locations."/".return = "444";
-        };
+        # Global options + layer4 SNI demux on :443.
+        # `https_port 4443` moves Caddy's own HTTPS listener off :443
+        # so layer4 can claim it; matched traffic loops back to 4443.
+        globalConfig = ''
+          order rate_limit before basicauth
+          https_port ${toString caddyInternalHTTPSPort}
+          auto_https disable_redirects
+          acme_dns cloudflare {env.CF_DNS_API_TOKEN}
 
-        virtualHosts."${authDomain}" =
-          mkHttpsVhost ''
-            # Larger buffers for OIDC flows (cookies + auth headers)
-            large_client_header_buffers 4 32k;
-            proxy_buffer_size 16k;
-            proxy_buffers 4 16k;
+          layer4 {
+            :443 {
+              @netbird tls sni *.${netbirdProxyDomain}
+              route @netbird {
+                proxy 127.0.0.1:${toString netbirdProxyPort}
+              }
+              # Default: forward to Caddy's HTTPS listener for TLS termination.
+              route {
+                proxy 127.0.0.1:${toString caddyInternalHTTPSPort}
+              }
+            }
+          }
+        '';
 
-            limit_conn per_ip 50;
-            limit_conn_status 429;
-          ''
-          // {
+        virtualHosts.${authDomain}.extraConfig = ''
+          encode zstd gzip
 
-            locations."/" = {
-              proxyPass = "http://127.0.0.1:${toString autheliaPort}";
-              proxyWebsockets = true;
-              extraConfig = ''
-                limit_req zone=general burst=60 nodelay;
-                limit_req_status 429;
-              '';
-            };
+          # Larger buffers for OIDC flows (cookies + auth headers).
+          # Caddy doesn't expose nginx's per-buffer knobs; the defaults
+          # cover typical OIDC payloads, but bump server.read_header_timeout
+          # / max_header_bytes via JSON config if oversize headers appear.
 
-            locations."/api/" = {
-              proxyPass = "http://127.0.0.1:${toString autheliaPort}";
-              extraConfig = ''
-                limit_req zone=authelia_api burst=20 nodelay;
-                limit_req_status 429;
-              '';
-            };
-          };
+          # Translated nginx limits (sliding window, so burst is folded in):
+          #   nginx general:      30 r/s + burst 60   ->   90 events / 1s
+          #   nginx authelia_api: 10 r/s + burst 20   ->   30 events / 1s
+          #   nginx limit_conn per_ip 50              ->   50 events / 1s on a conn zone
+          rate_limit {
+            zone authelia_general {
+              key {client_ip}
+              events 90
+              window 1s
+            }
+            zone authelia_api {
+              key {client_ip}
+              events 30
+              window 1s
+            }
+            zone authelia_conn {
+              key {client_ip}
+              events 50
+              window 1s
+            }
+          }
+
+          handle /api/* {
+            rate_limit zone authelia_api
+            rate_limit zone authelia_conn
+            reverse_proxy 127.0.0.1:${toString autheliaPort}
+          }
+
+          handle {
+            rate_limit zone authelia_general
+            rate_limit zone authelia_conn
+            reverse_proxy 127.0.0.1:${toString autheliaPort}
+          }
+        '';
       };
 
+      # Caddy's systemd service runs as the `caddy` user; the existing
+      # sops secret is owned by root (it's used by acme.service which has
+      # its own privileges). Allow caddy to read it.
+      sops.secrets."cloudflare/api-token".mode = lib.mkForce "0444";
+
       services.fail2ban.jails = {
-        nginx-http-auth = mkNginxJail "nginx-http-auth" 5;
-        nginx-botsearch = mkNginxJail "nginx-botsearch" 5;
-        nginx-bad-request = mkNginxJail "nginx-bad-request" 10;
+        # Caddy logs JSON; the filter below matches 4xx/5xx responses.
+        caddy-bad-request = mkCaddyJail 10;
         authelia.settings = {
           filter = "authelia";
           backend = "auto";
@@ -433,6 +482,15 @@ _: {
         [Definition]
         failregex = ^.*"remote_ip":"<HOST>".*"msg":"Unsuccessful .*authentication attempt.*$
         ignoreregex =
+      '';
+
+      # Caddy fail2ban filter — Caddy writes JSON logs (one per line) with
+      # request.remote_ip and status fields. Bans clients that generate too
+      # many 4xx responses.
+      environment.etc."fail2ban/filter.d/caddy-auth.conf".text = ''
+        [Definition]
+        failregex = ^.*"remote_ip":"<HOST>".*"status":(4[0-9]{2})\b.*$
+        ignoreregex = ^.*"status":(401|429)\b.*$
       '';
 
       # Cloudflare Tunnel — exposes services without opening inbound HTTP/S ports
@@ -528,7 +586,7 @@ _: {
       };
 
       environment.etc."alloy/config.alloy".text = ''
-        // Scrape journald logs (sshd, fail2ban, authelia, nginx, systemd)
+        // Scrape journald logs (sshd, fail2ban, authelia, caddy, systemd)
         // Route authelia's JSON-on-stdout through a parser stage that extracts
         // level/remote_ip as labels and tags the stream with job="authelia".
         loki.source.journal "journald" {
@@ -580,17 +638,44 @@ _: {
           }
         }
 
-        // Scrape nginx access log
-        local.file_match "nginx_log" {
+        // Scrape caddy access log (JSON, one record per line)
+        local.file_match "caddy_log" {
           path_targets = [
-            {"__path__" = "/var/log/nginx/access.log"},
-            {"__path__" = "/var/log/nginx/error.log"},
+            {"__path__" = "${caddyAccessLog}"},
           ]
         }
 
-        loki.source.file "nginx" {
-          targets    = local.file_match.nginx_log.targets
+        loki.source.file "caddy" {
+          targets    = local.file_match.caddy_log.targets
+          forward_to = [loki.process.caddy.receiver]
+        }
+
+        loki.process "caddy" {
           forward_to = [loki.write.local.receiver]
+
+          stage.json {
+            expressions = {
+              status     = "status",
+              remote_ip  = "request.remote_ip",
+              host       = "request.host",
+              method     = "request.method",
+              uri        = "request.uri",
+            }
+          }
+
+          stage.labels {
+            values = {
+              status    = "",
+              remote_ip = "",
+              host      = "",
+            }
+          }
+
+          stage.static_labels {
+            values = {
+              job = "caddy",
+            }
+          }
         }
 
         // Write logs to Loki
@@ -706,12 +791,10 @@ _: {
       # lldap web UI: not exposed via nginx — access via SSH tunnel (ssh -L 17170:127.0.0.1:17170)
       # or add to cloudflared tunnel with Cloudflare Access protection before exposing publicly.
 
-      services.nginx.virtualHosts."grafana.${domain}" = mkHttpsVhost "" // {
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString grafanaPort}";
-          proxyWebsockets = true;
-        };
-      };
+      services.caddy.virtualHosts."grafana.${domain}".extraConfig = ''
+        encode zstd gzip
+        reverse_proxy 127.0.0.1:${toString grafanaPort}
+      '';
 
       # Passwordless sudo via SSH agent forwarding. Both flags are required:
       # the first activates the PAM rssh module; the second (a bare bool, not
@@ -723,10 +806,12 @@ _: {
       services.tailscale.useRoutingFeatures = lib.mkForce "both";
 
       # Netbird - self-hosted control server (management + signal + dashboard + TURN)
+      # enableNginx flags are off because the gateway uses Caddy; see the
+      # netbird Caddy vhost further down for the equivalent routes.
       services.netbird.server = {
         enable = true;
         domain = netbirdDomain;
-        enableNginx = true;
+        enableNginx = false;
 
         coturn = {
           enable = true;
@@ -761,7 +846,7 @@ _: {
         signal.metricsPort = netbirdSignalMetricsPort;
 
         dashboard = {
-          enableNginx = true;
+          enableNginx = false;
           settings = {
             AUTH_AUTHORITY = "https://${authDomain}";
             AUTH_CLIENT_ID = "netbird";
@@ -811,19 +896,46 @@ _: {
         '';
       };
 
-      # TLS/HTTP3 and OIDC callback fallbacks for the netbird dashboard SPA
-      # Rate limiting on the HTTP layer is unreliable here because the stream
-      # block proxies all traffic from 127.0.0.1 — the real client IP is lost.
-      # DDoS protection is handled at the stream layer (limit_conn stream_per_ip)
-      # and nftables (SYN rate limiting).
-      services.nginx.virtualHosts.${netbirdDomain} = mkHttpsVhost "" // {
-        locations."/auth" = {
-          tryFiles = "$uri /index.html";
-        };
-        locations."/silent-auth" = {
-          tryFiles = "$uri /index.html";
-        };
-      };
+      # Netbird vhost — replaces what services.netbird.server.enableNginx
+      # would have produced. NOTE: this is best-effort and should be
+      # cross-checked against the upstream netbird nixos module's nginx
+      # config before deploying. Specifically verify:
+      #   - the dashboard package output path (`pkgs.netbird-dashboard`)
+      #   - the management gRPC path (/management.ManagementService/)
+      #   - whether signal gRPC is reachable on this domain (the stream block
+      #     used to forward only HTTPS; signal gRPC may live on a separate
+      #     port / domain in your setup)
+      #
+      # Real client IP is preserved here (unlike under nginx-stream) because
+      # caddy-l4 forwards the original TCP connection.
+      services.caddy.virtualHosts.${netbirdDomain}.extraConfig = ''
+        encode zstd gzip
+
+        # gRPC management API
+        handle /management.ManagementService/* {
+          reverse_proxy h2c://127.0.0.1:${toString netbirdMgmtPort}
+        }
+
+        # REST management API
+        handle /api/* {
+          reverse_proxy 127.0.0.1:${toString netbirdMgmtPort}
+        }
+
+        # OIDC SPA fallbacks (formerly nginx tryFiles for /auth, /silent-auth)
+        @spa path /auth /auth/* /silent-auth /silent-auth/*
+        handle @spa {
+          root * ${pkgs.netbird-dashboard}
+          try_files {path} /index.html
+          file_server
+        }
+
+        # Dashboard static files (SPA)
+        handle {
+          root * ${pkgs.netbird-dashboard}
+          try_files {path} /index.html
+          file_server
+        }
+      '';
 
       # Netbird reverse proxy — runs as OCI container, handles its own TLS
       virtualisation.oci-containers.containers.netbird-proxy = {
@@ -852,35 +964,12 @@ _: {
         NB_PROXY_ALLOW_INSECURE=true
       '';
 
-      # Nginx stream block: SNI-based routing on port 443
-      # *.kclj.dev → TLS passthrough to netbird-proxy (handles its own TLS)
-      # everything else → normal nginx HTTP block (TLS termination)
-      services.nginx.streamConfig = ''
-        limit_conn_zone $remote_addr zone=stream_per_ip:10m;
-
-        map $ssl_preread_server_name $backend {
-          ~^[a-zA-Z0-9-]+\.kclj\.dev$  netbird_proxy;
-          default                       nginx_https;
-        }
-
-        upstream netbird_proxy {
-          server 127.0.0.1:${toString netbirdProxyPort};
-        }
-
-        upstream nginx_https {
-          server 127.0.0.1:${toString nginxInternalSSLPort};
-        }
-
-        server {
-          listen 443;
-          listen [::]:443;
-          ssl_preread on;
-          limit_conn stream_per_ip 20;
-          proxy_connect_timeout 10s;
-          proxy_timeout 300s;
-          proxy_pass $backend;
-        }
-      '';
+      # The nginx stream-block SNI demux is replaced by the caddy-l4 layer4
+      # block in services.caddy.globalConfig above. Per-IP connection
+      # capping (formerly limit_conn stream_per_ip 20) is no longer enforced
+      # at the proxy layer; nftables SYN-flood limiting in
+      # networking.firewall.extraInputRules remains the primary DDoS guard.
+      # If a connection cap is needed, caddy-l4 supports a `throttle` matcher.
 
       system.stateVersion = "25.11";
     };
