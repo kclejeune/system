@@ -1,12 +1,22 @@
 _: {
-  # Display layout for the precision-5570 across home and single-external
-  # docks: eDP-1 panel rule, monitor-pinned workspaces (home-only U2718Q
-  # workspaces), and kanshi profiles. Home runs dual Dell U2718Q 4Ks
-  # (`home`, `home-clamshell`); any other single-external setup (e.g. the
-  # work Dell U3425WE ultrawide) uses the catch-all `single` /
-  # `single-clamshell` profiles; `undocked` is the laptop alone. Shared by
-  # the personal `wally` host and the work `klejeune@x86_64-linux` NixOS
-  # config, both of which pull this in directly.
+  # Display layout for the precision-5570. Kanshi profiles are named by
+  # topology, not location, and use model-scoped globs rather than exact
+  # serials so any unit of the same model matches:
+  #
+  #   dual-4k / dual-4k-clamshell         — two Dell U2718Q 4K panels
+  #   single-uwqhd / single-uwqhd-clamshell — one Dell U3425WE 3440x1440
+  #   undocked                            — laptop panel alone
+  #
+  # Kanshi supports fnmatch(3) globs in criteria (main.c:39), so a trailing
+  # `*` stands in for the serial field. Caveat: for dual profiles where
+  # both externals share a model, position assignment (0,0 vs 2560,0)
+  # follows wl_output advertisement order and can flip across hotplugs.
+  # Workspace pins in hyprland are serial-specific, so workspaces still
+  # follow the correct physical monitor either way.
+  #
+  # Shared by the personal `wally` host and the work
+  # `klejeune@x86_64-linux` NixOS config, both of which pull this in
+  # directly.
   flake.homeModules.displays-5570-home =
     { lib, ... }:
     {
@@ -30,16 +40,23 @@ _: {
       # doesn't trigger a redundant modeset after kanshi fires.
       services.kanshi.settings = [
         {
-          profile.name = "home";
+          # Two Dell U2718Q 4K panels side-by-side with the laptop
+          # centered below. Both glob criteria match the same model, and
+          # kanshi assigns them to outputs in wl_output advertisement
+          # order — so left/right assignment may flip across hotplugs.
+          # That's tolerable because hyprland workspace pins use serials
+          # (see `workspace` above), so workspaces follow the correct
+          # physical monitor regardless.
+          profile.name = "dual-4k";
           profile.outputs = [
             {
-              criteria = "Dell Inc. DELL U2718Q 4K8X779B03VL";
+              criteria = "Dell Inc. DELL U2718Q *";
               mode = "3840x2160@60Hz";
               scale = 1.5;
               position = "0,0";
             }
             {
-              criteria = "Dell Inc. DELL U2718Q 4K8X77950L3L";
+              criteria = "Dell Inc. DELL U2718Q *";
               mode = "3840x2160@60Hz";
               scale = 1.5;
               position = "2560,0";
@@ -53,16 +70,16 @@ _: {
           ];
         }
         {
-          profile.name = "home-clamshell";
+          profile.name = "dual-4k-clamshell";
           profile.outputs = [
             {
-              criteria = "Dell Inc. DELL U2718Q 4K8X779B03VL";
+              criteria = "Dell Inc. DELL U2718Q *";
               mode = "3840x2160@60Hz";
               scale = 1.5;
               position = "0,0";
             }
             {
-              criteria = "Dell Inc. DELL U2718Q 4K8X77950L3L";
+              criteria = "Dell Inc. DELL U2718Q *";
               mode = "3840x2160@60Hz";
               scale = 1.5;
               position = "2560,0";
@@ -70,21 +87,15 @@ _: {
           ];
         }
         {
-          profile.name = "single";
+          # Single Dell U3425WE 3440x1440 ultrawide with the laptop
+          # centered below. Scaled 1.25x, not 1.5x, since these displays
+          # aren't 4K and 1.5 leaves non-integer logical dimensions on
+          # 3440-wide panels. Logical size at 1.25 is 2752x1152; laptop
+          # centered below at x = (2752 - 1920/1.25) / 2 = 608.
+          profile.name = "single-uwqhd";
           profile.outputs = [
             {
-              # Catch-all for any single external monitor (currently the
-              # work Dell U3425WE 3440x1440 ultrawide). Scaled 1.25x, not
-              # 1.5x, since these displays aren't 4K and 1.5 leaves
-              # non-integer logical dimensions on 3440-wide panels.
-              # Logical size at 1.25 is 2752x1152; laptop centered below
-              # at x = (2752 - 1920/1.25) / 2 = 608.
-              #
-              # `*` matches the first unmatched output. eDP-1 is pinned by
-              # connector name below, so `*` resolves to the external. A
-              # bare wildcard is required because kanshi criteria must be
-              # an exact `make model serial` string (no partial globs).
-              criteria = "*";
+              criteria = "Dell Inc. DELL U3425WE *";
               mode = "3440x1440@120Hz";
               scale = 1.25;
               position = "0,0";
@@ -98,10 +109,10 @@ _: {
           ];
         }
         {
-          profile.name = "single-clamshell";
+          profile.name = "single-uwqhd-clamshell";
           profile.outputs = [
             {
-              criteria = "*";
+              criteria = "Dell Inc. DELL U3425WE *";
               mode = "3440x1440@120Hz";
               scale = 1.25;
               position = "0,0";
