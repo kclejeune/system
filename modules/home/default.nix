@@ -22,6 +22,7 @@ in
         flakeCfg.flake.homeModules.dev-interactive
         flakeCfg.flake.homeModules.direnv
         flakeCfg.flake.homeModules.dotfiles
+        flakeCfg.flake.homeModules.email
         flakeCfg.flake.homeModules.fzf
         flakeCfg.flake.homeModules.git
         flakeCfg.flake.homeModules.nushell
