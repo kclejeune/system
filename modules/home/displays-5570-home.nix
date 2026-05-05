@@ -1,18 +1,16 @@
 _: {
   # Display layout for the precision-5570. Kanshi profiles are named by
-  # topology, not location, and use model-scoped globs rather than exact
-  # serials so any unit of the same model matches:
+  # topology rather than location:
   #
-  #   dual-4k / dual-4k-clamshell         — two Dell U2718Q 4K panels
+  #   dual-4k / dual-4k-clamshell           — two Dell U2718Q 4K panels
   #   single-uwqhd / single-uwqhd-clamshell — one Dell U3425WE 3440x1440
-  #   undocked                            — laptop panel alone
+  #   undocked                              — laptop panel alone
   #
-  # Kanshi supports fnmatch(3) globs in criteria (main.c:39), so a trailing
-  # `*` stands in for the serial field. Caveat: for dual profiles where
-  # both externals share a model, position assignment (0,0 vs 2560,0)
-  # follows wl_output advertisement order and can flip across hotplugs.
-  # Workspace pins in hyprland are serial-specific, so workspaces still
-  # follow the correct physical monitor either way.
+  # Single-external profiles use a model-scoped glob (trailing `*` on the
+  # serial), matched via fnmatch(3) in kanshi (main.c:39). Dual profiles
+  # use exact serials because kanshi rejects two `output` directives with
+  # identical criteria strings in the same profile (config.c:354-362) —
+  # even with globs, each entry in a profile must be unique.
   #
   # Shared by the personal `wally` host and the work
   # `klejeune@x86_64-linux` NixOS config, both of which pull this in
@@ -41,22 +39,24 @@ _: {
       services.kanshi.settings = [
         {
           # Two Dell U2718Q 4K panels side-by-side with the laptop
-          # centered below. Both glob criteria match the same model, and
-          # kanshi assigns them to outputs in wl_output advertisement
-          # order — so left/right assignment may flip across hotplugs.
-          # That's tolerable because hyprland workspace pins use serials
-          # (see `workspace` above), so workspaces follow the correct
-          # physical monitor regardless.
+          # centered below. Criteria use exact serials rather than a
+          # shared `Dell Inc. DELL U2718Q *` glob because kanshi's
+          # parser rejects two `output` directives with identical
+          # criteria strings in the same profile (config.c:354-362 —
+          # strcmp-based dedup, not fnmatch), so the two duals must be
+          # distinguished. This also anchors each serial to a stable
+          # left/right position, matching the hyprland workspace pins
+          # on these serials in `workspace` above.
           profile.name = "dual-4k";
           profile.outputs = [
             {
-              criteria = "Dell Inc. DELL U2718Q *";
+              criteria = "Dell Inc. DELL U2718Q 4K8X779B03VL";
               mode = "3840x2160@60Hz";
               scale = 1.5;
               position = "0,0";
             }
             {
-              criteria = "Dell Inc. DELL U2718Q *";
+              criteria = "Dell Inc. DELL U2718Q 4K8X77950L3L";
               mode = "3840x2160@60Hz";
               scale = 1.5;
               position = "2560,0";
@@ -73,13 +73,13 @@ _: {
           profile.name = "dual-4k-clamshell";
           profile.outputs = [
             {
-              criteria = "Dell Inc. DELL U2718Q *";
+              criteria = "Dell Inc. DELL U2718Q 4K8X779B03VL";
               mode = "3840x2160@60Hz";
               scale = 1.5;
               position = "0,0";
             }
             {
-              criteria = "Dell Inc. DELL U2718Q *";
+              criteria = "Dell Inc. DELL U2718Q 4K8X77950L3L";
               mode = "3840x2160@60Hz";
               scale = 1.5;
               position = "2560,0";
