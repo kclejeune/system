@@ -32,14 +32,13 @@ _: {
       caddyInternalHTTPSPort = 4443;
       caddyAccessLog = "/var/log/caddy/access.log";
 
-      # Caddy with the rate limiter, layer4 (for SNI passthrough), and
-      # cloudflare DNS plugins. Versions/hash need updating on first build:
-      # set hash to lib.fakeHash, build once, paste the reported sha256.
+      # Caddy with the rate limiter and layer4 (for SNI passthrough)
+      # plugins. Versions/hash need updating on first build: set hash to
+      # lib.fakeHash, build once, paste the reported sha256.
       caddyWithPlugins = pkgs.caddy.withPlugins {
         plugins = [
           "github.com/mholt/caddy-ratelimit@v0.1.0"
           "github.com/mholt/caddy-l4@v0.0.0-20250109214548-d04476eccc16"
-          "github.com/caddy-dns/cloudflare@v0.2.1"
         ];
         hash = lib.fakeHash;
       };
@@ -374,16 +373,13 @@ _: {
       #   :443 (caddy-l4)  --SNI demux--+--> 127.0.0.1:netbirdProxyPort   (*.kclj.dev, TLS passthrough)
       #                                  +--> 127.0.0.1:caddyInternalHTTPSPort (everything else, TLS terminated by Caddy)
       #
-      # Caddy issues its own certs via Cloudflare DNS-01 so port 80 is not needed.
-      # security.acme is retained because coturn still consumes those certs.
+      # ACME uses Caddy's default flow: HTTP-01 challenges on :80 and
+      # TLS-ALPN-01 on the HTTPS listener. Port 80 is already open in the
+      # firewall above. security.acme is retained because coturn still
+      # consumes those certs.
       services.caddy = {
         enable = true;
         package = caddyWithPlugins;
-        # Reuses the same KEY=VALUE env file that security.acme consumes.
-        # The lego/Cloudflare token is conventionally CF_DNS_API_TOKEN; the
-        # Caddyfile reads it via {env.CF_DNS_API_TOKEN}. If the secret uses
-        # a different variable name, update the placeholder below to match.
-        environmentFile = config.sops.secrets."cloudflare/api-token".path;
         logFormat = ''
           level INFO
           output file ${caddyAccessLog} {
@@ -393,16 +389,20 @@ _: {
         '';
 
         # Global options + layer4 SNI demux on :443.
-        # `https_port 4443` moves Caddy's own HTTPS listener off :443
-        # so layer4 can claim it; matched traffic loops back to 4443.
+        # `https_port 4443` moves Caddy's own HTTPS listener off :443 so
+        # layer4 can claim it; matched traffic loops back to 4443. The
+        # acme-tls/1 ALPN matcher routes TLS-ALPN-01 challenges to the same
+        # internal listener so cert renewals work without DNS credentials.
         globalConfig = ''
           order rate_limit before basicauth
           https_port ${toString caddyInternalHTTPSPort}
-          auto_https disable_redirects
-          acme_dns cloudflare {env.CF_DNS_API_TOKEN}
 
           layer4 {
             :443 {
+              @acme tls alpn acme-tls/1
+              route @acme {
+                proxy 127.0.0.1:${toString caddyInternalHTTPSPort}
+              }
               @netbird tls sni *.${netbirdProxyDomain}
               route @netbird {
                 proxy 127.0.0.1:${toString netbirdProxyPort}
@@ -458,11 +458,6 @@ _: {
           }
         '';
       };
-
-      # Caddy's systemd service runs as the `caddy` user; the existing
-      # sops secret is owned by root (it's used by acme.service which has
-      # its own privileges). Allow caddy to read it.
-      sops.secrets."cloudflare/api-token".mode = lib.mkForce "0444";
 
       services.fail2ban.jails = {
         # Caddy logs JSON; the filter below matches 4xx/5xx responses.
