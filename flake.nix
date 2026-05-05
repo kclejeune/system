@@ -8,6 +8,7 @@
       "https://cache.garnix.io"
       "https://install.determinate.systems"
       "https://noctalia.cachix.org"
+      "https://zed.cachix.org"
     ];
     extra-trusted-public-keys = [
       # "kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk="
@@ -15,6 +16,7 @@
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
+      "zed.cachix.org-1:/pHQ6dpMsAZk2DiP4WCL0p9YDNKWj2Q5FL20bNmw1cU="
     ];
   };
 
@@ -76,6 +78,14 @@
     # once the change is merged.
     noctalia.url = "github:kclejeune/noctalia-shell/kcl/restart-auth-support";
     noctalia.inputs.nixpkgs.follows = "nixos-unstable";
+
+    # Zed editor — pulled from upstream to track the preview channel
+    # (the flake's `default` package is built from main, ahead of the
+    # stable channel in nixpkgs). Follows `nixos-unstable` to match
+    # upstream's own pin (their flake points `nixpkgs` at
+    # `nixos-unstable`), avoiding drift between the channel Zed expects
+    # and the one we hand it.
+    zed.url = "github:zed-industries/zed";
   };
 
   outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);

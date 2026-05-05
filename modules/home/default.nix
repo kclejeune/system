@@ -32,6 +32,7 @@ in
         flakeCfg.flake.homeModules.tldr
         flakeCfg.flake.homeModules.tmux
         flakeCfg.flake.homeModules.yazi
+        flakeCfg.flake.homeModules.zed-editor
         flakeCfg.flake.homeModules.nixpkgs
       ];
 

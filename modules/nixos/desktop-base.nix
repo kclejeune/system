@@ -288,7 +288,6 @@ in
         pkgs.vscode
         pkgs.yubikey-manager
         pkgs.yubioath-flutter
-        pkgs.zed-editor
         pkgs.zoom-us
 
         # Standalone GNOME apps — usable without gnome-shell. Picked to

@@ -13,6 +13,7 @@
         determinate-nixd = inputs.determinate.packages.${system}.default;
         nix = inputs.determinate.inputs.nix.packages.${system}.default;
         nh = inputs.nh.packages.${system}.default;
+        zed-preview = inputs.zed.packages.${system}.default;
 
         # 0.8.0 introduced the Tempo module (clock + weather + calendar);
         # nixpkgs-unstable still has 0.7.0 at this rev. Pin until upstream
