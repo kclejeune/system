@@ -635,11 +635,9 @@ _: {
         tesseract
         wf-recorder
 
-        # Wayland clipboard tools used by noctalia's built-in clipboard
-        # watcher (`appLauncher.clipboardWatchTextCommand`) and ad-hoc
-        # scripts. libnotify gives notify-send for the screenshot/recording
-        # toasts emitted by the plugin.
-        wl-clipboard-rs
+        # libnotify gives notify-send for the screenshot/recording toasts
+        # emitted by noctalia's plugins. Clipboard tools come from
+        # homeModules.clipboard.
         libnotify
 
         # Audio / Bluetooth GUIs that noctalia surfaces via the bar's
