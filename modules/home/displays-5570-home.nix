@@ -3,6 +3,7 @@ _: {
   # topology rather than location:
   #
   #   dual-4k / dual-4k-clamshell           — two Dell U2718Q 4K panels
+  #   single-4k / single-4k-clamshell       — one Dell U2718Q 4K panel
   #   single-uwqhd / single-uwqhd-clamshell — one Dell U3425WE 3440x1440
   #   undocked                              — laptop panel alone
   #
@@ -11,6 +12,12 @@ _: {
   # use exact serials because kanshi rejects two `output` directives with
   # identical criteria strings in the same profile (config.c:354-362) —
   # even with globs, each entry in a profile must be unique.
+  #
+  # Profile ordering matters: kanshi applies the first profile whose
+  # outputs all match (main.c:102-140). The dual-4k variants appear
+  # before single-4k so that when both U2718Q serials are present the
+  # dual layout wins; the single-4k wildcard only matches when the dual
+  # serial-pinned profile cannot.
   #
   # Shared by the personal `wally` host and the work
   # `klejeune@x86_64-linux` NixOS config, both of which pull this in
@@ -83,6 +90,41 @@ _: {
               mode = "3840x2160@60Hz";
               scale = 1.5;
               position = "2560,0";
+            }
+          ];
+        }
+        {
+          # Single Dell U2718Q 4K with the laptop centered below. Uses a
+          # model-scoped glob so either serial satisfies the profile —
+          # this is the fallback when only one of the two 4K panels
+          # links up (e.g. dock MST partial failure). Must come after
+          # the dual-4k profiles so the exact-serial dual match wins
+          # when both panels are present. Logical size at 1.5 is
+          # 2560x1440; laptop centered below at x = (2560 - 1920/1.25) / 2 = 512.
+          profile.name = "single-4k";
+          profile.outputs = [
+            {
+              criteria = "Dell Inc. DELL U2718Q *";
+              mode = "3840x2160@60Hz";
+              scale = 1.5;
+              position = "0,0";
+            }
+            {
+              criteria = "eDP-1";
+              mode = "1920x1200@59.95Hz";
+              scale = 1.25;
+              position = "512,1440";
+            }
+          ];
+        }
+        {
+          profile.name = "single-4k-clamshell";
+          profile.outputs = [
+            {
+              criteria = "Dell Inc. DELL U2718Q *";
+              mode = "3840x2160@60Hz";
+              scale = 1.5;
+              position = "0,0";
             }
           ];
         }
