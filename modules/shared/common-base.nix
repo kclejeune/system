@@ -30,7 +30,6 @@ in
       };
 
       user = {
-        description = "Kennan LeJeune";
         home = "${if pkgs.stdenvNoCC.isDarwin then "/Users" else "/home"}/${config.user.name}";
         shell = pkgs.zsh;
       };
@@ -45,6 +44,10 @@ in
       };
 
       environment = {
+        variables = {
+          EDITOR = "nvim";
+          VISUAL = "nvim";
+        };
         systemPackages = with pkgs; [
           neovim
           coreutils-full
@@ -68,6 +71,5 @@ in
           fish
         ];
       };
-
     };
 }

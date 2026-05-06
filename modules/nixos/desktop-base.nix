@@ -122,12 +122,15 @@ in
 
       hardware.enableAllFirmware = true;
 
+      # Mesa + Vulkan ICDs for Intel/AMD; Nvidia hosts layer `hardware.nvidia.*`
+      # on top which adds the proprietary ICD. 32-bit is needed for Steam,
+      # Wine, and a handful of Electron apps that load 32-bit GL libs.
+      hardware.graphics = {
+        enable = true;
+        enable32Bit = true;
+      };
+
       networking.networkmanager.enable = true;
-      networking.firewall.trustedInterfaces = [
-        "CloudflareWARP"
-        "wt0"
-        "docker0"
-      ];
 
       services.pcscd.enable = true;
 
@@ -159,16 +162,6 @@ in
           }
         });
       '';
-
-      # Passwordless sudo via SSH agent forwarding. Both flags are required:
-      # the first activates the PAM rssh module; the second (a bare bool, not
-      # an attrset) wires it into sudo.
-      security.pam.rssh.enable = true;
-      security.pam.services.sudo.rssh = true;
-      services.openssh.settings.StreamLocalBindUnlink = true;
-
-      programs.nano.enable = false;
-      environment.variables.EDITOR = "nvim";
 
       services.logind.settings.Login = {
         HandlePowerKey = "suspend";
@@ -286,6 +279,7 @@ in
         pkgs.signal-desktop
         pkgs.slack
         pkgs.vscode
+        pkgs.vulkan-tools
         pkgs.yubikey-manager
         pkgs.yubioath-flutter
         pkgs.zed-editor

@@ -92,22 +92,18 @@ _: {
         '';
       };
 
-      # Harden SSH for a public-facing server
+      # Extra SSH hardening on top of the defaults from nixos/default.nix:
+      # a public-facing server shouldn't act as a jump host, and enabling
+      # agent forwarding is explicit (desktops leave it at the upstream
+      # default).
       services.openssh.settings = {
-        PermitRootLogin = "no";
-        PasswordAuthentication = false;
         AllowAgentForwarding = true;
         AllowTcpForwarding = false;
-        MaxAuthTries = 3;
-        LoginGraceTime = 30;
       };
 
-      # Use nftables over iptables
-      networking.nftables.enable = true;
-
-      # Firewall (SSH only by default; consumers should open additional ports)
+      # Firewall (SSH only by default; consumers should open additional ports).
+      # enable / nftables backend / pingLimit come from nixos/default.nix.
       networking.firewall = {
-        enable = true;
         allowedTCPPorts = [ 22 ];
         # Log dropped packets for audit visibility
         logRefusedConnections = true;
@@ -146,18 +142,6 @@ _: {
             ct state new log prefix "nftables-new-conn: " flags all
           }
         '';
-      };
-
-      # Kernel hardening
-      boot.kernel.sysctl = {
-        "net.ipv4.conf.all.rp_filter" = 1;
-        "net.ipv4.conf.default.rp_filter" = 1;
-        "net.ipv4.conf.all.send_redirects" = 0;
-        "net.ipv4.conf.default.send_redirects" = 0;
-        "net.ipv4.conf.all.accept_redirects" = 0;
-        "net.ipv4.conf.default.accept_redirects" = 0;
-        "net.ipv6.conf.all.accept_redirects" = 0;
-        "net.ipv6.conf.default.accept_redirects" = 0;
       };
 
       time.timeZone = "UTC";

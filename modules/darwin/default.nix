@@ -17,6 +17,7 @@ in
       imports = [
         flakeCfg.flake.darwinModules.common-base
         flakeCfg.flake.darwinModules.primary-user
+        flakeCfg.flake.darwinModules.identity
         flakeCfg.flake.darwinModules.nixpkgs-wiring
         flakeCfg.flake.darwinModules.brew
         flakeCfg.flake.darwinModules.preferences

@@ -21,7 +21,8 @@ in
       programs.git = {
         enable = true;
         settings = {
-          user.name = "Kennan LeJeune";
+          # user.name / user.email come from the identity module — see
+          # modules/shared/identity.nix + profiles/personal.nix.
           credential.helper =
             if pkgs.stdenvNoCC.isDarwin then "osxkeychain" else "cache --timeout=1000000000";
           commit.verbose = true;

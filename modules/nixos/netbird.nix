@@ -1,5 +1,11 @@
 _: {
-  flake.nixosModules.netbird = _: {
-    services.netbird.enable = true;
-  };
+  flake.nixosModules.netbird =
+    { config, lib, ... }:
+    {
+      services.netbird.enable = true;
+
+      networking.firewall.trustedInterfaces = lib.mapAttrsToList (
+        _: client: client.interface
+      ) config.services.netbird.clients;
+    };
 }

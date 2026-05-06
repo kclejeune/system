@@ -46,9 +46,6 @@
     git-hooks.inputs.nixpkgs.follows = "nixpkgs";
     git-hooks.inputs.flake-compat.follows = "flake-compat";
 
-    nixGL.url = "github:nix-community/nixGL";
-    nixGL.inputs.nixpkgs.follows = "nixpkgs";
-
     darwin.url = "github:lnl7/nix-darwin";
     darwin.inputs.nixpkgs.follows = "nixpkgs";
 

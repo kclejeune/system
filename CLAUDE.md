@@ -176,6 +176,24 @@ still use the `user@system` form because they fan out across multiple systems.
   imports so each reusable module is pulled in exactly once per host — e.g.
   `desktop` imports `desktop-base`, but `gnome` and `hyprland` do NOT (they
   assume `desktop` already enrolled it).
+- **Specialisations must tag themselves for `nh`.** `nh` picks the right
+  activation script by reading `/etc/specialisation` (nixos) or
+  `~/.local/share/home-manager/specialisation` (home-manager). Every
+  specialisation — including ones merged in from upstream modules like
+  `nixos-hardware`'s `battery-saver` — must write its own name to that
+  path, or `nh switch` will silently activate the default config instead
+  of the running spec. The value must match the attr name exactly.
+  ```nix
+  specialisation.dgpu.configuration = {
+    environment.etc."specialisation".text = "dgpu";        # nixos
+    # …
+  };
+  # home-manager equivalent inside an HM config:
+  specialisation.foo.configuration = {
+    xdg.dataFile."home-manager/specialisation".text = "foo";
+    # …
+  };
+  ```
 
 ## Commands
 

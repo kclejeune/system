@@ -153,6 +153,40 @@ _: {
       # Offer a "battery-saver" grub entry that boots with the dGPU fully disabled.
       hardware.nvidia.primeBatterySaverSpecialisation = true;
 
+      # nh reads /etc/specialisation to know which spec's activation script
+      # to run on rebuild. Every specialisation must write its own name here
+      # — the value must match the attr name exactly, or nh will fall back
+      # to the default config.
+      specialisation.battery-saver.configuration.environment.etc."specialisation".text = "battery-saver";
+
+      # `dgpu` specialisation: boot entry that forces PRIME sync mode so the
+      # NVIDIA GPU is always on and drives all rendering. Intended for docked
+      # / AC-powered use: the 5570's HDMI + Thunderbolt outputs are wired to
+      # the NVIDIA GPU, and sync mode is the only path that drives them
+      # without render offload quirks. Trade-off: several watts of idle draw
+      # — do not use on battery.
+      #
+      # `forceFullCompositionPipeline` eliminates tearing on external
+      # displays at the cost of a small GPU overhead; worth it for the
+      # presentation-quality path.
+      specialisation.dgpu.configuration = {
+        system.nixos.tags = [ "dgpu" ];
+        environment.etc."specialisation".text = "dgpu";
+
+        hardware.nvidia = {
+          prime.sync.enable = lib.mkForce true;
+          prime.offload.enable = lib.mkForce false;
+          prime.offload.enableOffloadCmd = lib.mkForce false;
+
+          # Finegrained suspend is mutually exclusive with sync mode; keep
+          # the general suspend/resume hooks so resume-from-s2idle still
+          # restores the framebuffer cleanly.
+          powerManagement.finegrained = lib.mkForce false;
+
+          forceFullCompositionPipeline = true;
+        };
+      };
+
       nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
     };
 }

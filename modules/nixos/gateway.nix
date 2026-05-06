@@ -65,38 +65,33 @@ _: {
         neededForBoot = true;
       };
 
-      # Open additional ports beyond the SSH default from hetzner.nix
+      # Open additional ports beyond the SSH default from hetzner.nix.
+      # ICMPv4 echo-request rate-limiting comes from the base firewall's
+      # pingLimit; the base nftables input chain also drops ct-invalid and
+      # accepts the standard ICMPv6 types, so the only custom rules left
+      # here are the TCP blackholes, SYN-flood guard, and ICMPv6 rate-limit
+      # (pingLimit doesn't cover ICMPv6).
       networking.firewall = {
         allowedTCPPorts = [
           80 # HTTP
           443 # HTTPS
         ];
         extraInputRules = ''
-          ct state invalid drop
           tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
           tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
-          ip protocol icmp limit rate 10/second burst 20 packets accept
-          ip protocol icmp drop
-          icmpv6 type { nd-neighbor-solicit, nd-neighbor-advert, nd-router-solicit, nd-router-advert } accept
           ip6 nexthdr icmpv6 limit rate 10/second burst 20 packets accept
           ip6 nexthdr icmpv6 drop
         '';
       };
 
-      # User account
-      users.users = {
-        root.openssh.authorizedKeys.keys = [
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM48VQYrCQErK9QdC/mZ61Yzjh/4xKpgZ2WU5G19FpBG"
-        ];
-        "${config.user.name}" = {
-          isNormalUser = true;
-          extraGroups = [
-            "wheel"
-          ];
-          openssh.authorizedKeys.keys = [
-            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM48VQYrCQErK9QdC/mZ61Yzjh/4xKpgZ2WU5G19FpBG"
-          ];
-        };
+      # User account. SSH keys come from the identity module (set by
+      # profile-personal); gateway opts into installing them on root too as
+      # a rescue fallback since it's the only public-facing host.
+      identity.enableRootSshKeys = true;
+
+      users.users.${config.user.name} = {
+        isNormalUser = true;
+        extraGroups = [ "wheel" ];
       };
 
       # sops-nix - decrypts using the SSH host key via ssh-to-age
@@ -712,12 +707,6 @@ _: {
           proxyWebsockets = true;
         };
       };
-
-      # Passwordless sudo via SSH agent forwarding. Both flags are required:
-      # the first activates the PAM rssh module; the second (a bare bool, not
-      # an attrset) wires it into sudo.
-      security.pam.rssh.enable = true;
-      security.pam.services.sudo.rssh = true;
 
       # Gateway acts as a Tailscale subnet router / exit node, not just a client.
       services.tailscale.useRoutingFeatures = lib.mkForce "both";

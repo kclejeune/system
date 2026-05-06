@@ -276,8 +276,6 @@ in
         wireplumber.enable = true;
       };
 
-      hardware.graphics.enable = true;
-
       security.polkit.enable = true;
 
       hardware.bluetooth.enable = true;
