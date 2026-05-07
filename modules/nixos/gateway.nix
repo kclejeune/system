@@ -41,8 +41,13 @@ _: {
       netbirdMetricsContainerPort = 9090;
       netbirdMetricsHostPort = 9192;
       netbirdHealthPort = 9000; # container-internal only, not host-mapped
-      netbirdServerStateDir = "/var/lib/netbird-server";
-      netbirdServerConfigPath = "${netbirdServerStateDir}/config.yaml";
+      # Reuse the path the old services.netbird.server.management module
+      # wrote to (stateDir/data) so the existing SQLite store.db is picked
+      # up by the combined container — peers, setup keys, network routes,
+      # access policies and DNS config all carry over. Note: the IdP swap
+      # from Authelia → Dex still re-keys user accounts by their new `sub`
+      # claim, so existing user identities orphan and have to re-register.
+      netbirdServerDataDir = "/var/lib/netbird-mgmt/data";
       nginxInternalSSLPort = 4443;
 
       netbirdServerConfig = {
@@ -790,17 +795,21 @@ _: {
       # netbirdServerVersion / netbirdDashboardVersion let-bindings up top.
 
       # config.yaml — sops template substitutes encryptionKey + authSecret
-      # placeholders at activation. The result is bind-mounted read-only
+      # placeholders at activation. Lives in the default sops rendered
+      # location (/run/secrets/rendered/...) and is bind-mounted read-only
       # into the netbird-server container at /etc/netbird/config.yaml.
       sops.templates."netbird-server-config.yaml" = {
-        path = netbirdServerConfigPath;
         mode = "0640";
         content = builtins.toJSON netbirdServerConfig;
       };
 
+      # Ensure the data dir exists for fresh installs. On hosts upgrading
+      # from services.netbird.server, the dir already exists with the old
+      # SQLite database in it and tmpfiles' `d` rule leaves contents
+      # untouched.
       systemd.tmpfiles.rules = [
-        "d ${netbirdServerStateDir} 0750 root root -"
-        "d ${netbirdServerStateDir}/data 0750 root root -"
+        "d /var/lib/netbird-mgmt 0750 root root -"
+        "d ${netbirdServerDataDir} 0750 root root -"
       ];
 
       virtualisation.oci-containers.containers.netbird-server = {
@@ -810,8 +819,8 @@ _: {
           "/etc/netbird/config.yaml"
         ];
         volumes = [
-          "${netbirdServerConfigPath}:/etc/netbird/config.yaml:ro"
-          "${netbirdServerStateDir}/data:/var/lib/netbird"
+          "${config.sops.templates."netbird-server-config.yaml".path}:/etc/netbird/config.yaml:ro"
+          "${netbirdServerDataDir}:/var/lib/netbird"
         ];
         ports = [
           "127.0.0.1:${toString netbirdServerPort}:80"
