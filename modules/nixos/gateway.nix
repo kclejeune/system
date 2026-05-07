@@ -23,10 +23,60 @@ _: {
       netbirdDomain = "netbird.${domain}";
       netbirdProxyDomain = "kclj.dev";
       netbirdProxyPort = 8443;
-      netbirdMgmtPort = 8011;
-      netbirdMgmtMetricsPort = 9190;
-      netbirdSignalMetricsPort = 9191;
+      # netbird-server combined container (post-v0.65 architecture). Bumps
+      # against https://github.com/netbirdio/netbird/releases /
+      # https://github.com/netbirdio/dashboard/releases. The combined image
+      # bundles management + signal + relay + STUN; auth is the embedded Dex
+      # IdP on /oauth2 (Authelia is NOT used for netbird sign-in here —
+      # upstream's combined image hardcodes aud=netbird-dashboard / netbird-cli
+      # and never reads external-IdP fields from config.yaml).
+      netbirdServerVersion = "0.70.4";
+      netbirdDashboardVersion = "2.36.0";
+      netbirdServerPort = 8081; # host loopback ↔ container :80 (HTTP/gRPC/relay)
+      netbirdDashboardHttpPort = 8080; # host loopback ↔ dashboard container :80
+      netbirdStunPort = 3478; # UDP, must be reachable from peers
+      # Container-internal metrics port (default upstream value). Host
+      # mapping uses netbirdMetricsHostPort to avoid collision with the
+      # Prometheus server, which already owns 127.0.0.1:9090.
+      netbirdMetricsContainerPort = 9090;
+      netbirdMetricsHostPort = 9192;
+      netbirdHealthPort = 9000; # container-internal only, not host-mapped
+      netbirdServerStateDir = "/var/lib/netbird-server";
+      netbirdServerConfigPath = "${netbirdServerStateDir}/config.yaml";
       nginxInternalSSLPort = 4443;
+
+      netbirdServerConfig = {
+        server = {
+          listenAddress = ":80";
+          exposedAddress = "https://${netbirdDomain}:443";
+          stunPorts = [ netbirdStunPort ];
+          metricsPort = netbirdMetricsContainerPort;
+          healthcheckAddress = ":${toString netbirdHealthPort}";
+          logLevel = "info";
+          logFile = "console";
+          authSecret = config.sops.placeholder."netbird/auth_secret";
+          dataDir = "/var/lib/netbird";
+          disableAnonymousMetrics = true;
+          auth = {
+            issuer = "https://${netbirdDomain}/oauth2";
+            localAuthDisabled = false;
+            signKeyRefreshEnabled = true;
+            dashboardRedirectURIs = [
+              "https://${netbirdDomain}/nb-auth"
+              "https://${netbirdDomain}/nb-silent-auth"
+            ];
+            cliRedirectURIs = [ "http://localhost:53000/" ];
+          };
+          store = {
+            engine = "sqlite";
+            encryptionKey = config.sops.placeholder."netbird/datastore_encryption_key";
+          };
+          reverseProxy = {
+            trustedHTTPProxiesCount = 1; # nginx in front
+            trustedPeers = [ "0.0.0.0/0" ];
+          };
+        };
+      };
 
       mkHttpsVhost = extra: {
         forceSSL = true;
@@ -76,8 +126,16 @@ _: {
           80 # HTTP
           443 # HTTPS
         ];
+        # STUN: peers connect to the embedded STUN server in netbird-server
+        # for NAT detection. UDP-only — cannot be proxied via nginx.
+        allowedUDPPorts = [ netbirdStunPort ];
+        # Defense-in-depth: the netbird-server / dashboard / metrics ports all
+        # bind 127.0.0.1, so external traffic to them never reaches the
+        # process. Drop rule documents intent and protects against accidental
+        # 0.0.0.0 binds. nginxInternalSSLPort is the HTTPS-on-loopback that
+        # the stream block fronts.
         extraInputRules = ''
-          tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
+          tcp dport { ${toString netbirdServerPort}, ${toString netbirdDashboardHttpPort}, ${toString netbirdMetricsHostPort}, ${toString nginxInternalSSLPort} } drop
           tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
           ip6 nexthdr icmpv6 limit rate 10/second burst 20 packets accept
           ip6 nexthdr icmpv6 drop
@@ -133,9 +191,11 @@ _: {
             owner = "grafana";
           };
           "netbird/datastore_encryption_key" = { };
-          "netbird/turn_password" = {
-            owner = "turnserver";
-          };
+          # Shared secret used by netbird-server's built-in relay to mint
+          # client credentials. Generate with `openssl rand -base64 32` and
+          # add to secrets/gateway.yaml under netbird/auth_secret before
+          # deploying.
+          "netbird/auth_secret" = { };
           "netbird/proxy_token" = { };
           "proxmox/oidc_client_secret" = { };
         };
@@ -223,12 +283,6 @@ _: {
               "name"
               "preferred_username"
             ];
-            claims_policies.netbird.id_token = [
-              "email"
-              "name"
-              "preferred_username"
-              "groups"
-            ];
             clients = [
               {
                 client_id = "proxmox";
@@ -256,31 +310,6 @@ _: {
                 token_endpoint_auth_method = "client_secret_basic";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
-              }
-              {
-                client_id = "netbird";
-                client_name = "Netbird";
-                public = true;
-                authorization_policy = "one_factor";
-                consent_mode = "implicit";
-                claims_policy = "netbird";
-                audience = [ "netbird" ];
-                response_types = [ "code" ];
-                redirect_uris = [
-                  "http://localhost:53000"
-                  "https://${netbirdDomain}/auth"
-                  "https://${netbirdDomain}/silent-auth"
-                  "https://${netbirdDomain}/api/reverse-proxy/callback"
-                ];
-                scopes = [
-                  "openid"
-                  "profile"
-                  "email"
-                  "groups"
-                ];
-                require_pkce = true;
-                pkce_challenge_method = "S256";
-                token_endpoint_auth_method = "none";
               }
               {
                 client_id = "cloudflare-access";
@@ -628,8 +657,7 @@ _: {
           }
           (mkScrapeConfig "node" "127.0.0.1:${toString config.services.prometheus.exporters.node.port}")
           (mkScrapeConfig "cloudflared" "127.0.0.1:2000")
-          (mkScrapeConfig "netbird-management" "127.0.0.1:${toString netbirdMgmtMetricsPort}")
-          (mkScrapeConfig "netbird-signal" "127.0.0.1:${toString netbirdSignalMetricsPort}")
+          (mkScrapeConfig "netbird-server" "127.0.0.1:${toString netbirdMetricsHostPort}")
         ];
       };
 
@@ -711,108 +739,134 @@ _: {
       # Gateway acts as a Tailscale subnet router / exit node, not just a client.
       services.tailscale.useRoutingFeatures = lib.mkForce "both";
 
-      # Netbird - self-hosted control server (management + signal + dashboard + TURN)
-      services.netbird.server = {
-        enable = true;
-        domain = netbirdDomain;
-        enableNginx = true;
+      # Netbird control plane — combined-container architecture (post-v0.65).
+      # The netbirdio/netbird-server image bundles management + signal + relay
+      # + STUN; the netbirdio/dashboard image is the SPA. Auth uses the
+      # embedded Dex IdP at /oauth2 (upstream's combined image hardcodes
+      # aud=netbird-dashboard / netbird-cli, so external OIDC isn't supported
+      # by the YAML schema). Bumping the image versions is now the
+      # netbirdServerVersion / netbirdDashboardVersion let-bindings up top.
 
-        coturn = {
-          enable = true;
-          useAcmeCertificates = true;
-          passwordFile = config.sops.secrets."netbird/turn_password".path;
-        };
-
-        management = {
-          oidcConfigEndpoint = "https://${authDomain}/.well-known/openid-configuration";
-          metricsPort = netbirdMgmtMetricsPort;
-          settings = {
-            DataStoreEncryptionKey._secret = config.sops.secrets."netbird/datastore_encryption_key".path;
-            TURNConfig.Secret._secret = config.sops.secrets."netbird/turn_password".path;
-            HttpConfig = {
-              AuthIssuer = "https://${authDomain}";
-              AuthAudience = "netbird";
-              AuthClientID = "netbird";
-              AuthCallbackURL = "https://${netbirdDomain}/api/reverse-proxy/callback";
-            };
-            PKCEAuthorizationFlow.ProviderConfig = {
-              Audience = "netbird";
-              ClientID = "netbird";
-              AuthorizationEndpoint = "https://${authDomain}/api/oidc/authorization";
-              TokenEndpoint = "https://${authDomain}/api/oidc/token";
-              Scope = "openid profile email groups";
-              RedirectURLs = [ "http://localhost:53000" ];
-              UseIDToken = true;
-            };
-          };
-        };
-
-        signal.metricsPort = netbirdSignalMetricsPort;
-
-        dashboard = {
-          enableNginx = true;
-          settings = {
-            AUTH_AUTHORITY = "https://${authDomain}";
-            AUTH_CLIENT_ID = "netbird";
-            AUTH_AUDIENCE = "netbird";
-            AUTH_SUPPORTED_SCOPES = "openid profile email groups";
-            AUTH_REDIRECT_URI = "/auth";
-            AUTH_SILENT_REDIRECT_URI = "/silent-auth";
-            USE_AUTH0 = "";
-          };
-        };
+      # config.yaml — sops template substitutes encryptionKey + authSecret
+      # placeholders at activation. The result is bind-mounted read-only
+      # into the netbird-server container at /etc/netbird/config.yaml.
+      sops.templates."netbird-server-config.yaml" = {
+        path = netbirdServerConfigPath;
+        mode = "0640";
+        content = builtins.toJSON netbirdServerConfig;
       };
 
-      # Ensure netbird-management starts after authelia (OIDC discovery dependency)
-      systemd.services.netbird-management = {
+      systemd.tmpfiles.rules = [
+        "d ${netbirdServerStateDir} 0750 root root -"
+        "d ${netbirdServerStateDir}/data 0750 root root -"
+      ];
+
+      virtualisation.oci-containers.containers.netbird-server = {
+        image = "netbirdio/netbird-server:${netbirdServerVersion}";
+        cmd = [
+          "--config"
+          "/etc/netbird/config.yaml"
+        ];
+        volumes = [
+          "${netbirdServerConfigPath}:/etc/netbird/config.yaml:ro"
+          "${netbirdServerStateDir}/data:/var/lib/netbird"
+        ];
+        ports = [
+          "127.0.0.1:${toString netbirdServerPort}:80"
+          "127.0.0.1:${toString netbirdMetricsHostPort}:${toString netbirdMetricsContainerPort}"
+          "0.0.0.0:${toString netbirdStunPort}:${toString netbirdStunPort}/udp"
+        ];
+        extraOptions = [ "--restart=unless-stopped" ];
+      };
+
+      virtualisation.oci-containers.containers.netbird-dashboard = {
+        image = "netbirdio/dashboard:${netbirdDashboardVersion}";
+        # The dashboard image's entrypoint templates these env vars into the
+        # bundled nginx config + JS bundle at startup. AUTH_* points at the
+        # embedded Dex (served by netbird-server at /oauth2). LETSENCRYPT_DOMAIN=none
+        # keeps the bundled nginx HTTP-only; NixOS nginx terminates TLS upstream.
+        environment = {
+          NETBIRD_MGMT_API_ENDPOINT = "https://${netbirdDomain}";
+          NETBIRD_MGMT_GRPC_API_ENDPOINT = "https://${netbirdDomain}";
+          AUTH_AUDIENCE = "netbird-dashboard";
+          AUTH_CLIENT_ID = "netbird-dashboard";
+          AUTH_CLIENT_SECRET = "";
+          AUTH_AUTHORITY = "https://${netbirdDomain}/oauth2";
+          USE_AUTH0 = "false";
+          AUTH_SUPPORTED_SCOPES = "openid profile email groups";
+          AUTH_REDIRECT_URI = "/nb-auth";
+          AUTH_SILENT_REDIRECT_URI = "/nb-silent-auth";
+          NGINX_SSL_PORT = "443";
+          LETSENCRYPT_DOMAIN = "none";
+        };
+        ports = [
+          "127.0.0.1:${toString netbirdDashboardHttpPort}:80"
+        ];
+        extraOptions = [ "--restart=unless-stopped" ];
+      };
+
+      # netbird-server needs the sops-rendered config.yaml present before it
+      # can start. The oci-containers backend creates units named
+      # ${backend}-${name}.service.
+      systemd.services."${config.virtualisation.oci-containers.backend}-netbird-server" = {
         after = [
-          "authelia-${autheliaInstance}.service"
+          "sops-install-secrets.service"
           "systemd-resolved.service"
           "network-online.target"
         ];
-        wants = [
-          "authelia-${autheliaInstance}.service"
-          "network-online.target"
-        ];
+        wants = [ "network-online.target" ];
+        requires = [ "sops-install-secrets.service" ];
         startLimitIntervalSec = 60;
         startLimitBurst = 10;
         serviceConfig.RestartSec = "5s";
       };
 
-      # Restrict coturn relay port range and block SSRF to internal networks
-      services.coturn = {
-        min-port = 49152;
-        max-port = 49263;
-        extraConfig = ''
-          denied-peer-ip=0.0.0.0-0.255.255.255
-          denied-peer-ip=10.0.0.0-10.255.255.255
-          denied-peer-ip=127.0.0.0-127.255.255.255
-          denied-peer-ip=169.254.0.0-169.254.255.255
-          denied-peer-ip=172.16.0.0-172.31.255.255
-          denied-peer-ip=192.168.0.0-192.168.255.255
-          no-loopback-peers
-          no-multicast-peers
-          stale-nonce=600
-          user-quota=100
-          total-quota=500
-          max-bps=50000000
-          max-allocate-timeout=300
-        '';
-      };
-
-      # TLS/HTTP3 and OIDC callback fallbacks for the netbird dashboard SPA
-      # Rate limiting on the HTTP layer is unreliable here because the stream
-      # block proxies all traffic from 127.0.0.1 — the real client IP is lost.
-      # DDoS protection is handled at the stream layer (limit_conn stream_per_ip)
-      # and nftables (SYN rate limiting).
-      services.nginx.virtualHosts.${netbirdDomain} = mkHttpsVhost "" // {
-        locations."/auth" = {
-          tryFiles = "$uri /index.html";
+      # netbird.${domain} — TLS termination + reverse-proxy to both containers.
+      # Path layout per
+      # https://docs.netbird.io/selfhosted/external-reverse-proxy:
+      #   /signalexchange.SignalExchange/* → server (gRPC, h2c)
+      #   /management.ManagementService/*  → server (gRPC, h2c)
+      #   /management.ProxyService/*       → server (gRPC, h2c)
+      #   /api/*, /oauth2/*                → server (HTTP)
+      #   /relay, /ws-proxy/*              → server (WebSocket)
+      #   /*                               → dashboard (HTTP catch-all)
+      #
+      # Rate-limiting on this vhost is unreliable when traffic arrives via
+      # the *.kclj.dev SNI-passthrough flow (real client IP is lost in the
+      # stream block); DDoS protection lives at the stream layer
+      # (limit_conn stream_per_ip) + nftables (SYN rate limiting).
+      services.nginx.virtualHosts.${netbirdDomain} =
+        let
+          grpcLocation = ''
+            client_body_timeout 1d;
+            grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            grpc_pass grpc://127.0.0.1:${toString netbirdServerPort};
+            grpc_read_timeout 1d;
+            grpc_send_timeout 1d;
+            grpc_socket_keepalive on;
+          '';
+        in
+        mkHttpsVhost "" // {
+          locations = {
+            "/" = {
+              proxyPass = "http://127.0.0.1:${toString netbirdDashboardHttpPort}";
+              proxyWebsockets = true;
+            };
+            "/api/".proxyPass = "http://127.0.0.1:${toString netbirdServerPort}";
+            "/oauth2/".proxyPass = "http://127.0.0.1:${toString netbirdServerPort}";
+            "/relay" = {
+              proxyPass = "http://127.0.0.1:${toString netbirdServerPort}";
+              proxyWebsockets = true;
+            };
+            "/ws-proxy/" = {
+              proxyPass = "http://127.0.0.1:${toString netbirdServerPort}";
+              proxyWebsockets = true;
+            };
+            "/management.ManagementService/".extraConfig = grpcLocation;
+            "/management.ProxyService/".extraConfig = grpcLocation;
+            "/signalexchange.SignalExchange/".extraConfig = grpcLocation;
+          };
         };
-        locations."/silent-auth" = {
-          tryFiles = "$uri /index.html";
-        };
-      };
 
       # Netbird reverse proxy — runs as OCI container, handles its own TLS
       virtualisation.oci-containers.containers.netbird-proxy = {
@@ -834,7 +888,7 @@ _: {
       sops.templates."netbird-proxy.env".content = ''
         NB_PROXY_TOKEN=${config.sops.placeholder."netbird/proxy_token"}
         NB_PROXY_DOMAIN=${netbirdProxyDomain}
-        NB_PROXY_MANAGEMENT_ADDRESS=http://127.0.0.1:${toString netbirdMgmtPort}
+        NB_PROXY_MANAGEMENT_ADDRESS=http://127.0.0.1:${toString netbirdServerPort}
         NB_PROXY_ADDRESS=127.0.0.1:${toString netbirdProxyPort}
         NB_PROXY_ACME_CERTIFICATES=true
         NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
