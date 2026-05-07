@@ -283,6 +283,12 @@ _: {
               "name"
               "preferred_username"
             ];
+            claims_policies.netbird.id_token = [
+              "email"
+              "name"
+              "preferred_username"
+              "groups"
+            ];
             clients = [
               {
                 client_id = "proxmox";
@@ -310,6 +316,42 @@ _: {
                 token_endpoint_auth_method = "client_secret_basic";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
+              }
+              {
+                # Preserved for future use as a federated upstream OIDC
+                # connector in netbird's embedded Dex IdP. Activated by
+                # adding "Generic OIDC" in the dashboard's Settings →
+                # Identity Providers UI — point it at https://${authDomain}
+                # with the client_id/client_secret used here. The connector
+                # callback Dex registers is /oauth2/callback/<connector-id>;
+                # the slug below assumes "authelia" but the dashboard
+                # surfaces the exact URL after saving.
+                #
+                # NOTE: Dex requires a confidential client (with secret) for
+                # upstream OIDC connectors. To use this, flip `public` to
+                # false and replace `client_secret` with a pbkdf2 hash
+                # (`authelia crypto hash generate pbkdf2 --variant sha512`)
+                # of a value stored in sops; until then this client remains
+                # registered but unused.
+                client_id = "netbird";
+                client_name = "Netbird";
+                public = true;
+                authorization_policy = "one_factor";
+                consent_mode = "implicit";
+                claims_policy = "netbird";
+                response_types = [ "code" ];
+                redirect_uris = [
+                  "https://${netbirdDomain}/oauth2/callback/authelia"
+                ];
+                scopes = [
+                  "openid"
+                  "profile"
+                  "email"
+                  "groups"
+                ];
+                require_pkce = true;
+                pkce_challenge_method = "S256";
+                token_endpoint_auth_method = "none";
               }
               {
                 client_id = "cloudflare-access";
