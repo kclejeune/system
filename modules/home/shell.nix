@@ -106,6 +106,8 @@ _: {
         };
         initContent = ''
           unset RPS1
+          setopt CHASE_LINKS
+          setopt CHASE_DOTS
           ${wtInstall "zsh"}
           ${slinkyInstall "zsh"}
         '';
