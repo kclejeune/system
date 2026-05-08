@@ -7,25 +7,25 @@ Linux machines.
 
 ## Structure
 
-The flake follows the **dendritic pattern**: [`flake.nix`](./flake.nix) is a
-tiny entry point that hands a [`flake-parts`](https://flake.parts) orchestrator
-the recursively-discovered tree under [`./modules`](./modules) via
-[`vic/import-tree`](https://github.com/vic/import-tree). Every `.nix` file
-under `./modules` is a flake-parts module that self-registers a piece of the
-flake output: a reusable module, a host configuration, an overlay, a devShell,
-etc. There is no central file that imports everything.
+The flake follows the **dendritic pattern** on top of
+[`flake-parts`](https://flake.parts). [`flake.nix`](./flake.nix) holds the
+inputs, the concrete host outputs (`nixosConfigurations`,
+`darwinConfigurations`, `homeConfigurations`), and the `perSystem` wiring
+for overlays, devShell, treefmt, pre-commit, and checks.
+[`vic/import-tree`](https://github.com/vic/import-tree) recursively pulls in
+every `.nix` file under [`./modules`](./modules); each one self-registers as
+a **reusable module body** (`flake.<class>Modules.<name>`). Hosts then
+compose those modules by name.
 
 ```
 modules/
-├── imports.nix, systems.nix, options.nix    # flake-parts plumbing
-├── nixpkgs.nix, overlays.nix, packages.nix  # per-system package wiring
-├── devshell.nix, treefmt.nix, pre-commit.nix
-├── hosts/      # one file per concrete config output (phil, wally, gateway, …)
-├── shared/     # cross-class option modules (primary-user, nixpkgs-wiring)
-├── nixos/      # flake.nixosModules.<name>
-├── darwin/     # flake.darwinModules.<name>
-├── home/       # flake.homeModules.<name>
-└── profiles/   # personal/work profiles, declared across all three classes
+├── _lib.nix   # mkAspect helper (underscore-prefixed, skipped by import-tree)
+├── shared/    # cross-class option modules + wiring
+│               (primary-user, common-base, nixpkgs-wiring, identity, fonts)
+├── nixos/     # flake.nixosModules.<name>
+├── darwin/    # flake.darwinModules.<name>
+├── home/      # flake.homeModules.<name>  (includes assets/ for non-Nix files)
+└── profiles/  # identity profiles registered across all three classes
 ```
 
 Each module file inlines its body directly — a file like `modules/nixos/hyprland.nix`
@@ -54,17 +54,19 @@ nix-darwin. All modules live in [`modules/home/`](./modules/home). For each
 NixOS/darwin host they are pulled in via the flake-parts `hm` alias (see
 [`modules/shared/primary-user.nix`](./modules/shared/primary-user.nix)),
 which forwards `config.hm.*` to `home-manager.users.${config.user.name}.*`.
-The same module tree is also exposed as
-[`homeConfigurations`](./modules/hosts/home-standalone.nix) so it is fully
-usable as a standalone configuration on any Linux system via the
+The same module tree is also exposed as `homeConfigurations` in
+[`flake.nix`](./flake.nix) (fanned out across `x86_64-linux`,
+`aarch64-linux`, and `aarch64-darwin`) so it is fully usable as a
+standalone configuration on any Linux or macOS system via the
 `home-manager` CLI.
 
 ### User profiles
 
 User "profiles" live in [`modules/profiles`](./modules/profiles); these
 modules configure contextual, identity-specific settings such as SSL
-certificates or work-vs-personal email addresses. Each profile is declared
-across all three module classes in a single file (`personal.nix`, `work.nix`).
+certificates or email addresses. Each profile is declared across all three
+module classes in a single file via the `mkAspect` helper; currently only
+`personal.nix` exists.
 
 ## Installing a configuration
 

@@ -7,29 +7,31 @@ conventions.
 
 ## Top-level structure
 
-- `flake.nix` — inputs, `nixConfig`, and a one-line `outputs` that hands
-  everything under `./modules` to `flake-parts.lib.mkFlake` via
-  `import-tree`. Do **not** add logic here; add a new file under `./modules/`
-  instead.
+- `flake.nix` — inputs, `nixConfig`, the flake-parts `mkFlake` call, all
+  concrete config outputs (`nixosConfigurations`, `darwinConfigurations`,
+  `homeConfigurations`), `perSystem` wiring (overlays, devShell, treefmt,
+  pre-commit, checks), the `systems` list, and the inline declaration of
+  the `flake.darwinModules` option. Reusable **module bodies** live under
+  `./modules/`; host definitions and per-system plumbing live here.
 - `modules/` — the dendritic root. Every `.nix` file here is a flake-parts
-  module. `import-tree` discovers them recursively, so new files are
-  auto-registered.
+  module pulled in by `(inputs.import-tree ./modules)`. `import-tree`
+  discovers them recursively, so new files are auto-registered.
 - `modules/{nixos,darwin,home}/` — reusable class-specific modules. Each
   file registers `flake.<class>Modules.<name>` with the full body inlined.
 - `modules/shared/` — option modules and wiring shared across classes
-  (`primary-user`, `nixpkgs-wiring`, `common-base`).
+  (`primary-user`, `nixpkgs-wiring`, `common-base`, `identity`, `fonts`).
 - `modules/_lib.nix` — `mkAspect` helper for declaring multi-class
   modules. Underscore-prefixed so `import-tree` skips it; imported
   explicitly via `import ../_lib.nix`.
-- `modules/profiles/` — per-identity modules (personal, work) that declare
-  `flake.{nixos,darwin,home}Modules.profile-<name>` in one file.
-- `modules/hosts/` — one file per concrete top-level config
-  (`flake.nixosConfigurations.<name>`, etc.).
+- `modules/profiles/` — per-identity modules (currently just
+  `personal.nix`) that declare `flake.{nixos,darwin,home}Modules.profile-<name>`
+  in one file via `mkAspect`.
 - `modules/home/assets/{dotfiles,nvim,yazi}/` — **asset dirs only** (lua
   files, dotfiles, themes). Referenced from the corresponding
   `modules/home/*.nix` via relative paths (`./assets/<name>/...`).
 - `pkgs/` — custom package definitions (cb, fnox, weave). Wired into
-  `overlays.default` by `modules/overlays.nix`.
+  `overlays.default` via the `overlayAttrs` block inside `perSystem` in
+  `flake.nix`.
 - `secrets/` — sops-encrypted per-host secrets.
 
 ## The inlined-module pattern
@@ -98,8 +100,8 @@ in
 `nixos = …` / `darwin = …` explicitly when the class bodies diverge.
 `home = …` registers under `flake.homeModules.<name>`. Any key you omit
 doesn't register. See `modules/shared/common-base.nix`,
-`modules/shared/primary-user.nix`, and
-`modules/profiles/{personal,work}.nix` for live examples.
+`modules/shared/primary-user.nix`, and `modules/profiles/personal.nix`
+for live examples.
 
 ## Adding a new reusable module
 
@@ -124,7 +126,9 @@ doesn't register. See `modules/shared/common-base.nix`,
      };
    }
    ```
-4. Enroll in whichever host wants it by adding to `modules/hosts/<host>.nix`:
+4. Enroll in whichever host wants it by editing the corresponding
+   `flake.nixosConfigurations.<host>` (or darwin/home) block in
+   `flake.nix`:
    ```nix
    modules = [ … config.flake.nixosModules.<name> … ];
    ```
@@ -134,15 +138,18 @@ doesn't register. See `modules/shared/common-base.nix`,
 
 ## Adding a new host
 
-Create `modules/flake/hosts/<hostname>.nix` — one self-contained file that
-calls `nixosSystem` / `darwinSystem` / `homeManagerConfiguration` and lists
-the features to enable. See `phil.nix` / `wally.nix` / `gateway.nix` for
-NixOS, `kclejeune-darwin.nix` for polymorphic darwin, and
-`home-standalone.nix` for polymorphic standalone home.
+Hosts are defined inline in `flake.nix`, not as separate files. Add a new
+attribute under `flake.nixosConfigurations` / `flake.darwinConfigurations` /
+`flake.homeConfigurations` that calls `nixosSystem` / `darwinSystem` /
+`homeManagerConfiguration` and lists the modules to enable. See the
+existing `phil` / `wally` / `gateway` (NixOS), the `kclejeune@${system}`
+`lib.map` block (darwin), and the standalone-home `lib.map` block for the
+shapes to copy.
 
-**Output naming**: nixos host files expose `flake.nixosConfigurations.<bare-name>`
-(e.g. `phil`, `wally`, `gateway` — not `user@system`). Darwin and standalone-home
-still use the `user@system` form because they fan out across multiple systems.
+**Output naming**: NixOS hosts use the bare hostname
+(`nixosConfigurations.phil`, `.wally`, `.gateway`). Darwin and
+standalone-home use `kclejeune@<system>` because those attrs fan out
+across multiple systems via `lib.map` + `lib.mergeAttrsList`.
 
 ## Key non-obvious conventions
 
@@ -163,11 +170,11 @@ still use the `user@system` form because they fan out across multiple systems.
 - **Underscore-prefixed files are excluded** from `import-tree`. Use this
   escape hatch for any `.nix` file under `./modules` that should not
   register as a flake-parts module.
-- **`flake.darwinModules` option** is declared in
-  `modules/options.nix` because upstream flake-parts does not declare it.
-  Don't delete that file — without the declaration, files under
-  `modules/darwin/` that each contribute a named module collide on
-  evaluation.
+- **`flake.darwinModules` option** is declared inline in `flake.nix`
+  (inside `imports`, alongside the upstream flake-parts modules) because
+  upstream flake-parts does not declare it. Don't delete that block —
+  without the declaration, files under `modules/darwin/` that each
+  contribute a named module collide on evaluation.
 - **Double-importing the same module is a trap.** Flake-parts wraps module
   values with unique `_file` annotations each time they're referenced, so
   Nix's identity-based import dedup DOES NOT work — two transitive
