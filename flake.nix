@@ -78,7 +78,12 @@
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } (
-      { self, lib, ... }:
+      {
+        self,
+        config,
+        lib,
+        ...
+      }:
       {
         imports = [
           inputs.home-manager.flakeModules.home-manager
@@ -103,6 +108,150 @@
           "x86_64-darwin"
           "aarch64-darwin"
         ];
+
+        flake.nixosConfigurations.phil = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
+            config.flake.nixosModules.hardware-thinkpad-t460s
+
+            config.flake.nixosModules.desktop
+            config.flake.nixosModules.personal-apps
+            config.flake.nixosModules.profile-personal
+
+            config.flake.nixosModules.tailscale
+            config.flake.nixosModules.netbird
+
+            {
+              networking.hostName = "phil";
+              # Host-level: pin phil's Hyprland panel/kanshi overlay. The
+              # hardware module stays generic so any T460s could reuse it.
+              hm.imports = [ config.flake.homeModules.hyprland-host-phil ];
+            }
+          ];
+        };
+
+        flake.nixosConfigurations.wally = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            inputs.nixos-hardware.nixosModules.dell-precision-5570
+            config.flake.nixosModules.hardware-precision-5570
+
+            config.flake.nixosModules.desktop
+            config.flake.nixosModules.personal-apps
+            config.flake.nixosModules.profile-personal
+
+            config.flake.nixosModules.tailscale
+            config.flake.nixosModules.netbird
+
+            {
+              networking.hostName = "wally";
+              # Host-level: pin the precision-5570 + home Dell U2718Q panel
+              # / kanshi / workspace overlay. Hardware module stays generic.
+              hm.imports = [ config.flake.homeModules.displays-5570-home ];
+            }
+          ];
+        };
+
+        flake.nixosConfigurations.gateway = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            config.flake.nixosModules.hetzner
+
+            config.flake.nixosModules.gateway
+            config.flake.nixosModules.profile-personal
+
+            config.flake.nixosModules.tailscale
+            config.flake.nixosModules.netbird
+          ];
+        };
+
+        flake.darwinConfigurations = lib.mergeAttrsList (
+          lib.map (system: {
+            "kclejeune@${system}" = inputs.darwin.lib.darwinSystem {
+              inherit system;
+              specialArgs = {
+                inherit self inputs;
+                nixpkgs = inputs.nixpkgs;
+              };
+              modules = [
+                inputs.determinate.darwinModules.default
+                inputs.home-manager.darwinModules.home-manager
+
+                config.flake.darwinModules.default
+
+                config.flake.darwinModules.profile-personal
+                config.flake.darwinModules.apps
+              ];
+            };
+          }) [ "aarch64-darwin" ]
+        );
+
+        flake.homeConfigurations = lib.mergeAttrsList (
+          lib.map
+            (
+              system:
+              let
+                isDarwin = lib.hasSuffix "darwin" system;
+                username = "kclejeune";
+                homeDirectory = "${if isDarwin then "/Users" else "/home"}/${username}";
+              in
+              {
+                "kclejeune@${system}" = inputs.home-manager.lib.homeManagerConfiguration {
+                  pkgs = import inputs.nixpkgs {
+                    inherit system;
+                    config = {
+                      allowUnsupportedSystem = true;
+                      allowUnfree = true;
+                      allowBroken = false;
+                    };
+                    overlays = [ self.overlays.default ];
+                  };
+                  extraSpecialArgs = {
+                    inherit self inputs;
+                    nixpkgs = inputs.nixpkgs;
+                  };
+                  modules = [
+                    config.flake.homeModules.default
+                    config.flake.homeModules.profile-personal
+                    (
+                      { pkgs, ... }:
+                      {
+                        nix.package = pkgs.nix;
+                        home = { inherit username homeDirectory; };
+                      }
+                    )
+                  ];
+                };
+              }
+            )
+            [
+              "x86_64-linux"
+              "aarch64-linux"
+              "aarch64-darwin"
+            ]
+        );
 
         perSystem =
           {
