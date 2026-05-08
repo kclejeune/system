@@ -75,5 +75,130 @@
     noctalia.inputs.nixpkgs.follows = "nixos-unstable";
   };
 
-  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
+  outputs =
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } (
+      { self, lib, ... }:
+      {
+        imports = [
+          inputs.home-manager.flakeModules.home-manager
+          inputs.treefmt-nix.flakeModule
+          inputs.flake-parts.flakeModules.easyOverlay
+          inputs.git-hooks.flakeModule
+          (inputs.import-tree ./modules)
+          # flake-parts doesn't declare flake.darwinModules upstream; declare
+          # it here so files under modules/darwin/ can each contribute a
+          # named entry that merges into the attrset.
+          {
+            options.flake.darwinModules = lib.mkOption {
+              type = lib.types.lazyAttrsOf lib.types.unspecified;
+              default = { };
+            };
+          }
+        ];
+
+        systems = [
+          "x86_64-linux"
+          "aarch64-linux"
+          "x86_64-darwin"
+          "aarch64-darwin"
+        ];
+
+        perSystem =
+          {
+            config,
+            pkgs,
+            system,
+            ...
+          }:
+          let
+            filterSystem = lib.filterAttrs (_: drv: drv.pkgs.system == system);
+          in
+          {
+            _module.args.pkgs = import inputs.nixpkgs {
+              inherit system;
+              overlays = [ self.overlays.default ];
+            };
+
+            legacyPackages = pkgs;
+
+            overlayAttrs = {
+              inherit (inputs.attic.packages.${system}) attic attic-client attic-server;
+
+              cb = pkgs.callPackage ./pkgs/cb/package.nix { };
+              fnox = pkgs.callPackage ./pkgs/fnox/package.nix { };
+              weave = pkgs.callPackage ./pkgs/weave/package.nix { };
+              stable = inputs.stable.legacyPackages.${system};
+              determinate-nixd = inputs.determinate.packages.${system}.default;
+              nix = inputs.determinate.inputs.nix.packages.${system}.default;
+              nh = inputs.nh.packages.${system}.default;
+            };
+
+            devShells.default = pkgs.mkShell {
+              packages =
+                (builtins.attrValues {
+                  inherit (pkgs)
+                    bashInteractive
+                    fd
+                    ripgrep
+                    uv
+                    nh
+                    ;
+                })
+                ++ config.pre-commit.settings.enabledPackages
+                ++ (lib.attrValues config.treefmt.build.programs)
+                ++ (lib.attrValues config.packages);
+              shellHook = config.pre-commit.installationScript;
+            };
+
+            treefmt = {
+              programs = {
+                deadnix = {
+                  enable = true;
+                  no-lambda-arg = true;
+                  no-lambda-pattern-names = true;
+                };
+                nixfmt.enable = true;
+                oxfmt.enable = true;
+                ruff-check.enable = true;
+                ruff-format.enable = true;
+                shellcheck.enable = true;
+                shfmt.enable = true;
+                stylua.enable = true;
+              };
+
+              settings.excludes = [
+                ".envrc"
+                ".env"
+                ".vscode/*.json"
+                "**/Spoons/**/*.json"
+                "**/zed/**/*.json"
+              ];
+              settings.on-unmatched = "info";
+              settings.formatter.ruff-check.options = [
+                # sort imports
+                "--extend-select"
+                "I"
+              ];
+            };
+
+            pre-commit = {
+              settings.package = pkgs.prek;
+              settings.hooks.treefmt = {
+                enable = true;
+                pass_filenames = false;
+                settings.no-cache = false;
+              };
+            };
+
+            checks =
+              (lib.mapAttrs' (name: cfg: lib.nameValuePair "${name}_home" cfg.activationPackage) (
+                filterSystem self.homeConfigurations
+              ))
+              // (lib.mapAttrs (_: cfg: cfg.config.system.build.toplevel) (
+                filterSystem (self.darwinConfigurations // self.nixosConfigurations)
+              ));
+          };
+      }
+    );
 }
