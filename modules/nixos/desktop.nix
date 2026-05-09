@@ -15,7 +15,16 @@ in
       imports = [
         flakeCfg.flake.nixosModules.desktop-base
         flakeCfg.flake.nixosModules.hyprland
+        flakeCfg.flake.nixosModules.avahi
+        flakeCfg.flake.nixosModules.airprint
+        flakeCfg.flake.nixosModules.airplay
       ];
+
+      services.airprint = {
+        enable = true;
+        ippUsb = true;
+      };
+      services.airplay.enable = true;
 
       users = {
         mutableUsers = false;
