@@ -51,7 +51,6 @@ _: {
       };
       c = dark;
 
-      noctaliaBin = lib.getExe inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
       hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
 
       # noctalia-shell IPC invocation. The default config-path discovery
@@ -310,7 +309,7 @@ _: {
 
           # -- Keybindings --
           "$mod" = "ALT";
-          "$ipc" = "${noctaliaBin} ipc call";
+          "$ipc" = "${noctaliaIpc} call";
 
           bind = [
             # Focus (alt-hjkl)
@@ -710,7 +709,7 @@ _: {
                 ;;
             esac
           done
-          ${noctaliaBin} ipc call wallpaper refresh || true
+          ${noctaliaIpc} call wallpaper refresh || true
         '')
 
         # nm-connection-editor (advanced VPN/Wi-Fi config — noctalia opens
