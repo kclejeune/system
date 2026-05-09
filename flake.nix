@@ -61,6 +61,11 @@
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
+    # UEFI Secure Boot via signed unified kernel images. Replaces
+    # systemd-boot on hosts that enroll modules/nixos/secure-boot.nix.
+    lanzaboote.url = "github:nix-community/lanzaboote/v1.0.0";
+    lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
+
     # Noctalia Wayland desktop shell (bar, notifications, launcher, lock,
     # idle, OSD, wallpaper, night-light). Tracks nixos-unstable since it
     # depends on the latest Quickshell.
@@ -154,6 +159,9 @@
             config.flake.nixosModules.desktop
             config.flake.nixosModules.personal-apps
             config.flake.nixosModules.profile-personal
+
+            # disable pending disko partition update
+            # config.flake.nixosModules.secure-boot
 
             config.flake.nixosModules.tailscale
             config.flake.nixosModules.netbird
