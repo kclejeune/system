@@ -343,6 +343,31 @@ in
             force_default_wallpaper = 0;
             disable_hyprland_logo = true;
             focus_on_activate = true;
+            # When an ext-session-lock-v1 client (noctalia's lock
+            # surface) disconnects without sending unlock_and_destroy,
+            # the protocol obliges the compositor to keep the screen
+            # secured — Hyprland shows its red "lockdead" / "your lock
+            # screen died" fallback (share/hypr/lockdead*.png). The
+            # noctalia lock screen's Logout / Reboot / Shutdown buttons
+            # run `uwsm stop` / `systemctl reboot` / `systemctl
+            # poweroff` directly without releasing the WlSessionLock
+            # first, so the quickshell process is killed by the
+            # teardown a beat before Hyprland exits — and that beat is
+            # long enough to flash the lockdead screen with the default
+            # 1000 ms delay. Stretch the delay well past how long a
+            # logout/reboot/poweroff takes to tear the session down, so
+            # the system is already gone before Hyprland would paint
+            # it. (Only affects the lock-client-died path; a normal
+            # password unlock sends unlock_and_destroy and is
+            # unaffected.)
+            lockdead_screen_delay = 5000;
+            # Safety net for a *genuine* lock-client crash (noctalia
+            # dies mid-session, not during a planned shutdown): keep
+            # the screen secured but let a freshly launched lock
+            # client re-attach to the existing lock instead of leaving
+            # the user hard-locked-out. Recovery is then just
+            # re-running noctalia-shell (or `hyprlock`) from a TTY.
+            allow_session_lock_restore = true;
           };
 
           ecosystem = {
@@ -796,13 +821,21 @@ in
         pwvucontrol
         overskride
 
-        # Graceful logout for the noctalia session menu: sends
-        # xdg-toplevel close events to running apps (so they can
-        # prompt for unsaved work / flush state) before exiting
-        # Hyprland via `hyprctl dispatch exit`. UWSM's bindpid
-        # watcher detects the compositor exit and cascades the
-        # wayland-session@hyprland.target teardown automatically, so
-        # no separate `uwsm stop` call is needed.
+        # Graceful logout helper: sends xdg-toplevel close events to
+        # running apps (so they can prompt for unsaved work / flush
+        # state) before exiting Hyprland via `hyprctl dispatch exit`;
+        # UWSM's bindpid watcher then cascades the
+        # wayland-session@hyprland.target teardown. Kept available for
+        # manual use, but NOT wired to the noctalia session-menu /
+        # lock-screen Logout button — that runs a bare
+        # `hyprctl dispatch exit` (see sessionMenu.powerOptions in
+        # assets/noctalia/settings.json) because `hyprshutdown` was
+        # observed to hang indefinitely when an app ignores the close
+        # event, with no way out but a TTY. Exiting Hyprland directly
+        # also closes the lock surface in the same instant as every
+        # other client, so there's no window for Hyprland's "lockdead"
+        # screen (which `uwsm stop`'s slower, ordered teardown left
+        # open).
         hyprshutdown
 
         # Helpers for the declarative settings workflow. The activation

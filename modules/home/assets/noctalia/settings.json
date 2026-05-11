@@ -569,7 +569,7 @@
       },
       {
         "action": "logout",
-        "command": "uwsm stop",
+        "command": "hyprctl dispatch exit",
         "countdownEnabled": true,
         "enabled": true,
         "keybind": "5"
