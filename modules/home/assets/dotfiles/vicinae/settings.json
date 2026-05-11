@@ -94,13 +94,13 @@
         "power-off": {
           "preferences": {
             "confirm": true,
-            "customProgram": "hyprshutdown --post-cmd 'systemctl poweroff'"
+            "customProgram": "systemctl poweroff"
           }
         },
         "reboot": {
           "preferences": {
             "confirm": true,
-            "customProgram": "hyprshutdown --post-cmd 'systemctl reboot'"
+            "customProgram": "systemctl reboot"
           }
         },
         "sleep": {
@@ -112,7 +112,7 @@
         "soft-reboot": {
           "preferences": {
             "confirm": true,
-            "customProgram": "hyprshutdown --post-cmd 'systemctl soft-reboot'"
+            "customProgram": "systemctl soft-reboot"
           }
         },
         "suspend": {

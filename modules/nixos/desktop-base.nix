@@ -54,6 +54,38 @@ in
       boot.kernel.sysctl."net.core.rmem_max" = 2097152;
       boot.kernel.sysctl."net.core.rmem_default" = 1048576;
 
+      # Propagate log level + target as env vars to PID 1 so they
+      # survive into `systemd-shutdown`. The `systemd.log_level=` /
+      # `systemd.log_target=` kernel cmdline directives apply to PID 1
+      # at init, but PID 1 doesn't pass them through as environment
+      # variables when it exec()s `/lib/systemd/systemd-shutdown` at
+      # the end of teardown. systemd-shutdown then runs this on entry
+      # (src/shutdown/shutdown.c):
+      #
+      #   log_set_target(LOG_TARGET_CONSOLE);
+      #   log_set_prohibit_ipc(true);
+      #   log_parse_environment();
+      #
+      # — i.e. it hard-resets its log target to CONSOLE (writing
+      # directly to /dev/tty1) and only respects an env override via
+      # log_parse_environment(). That's why we see ERR-level messages
+      # like "Could not detach DM /dev/dm-2: Device or resource busy"
+      # and "Unable to finalize remaining …" on screen during phase 1
+      # of shutdown, despite the cmdline settings.
+      #
+      # `systemd.managerEnvironment` in NixOS compiles to
+      # `systemd.setenv=KEY=VAL` on the kernel cmdline, which PID 1
+      # reads into its own environment, which is then inherited by
+      # systemd-shutdown when PID 1 exec()s it. Target=kmsg routes
+      # systemd-shutdown's output to /dev/kmsg instead of /dev/tty1
+      # — kmsg is already filtered for console display by
+      # `consoleLogLevel=0`, so nothing paints. Messages are still in
+      # the kernel ring buffer for `dmesg` post-mortem.
+      systemd.managerEnvironment = {
+        SYSTEMD_LOG_LEVEL = "err";
+        SYSTEMD_LOG_TARGET = "kmsg";
+      };
+
       # Plymouth + quiet boot. Covers the gap between bootloader and
       # greeter so the user doesn't watch kernel/systemd unit logs
       # scroll past on every boot. Mocha theme keeps the visual
@@ -73,12 +105,44 @@ in
       # `vt.global_cursor_default=0` — no blinking VT cursor peeking
       #                       through plymouth or between greeter/
       #                       compositor handoffs
+      # `systemd.log_level=err` — silences PID 1's INFO/NOTICE/WARNING
+      #                       chatter. `show_status=false` already hides
+      #                       "Started X" unit-status lines, but systemd-
+      #                       shutdown still logs WARNING-level "Could
+      #                       not finalize remaining DM/LUKS devices,
+      #                       ignoring" / detach-busy messages once
+      #                       journald has stopped (the root LV is still
+      #                       in use, so the teardown can never succeed).
+      #                       PID 1 also emits info-level PAM session /
+      #                       scope-creation messages during greetd→
+      #                       Hyprland handoff. Both land directly on
+      #                       /dev/console (tty1) and paint the screen
+      #                       during the shutdown splash and the cage→
+      #                       compositor gap. `err` keeps actual failures
+      #                       (oom-killer, panic precursors) visible.
+      # `systemd.log_target=journal-or-kmsg` — routes PID 1's own logs to
+      #                       journal (or kmsg fallback before journald
+      #                       starts / after it stops). Avoids the
+      #                       default `auto` target's secondary write to
+      #                       /dev/console, which is the path that paints
+      #                       over the framebuffer between cage exit and
+      #                       Hyprland claiming the GPU. kmsg fallback is
+      #                       fine — kernel console output is already
+      #                       muted by `loglevel=3` / `consoleLogLevel=0`.
+      # `rd.systemd.*` — same for the initrd's PID 1 (covers the post-
+      #                       LUKS-unlock window where libseat error from
+      #                       cage / compositor probes would otherwise
+      #                       flash on tty1).
       boot.kernelParams = [
         "quiet"
         "splash"
         "loglevel=3"
         "systemd.show_status=false"
         "rd.systemd.show_status=false"
+        "systemd.log_level=err"
+        "rd.systemd.log_level=err"
+        "systemd.log_target=journal-or-kmsg"
+        "rd.systemd.log_target=journal-or-kmsg"
         "rd.udev.log_level=3"
         "udev.log_priority=3"
         "vt.global_cursor_default=0"
@@ -129,6 +193,23 @@ in
       };
 
       networking.networkmanager.enable = true;
+      # Route DNS through systemd-resolved instead of openresolv.
+      # Default NixOS wiring is `dns=default` + `rc-manager=resolvconf`,
+      # which lets tailscaled register its MagicDNS server (100.100.100.100)
+      # in resolvconf's `exclusive` mode and clobber every other resolver.
+      # Net effect: until tailscaled is fully up post-boot (or post-resume),
+      # every lookup — `api.anthropic.com`, `*.tailf0779.ts.net`, the lot —
+      # fails outright, manifesting as "unable to connect to socket"
+      # errors. The wifi-toggle workaround kicks tailscaled into rebuilding
+      # its DNS routes.
+      #
+      # systemd-resolved sits between clients and upstreams: it accepts
+      # per-interface DNS routes from NM (DHCP-supplied LAN servers) and
+      # from tailscaled (MagicDNS for *.ts.net), and resolves each
+      # query against the right backend by suffix. If Tailscale is down,
+      # public lookups still flow through the LAN-supplied resolver.
+      services.resolved.enable = true;
+      networking.networkmanager.dns = "systemd-resolved";
       # `NetworkManager-wait-online.service` blocks `multi-user.target`
       # (and therefore `graphical.target`) waiting up to 30s for the
       # network to be online at boot. UWSM checks `graphical.target` is

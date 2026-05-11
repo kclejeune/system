@@ -562,7 +562,7 @@
       },
       {
         "action": "reboot",
-        "command": "hyprshutdown --post-cmd 'systemctl reboot'",
+        "command": "systemctl reboot",
         "countdownEnabled": true,
         "enabled": true,
         "keybind": "4"
@@ -576,7 +576,7 @@
       },
       {
         "action": "shutdown",
-        "command": "hyprshutdown --post-cmd 'systemctl poweroff'",
+        "command": "systemctl poweroff",
         "countdownEnabled": true,
         "enabled": true,
         "keybind": "6"

@@ -163,6 +163,21 @@ in
                   ${hyprThemeCmds light}
                 fi
               '';
+              # Mirror noctalia's active wallpaper into the regreet
+              # background slot. `$1` is the path noctalia just
+              # switched to. We blur it (sigma 16 — same as the
+              # build-time fallback) and write to
+              # /var/lib/regreet/background.png, which is tmpfile-
+              # created as kclejeune-owned + world-readable so this
+              # write from the user session and ReGreet's read from
+              # the greeter user both work. ReGreet picks up the new
+              # file on its next startup (no live reload — but the
+              # greeter is short-lived, so the next reboot / logout
+              # cycle shows the latest wallpaper).
+              wallpaperChange = ''
+                ${pkgs.imagemagick}/bin/magick "$1" -blur 0x16 \
+                  /var/lib/regreet/background.png 2>/dev/null || true
+              '';
             };
             # noctalia reads `wallpaper.directory` directly via QML's
             # FileView (no shell), so a leading `~` is taken literally.
@@ -354,16 +369,16 @@ in
           # `uwsm-app` is on PATH because `programs.hyprland.withUWSM = true`
           # (modules/nixos/hyprland.nix) adds pkgs.uwsm to systemPackages.
           exec-once = [
-            # 1Password tray-only; kitty lands on workspace T via the
-            # match:class kitty rule (windowrules still match — the
-            # uwsm-app wrapper doesn't change app_id/class).
-            "uwsm-app -- 1password --silent"
-            "uwsm-app -- kitty"
             # noctalia-shell stays exec-once: upstream deprecated systemd
             # startup over IPC / start-order issues. The uwsm-app wrapper
             # is still worthwhile — gets it into app.slice so a
             # compositor crash doesn't orphan it.
             "uwsm-app -- noctalia-shell"
+
+            # 1Password tray-only; kitty lands on workspace T via the
+            # match:class kitty rule (windowrules still match — the
+            # uwsm-app wrapper doesn't change app_id/class).
+            "uwsm-app -- 1password --silent"
           ];
 
           # -- Named workspaces with monitor pinning --
@@ -598,6 +613,31 @@ in
       # `wallpaper.directory` in assets/noctalia/settings.json.
       home.activation.makeWallpapersDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         $DRY_RUN_CMD mkdir -p $HOME/Pictures/Wallpapers
+      '';
+
+      # Re-blur the user's current dark-mode wallpaper into the regreet
+      # background slot on every HM activation. Two reasons:
+      #   1. First boot — noctalia's wallpaperChange hook hasn't fired
+      #      yet, so /var/lib/regreet/background.png is whatever the
+      #      build-time tmpfile fallback was. Without this seeder, the
+      #      greeter shows that frozen fallback until the user actually
+      #      switches wallpapers in noctalia.
+      #   2. Subsequent rebuilds — if the user updates the raw
+      #      wallpaper-dark.png on disk (without rotating through
+      #      noctalia), we still want the greeter to track it.
+      #
+      # Destination is tmpfile-created as kclejeune-owned + world-
+      # readable (see modules/nixos/hyprland.nix), so this write from
+      # the user session and ReGreet's read from the greeter user both
+      # work without ACL gymnastics. The `-w` check is the safety net
+      # for the very first activation where the tmpfile rule might not
+      # have landed yet.
+      home.activation.seedGreeterBackground = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        src="$HOME/Pictures/Wallpapers/wallpaper-dark.png"
+        dst="/var/lib/regreet/background.png"
+        if [ -f "$src" ] && [ -w "$dst" ]; then
+          $DRY_RUN_CMD ${pkgs.imagemagick}/bin/magick "$src" -blur 0x16 "$dst" 2>/dev/null || true
+        fi
       '';
 
       programs.ghostty.enable = true;
