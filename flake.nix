@@ -78,6 +78,15 @@
     # once the change is merged.
     noctalia.url = "github:kclejeune/noctalia-shell/kcl/restart-auth-support";
     noctalia.inputs.nixpkgs.follows = "nixos-unstable";
+
+    # Tinted-theming color scheme catalog (230+ schemes) and the
+    # base16.nix YAML loader. Consumed by modules/shared/theme.nix
+    # via `flake.lib.mkTheme`.
+    base16.url = "github:SenchoPens/base16.nix";
+    tinted-schemes = {
+      url = "github:tinted-theming/schemes";
+      flake = false;
+    };
   };
 
   outputs =

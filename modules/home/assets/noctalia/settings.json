@@ -103,6 +103,26 @@
           "id": "Clock",
           "tooltipFormat": "",
           "useCustomFont": false
+        },
+        {
+          "hideWhenZero": false,
+          "hideWhenZeroUnread": false,
+          "iconColor": "none",
+          "id": "NotificationHistory",
+          "showUnreadBadge": true,
+          "unreadBadgeColor": "primary"
+        },
+        {
+          "defaultSettings": {
+            "enableCross": true,
+            "enableWindowsSelection": true,
+            "keepSourceScreenshot": false,
+            "recordingNotifications": true,
+            "recordingSavePath": "~/Videos",
+            "savePath": "~/Pictures/Screenshots",
+            "screenshotEditor": "swappy"
+          },
+          "id": "plugin:screen-shot-and-record"
         }
       ],
       "left": [
@@ -133,7 +153,7 @@
           "blacklist": [],
           "chevronColor": "none",
           "colorizeIcons": false,
-          "drawerEnabled": true,
+          "drawerEnabled": false,
           "hidePassive": false,
           "id": "Tray",
           "pinned": []
@@ -177,14 +197,6 @@
           "usePadding": false
         },
         {
-          "hideWhenZero": false,
-          "hideWhenZeroUnread": false,
-          "iconColor": "none",
-          "id": "NotificationHistory",
-          "showUnreadBadge": true,
-          "unreadBadgeColor": "primary"
-        },
-        {
           "displayMode": "alwaysShow",
           "iconColor": "none",
           "id": "Volume",
@@ -197,27 +209,6 @@
           "iconColor": "none",
           "id": "Brightness",
           "textColor": "none"
-        },
-        {
-          "defaultSettings": {
-            "enableCross": true,
-            "enableWindowsSelection": true,
-            "keepSourceScreenshot": false,
-            "recordingNotifications": true,
-            "recordingSavePath": "~/Videos",
-            "savePath": "~/Pictures/Screenshots",
-            "screenshotEditor": "swappy"
-          },
-          "id": "plugin:screen-shot-and-record"
-        },
-        {
-          "deviceNativePath": "__default__",
-          "displayMode": "graphic",
-          "hideIfIdle": false,
-          "hideIfNotDetected": true,
-          "id": "Battery",
-          "showNoctaliaPerformance": true,
-          "showPowerProfiles": true
         },
         {
           "defaultSettings": {
@@ -234,36 +225,21 @@
         },
         {
           "defaultSettings": {
-            "audioCodec": "opus",
-            "audioSource": "default_output",
-            "colorRange": "limited",
-            "copyToClipboard": false,
-            "customReplayDuration": "30",
-            "directory": "",
-            "filenamePattern": "recording_yyyyMMdd_HHmmss",
-            "frameRate": "60",
-            "hideInactive": false,
-            "iconColor": "none",
-            "quality": "very_high",
-            "replayDuration": "30",
-            "replayEnabled": false,
-            "replayStorage": "ram",
-            "resolution": "original",
-            "restorePortalSession": false,
-            "showCursor": true,
-            "videoCodec": "h264",
-            "videoSource": "portal"
-          },
-          "id": "plugin:screen-recorder"
-        },
-        {
-          "defaultSettings": {
             "compactMode": false,
             "defaultDuration": 0,
             "iconColor": "none",
             "textColor": "none"
           },
           "id": "plugin:timer"
+        },
+        {
+          "deviceNativePath": "__default__",
+          "displayMode": "graphic",
+          "hideIfIdle": false,
+          "hideIfNotDetected": true,
+          "id": "Battery",
+          "showNoctaliaPerformance": true,
+          "showPowerProfiles": true
         }
       ]
     }
@@ -429,7 +405,7 @@
     "language": "",
     "lockOnSuspend": false,
     "lockScreenAnimations": true,
-    "lockScreenBlur": 0.9,
+    "lockScreenBlur": 0.98,
     "lockScreenCountdownDuration": 5000,
     "lockScreenMonitors": [],
     "lockScreenTint": 0,
@@ -557,7 +533,7 @@
     "notifyUpdates": true
   },
   "sessionMenu": {
-    "countdownDuration": 10000,
+    "countdownDuration": 3000,
     "enableCountdown": true,
     "largeButtonsLayout": "single-row",
     "largeButtonsStyle": true,
@@ -586,21 +562,21 @@
       },
       {
         "action": "reboot",
-        "command": "",
+        "command": "hyprshutdown --post-cmd 'systemctl reboot'",
         "countdownEnabled": true,
         "enabled": true,
         "keybind": "4"
       },
       {
         "action": "logout",
-        "command": "",
+        "command": "uwsm stop",
         "countdownEnabled": true,
         "enabled": true,
         "keybind": "5"
       },
       {
         "action": "shutdown",
-        "command": "",
+        "command": "hyprshutdown --post-cmd 'systemctl poweroff'",
         "countdownEnabled": true,
         "enabled": true,
         "keybind": "6"
@@ -659,14 +635,14 @@
     "panelBackgroundOpacity": 0.94,
     "panelsAttachedToBar": true,
     "scrollbarAlwaysVisible": true,
-    "settingsPanelMode": "attached",
+    "settingsPanelMode": "window",
     "settingsPanelSideBarCardStyle": false,
     "tooltipsEnabled": true,
     "translucentWidgets": true
   },
   "wallpaper": {
     "automationEnabled": false,
-    "directory": "/home/kclejeune/.config/hypr",
+    "directory": "~/Pictures/Wallpapers",
     "enableMultiMonitorDirectories": false,
     "enabled": true,
     "favorites": [],

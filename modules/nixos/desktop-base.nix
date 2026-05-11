@@ -109,8 +109,6 @@ in
       # `editor = false` blocks kernel-cmdline editing at the boot
       # menu, which would otherwise be a way to bypass disk encryption.
       # mkDefault on `timeout` so the ISO installer image can override.
-      # Boot menu reveal: tap Space (or any key) during the brief flash
-      # — systemd-boot's equivalent of GRUB's hold-shift trick.
       boot.loader.timeout = lib.mkDefault 0;
       boot.loader.efi.canTouchEfiVariables = true;
       boot.loader.efi.efiSysMountPoint = "/boot/efi";
@@ -131,6 +129,15 @@ in
       };
 
       networking.networkmanager.enable = true;
+      # `NetworkManager-wait-online.service` blocks `multi-user.target`
+      # (and therefore `graphical.target`) waiting up to 30s for the
+      # network to be online at boot. UWSM checks `graphical.target` is
+      # active before starting a Wayland session, so this delay
+      # manifests as "graphical.target is queued for start, waiting for
+      # 60s..." in greetd→UWSM login attempts, often well past the user
+      # picking the session. Server-oriented service; desktop users
+      # connect to networks after the desktop is up.
+      systemd.services.NetworkManager-wait-online.enable = false;
 
       services.pcscd.enable = true;
 
@@ -184,6 +191,13 @@ in
         enable = true;
         polkitPolicyOwners = [ config.user.name ];
       };
+
+      # The localsend module installs the package and opens UDP/TCP 53317
+      # in the firewall (default), which is required for device discovery
+      # and receiving files. Plain `pkgs.localsend` in systemPackages
+      # would install the binary but leave the firewall blocking inbound
+      # discovery beacons.
+      programs.localsend.enable = true;
 
       # nix-ld for running unpatched dynamic binaries (VS Code, Zed, Brave extensions)
       programs.nix-ld.enable = true;
@@ -273,7 +287,6 @@ in
         pkgs.dmidecode
         pkgs.firefox-devedition
         pkgs.kitty
-        pkgs.localsend
         pkgs.obsidian
         pkgs.pulseaudio
         pkgs.signal-desktop

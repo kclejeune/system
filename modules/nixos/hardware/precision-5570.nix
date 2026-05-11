@@ -20,16 +20,6 @@ _: {
       ];
       boot.kernelModules = [ "kvm-intel" ];
 
-      # Pin the iGPU to i915. nixos-hardware's dell-precision-5570 defaults
-      # to the experimental `xe` KMD on kernels ≥ 6.8, which on this box
-      # produces "Tile0: GT0: Timedout job" GPU resets that kill the
-      # WlSessionLock client (quickshell), leaving Hyprland's fallback
-      # "lockscreen process has crashed" screen on resume. Mesa itself
-      # prints `Support for this platform is experimental with Xe KMD`.
-      # Reverting to i915 also drops the matching `*.force_probe=` params
-      # the upstream module gates on `intelgpu.driver == "xe"`.
-      # hardware.intelgpu.driver = lib.mkForce "i915";
-
       # initrd-side systemd is required for the FIDO2-unlocked LUKS
       # prompt the disko config below relies on. Plymouth + quiet boot
       # / kernel params are owned by desktop-base.nix so the theme
@@ -113,29 +103,6 @@ _: {
           ATTR{idVendor}=="27c6", ATTR{idProduct}=="63ac", \
           ATTR{power/control}="on"
       '';
-
-      # Disable LID0 as an ACPI wakeup source. The 5570's lid switch is flagged
-      # by the kernel as "not compliant to SW_LID" and fires a spurious "lid
-      # opened" event the instant the system enters s2idle, immediately waking
-      # it back up — so closing the lid suspends for ~3 s and then resumes.
-      # Logind still sees the close (it watches the input device, not the
-      # ACPI wake source) and triggers suspend; we just don't want the same
-      # device to *also* be the wake reason. Trade-off: opening the lid no
-      # longer auto-wakes; press the power button or any key.
-      systemd.services.disable-lid-wakeup = {
-        description = "Disable LID0 ACPI wakeup (Precision 5570 quirk)";
-        wantedBy = [ "multi-user.target" ];
-        after = [ "sysinit.target" ];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          ExecStart = pkgs.writeShellScript "disable-lid-wakeup" ''
-            if ${pkgs.gnugrep}/bin/grep -q '^LID0.*\*enabled' /proc/acpi/wakeup; then
-              echo LID0 > /proc/acpi/wakeup
-            fi
-          '';
-        };
-      };
 
       # Touchpad palm rejection lives in modules/home/hyprland.nix —
       # Hyprland reads its own libinput config and ignores

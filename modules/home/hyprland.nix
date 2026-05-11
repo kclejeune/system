@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  flakeCfg = config;
+in
+{
   flake.homeModules.hyprland =
     # Hyprland home-manager configuration — compositor settings, keybindings,
     # kanshi for monitor management, and noctalia-shell for the desktop shell
@@ -11,44 +15,17 @@ _: {
       ...
     }:
     let
-      # Catppuccin Mocha (dark) — used for hyprland borders + shadow.
-      # Noctalia handles the rest of the theme via its built-in Catppuccin
-      # color scheme (predefinedScheme = "Catppuccin"), which already covers
-      # the bar, panels, lock screen, OSD, and notifications. dconf + GTK
-      # theme name are still tracked in lockstep via the noctalia darkMode
-      # hook below so Mocha (dark) ↔ Latte (light) swaps stay in sync.
-      dark = {
-        base = "1e1e2e";
-        mantle = "181825";
-        crust = "11111b";
-        surface0 = "313244";
-        overlay0 = "6c7086";
-        text = "cdd6f4";
-        subtext1 = "bac2de";
-        blue = "89b4fa";
-        lavender = "b4befe";
-        green = "a6e3a1";
-        yellow = "f9e2af";
-        peach = "fab387";
-        red = "f38ba8";
-        mauve = "cba6f7";
-      };
-      light = {
-        base = "eff1f5";
-        mantle = "e6e9ef";
-        crust = "dce0e8";
-        surface0 = "ccd0da";
-        overlay0 = "9ca0b0";
-        text = "4c4f69";
-        subtext1 = "5c5f77";
-        blue = "1e66f5";
-        lavender = "7287fd";
-        green = "40a02b";
-        yellow = "df8e1d";
-        peach = "fe640b";
-        red = "d20f39";
-        mauve = "8839ef";
-      };
+      # Theme palettes + GTK name constants come from `flake.lib.mkTheme`
+      # (modules/shared/theme.nix). The mkTheme function loads
+      # base24 scheme YAML from tinted-theming/schemes via
+      # base16.nix, so swapping schemes is a one-line edit there.
+      # Catppuccin Mocha is the dark baseline used for hyprland borders
+      # + shadow; Latte is the light variant the darkModeChange hook
+      # swaps to. Noctalia owns the broader theme (bar, panels, lock,
+      # OSD, notifications) via its built-in Catppuccin color scheme.
+      theme = flakeCfg.flake.lib.mkTheme pkgs;
+      dark = theme.palettes.dark;
+      light = theme.palettes.light;
       c = dark;
 
       hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
@@ -74,6 +51,48 @@ _: {
       noctaliaIpc = pkgs.writeShellScript "noctalia-ipc" ''
         export QS_CONFIG_PATH=
         exec noctalia-shell ipc --pid "$(pgrep -fxo '.*/bin/quickshell')" "$@"
+      '';
+
+      # hypridle's after_sleep_cmd handler. Three-stage to fix flaky
+      # fingerprint behaviour on the lock screen after resume:
+      #
+      #   1. DPMS-on fires unconditionally and first. Independent of
+      #      fprintd state — the lock screen is visible the instant
+      #      logind says PrepareForSleep=false, so the user's first
+      #      keypress isn't into a black void.
+      #
+      #   2. Poll fprintd's Manager.GetDevices over D-Bus until at
+      #      least one device is returned. The kernel asynchronously
+      #      resets USB 3-9 (Goodix 27c6:63ac) 3-8 s AFTER logind's
+      #      PrepareForSleep returns; without this wait, noctalia's
+      #      restartAuth lands in that gap and the lock-screen
+      #      fingerprint widget intermittently fails to show. Polling
+      #      GetDevices both dbus-activates fprintd and forces a
+      #      device rescan on each call, so as soon as the kernel
+      #      re-enumerates the Goodix the next poll picks it up.
+      #
+      #   3. Re-arm noctalia's PAM stack against the now-ready fprintd.
+      #
+      # All three stages are best-effort (`|| true`) so a single
+      # failure doesn't strand the user in a broken auth state.
+      afterSleepHook = pkgs.writeShellScript "noctalia-after-sleep" ''
+        ${hyprctl} dispatch dpms on || true
+
+        # 30 × 0.3s = 9s budget — covers observed 3–8s post-resume
+        # Goodix USB re-enumeration window with margin.
+        for _ in {1..30}; do
+          out=$(${pkgs.systemd}/bin/busctl --system call \
+            net.reactivated.Fprint \
+            /net/reactivated/Fprint/Manager \
+            net.reactivated.Fprint.Manager \
+            GetDevices 2>/dev/null) || out=""
+          case "$out" in
+            *Device*) break ;;
+          esac
+          sleep 0.3
+        done
+
+        ${noctaliaIpc} call lockScreen restartAuth || true
       '';
 
       # Catppuccin border / shadow values per palette. Used by the static
@@ -106,58 +125,92 @@ _: {
         ) (lib.range 1 9)
       );
 
-      # Bootstrap template for ~/.config/noctalia/settings.json. Source of
-      # truth is `./assets/noctalia/settings.json` — refresh it from the
-      # running shell with `jq 'del(.hooks.darkModeChange) | del(.settingsVersion)'
-      # ~/.config/noctalia/settings.json > modules/home/assets/noctalia/settings.json`.
-      # We re-inject `hooks.darkModeChange` here so the rendered hook tracks
-      # current store paths.
+      # Settings.json is re-seeded from the asset on every HM
+      # activation, which fires on `nixos-rebuild switch` and at
+      # system boot (NOT on interactive login — that's a separate
+      # user@$UID.service start). The file is writable during a
+      # session: noctalia's `darkModeChange` hook owns SUPER+d
+      # toggles, in-memory state changes flow through to Hyprland
+      # borders via hyprctl, and runtime mutations live until the
+      # next switch or reboot. To make a change permanent: capture
+      # via `noctalia-settings-dump`, edit
+      # `./assets/noctalia/settings.json`, commit, rebuild.
       #
-      # Why a writable copy and not `programs.noctalia-shell.settings`: the
-      # latter symlinks to /nix/store, which causes runtime toggles like
-      # darkMode to flash and revert — noctalia writes a fresh colors.json on
-      # toggle, the parent-dir watcher in Commons/Settings.qml fires, and the
-      # next reload restores the symlinked settings.json over the in-memory
-      # toggle. Nix updates apply on fresh installs only; to refresh after
-      # rebuilds, `rm ~/.config/noctalia/settings.json && home-manager switch`.
-      #
-      # OS dark/light propagation: `colorSchemes.syncGsettings = true` runs
-      # `gtk-refresh.py --appearance-only` which `gsettings set`s
+      # OS dark/light propagation: `colorSchemes.syncGsettings = true`
+      # runs `gtk-refresh.py --appearance-only` which `gsettings set`s
       # org.gnome.desktop.interface/color-scheme. xdg-desktop-portal-gtk
       # watches that and emits the freedesktop appearance SettingChanged
-      # signal that kitty / Zed / Electron subscribe to. The hook only owns
-      # hyprland border colors (no portal involvement).
-      noctaliaSettings = (pkgs.formats.json { }).generate "noctalia-settings.json" (
-        (builtins.fromJSON (builtins.readFile ./assets/noctalia/settings.json))
-        // {
-          hooks = {
-            enabled = true;
-            # `$1` is text-substituted with "true"/"false" before `sh -lc`
-            # — must be a shell command string, not a script path.
-            darkModeChange = ''
-              if [ "$1" = "true" ]; then
-                ${hyprThemeCmds dark}
-              else
-                ${hyprThemeCmds light}
-              fi
-            '';
-          };
-        }
+      # signal that kitty / Zed / Electron subscribe to.
+      noctaliaSettings =
+        let
+          asset = builtins.fromJSON (builtins.readFile ./assets/noctalia/settings.json);
+        in
+        (pkgs.formats.json { }).generate "noctalia-settings.json" (
+          asset
+          // {
+            # Field-level merge so future non-empty hook entries in
+            # the asset (colorGeneration, screenLock, ...) aren't
+            # silently dropped by a wholesale replace.
+            hooks = (asset.hooks or { }) // {
+              enabled = true;
+              # `$1` is text-substituted with "true"/"false" before
+              # `sh -lc` — must be a shell command string, not a
+              # script path.
+              darkModeChange = ''
+                if [ "$1" = "true" ]; then
+                  ${hyprThemeCmds dark}
+                else
+                  ${hyprThemeCmds light}
+                fi
+              '';
+            };
+            # noctalia reads `wallpaper.directory` directly via QML's
+            # FileView (no shell), so a leading `~` is taken literally.
+            # Interpolate `home.homeDirectory` at eval time to land an
+            # absolute path in the rendered settings.json.
+            wallpaper = (asset.wallpaper or { }) // {
+              directory = "${config.home.homeDirectory}/Pictures/Wallpapers";
+            };
+          }
+        );
+
+      # Plugins.json — pure data, no Nix-side overlay needed. Same
+      # writable-with-re-seed semantics as settings.json: asset is
+      # the source of truth for which noctalia plugins are enabled
+      # and where to fetch them; runtime mutations (toggling a
+      # plugin via the GUI) live until the next switch/reboot. To
+      # persist a change, edit the asset.
+      noctaliaPlugins = (pkgs.formats.json { }).generate "noctalia-plugins.json" (
+        builtins.fromJSON (builtins.readFile ./assets/noctalia/plugins.json)
       );
+
+      # Shared jq filters for the noctalia-settings-* helpers.
+      # `stripFilter` operates on a settings object directly (used on the
+      # nix-store derivation, which is already a settings object).
+      # `ipcFilter` strips the `state.all` IPC envelope first.
+      stripFilter = "del(.hooks.darkModeChange) | del(.settingsVersion)";
+      ipcFilter = ".settings | ${stripFilter}";
 
     in
     {
       imports = [ inputs.noctalia.homeModules.default ];
 
-      # Scope HM Wayland services (kanshi, ...) to hyprland-session.target so
-      # they only start under Hyprland. Default binds to graphical-session.target,
-      # which any Wayland session satisfies.
-      wayland.systemd.target = "hyprland-session.target";
+      # UWSM owns the session targets (it activates graphical-session.target
+      # via wayland-session@hyprland.target). Without UWSM we used
+      # hyprland-session.target to scope HM Wayland services to Hyprland;
+      # with UWSM that target no longer exists, so we bind to
+      # graphical-session.target — which UWSM sets up specifically for the
+      # active wayland session, so the "any wayland session" leak doesn't
+      # apply here.
+      wayland.systemd.target = "graphical-session.target";
 
       wayland.windowManager.hyprland = {
         enable = true;
         xwayland.enable = true;
-        systemd.enable = true;
+        # MUST be false under UWSM — HM's systemd integration creates its own
+        # hyprland-session.target and env-export wiring that conflicts with
+        # UWSM's session management. https://wiki.nixos.org/wiki/Hyprland
+        systemd.enable = false;
 
         # hyprbars and hyprgrass are intentionally NOT here: nixpkgs's
         # hyprland-plugins lag the bundled hyprland API, so both fail to
@@ -282,13 +335,35 @@ _: {
           };
 
           # -- Startup --
+          # Per https://wiki.hypr.land/Useful-Utilities/Systemd-start/:
+          # "Running applications as child processes inside compositor's
+          # unit is discouraged." Apps go through `uwsm-app --` so they
+          # land in app.slice as their own transient scopes; services
+          # (hyprpolkitagent) are declared as systemd user units below
+          # and pulled in via WantedBy=graphical-session.target instead
+          # of exec-once.
+          #
+          # `uwsm-app` (not `uwsm app`) is the fast shell client that
+          # talks to wayland-wm-app-daemon.service via FIFOs in
+          # $XDG_RUNTIME_DIR; subsequent calls bypass Python startup.
+          # On the FIRST invocation after login the script auto-restarts
+          # the daemon and polls for pipes with `sleep 1` (≤2s stall on
+          # the first exec-once entry only) — fine in practice because it
+          # happens before the first frame is composited.
+          #
+          # `uwsm-app` is on PATH because `programs.hyprland.withUWSM = true`
+          # (modules/nixos/hyprland.nix) adds pkgs.uwsm to systemPackages.
           exec-once = [
-            "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
             # 1Password tray-only; kitty lands on workspace T via the
-            # match:class kitty rule.
-            "1password --silent"
-            "kitty"
-            "noctalia-shell"
+            # match:class kitty rule (windowrules still match — the
+            # uwsm-app wrapper doesn't change app_id/class).
+            "uwsm-app -- 1password --silent"
+            "uwsm-app -- kitty"
+            # noctalia-shell stays exec-once: upstream deprecated systemd
+            # startup over IPC / start-order issues. The uwsm-app wrapper
+            # is still worthwhile — gets it into app.slice so a
+            # compositor crash doesn't orphan it.
+            "uwsm-app -- noctalia-shell"
           ];
 
           # -- Named workspaces with monitor pinning --
@@ -334,7 +409,8 @@ _: {
 
             # Launch — Super+Space mirrors GNOME; Alt+Space stays on
             # vicinae (kept for its dmenu mode used by ad-hoc scripts).
-            "$mod, Return, exec, kitty"
+            # `uwsm-app --` for the same reason as exec-once above.
+            "$mod, Return, exec, uwsm-app -- kitty"
             "SUPER, Space, exec, $ipc launcher toggle"
             "$mod, Space, exec, vicinae toggle"
 
@@ -491,22 +567,37 @@ _: {
       };
 
       # -- Noctalia shell --
-      # Launched via hyprland's exec-once above; upstream deprecated systemd
-      # startup over IPC / start-order issues. See `noctaliaSettings` (let
-      # block) for why settings.json is bootstrapped instead of symlinked.
+      # Launched via hyprland's exec-once above; upstream deprecated
+      # systemd startup over IPC / start-order issues. Settings.json
+      # is seeded by the activation script below — see the
+      # noctaliaSettings let-block for the "writable, re-seeded on
+      # switch" rationale.
       programs.noctalia-shell.enable = true;
 
       home.activation.noctaliaSettingsBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         cfg="$HOME/.config/noctalia/settings.json"
         $DRY_RUN_CMD mkdir -p "$(dirname "$cfg")"
-        # Replace if missing, or if it's still a read-only symlink from a
-        # previous build that used `programs.noctalia-shell.settings`.
-        # Do not overwrite an existing regular file — that's where noctalia
-        # persists runtime mutations (darkMode toggles, wallpaper picks).
-        if [ ! -e "$cfg" ] || [ -L "$cfg" ]; then
-          $DRY_RUN_CMD rm -f "$cfg"
-          $DRY_RUN_CMD install -m 644 ${noctaliaSettings} "$cfg"
-        fi
+        # Always replace — settings.json is treated as ephemeral.
+        # Asset is the source of truth; runtime mutations live until
+        # the next nixos-rebuild switch or reboot. To persist a
+        # runtime change, capture it via `noctalia-settings-dump`,
+        # edit the asset, commit, rebuild.
+        $DRY_RUN_CMD rm -f "$cfg"
+        $DRY_RUN_CMD install -m 644 ${noctaliaSettings} "$cfg"
+      '';
+
+      home.activation.noctaliaPluginsBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        cfg="$HOME/.config/noctalia/plugins.json"
+        $DRY_RUN_CMD mkdir -p "$(dirname "$cfg")"
+        $DRY_RUN_CMD rm -f "$cfg"
+        $DRY_RUN_CMD install -m 644 ${noctaliaPlugins} "$cfg"
+      '';
+
+      # Make sure noctalia's wallpaper directory exists so the picker
+      # doesn't show "no directory" on a fresh install. The path tracks
+      # `wallpaper.directory` in assets/noctalia/settings.json.
+      home.activation.makeWallpapersDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        $DRY_RUN_CMD mkdir -p $HOME/Pictures/Wallpapers
       '';
 
       programs.ghostty.enable = true;
@@ -518,8 +609,19 @@ _: {
         enable = true;
         useLayerShell = true;
         systemd.enable = true;
-        systemd.target = "hyprland-session.target";
+        systemd.target = "graphical-session.target";
       };
+
+      # -- Polkit auth agent --
+      # Handled by noctalia's `polkit-agent` plugin (in plugins.json),
+      # not a separate hyprpolkitagent process. The plugin uses
+      # Quickshell.Services.Polkit + WlrLayershell.Overlay for a native
+      # Wayland overlay that matches noctalia's theme/animations and
+      # shares the same auth surface language as the lock screen.
+      # Trade-off: the agent dies if noctalia crashes — fine here
+      # because noctalia is the shell, so a crash means the bar /
+      # launcher / notifications are gone too, and a polkit prompt is
+      # the least of the worries.
 
       # -- Kanshi (monitor management, wlroots protocol) --
       # Outside noctalia's scope (compositor-level). Profiles (eDP-1
@@ -528,7 +630,7 @@ _: {
       # displays-<hardware>-<loc>).
       services.kanshi = {
         enable = true;
-        systemdTarget = "hyprland-session.target";
+        systemdTarget = "graphical-session.target";
       };
 
       # -- Hypridle: single coordinator for idle + sleep hooks --
@@ -547,11 +649,13 @@ _: {
           general = {
             lock_cmd = "${noctaliaIpc} call lockScreen lock";
             before_sleep_cmd = "${noctaliaIpc} call lockScreen lock";
-            # Re-arm noctalia's PAM session after resume. fprintd is
-            # stopped before s2idle by the system-level Conflicts=sleep.target
-            # rule (modules/nixos/hyprland.nix), so this restartAuth runs
-            # pam.start() against a freshly auto-launched fprintd.
-            after_sleep_cmd = "${noctaliaIpc} call lockScreen restartAuth";
+            # DPMS-on + wait-for-fprintd + restartAuth — see the
+            # afterSleepHook let-binding above for the rationale on
+            # each stage. The fprintd wait is the load-bearing piece:
+            # the kernel's post-resume Goodix USB re-enumeration lags
+            # PrepareForSleep by several seconds, which used to make
+            # the lock-screen fingerprint widget appear flakily.
+            after_sleep_cmd = "${afterSleepHook}";
             inhibit_sleep = 3;
           };
           # Idle thresholds ported verbatim from the old noctalia
@@ -576,25 +680,31 @@ _: {
       };
 
       # -- GTK/Qt theming (Catppuccin Mocha) --
-      # Theme-name swap is driven by the noctalia darkModeChange hook
-      # above (Mocha ↔ Latte). dconf color-scheme is handled by
-      # noctalia's `colorSchemes.syncGsettings`.
+      # Static theme — the GTK theme NAME stays Mocha across runtime
+      # toggles. The darkModeChange hook only updates Hyprland border
+      # colors via hyprctl; it does not swap GTK themes. Dark/light
+      # propagation to libadwaita / Electron happens via dconf
+      # color-scheme, which noctalia's `colorSchemes.syncGsettings`
+      # keeps in sync — apps that subscribe to the freedesktop
+      # appearance signal flip between dark/light renderings, but
+      # the underlying GTK theme remains Mocha. Latte is installed
+      # below as a fallback package, not auto-applied.
       gtk = {
         enable = true;
         theme = {
-          name = "catppuccin-mocha-blue-standard";
+          name = theme.gtk.themeName;
           package = pkgs.catppuccin-gtk.override {
-            accents = [ "blue" ];
-            variant = "mocha";
+            accents = [ theme.gtk.accent ];
+            variant = theme.gtk.variant;
           };
         };
         iconTheme = {
-          name = "Papirus-Dark";
+          name = theme.gtk.iconThemeName;
           package = pkgs.papirus-icon-theme;
         };
         font = {
-          name = "Open Sans";
-          size = 13;
+          name = theme.gtk.fontName;
+          size = theme.gtk.fontSize;
           package = pkgs.open-sans;
         };
         gtk3.extraConfig.gtk-application-prefer-dark-theme = 1;
@@ -609,7 +719,7 @@ _: {
 
       home.pointerCursor = {
         gtk.enable = true;
-        name = "catppuccin-mocha-dark-cursors";
+        name = theme.gtk.cursorName;
         package = pkgs.catppuccin-cursors.mochaDark;
         size = 24;
       };
@@ -617,9 +727,10 @@ _: {
       # -- Packages --
       home.packages = with pkgs; [
         # Catppuccin Latte GTK theme used by the darkModeChange hook when
-        # switching to light mode.
+        # switching to light mode. Variant is hardcoded to "latte" (the
+        # light counterpart); accent tracks the centralized choice.
         (catppuccin-gtk.override {
-          accents = [ "blue" ];
+          accents = [ theme.gtk.accent ];
           variant = "latte";
         })
 
@@ -644,6 +755,88 @@ _: {
         # these). Optional — noctalia's built-in panels are usually enough.
         pwvucontrol
         overskride
+
+        # Graceful logout for the noctalia session menu: sends
+        # xdg-toplevel close events to running apps (so they can
+        # prompt for unsaved work / flush state) before exiting
+        # Hyprland via `hyprctl dispatch exit`. UWSM's bindpid
+        # watcher detects the compositor exit and cascades the
+        # wayland-session@hyprland.target teardown automatically, so
+        # no separate `uwsm stop` call is needed.
+        hyprshutdown
+
+        # Helpers for the declarative settings workflow. The activation
+        # installs settings.json as a writable copy (mode 0644), and
+        # noctalia writes runtime state back to it — so comparing the
+        # live file against IPC is meaningless (both reflect runtime).
+        # `noctalia-settings-diff` therefore compares the /nix/store
+        # derivation (asset + Nix-side overlays) against IPC state. To
+        # persist a runtime change, capture via `noctalia-settings-dump`
+        # and update `modules/home/assets/noctalia/settings.json`.
+        #
+        #   noctalia-settings-diff
+        #       Show a unified diff between the declarative file and
+        #       the running noctalia state. Useful for finding what
+        #       you've toggled in the current session that doesn't yet
+        #       live in the Nix asset.
+        #
+        #   noctalia-settings-dump
+        #       Print the running noctalia state, stripped of the
+        #       fields that should not be tracked (the `darkModeChange`
+        #       hook is generated with /nix/store paths every build,
+        #       and `settingsVersion` bumps on schema changes). Pipe
+        #       this into the asset file:
+        #
+        #         noctalia-settings-dump > \
+        #           ~/.nixpkgs/modules/home/assets/noctalia/settings.json
+        #
+        #       Then `git diff` the asset, sanity-check, and rebuild.
+        (writeShellScriptBin "noctalia-settings-dump" ''
+          set -eu
+          # `-S` sorts keys so successive dumps produce diff-stable
+          # output regardless of noctalia's internal emission order.
+          ${noctaliaIpc} call state all | ${pkgs.jq}/bin/jq -S '${ipcFilter}'
+        '')
+        # Asset-shaped dump: same as `noctalia-settings-dump`, but rewrites
+        # `wallpaper.directory` back to the `~/Pictures/Wallpapers` tilde
+        # form that the asset uses (the Nix overlay expands `~` at eval
+        # time, so the runtime always shows the absolute path). Redirect
+        # straight onto the asset to capture runtime drift:
+        #
+        #   noctalia-settings-apply \
+        #     > ~/.nixpkgs/modules/home/assets/noctalia/settings.json
+        (writeShellScriptBin "noctalia-settings-apply" ''
+          set -eu
+          ${noctaliaIpc} call state all \
+            | ${pkgs.jq}/bin/jq -S '${ipcFilter} | .wallpaper.directory |= sub("^"+env.HOME+"/"; "~/")'
+        '')
+        (writeShellScriptBin "noctalia-settings-diff" ''
+          set -eu
+          # Compare the Nix-store derivation (asset + Nix-side overlays)
+          # against the live IPC state — NOT $HOME/.config/noctalia/settings.json,
+          # which noctalia mutates at runtime and would always match IPC.
+          ${pkgs.diffutils}/bin/diff -u --label declarative --label runtime \
+            <(${pkgs.jq}/bin/jq -S '${stripFilter}' "${noctaliaSettings}") \
+            <(${noctaliaIpc} call state all | ${pkgs.jq}/bin/jq -S '${ipcFilter}') \
+            || true
+        '')
+
+        # plugins.json equivalents. plugins.json doesn't have an IPC
+        # accessor — the file itself is the runtime state, written by
+        # noctalia when plugins are toggled in the GUI. dump prints
+        # the current file (sorted); diff compares against the
+        # checked-in asset.
+        (writeShellScriptBin "noctalia-plugins-dump" ''
+          set -eu
+          ${pkgs.jq}/bin/jq -S '.' "$HOME/.config/noctalia/plugins.json"
+        '')
+        (writeShellScriptBin "noctalia-plugins-diff" ''
+          set -eu
+          ${pkgs.diffutils}/bin/diff -u --label asset --label runtime \
+            <(${pkgs.jq}/bin/jq -S '.' "${./assets/noctalia/plugins.json}") \
+            <(${pkgs.jq}/bin/jq -S '.' "$HOME/.config/noctalia/plugins.json") \
+            || true
+        '')
 
         # Direct (no-overlay) screenshot wrapper for the macOS-style
         # alt-shift-4 / alt-shift-5 keybinds. Mode = region|screen,
@@ -685,31 +878,6 @@ _: {
               ;;
             *) echo "usage: screenshot {region|screen} {file|clipboard}" >&2; exit 2 ;;
           esac
-        '')
-
-        (writeShellScriptBin "sync-wallpaper" ''
-          # Sync GNOME wallpaper to noctalia's directory, converting SVG if needed.
-          # noctalia picks them up via `wallpaper.directory` + the
-          # linkLightAndDarkWallpapers pairing on basename match.
-          for variant in dark light; do
-            if [ "$variant" = "dark" ]; then
-              uri=$(${pkgs.dconf}/bin/dconf read /org/gnome/desktop/background/picture-uri-dark | tr -d "'")
-            else
-              uri=$(${pkgs.dconf}/bin/dconf read /org/gnome/desktop/background/picture-uri | tr -d "'")
-            fi
-            src=''${uri#file://}
-            dest="$HOME/.config/hypr/wallpaper-$variant.png"
-            if [ -z "$src" ] || [ ! -f "$src" ]; then continue; fi
-            case "$src" in
-              *.svg)
-                ${pkgs.librsvg}/bin/rsvg-convert -w 3840 "$src" -o "$dest"
-                ;;
-              *.png|*.jpg|*.jpeg)
-                cp "$src" "$dest"
-                ;;
-            esac
-          done
-          ${noctaliaIpc} call wallpaper refresh || true
         '')
 
         # nm-connection-editor (advanced VPN/Wi-Fi config — noctalia opens
@@ -787,6 +955,21 @@ _: {
         XDG_CURRENT_DESKTOP = "Hyprland";
         XDG_SESSION_DESKTOP = "Hyprland";
       };
+
+      # Bridge `home.sessionVariables` into the UWSM session env. UWSM
+      # is exec'd directly by greetd (no shell login between the two),
+      # so the standard HM env path — sourcing `hm-session-vars.sh`
+      # from `~/.profile` — never runs for the wayland session.
+      # `~/.config/uwsm/env` is the documented UWSM hook: it's sourced
+      # by `wayland-wm-env@hyprland.desktop.service` before the
+      # compositor starts and the resulting env is exported to the
+      # whole `wayland-session@hyprland.target` graph. Without this,
+      # vars like NIXOS_OZONE_WL / QT_QPA_PLATFORM only land in shells
+      # spawned from kitty (which inherits via systemd-user), not in
+      # apps started directly by the compositor.
+      xdg.configFile."uwsm/env".text = ''
+        source ${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh
+      '';
 
       xdg.mime.enable = true;
 

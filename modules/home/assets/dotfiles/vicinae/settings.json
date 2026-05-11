@@ -19,7 +19,7 @@
   "font": {
     "rendering": "native",
     "normal": {
-      "family": "JetBrains Mono",
+      "family": "Open Sans",
       "size": 12
     }
   },
@@ -69,6 +69,58 @@
         "eraseOnStartup": false,
         "ignorePasswords": true,
         "monitoring": true
+      }
+    },
+    "power": {
+      "entrypoints": {
+        "hibernate": {
+          "preferences": {
+            "confirm": true,
+            "customProgram": "systemctl hibernate"
+          }
+        },
+        "lock": {
+          "preferences": {
+            "confirm": false,
+            "customProgram": "loginctl lock-session"
+          }
+        },
+        "logout": {
+          "preferences": {
+            "confirm": true,
+            "customProgram": "uwsm stop"
+          }
+        },
+        "power-off": {
+          "preferences": {
+            "confirm": true,
+            "customProgram": "hyprshutdown --post-cmd 'systemctl poweroff'"
+          }
+        },
+        "reboot": {
+          "preferences": {
+            "confirm": true,
+            "customProgram": "hyprshutdown --post-cmd 'systemctl reboot'"
+          }
+        },
+        "sleep": {
+          "preferences": {
+            "confirm": true,
+            "customProgram": "systemctl suspend"
+          }
+        },
+        "soft-reboot": {
+          "preferences": {
+            "confirm": true,
+            "customProgram": "hyprshutdown --post-cmd 'systemctl soft-reboot'"
+          }
+        },
+        "suspend": {
+          "preferences": {
+            "confirm": true,
+            "customProgram": "systemctl suspend"
+          }
+        }
       }
     }
   }
