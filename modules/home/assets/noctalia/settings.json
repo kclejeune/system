@@ -381,7 +381,7 @@
     "animationDisabled": false,
     "animationSpeed": 2,
     "autoStartAuth": true,
-    "avatarImage": "/home/kclejeune/slurp.jpg",
+    "avatarImage": "~/slurp.jpg",
     "boxRadiusRatio": 1,
     "clockFormat": "hh\\nmm",
     "clockStyle": "digital",

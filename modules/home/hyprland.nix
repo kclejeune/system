@@ -179,13 +179,24 @@ in
                   /var/lib/regreet/background.png 2>/dev/null || true
               '';
             };
-            # noctalia reads `wallpaper.directory` directly via QML's
-            # FileView (no shell), so a leading `~` is taken literally.
-            # Interpolate `home.homeDirectory` at eval time to land an
-            # absolute path in the rendered settings.json.
+            # noctalia reads `wallpaper.directory` and
+            # `general.avatarImage` directly via QML's FileView (no
+            # shell), so a leading `~` is taken literally. Expand
+            # `~/`-prefixed asset values against `home.homeDirectory`
+            # at eval time so the rendered settings.json lands an
+            # absolute path that tracks whichever user the HM config
+            # is being built for (not whichever machine happened to
+            # seed the asset).
             wallpaper = (asset.wallpaper or { }) // {
               directory = "${config.home.homeDirectory}/Pictures/Wallpapers";
             };
+            general =
+              let
+                g = asset.general or { };
+                expandTilde =
+                  v: if lib.hasPrefix "~/" v then "${config.home.homeDirectory}/${lib.removePrefix "~/" v}" else v;
+              in
+              g // lib.optionalAttrs (g ? avatarImage) { avatarImage = expandTilde g.avatarImage; };
           }
         );
 
@@ -871,17 +882,22 @@ in
           ${noctaliaIpc} call state all | ${pkgs.jq}/bin/jq -S '${ipcFilter}'
         '')
         # Asset-shaped dump: same as `noctalia-settings-dump`, but rewrites
-        # `wallpaper.directory` back to the `~/Pictures/Wallpapers` tilde
-        # form that the asset uses (the Nix overlay expands `~` at eval
-        # time, so the runtime always shows the absolute path). Redirect
-        # straight onto the asset to capture runtime drift:
+        # `wallpaper.directory` and `general.avatarImage` back to the
+        # `~/`-prefixed form the asset uses (the Nix overlay expands `~`
+        # against `home.homeDirectory` at eval time, so the runtime
+        # always shows the absolute path). Redirect straight onto the
+        # asset to capture runtime drift:
         #
         #   noctalia-settings-apply \
         #     > ~/.nixpkgs/modules/home/assets/noctalia/settings.json
         (writeShellScriptBin "noctalia-settings-apply" ''
           set -eu
           ${noctaliaIpc} call state all \
-            | ${pkgs.jq}/bin/jq -S '${ipcFilter} | .wallpaper.directory |= sub("^"+env.HOME+"/"; "~/")'
+            | ${pkgs.jq}/bin/jq -S '${ipcFilter}
+                | .wallpaper.directory |= sub("^"+env.HOME+"/"; "~/")
+                | if .general.avatarImage? then
+                    .general.avatarImage |= sub("^"+env.HOME+"/"; "~/")
+                  else . end'
         '')
         (writeShellScriptBin "noctalia-settings-diff" ''
           set -eu
