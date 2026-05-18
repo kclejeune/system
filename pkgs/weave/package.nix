@@ -8,16 +8,16 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "weave";
-  version = "0.3.2";
+  version = "0.3.3";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "weave";
     rev = "v${version}";
-    hash = "sha256-NlBHoxDgiNF38ktx2d44BmdABrPh4wr52mkNjlAmtX0=";
+    hash = "sha256-GKSINiu98bTYjspHqv/6b7VfCI00gfTkhrmlz0PEKk8=";
   };
 
-  cargoHash = "sha256-XUasm/j9FOH9vDqSt1mYBfk3Y9UFKyFb8EKovptXYbI=";
+  cargoHash = "sha256-FoewhLvXTZZYEcNlvjfqHMF87WP5Q8OzHmetep+qh/c=";
 
   nativeBuildInputs = [
     pkg-config

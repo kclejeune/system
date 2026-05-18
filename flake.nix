@@ -293,6 +293,7 @@
 
               cb = pkgs.callPackage ./pkgs/cb/package.nix { };
               fnox = pkgs.callPackage ./pkgs/fnox/package.nix { };
+              sem-cli = pkgs.callPackage ./pkgs/sem-cli/package.nix { };
               weave = pkgs.callPackage ./pkgs/weave/package.nix { };
               stable = inputs.stable.legacyPackages.${system};
               determinate-nixd = inputs.determinate.packages.${system}.default;

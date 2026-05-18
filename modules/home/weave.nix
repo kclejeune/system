@@ -1,19 +1,26 @@
 _: {
   flake.homeModules.weave =
-    { pkgs, ... }:
+    { pkgs, lib, ... }:
     {
-      home.packages = [ pkgs.weave ];
+      home.packages = [
+        # `sem` collides with GNU parallel's semaphore wrapper (also called
+        # `sem`); we want sem-cli to win since parallel users invoke `sem`
+        # rarely and via the GNU parallel docs.
+        (lib.hiPrio pkgs.sem-cli)
+        pkgs.weave
+      ];
 
       programs.git = {
+        # Mirrors upstream `weave setup` (crates/weave-cli/src/commands/setup.rs).
+        # Update when bumping the weave package if upstream adds/removes parsers.
         attributes = [
           # TypeScript / JavaScript
           "*.ts merge=weave"
           "*.tsx merge=weave"
           "*.js merge=weave"
-          "*.jsx merge=weave"
           "*.mjs merge=weave"
           "*.cjs merge=weave"
-          "*.es6 merge=weave"
+          "*.jsx merge=weave"
           # Python / Go / Rust
           "*.py merge=weave"
           "*.go merge=weave"
@@ -36,20 +43,11 @@ _: {
           "*.ex merge=weave"
           "*.exs merge=weave"
           "*.sh merge=weave"
-          # Kotlin
-          "*.kt merge=weave"
-          "*.kts merge=weave"
           # Fortran
           "*.f90 merge=weave"
           "*.f95 merge=weave"
           "*.f03 merge=weave"
           "*.f08 merge=weave"
-          "*.f merge=weave"
-          "*.for merge=weave"
-          # HCL / Terraform
-          "*.hcl merge=weave"
-          "*.tf merge=weave"
-          "*.tfvars merge=weave"
           # XML family
           "*.xml merge=weave"
           "*.plist merge=weave"
@@ -57,27 +55,21 @@ _: {
           "*.csproj merge=weave"
           "*.fsproj merge=weave"
           "*.vbproj merge=weave"
-          "*.xhtml merge=weave"
-          "*.props merge=weave"
-          "*.targets merge=weave"
-          "*.nuspec merge=weave"
-          "*.resx merge=weave"
-          "*.xaml merge=weave"
-          "*.axml merge=weave"
           # Data / config
           "*.json merge=weave"
           "*.yaml merge=weave"
           "*.yml merge=weave"
           "*.toml merge=weave"
-          "*.csv merge=weave"
-          "*.tsv merge=weave"
           # Docs
           "*.md merge=weave"
-          "*.mdx merge=weave"
-          # Web / templates
-          "*.vue merge=weave"
-          "*.svelte merge=weave"
-          "*.erb merge=weave"
+          # Scala family
+          "*.scala merge=weave"
+          "*.sc merge=weave"
+          "*.sbt merge=weave"
+          "*.kojo merge=weave"
+          "*.mill merge=weave"
+          # Dart
+          "*.dart merge=weave"
         ];
 
         settings.merge.weave = {
