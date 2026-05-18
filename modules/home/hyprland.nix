@@ -237,6 +237,14 @@ in
         # hyprland-session.target and env-export wiring that conflicts with
         # UWSM's session management. https://wiki.nixos.org/wiki/Hyprland
         systemd.enable = false;
+        # Pin the generator to hyprlang. A recent HM bump flipped the
+        # default to "lua", which writes `~/.config/hypr/hyprland.lua` and
+        # is only understood by Hyprland's experimental Lua config loader.
+        # Hyprland 0.54.x (current) does not parse it — the compositor
+        # silently falls back to whatever stale `hyprland.conf` is on
+        # disk, so settings here stop applying. Force the classic
+        # hyprlang generator until/unless we opt into Lua deliberately.
+        configType = "hyprlang";
 
         # hyprbars and hyprgrass are intentionally NOT here: nixpkgs's
         # hyprland-plugins lag the bundled hyprland API, so both fail to
