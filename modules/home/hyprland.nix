@@ -30,6 +30,25 @@ in
 
       hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
 
+      # `hyprctl reload` re-reads the config but does not re-init plugins —
+      # plugin .so handles stay mapped with whatever state they had. The
+      # `hypr-dynamic-cursors` plugin occasionally gets into a degraded
+      # render state on this host (cursor stays sluggish indefinitely);
+      # unload+load drops the cursor render path and reinitializes it
+      # without dropping the session. Path is read from /proc/<pid>/maps
+      # because plugins live at unique /nix/store paths per build, and
+      # querying the running process is the only reliable way to find
+      # the .so currently loaded.
+      hyprReload = pkgs.writeShellScript "hypr-reload" ''
+        ${hyprctl} reload
+        plug=$(${pkgs.gawk}/bin/awk '/libhypr-dynamic-cursors\.so/ {print $NF; exit}' \
+          /proc/$(${pkgs.procps}/bin/pgrep -x Hyprland)/maps 2>/dev/null) || true
+        if [ -n "$plug" ]; then
+          ${hyprctl} plugin unload "$plug" || true
+          ${hyprctl} plugin load "$plug" || true
+        fi
+      '';
+
       # noctalia-shell IPC invocation. The default config-path discovery
       # hits a quickshell upstream bug (returns "No running instances"
       # even on exact match), so we pass `--pid` explicitly. Two quirks
@@ -362,6 +381,13 @@ in
             force_default_wallpaper = 0;
             disable_hyprland_logo = true;
             focus_on_activate = true;
+            # VFR throttles the compositor's render loop when nothing is
+            # animating. Combined with the hypr-dynamic-cursors plugin's
+            # per-frame buffer reimports, the loop occasionally locks
+            # into a low-Hz state and the cursor stays sluggish until
+            # something forces a refresh. Cost of disabling is a few
+            # extra GPU wakeups per second; cheap on a desktop laptop.
+            vfr = false;
             # When an ext-session-lock-v1 client (noctalia's lock
             # surface) disconnects without sending unlock_and_destroy,
             # the protocol obliges the compositor to keep the screen
@@ -475,6 +501,11 @@ in
 
             # Dark/light mode toggle — fires the darkModeChange hook.
             "SUPER, d, exec, $ipc darkMode toggle"
+
+            # Reload config + bounce the dynamic-cursors plugin. Workaround
+            # for an intermittent state where the plugin's cursor render
+            # path goes sluggish and stays that way until reinitialized.
+            "SUPER, r, exec, ${hyprReload}"
 
             # Lock screen
             "$mod CTRL, q, exec, $ipc lockScreen lock"

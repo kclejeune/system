@@ -23,6 +23,8 @@ _: {
           cacert
           cachix
           cb
+          clang
+          cmake
           codespell
           coreutils-full
           curl
