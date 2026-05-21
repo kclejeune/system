@@ -414,6 +414,15 @@ in
       services.udisks2.enable = true;
       programs.dconf.enable = true;
 
+      # ReGreet calls `org.freedesktop.Accounts` at startup to enumerate
+      # human users for the picker; without accountsservice on the bus it
+      # panics in src/gui/model.rs ("MethodError … ServiceUnknown: The
+      # name is not activatable") and falls back to a default GTK form
+      # with none of our regreet.toml / regreet.css applied — visually
+      # identical to a fresh ReGreet install. GNOME pulls accountsservice
+      # in transitively, so the bug only shows up on Hyprland hosts.
+      services.accounts-daemon.enable = true;
+
       hm.imports = [ flakeCfg.flake.homeModules.onepassword ];
     };
 }
