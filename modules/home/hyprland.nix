@@ -381,13 +381,6 @@ in
             force_default_wallpaper = 0;
             disable_hyprland_logo = true;
             focus_on_activate = true;
-            # VFR throttles the compositor's render loop when nothing is
-            # animating. Combined with the hypr-dynamic-cursors plugin's
-            # per-frame buffer reimports, the loop occasionally locks
-            # into a low-Hz state and the cursor stays sluggish until
-            # something forces a refresh. Cost of disabling is a few
-            # extra GPU wakeups per second; cheap on a desktop laptop.
-            vfr = false;
             # When an ext-session-lock-v1 client (noctalia's lock
             # surface) disconnects without sending unlock_and_destroy,
             # the protocol obliges the compositor to keep the screen
