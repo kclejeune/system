@@ -17,36 +17,33 @@ _: {
       slinkyInstall = shell: ''
         if command -v slinky >/dev/null 2>&1; then eval "$(command slinky config hook ${shell})"; fi
       '';
+      onNixos = osConfig != null && pkgs.stdenvNoCC.hostPlatform.isLinux;
+      ageKey = "${config.xdg.configHome}/sops/age/keys.txt";
     in
     {
       home = {
         preferXdgDirectories = true;
-        sessionVariables =
-          let
-            ageKey = "${config.xdg.configHome}/sops/age/keys.txt";
-            # On NixOS, nh os defaults to the system hostname (e.g. "wally"),
-            # which matches nixosConfigurations.<host> — so leave NH_HOST unset
-            # there. For standalone HM and nix-darwin we still want the
-            # hardware-independent "<user>@<system>" scheme.
-            onNixos = osConfig != null && pkgs.stdenvNoCC.hostPlatform.isLinux;
-          in
-          {
-            GPG_TTY = "/dev/ttys000";
-            CLICOLOR = 1;
-            LSCOLORS = "ExFxBxDxCxegedabagacad";
-            LANG = "en_US.UTF-8";
-            DEFAULT_USER = "${config.home.username}";
-            LS_COLORS = "ExFxBxDxCxegedabagacad";
-            TERM = "xterm-256color";
-            MISE_ENV_FILE = ".env";
-            AGE_KEY_FILE = ageKey;
-            MISE_AGE_KEY_FILE = ageKey;
-            SOPS_AGE_KEY_FILE = ageKey;
-            FNOX_AGE_KEY_FILE = ageKey;
-          }
-          // lib.optionalAttrs (!onNixos) {
-            NH_HOST = "${config.home.username}@${pkgs.stdenvNoCC.hostPlatform.system}";
-          };
+        sessionVariables = {
+          GPG_TTY = "/dev/ttys000";
+          CLICOLOR = 1;
+          LSCOLORS = "ExFxBxDxCxegedabagacad";
+          LANG = "en_US.UTF-8";
+          DEFAULT_USER = "${config.home.username}";
+          LS_COLORS = "ExFxBxDxCxegedabagacad";
+          TERM = "xterm-256color";
+          MISE_ENV_FILE = ".env";
+          AGE_KEY_FILE = ageKey;
+          MISE_AGE_KEY_FILE = ageKey;
+          SOPS_AGE_KEY_FILE = ageKey;
+          FNOX_AGE_KEY_FILE = ageKey;
+        }
+        // lib.optionalAttrs (!onNixos) {
+          # On NixOS, nh os defaults to the system hostname (e.g. "wally"),
+          # which matches nixosConfigurations.<host> — so leave NH_HOST unset
+          # there. For standalone HM and nix-darwin we still want the
+          # hardware-independent "<user>@<system>" scheme.
+          NH_HOST = "${config.home.username}@${pkgs.stdenvNoCC.hostPlatform.system}";
+        };
         sessionPath = [
           "${homeDir}/.local/bin"
           "${homeDir}/.rustup/bin"
@@ -58,6 +55,8 @@ _: {
           ncdu = "gdu";
           pre-commit = "prek";
           lwt = "lazyworktree";
+        }
+        // lib.optionalAttrs onNixos {
           # nixpkgs renames Zed's binary to avoid colliding with the
           # nodePackages.zed CLI; alias back so muscle memory works.
           zed = "zeditor";
@@ -109,7 +108,7 @@ _: {
           setopt CHASE_LINKS
           setopt CHASE_DOTS
           ${wtInstall "zsh"}
-          ${slinkyInstall "zsh"}
+          # ${slinkyInstall "zsh"}
         '';
         oh-my-zsh = {
           enable = true;
@@ -157,7 +156,7 @@ _: {
         initExtra = ''
           eval "$(mise activate bash)"
           ${wtInstall "bash"}
-          ${slinkyInstall "bash"}
+          # ${slinkyInstall "bash"}
         '';
       };
     };
