@@ -305,15 +305,6 @@ in
         gtk3
       ];
 
-      # nix-ld's NIX_LD_LIBRARY_PATH is only consulted when nix-ld itself
-      # is the dynamic loader. Nix-built interpreters (e.g. the python in
-      # uv's PEP 517 build envs when it picks up a system python) use the
-      # regular loader and won't see it. Exposing the same lib bundle on
-      # LD_LIBRARY_PATH lets those processes resolve libstdc++.so.6 et al
-      # — needed for grpc_tools._protoc_compiler and similar prebuilt
-      # wheels invoked during source builds.
-      environment.sessionVariables.LD_LIBRARY_PATH = "/run/current-system/sw/share/nix-ld/lib";
-
       environment.etc."determinate/config.json".text = builtins.toJSON {
         authentication.additionalNetrcSources = [ "/etc/nix/netrc" ];
       };
