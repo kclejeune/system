@@ -69,6 +69,21 @@ _: {
         daemon.enable = true;
         flags = [ ];
       };
+      # atuin's daemon does not unlink its unix socket on bind, so a hard kill
+      # (sleep, crash, force-quit) leaves a stale socket and every subsequent
+      # `atuin daemon start` exits with EADDRINUSE — invisibly, since launchd's
+      # KeepAlive just respawns the failing process. On Linux the systemd
+      # socket unit handles this via RemoveOnStop=true; on darwin we have to
+      # remove the socket ourselves before exec.
+      launchd.agents.atuin-daemon.config.ProgramArguments =
+        lib.mkIf pkgs.stdenvNoCC.hostPlatform.isDarwin
+          (
+            lib.mkForce [
+              "/bin/sh"
+              "-c"
+              ''rm -f "${config.xdg.dataHome}/atuin/daemon.sock"; exec ${lib.getExe pkgs.atuin} daemon start''
+            ]
+          );
       xdg =
         let
           mkZshPlugin =
