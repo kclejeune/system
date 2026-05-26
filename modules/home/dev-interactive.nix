@@ -37,7 +37,7 @@ _: {
           kotlin
           luajit
           nixpacks
-          nodejs_20
+          nodejs_22
           pyright
           rustup
           trivy
