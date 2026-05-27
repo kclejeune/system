@@ -78,7 +78,7 @@ _: {
           process-compose
           procps
           pv
-          rclone
+          stable.rclone
           restic
           rsync
           ruff
