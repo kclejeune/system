@@ -35,7 +35,7 @@ _: {
         "utm"
         "visual-studio-code"
         "vscodium"
-        "zed@preview"
+        "zed"
         "zotero"
       ];
     };
