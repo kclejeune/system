@@ -67,6 +67,7 @@ _: {
           nixfmt
           nixfmt-tree
           nmap
+          nurl
           openldap
           openssl
           ouch
