@@ -270,8 +270,15 @@ in
         # compile (SCallbackInfo / m_lastMonitor mismatches). The proper
         # fix is to switch hyprland to the upstream flake input where
         # plugins ship in lockstep with the compositor.
+        #
+        # hypr-dynamic-cursors is commented out for the same reason: the
+        # nixos-unstable bump to Hyprland 0.55.2 broke its build (0.55's
+        # render-API refactor replaced CTexture with Render::ITexture and
+        # made IPassElement::type() pure virtual; the packaged plugin
+        # predates both). Re-enable once nixpkgs ships a 0.55-compatible
+        # hypr-dynamic-cursors.
         plugins = with pkgs.hyprlandPlugins; [
-          hypr-dynamic-cursors
+          # hypr-dynamic-cursors
         ];
 
         settings = {
