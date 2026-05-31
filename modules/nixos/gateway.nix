@@ -291,7 +291,6 @@ _: {
                 # in management.json's EmbeddedIdP.StaticConnectors below.
                 client_id = "netbird";
                 client_name = "Netbird";
-                # TODO: replace with a real pbkdf2 hash before deploying.
                 client_secret = "$pbkdf2-sha512$310000$eR/0.KCdrZkDNlG4UxJHZA$RnhRovxssPf8MHatxmR2mAd8hLhMX0MZ0ZtwDsvoEr/auAdTMBHNuXo3avAnwB6sP4YsE0FWTJL.zot0YyLhTA";
                 authorization_policy = "one_factor";
                 consent_mode = "implicit";
