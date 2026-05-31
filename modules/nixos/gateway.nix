@@ -284,11 +284,11 @@ _: {
                 # exchange auth codes; Authelia stores only the pbkdf2
                 # hash below. Rotate them in lockstep
                 # (`authelia crypto hash generate pbkdf2 --variant sha512`).
-                # The redirect URI follows Dex's connector callback
-                # convention: /oauth2/callback/<connector-id> where the
-                # connector id is "authelia" (must match StaticConnectors
-                # in management.json and the --idp-seed-info JSON used by
-                # netbird-idp-migrate).
+                # Dex uses a single shared callback for all connectors —
+                # issuer + "/callback" (verified in netbird idp/dex
+                # connector.go GetRedirectURI) — NOT a per-connector path.
+                # This must exactly match the connector's config.redirectURI
+                # in management.json's EmbeddedIdP.StaticConnectors below.
                 client_id = "netbird";
                 client_name = "Netbird";
                 # TODO: replace with a real pbkdf2 hash before deploying.
@@ -298,7 +298,7 @@ _: {
                 claims_policy = "netbird";
                 response_types = [ "code" ];
                 redirect_uris = [
-                  "https://${netbirdDomain}/oauth2/callback/authelia"
+                  "https://${netbirdDomain}/oauth2/callback"
                 ];
                 scopes = [
                   "openid"
