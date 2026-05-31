@@ -15,6 +15,7 @@ in
       imports = [
         flakeCfg.flake.nixosModules.fonts
         flakeCfg.flake.nixosModules.keyd
+        flakeCfg.flake.nixosModules.nix-ld
       ];
 
       hm.desktop.enable = true;
@@ -280,15 +281,11 @@ in
       # discovery beacons.
       programs.localsend.enable = true;
 
-      # nix-ld for running unpatched dynamic binaries (VS Code, Zed, Brave extensions)
-      programs.nix-ld.enable = true;
+      # GUI libraries layered on top of the base nix-ld set (from the nix-ld
+      # module imported above) for running unpatched dynamic desktop binaries
+      # (VS Code, Zed, Brave extensions). The base set already provides
+      # stdenv.cc.cc.lib, zlib, openssl, icu, curl, glib.
       programs.nix-ld.libraries = with pkgs; [
-        stdenv.cc.cc.lib
-        zlib
-        openssl
-        icu
-        curl
-        glib
         nss
         nspr
         libx11
