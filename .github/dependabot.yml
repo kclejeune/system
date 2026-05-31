@@ -6,9 +6,40 @@ updates:
       interval: daily
       time: "10:00"
     open-pull-requests-limit: 10
-  # - package-ecosystem: nix
-  #   directory: "/"
-  #   schedule:
-  #     interval: daily
-  #     time: "11:30"
-  #   open-pull-requests-limit: 10
+  - package-ecosystem: nix
+    directory: "/"
+    schedule:
+      interval: daily
+      time: "11:30"
+    open-pull-requests-limit: 10
+    groups:
+      # Batch the nixpkgs channels (stable/unstable/nixos-unstable/nixpkgs)
+      # plus home-manager and nix-darwin into a single PR — they track each
+      # other and should bump in lockstep.
+      nixpkgs:
+        patterns:
+          - "darwin"
+          - "home-manager"
+          - "nix-index-database"
+          - "nixos-hardware"
+          - "nixos-unstable"
+          - "nixpkgs"
+          - "stable"
+          - "unstable"
+      # Build/format/CI plumbing — low blast radius, frequent tiny bumps.
+      dev:
+        patterns:
+          - "flake-parts"
+          - "import-tree"
+          - "flake-compat"
+          - "treefmt-nix"
+          - "git-hooks"
+          - "nh"
+          - "disko"
+          - "sops-nix"
+          - "lanzaboote"
+      # Both feed modules/shared/theme.nix via flake.lib.mkTheme.
+      theming:
+        patterns:
+          - "base16"
+          - "tinted-schemes"
