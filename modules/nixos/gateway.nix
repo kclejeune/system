@@ -136,6 +136,15 @@ _: {
           "netbird/turn_password" = {
             owner = "turnserver";
           };
+          # Plaintext OIDC client secret used by the embedded Dex IdP to
+          # authenticate against Authelia as a confidential upstream
+          # connector. The matching pbkdf2 hash lives in the Authelia
+          # netbird OIDC client config below; rotate them in lockstep
+          # (`authelia crypto hash generate pbkdf2 --variant sha512`).
+          # Substituted into management.json's
+          # EmbeddedIdP.StaticConnectors[].config.clientSecret via the
+          # netbird module's _secret/jq mechanism.
+          "netbird/authelia_client_secret" = { };
           "netbird/proxy_token" = { };
           "proxmox/oidc_client_secret" = { };
         };
@@ -223,8 +232,14 @@ _: {
               "name"
               "preferred_username"
             ];
+            # email_verified is required: netbird's embedded Dex rejects the
+            # upstream Authelia ID token when the email scope is requested but
+            # the token lacks email_verified (Dex errors "email not verified"
+            # unless insecureSkipEmailVerified is set). Authelia emits
+            # email_verified=true for LDAP users.
             claims_policies.netbird.id_token = [
               "email"
+              "email_verified"
               "name"
               "preferred_username"
               "groups"
@@ -269,19 +284,26 @@ _: {
                 pkce_challenge_method = "S256";
               }
               {
+                # Upstream OIDC connector consumed by netbird's embedded
+                # Dex IdP. Confidential client — Dex uses
+                # netbird/authelia_client_secret (plaintext, sops) to
+                # exchange auth codes; Authelia stores only the pbkdf2
+                # hash below. Rotate them in lockstep
+                # (`authelia crypto hash generate pbkdf2 --variant sha512`).
+                # Dex uses a single shared callback for all connectors —
+                # issuer + "/callback" (verified in netbird idp/dex
+                # connector.go GetRedirectURI) — NOT a per-connector path.
+                # This must exactly match the connector's config.redirectURI
+                # in management.json's EmbeddedIdP.StaticConnectors below.
                 client_id = "netbird";
                 client_name = "Netbird";
-                public = true;
+                client_secret = "$pbkdf2-sha512$310000$eR/0.KCdrZkDNlG4UxJHZA$RnhRovxssPf8MHatxmR2mAd8hLhMX0MZ0ZtwDsvoEr/auAdTMBHNuXo3avAnwB6sP4YsE0FWTJL.zot0YyLhTA";
                 authorization_policy = "one_factor";
                 consent_mode = "implicit";
                 claims_policy = "netbird";
-                audience = [ "netbird" ];
                 response_types = [ "code" ];
                 redirect_uris = [
-                  "http://localhost:53000"
-                  "https://${netbirdDomain}/auth"
-                  "https://${netbirdDomain}/silent-auth"
-                  "https://${netbirdDomain}/api/reverse-proxy/callback"
+                  "https://${netbirdDomain}/oauth2/callback"
                 ];
                 scopes = [
                   "openid"
@@ -289,9 +311,9 @@ _: {
                   "email"
                   "groups"
                 ];
+                token_endpoint_auth_method = "client_secret_basic";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
-                token_endpoint_auth_method = "none";
               }
               {
                 client_id = "cloudflare-access";
@@ -735,25 +757,58 @@ _: {
         };
 
         management = {
-          oidcConfigEndpoint = "https://${authDomain}/.well-known/openid-configuration";
+          # Required by the upstream module — used to populate
+          # HttpConfig.OIDCConfigEndpoint. With EmbeddedIdP enabled the
+          # binary doesn't actually consult HttpConfig for auth, but the
+          # NixOS option is mandatory, so we point it at the embedded
+          # Dex's discovery URL for consistency.
+          oidcConfigEndpoint = "https://${netbirdDomain}/oauth2/.well-known/openid-configuration";
           metricsPort = netbirdMgmtMetricsPort;
           settings = {
             DataStoreEncryptionKey._secret = config.sops.secrets."netbird/datastore_encryption_key".path;
             TURNConfig.Secret._secret = config.sops.secrets."netbird/turn_password".path;
-            HttpConfig = {
-              AuthIssuer = "https://${authDomain}";
-              AuthAudience = "netbird";
-              AuthClientID = "netbird";
-              AuthCallbackURL = "https://${netbirdDomain}/api/reverse-proxy/callback";
-            };
-            PKCEAuthorizationFlow.ProviderConfig = {
-              Audience = "netbird";
-              ClientID = "netbird";
-              AuthorizationEndpoint = "https://${authDomain}/api/oidc/authorization";
-              TokenEndpoint = "https://${authDomain}/api/oidc/token";
-              Scope = "openid profile email groups";
-              RedirectURLs = [ "http://localhost:53000" ];
-              UseIDToken = true;
+            # Wipe the keys netbird-idp-migrate strips. The upstream
+            # module's defaultSettings includes IdpManagerConfig,
+            # PKCEAuthorizationFlow, and DeviceAuthorizationFlow; setting
+            # them to null here, with mkForce to override the defaults,
+            # produces "key": null in management.json which the binary
+            # treats as absent (Go decodes JSON null → nil pointer).
+            IdpManagerConfig = lib.mkForce null;
+            PKCEAuthorizationFlow = lib.mkForce null;
+            DeviceAuthorizationFlow = lib.mkForce null;
+            # Embedded Dex IdP. Authelia is wired in as an upstream OIDC
+            # connector; users signing in are redirected to Authelia, then
+            # back to Dex, which mints netbird-flavored tokens (aud =
+            # netbird-dashboard / netbird-cli). The connector id MUST
+            # match the value used when running netbird-idp-migrate
+            # (--idp-seed-info) — re-encoded user IDs in store.db are
+            # bound to that id.
+            EmbeddedIdP = {
+              Enabled = true;
+              Issuer = "https://${netbirdDomain}/oauth2";
+              DashboardRedirectURIs = [
+                "https://${netbirdDomain}/nb-auth"
+                "https://${netbirdDomain}/nb-silent-auth"
+              ];
+              StaticConnectors = [
+                {
+                  type = "oidc";
+                  id = "authelia";
+                  name = "Authelia";
+                  config = {
+                    issuer = "https://${authDomain}";
+                    clientID = "netbird";
+                    clientSecret._secret = config.sops.secrets."netbird/authelia_client_secret".path;
+                    redirectURI = "https://${netbirdDomain}/oauth2/callback";
+                    scopes = [
+                      "openid"
+                      "profile"
+                      "email"
+                      "groups"
+                    ];
+                  };
+                }
+              ];
             };
           };
         };
@@ -763,12 +818,12 @@ _: {
         dashboard = {
           enableNginx = true;
           settings = {
-            AUTH_AUTHORITY = "https://${authDomain}";
-            AUTH_CLIENT_ID = "netbird";
-            AUTH_AUDIENCE = "netbird";
+            AUTH_AUTHORITY = "https://${netbirdDomain}/oauth2";
+            AUTH_CLIENT_ID = "netbird-dashboard";
+            AUTH_AUDIENCE = "netbird-dashboard";
             AUTH_SUPPORTED_SCOPES = "openid profile email groups";
-            AUTH_REDIRECT_URI = "/auth";
-            AUTH_SILENT_REDIRECT_URI = "/silent-auth";
+            AUTH_REDIRECT_URI = "/nb-auth";
+            AUTH_SILENT_REDIRECT_URI = "/nb-silent-auth";
             USE_AUTH0 = "";
           };
         };
@@ -811,16 +866,25 @@ _: {
         '';
       };
 
-      # TLS/HTTP3 and OIDC callback fallbacks for the netbird dashboard SPA
-      # Rate limiting on the HTTP layer is unreliable here because the stream
-      # block proxies all traffic from 127.0.0.1 — the real client IP is lost.
-      # DDoS protection is handled at the stream layer (limit_conn stream_per_ip)
-      # and nftables (SYN rate limiting).
+      # Embedded Dex IdP routes + dashboard SPA fallbacks. The netbird
+      # module's auto-generated vhost only knows about /api and the gRPC
+      # paths; we add /oauth2 (Dex's OIDC endpoints — discovery, JWKS,
+      # token, /oauth2/callback/<connector-id>) and the SPA tryFiles for
+      # /nb-auth + /nb-silent-auth (the dashboard's auth callback paths
+      # post-IdP-migration).
+      #
+      # Rate limiting on the HTTP layer is unreliable here because the
+      # stream block proxies all traffic from 127.0.0.1 — the real client
+      # IP is lost. DDoS protection is handled at the stream layer
+      # (limit_conn stream_per_ip) and nftables (SYN rate limiting).
       services.nginx.virtualHosts.${netbirdDomain} = mkHttpsVhost "" // {
-        locations."/auth" = {
+        locations."/oauth2/" = {
+          proxyPass = "http://127.0.0.1:${toString netbirdMgmtPort}";
+        };
+        locations."/nb-auth" = {
           tryFiles = "$uri /index.html";
         };
-        locations."/silent-auth" = {
+        locations."/nb-silent-auth" = {
           tryFiles = "$uri /index.html";
         };
       };
