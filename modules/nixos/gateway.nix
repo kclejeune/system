@@ -232,8 +232,14 @@ _: {
               "name"
               "preferred_username"
             ];
+            # email_verified is required: netbird's embedded Dex rejects the
+            # upstream Authelia ID token when the email scope is requested but
+            # the token lacks email_verified (Dex errors "email not verified"
+            # unless insecureSkipEmailVerified is set). Authelia emits
+            # email_verified=true for LDAP users.
             claims_policies.netbird.id_token = [
               "email"
+              "email_verified"
               "name"
               "preferred_username"
               "groups"
