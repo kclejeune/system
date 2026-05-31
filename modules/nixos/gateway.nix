@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  flakeCfg = config;
+in
+{
   flake.nixosModules.gateway =
     {
       config,
@@ -27,6 +31,10 @@ _: {
       netbirdMgmtMetricsPort = 9190;
       netbirdSignalMetricsPort = 9191;
       nginxInternalSSLPort = 4443;
+      # 8080/6060 (crowdsec defaults) collide with netbird-proxy and
+      # netbird-signal respectively on this host, so move both.
+      crowdsecLapiPort = 8090;
+      crowdsecMetricsPort = 9060;
 
       mkHttpsVhost = extra: {
         forceSSL = true;
@@ -38,17 +46,10 @@ _: {
         inherit job_name;
         static_configs = [ { targets = [ target ]; } ];
       };
-
-      mkNginxJail = filter: maxretry: {
-        settings = {
-          inherit filter maxretry;
-          backend = "auto";
-          logpath = "/var/log/nginx/access.log";
-          findtime = 600;
-        };
-      };
     in
     {
+      imports = [ flakeCfg.flake.nixosModules.crowdsec ];
+
       networking.hostName = "gateway";
 
       # Hetzner volume mounted early in initrd so that /nix is available before
@@ -146,6 +147,12 @@ _: {
           # netbird module's _secret/jq mechanism.
           "netbird/authelia_client_secret" = { };
           "netbird/proxy_token" = { };
+          # Bouncer API key shared between the CrowdSec LAPI and the netbird
+          # reverse proxy. Generate with `openssl rand -hex 32`. Wired via
+          # services.crowdsec.declarativeBouncers.netbird-proxy, whose
+          # crowdsec-register-netbird-proxy oneshot registers the bouncer with
+          # this key; the proxy authenticates to LAPI with it.
+          "crowdsec/bouncer_key" = { };
           "proxmox/oidc_client_secret" = { };
         };
       };
@@ -442,10 +449,16 @@ _: {
           };
       };
 
+      # fail2ban is trimmed to authelia only: CrowdSec owns nginx + sshd
+      # detection (crowdsecurity/nginx + crowdsecurity/sshd scenarios), so the
+      # nginx jails are dropped and the default sshd jail is disabled to avoid
+      # double-banning. Authelia stays on fail2ban because CrowdSec has no
+      # standard parser for its JSON auth log.
       services.fail2ban.jails = {
-        nginx-http-auth = mkNginxJail "nginx-http-auth" 5;
-        nginx-botsearch = mkNginxJail "nginx-botsearch" 5;
-        nginx-bad-request = mkNginxJail "nginx-bad-request" 10;
+        # hetzner.nix enables the sshd jail via `settings.enabled = true`, and
+        # the rendered jail takes `enabled` from settings, so the top-level
+        # `enabled` option can't turn it off — force it in settings instead.
+        sshd.settings.enabled = lib.mkForce false;
         authelia.settings = {
           filter = "authelia";
           backend = "auto";
@@ -663,6 +676,7 @@ _: {
           (mkScrapeConfig "cloudflared" "127.0.0.1:2000")
           (mkScrapeConfig "netbird-management" "127.0.0.1:${toString netbirdMgmtMetricsPort}")
           (mkScrapeConfig "netbird-signal" "127.0.0.1:${toString netbirdSignalMetricsPort}")
+          (mkScrapeConfig "crowdsec" "127.0.0.1:${toString crowdsecMetricsPort}")
         ];
       };
 
@@ -889,6 +903,78 @@ _: {
         };
       };
 
+      # CrowdSec — local detection (nginx + sshd) plus the community/CAPI
+      # blocklist, enforced at nftables by the firewall bouncer and surfaced to
+      # the netbird reverse proxy's embedded bouncer. The reusable crowdsec
+      # module (imported above) runs it as a native service; LAPI and metrics
+      # are moved off their defaults (8080/6060) to dodge netbird-proxy and
+      # netbird-signal.
+      services.crowdsec.enable = true;
+      services.crowdsec.settings.general.api.server.listen_uri = "127.0.0.1:${toString crowdsecLapiPort}";
+      services.crowdsec.settings.general.prometheus.listen_port = crowdsecMetricsPort;
+
+      # crowdsecurity/linux brings the sshd parser + ssh-bf scenarios.
+      #
+      # No nginx acquisition: the SNI stream block proxies all HTTPS from
+      # 127.0.0.1, so nginx logs only ever show the loopback address as the
+      # client. CrowdSec would then attribute every HTTP "attack" to 127.0.0.1
+      # and ban it — and the firewall bouncer dropping loopback takes down
+      # everything proxied over it (authelia, netbird, …). Until real client IPs
+      # are preserved through the stream layer (PROXY protocol), HTTP detection
+      # here is unusable, so we feed only sshd (whose logs carry real IPs).
+      services.crowdsec.hub.collections = [ "crowdsecurity/linux" ];
+
+      # Data source for the agent: sshd via journald. Without an acquisition the
+      # agent has no datasource and refuses to start.
+      services.crowdsec.localConfig.acquisitions = [
+        {
+          source = "journalctl";
+          journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
+          labels.type = "syslog";
+        }
+      ];
+
+      # Whitelist the overlay ranges (on top of the loopback/RFC1918 baseline in
+      # the crowdsec module) so a tailscale/netbird peer can never be banned.
+      services.crowdsec.localConfig.parsers.s02Enrich = [
+        {
+          name = "gateway/trusted-overlay";
+          description = "Never ban tailscale/netbird overlay sources";
+          whitelist = {
+            reason = "trusted overlay networks (tailscale / netbird)";
+            cidr = [
+              "100.64.0.0/10"
+              "100.100.0.0/16"
+            ];
+          };
+        }
+      ];
+
+      # crowdsec reads the journal (sshd) via the systemd-journal group.
+      systemd.services.crowdsec.serviceConfig.SupplementaryGroups = [ "systemd-journal" ];
+
+      # Firewall bouncer: drops CrowdSec decisions (local + community blocklist)
+      # at nftables. Turnkey — it auto-registers with the LAPI, picks the
+      # nftables backend (networking.nftables.enable = true), creates its own
+      # drop-sets, and reads api_url from the LAPI listen_uri above.
+      services.crowdsec-firewall-bouncer.enable = true;
+
+      services.crowdsec.declarativeBouncers.netbird-proxy.keyFile =
+        config.sops.secrets."crowdsec/bouncer_key".path;
+      # CrowdSec Console: enrollment is a one-time imperative bootstrap that
+      # also requires approving the machine in the Console web UI, so it is NOT
+      # encoded here. Enroll once on the host with a token from
+      # app.crowdsec.net (Security Engines → Enroll engine):
+      #   sudo cscli console enroll <token> --name gateway
+      # The sharing config below is declarative (it's a real config file) and
+      # takes effect once enrolled; dial it back to keep data local.
+      services.crowdsec.settings.console.configuration = {
+        share_manual_decisions = true;
+        share_tainted = true;
+        share_context = true;
+        share_custom = true;
+      };
+
       # Netbird reverse proxy — runs as OCI container, handles its own TLS
       virtualisation.oci-containers.containers.netbird-proxy = {
         # Tag tracks the netbird management package version from nixpkgs so
@@ -908,6 +994,9 @@ _: {
         ];
       };
 
+      # CrowdSec env vars are appended only when crowdsec is enabled, so the
+      # proxy cleanly loses its bouncer wiring (and the secret reference) if the
+      # module is dropped.
       sops.templates."netbird-proxy.env".content = ''
         NB_PROXY_TOKEN=${config.sops.placeholder."netbird/proxy_token"}
         NB_PROXY_DOMAIN=${netbirdProxyDomain}
@@ -916,7 +1005,18 @@ _: {
         NB_PROXY_ACME_CERTIFICATES=true
         NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
         NB_PROXY_ALLOW_INSECURE=true
+      ''
+      + lib.optionalString config.services.crowdsec.enable ''
+        NB_PROXY_CROWDSEC_API_URL=http://127.0.0.1:${toString crowdsecLapiPort}
+        NB_PROXY_CROWDSEC_API_KEY=${config.sops.placeholder."crowdsec/bouncer_key"}
       '';
+
+      # Start the proxy only after its bouncer is registered with LAPI, so the
+      # CrowdSec API key is valid the moment the proxy comes up.
+      systemd.services.podman-netbird-proxy = lib.mkIf config.services.crowdsec.enable {
+        after = [ "crowdsec-register-netbird-proxy.service" ];
+        wants = [ "crowdsec-register-netbird-proxy.service" ];
+      };
 
       # Nginx stream block: SNI-based routing on port 443
       # *.kclj.dev → TLS passthrough to netbird-proxy (handles its own TLS)
