@@ -891,7 +891,9 @@ _: {
 
       # Netbird reverse proxy — runs as OCI container, handles its own TLS
       virtualisation.oci-containers.containers.netbird-proxy = {
-        image = "netbirdio/reverse-proxy:latest";
+        # Tag tracks the netbird management package version from nixpkgs so
+        # the proxy stays in lockstep with the server components.
+        image = "netbirdio/reverse-proxy:${config.services.netbird.server.management.package.version}";
         environmentFiles = [ config.sops.templates."netbird-proxy.env".path ];
         volumes = [
           "netbird-proxy-certs:/certs"
