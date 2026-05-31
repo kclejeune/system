@@ -348,7 +348,9 @@ in
           };
 
           dwindle = {
-            pseudotile = true;
+            # Hyprland 0.55 removed the `dwindle:pseudotile` option;
+            # pseudotiling is now per-window only via the `togglepseudo`
+            # dispatcher or `windowrule = pseudo, ...`.
             preserve_split = true;
           };
 
@@ -485,7 +487,9 @@ in
             "$mod SHIFT, l, movewindow, r"
 
             # Layout (alt-slash = toggle split, alt-comma = toggle layout)
-            "$mod, slash, togglesplit"
+            # Hyprland 0.54 removed the direct `togglesplit` dispatcher;
+            # it must be invoked via `layoutmsg` now.
+            "$mod, slash, layoutmsg, togglesplit"
             "$mod, comma, exec, hyprctl keyword general:layout $(hyprctl getoption general:layout -j | jq -r 'if .str == \"dwindle\" then \"master\" else \"dwindle\" end')"
 
             # Workspace navigation
