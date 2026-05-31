@@ -104,5 +104,14 @@ in
       # the user's agent already holds.
       security.pam.rssh.enable = true;
       security.pam.services.sudo.rssh = true;
+
+      # By default sudo skips PAM authentication entirely in non-interactive
+      # mode (`sudo -n`), assuming auth needs user input — so pam_rssh never
+      # runs and `sudo -n` fails with "a password is required". That breaks
+      # non-interactive agent auth, e.g. `nh os switch --target-host … -e
+      # passwordless`, which runs `sudo --non-interactive`. noninteractive_auth
+      # (sudo ≥ 1.9.10) tells sudo to attempt PAM auth even under -n, letting
+      # pam_rssh complete its agent round-trip without any prompt.
+      security.sudo.extraConfig = "Defaults noninteractive_auth";
     };
 }
