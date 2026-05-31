@@ -10,7 +10,6 @@ _: {
         "google-chrome"
         "google-drive"
         "keybase"
-        "messenger"
         "notion"
         "signal"
         "slack"
