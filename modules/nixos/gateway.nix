@@ -1025,6 +1025,11 @@ in
         share_tainted = true;
         share_context = true;
         share_custom = true;
+        # Receive console-managed decisions and blocklists over PAPI. CrowdSec
+        # delivers the community blocklist (and any you subscribe to in the
+        # console) via this channel, so without it the engine enrols but applies
+        # no console blocklists. Requires the machine to be enrolled.
+        console_management = true;
       };
 
       # Netbird reverse proxy — runs as OCI container, handles its own TLS
