@@ -396,6 +396,36 @@ in
       services.nginx = {
         enable = true;
         defaultSSLListenPort = nginxInternalSSLPort;
+        # The SNI stream block (below) terminates the client TCP connection and
+        # re-proxies to the internal SSL port from 127.0.0.1, so it sends a
+        # PROXY-protocol header to carry the real client IP. The internal SSL
+        # listeners must therefore expect proxy_protocol; port 80 (direct, not
+        # behind the stream) must NOT. real_ip (below) then rewrites $remote_addr
+        # to the real client for logs, rate-limits, and crowdsec.
+        defaultListen = [
+          {
+            addr = "0.0.0.0";
+            port = nginxInternalSSLPort;
+            ssl = true;
+            proxyProtocol = true;
+          }
+          {
+            addr = "[::0]";
+            port = nginxInternalSSLPort;
+            ssl = true;
+            proxyProtocol = true;
+          }
+          {
+            addr = "0.0.0.0";
+            port = 80;
+            ssl = false;
+          }
+          {
+            addr = "[::0]";
+            port = 80;
+            ssl = false;
+          }
+        ];
         recommendedTlsSettings = true;
         recommendedOptimisation = true;
         recommendedGzipSettings = true;
@@ -403,6 +433,15 @@ in
         recommendedProxySettings = true;
 
         commonHttpConfig = ''
+          # Trust the loopback stream proxy and take the real client IP from its
+          # PROXY-protocol header. This rewrites $remote_addr before the
+          # limit_req/limit_conn zones and the access log evaluate it, so per-IP
+          # rate-limiting, X-Forwarded-For to backends (authelia), and crowdsec
+          # nginx log parsing all see the real client instead of 127.0.0.1.
+          set_real_ip_from 127.0.0.1;
+          set_real_ip_from ::1;
+          real_ip_header proxy_protocol;
+
           limit_req_zone $binary_remote_addr zone=general:10m rate=30r/s;
           limit_req_zone $binary_remote_addr zone=authelia_api:10m rate=10r/s;
           limit_conn_zone $binary_remote_addr zone=per_ip:10m;
@@ -913,24 +952,33 @@ in
       services.crowdsec.settings.general.api.server.listen_uri = "127.0.0.1:${toString crowdsecLapiPort}";
       services.crowdsec.settings.general.prometheus.listen_port = crowdsecMetricsPort;
 
-      # crowdsecurity/linux brings the sshd parser + ssh-bf scenarios.
-      #
-      # No nginx acquisition: the SNI stream block proxies all HTTPS from
-      # 127.0.0.1, so nginx logs only ever show the loopback address as the
-      # client. CrowdSec would then attribute every HTTP "attack" to 127.0.0.1
-      # and ban it — and the firewall bouncer dropping loopback takes down
-      # everything proxied over it (authelia, netbird, …). Until real client IPs
-      # are preserved through the stream layer (PROXY protocol), HTTP detection
-      # here is unusable, so we feed only sshd (whose logs carry real IPs).
-      services.crowdsec.hub.collections = [ "crowdsecurity/linux" ];
+      # crowdsecurity/linux brings the sshd parser + ssh-bf scenarios; nginx adds
+      # HTTP probing/scanner/bad-bot detection. nginx detection is only safe
+      # because the stream block now forwards the real client IP via PROXY
+      # protocol (set_real_ip_from above) — previously nginx logged 127.0.0.1 for
+      # all HTTPS, so crowdsec would ban loopback and the firewall bouncer would
+      # drop everything proxied over it. The loopback/RFC1918 whitelist (crowdsec
+      # module) + overlay whitelist (below) are belt-and-suspenders.
+      services.crowdsec.hub.collections = [
+        "crowdsecurity/linux"
+        "crowdsecurity/nginx"
+      ];
 
-      # Data source for the agent: sshd via journald. Without an acquisition the
-      # agent has no datasource and refuses to start.
+      # Data sources: sshd via journald, nginx via its log files (now carrying
+      # real client IPs). Without an acquisition the agent refuses to start.
       services.crowdsec.localConfig.acquisitions = [
         {
           source = "journalctl";
           journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
           labels.type = "syslog";
+        }
+        {
+          source = "file";
+          filenames = [
+            "/var/log/nginx/access.log"
+            "/var/log/nginx/error.log"
+          ];
+          labels.type = "nginx";
         }
       ];
 
@@ -950,8 +998,12 @@ in
         }
       ];
 
-      # crowdsec reads the journal (sshd) via the systemd-journal group.
-      systemd.services.crowdsec.serviceConfig.SupplementaryGroups = [ "systemd-journal" ];
+      # crowdsec reads the journal (sshd) via systemd-journal and the nginx logs
+      # (nginx:nginx 0640 in a 0750 dir) via the nginx group.
+      systemd.services.crowdsec.serviceConfig.SupplementaryGroups = [
+        "nginx"
+        "systemd-journal"
+      ];
 
       # Firewall bouncer: drops CrowdSec decisions (local + community blocklist)
       # at nftables. Turnkey — it auto-registers with the LAPI, picks the
@@ -1005,18 +1057,29 @@ in
         NB_PROXY_ACME_CERTIFICATES=true
         NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
         NB_PROXY_ALLOW_INSECURE=true
+        NB_PROXY_PROXY_PROTOCOL=true
+        NB_PROXY_TRUSTED_PROXIES=127.0.0.1/32,::1/128
       ''
       + lib.optionalString config.services.crowdsec.enable ''
         NB_PROXY_CROWDSEC_API_URL=http://127.0.0.1:${toString crowdsecLapiPort}
         NB_PROXY_CROWDSEC_API_KEY=${config.sops.placeholder."crowdsec/bouncer_key"}
       '';
 
-      # Start the proxy only after its bouncer is registered with LAPI, so the
-      # CrowdSec API key is valid the moment the proxy comes up.
-      systemd.services.podman-netbird-proxy = lib.mkIf config.services.crowdsec.enable {
-        after = [ "crowdsec-register-netbird-proxy.service" ];
-        wants = [ "crowdsec-register-netbird-proxy.service" ];
-      };
+      systemd.services.podman-netbird-proxy = lib.mkMerge [
+        {
+          # Restart the container when its env (sops template) changes. NixOS
+          # oci-containers only restart on unit/image changes, not env-file
+          # *content* changes — so without this, an env edit (e.g. enabling
+          # PROXY protocol) silently doesn't take effect until a manual restart.
+          restartTriggers = [ config.sops.templates."netbird-proxy.env".content ];
+        }
+        # Start the proxy only after its bouncer is registered with LAPI, so the
+        # CrowdSec API key is valid the moment the proxy comes up.
+        (lib.mkIf config.services.crowdsec.enable {
+          after = [ "crowdsec-register-netbird-proxy.service" ];
+          wants = [ "crowdsec-register-netbird-proxy.service" ];
+        })
+      ];
 
       # Nginx stream block: SNI-based routing on port 443
       # *.kclj.dev → TLS passthrough to netbird-proxy (handles its own TLS)
@@ -1040,6 +1103,11 @@ in
         server {
           listen 443;
           listen [::]:443;
+          # Emit a PROXY-protocol header to the chosen backend so the real
+          # client IP survives the loopback re-proxy. Both backends must accept
+          # it: nginx_https via defaultListen proxyProtocol, netbird-proxy via
+          # NB_PROXY_PROXY_PROTOCOL. ssl_preread reads SNI before this.
+          proxy_protocol on;
           ssl_preread on;
           limit_conn stream_per_ip 20;
           proxy_connect_timeout 10s;
