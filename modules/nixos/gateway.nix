@@ -962,15 +962,27 @@ in
       services.crowdsec.hub.collections = [
         "crowdsecurity/linux"
         "crowdsecurity/nginx"
+        # Community collection: authelia parser + auth brute-force scenarios.
+        "LePresidente/authelia"
       ];
 
-      # Data sources: sshd via journald, nginx via its log files (now carrying
-      # real client IPs). Without an acquisition the agent refuses to start.
+      # Data sources: sshd via journald; nginx + authelia via their log files
+      # (nginx now carrying real client IPs). authelia is read from its file
+      # rather than journald on purpose: it logs JSON, and crowdsec's journald
+      # source prefixes each line with a syslog header (`<ts> host authelia[pid]:
+      # {json}`) which breaks the LePresidente parser's JSON unmarshal — the
+      # file carries the raw JSON the parser expects. The 0600 log is made
+      # readable to the crowdsec user via the ACL in systemd.tmpfiles below.
       services.crowdsec.localConfig.acquisitions = [
         {
           source = "journalctl";
           journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
           labels.type = "syslog";
+        }
+        {
+          source = "file";
+          filenames = [ autheliaLogFile ];
+          labels.type = "authelia";
         }
         {
           source = "file";
@@ -980,6 +992,14 @@ in
           ];
           labels.type = "nginx";
         }
+      ];
+
+      # Authelia writes its log 0600 in a 0700 state dir, so the sandboxed
+      # crowdsec user can't read it. Grant it via ACL (traverse the dir + read
+      # the log); the default ACL covers the file if authelia ever recreates it.
+      systemd.tmpfiles.rules = [
+        "a+ ${autheliaStateDir} - - - - u:crowdsec:rx,d:u:crowdsec:r"
+        "a+ ${autheliaLogFile} - - - - u:crowdsec:r"
       ];
 
       # Whitelist the overlay ranges (on top of the loopback/RFC1918 baseline in
