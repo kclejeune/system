@@ -51,17 +51,13 @@ _: {
         services.crowdsec.hub.collections = lib.mkDefault [ "crowdsecurity/linux" ];
 
         services.crowdsec.settings = {
-          # Run the local API server so bouncers can pull decisions. Normal
-          # priority to override the upstream module's `mkDefault false`.
+          # Run the local API server so bouncers can pull decisions (overrides
+          # the upstream module's `mkDefault false`).
           general.api.server.enable = true;
-          # The module's setup script writes machine + online (CAPI)
-          # credentials here on first boot (`cscli machine add --auto` and
-          # `cscli capi register`); CAPI registration is what pulls the
-          # community blocklist. These MUST live in a crowdsec-owned directory:
-          # /etc/crowdsec is created by the module's tmpfiles owned by the
-          # crowdsec user (and is crowdsec's stock location for these files),
-          # whereas /var/lib/crowdsec itself is a root-owned parent, so writing
-          # there fails with "permission denied".
+          # Credentials must live in a crowdsec-owned dir: the setup script
+          # writes them as the crowdsec user on first boot, but /var/lib/crowdsec
+          # is root-owned (writes fail "permission denied"). /etc/crowdsec is
+          # crowdsec's stock location and the module owns it correctly.
           lapi.credentialsFile = lib.mkDefault "/etc/crowdsec/local_api_credentials.yaml";
           capi.credentialsFile = lib.mkDefault "/etc/crowdsec/online_api_credentials.yaml";
         };
@@ -77,11 +73,9 @@ _: {
             description = "Whitelist loopback and RFC1918 source IPs";
             whitelist = {
               reason = "trusted infrastructure (loopback / RFC1918)";
-              ip = [
-                "127.0.0.1"
-                "::1"
-              ];
+              ip = [ "::1" ];
               cidr = [
+                "127.0.0.0/8"
                 "10.0.0.0/8"
                 "172.16.0.0/12"
                 "192.168.0.0/16"
@@ -90,20 +84,14 @@ _: {
           }
         ];
 
-        # The nixpkgs module passes the daemon its config via `-c <store path>`
-        # and never writes /etc/crowdsec/config.yaml, so a bare `cscli` (no -c)
-        # fails with "open /etc/crowdsec/config.yaml: no such file". That breaks
-        # the firewall-bouncer's register oneshot (which calls raw cscli) and
-        # interactive admin use. Symlink the default path at the *same*
-        # generated config the daemon uses so bare cscli just works.
+        # The nixpkgs module never writes /etc/crowdsec/config.yaml (it passes the
+        # daemon `-c <store path>`), so a bare `cscli` — used by the
+        # firewall-bouncer's register oneshot and interactive admin — fails with
+        # "no such file". Symlink the default path at the daemon's own config.
         systemd.tmpfiles.settings."99-crowdsec-cscli-config"."/etc/crowdsec/config.yaml"."L+".argument =
           toString
             ((pkgs.formats.yaml { }).generate "crowdsec.yaml" config.services.crowdsec.settings.general);
 
-        # systemd.services gets the static-user pin plus one idempotent
-        # registration oneshot per declared bouncer. cscli is the wrapper
-        # installed by services.crowdsec; it sudo's to the crowdsec user, which
-        # owns the LAPI database.
         systemd.services = {
           # The upstream module pairs DynamicUser=true with a static
           # User=crowdsec. The (tmpfiles-managed) state dir then lives under
@@ -114,7 +102,24 @@ _: {
           # the state dir. Pin to the static crowdsec user so ownership is stable
           # across restarts and reboots; the user's group memberships
           # (systemd-journal, plus any host SupplementaryGroups) then apply too.
-          crowdsec.serviceConfig.DynamicUser = lib.mkForce false;
+          crowdsec.serviceConfig = {
+            DynamicUser = lib.mkForce false;
+            # Upstream sets RestartSec but no Restart=, so a crashed engine stays
+            # down and stops producing decisions — silently disabling detection.
+            # Auto-recover so detection isn't lost on a transient failure.
+            Restart = lib.mkDefault "on-failure";
+          };
+
+          # The bouncer enforces decisions at nftables; if it dies the drop-set
+          # goes stale and no new bans apply while the engine keeps detecting
+          # into the void. Upstream sets no Restart= either, so add one — this is
+          # the enforcement floor to the engine's detection floor above.
+          crowdsec-firewall-bouncer = lib.mkIf config.services.crowdsec-firewall-bouncer.enable {
+            serviceConfig = {
+              Restart = lib.mkDefault "on-failure";
+              RestartSec = lib.mkDefault 10;
+            };
+          };
 
           # The firewall-bouncer's register oneshot runs as User=crowdsec but
           # with DynamicUser=true and StateDirectory="...crowdsec", so it seizes

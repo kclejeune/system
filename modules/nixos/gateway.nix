@@ -148,10 +148,8 @@ in
           "netbird/authelia_client_secret" = { };
           "netbird/proxy_token" = { };
           # Bouncer API key shared between the CrowdSec LAPI and the netbird
-          # reverse proxy. Generate with `openssl rand -hex 32`. Wired via
-          # services.crowdsec.declarativeBouncers.netbird-proxy, whose
-          # crowdsec-register-netbird-proxy oneshot registers the bouncer with
-          # this key; the proxy authenticates to LAPI with it.
+          # reverse proxy (see declarativeBouncers.netbird-proxy below).
+          # Generate with `openssl rand -hex 32`.
           "crowdsec/bouncer_key" = { };
           "proxmox/oidc_client_secret" = { };
         };
@@ -402,30 +400,25 @@ in
         # listeners must therefore expect proxy_protocol; port 80 (direct, not
         # behind the stream) must NOT. real_ip (below) then rewrites $remote_addr
         # to the real client for logs, rate-limits, and crowdsec.
-        defaultListen = [
-          {
-            addr = "0.0.0.0";
-            port = nginxInternalSSLPort;
-            ssl = true;
-            proxyProtocol = true;
-          }
-          {
-            addr = "[::0]";
-            port = nginxInternalSSLPort;
-            ssl = true;
-            proxyProtocol = true;
-          }
-          {
-            addr = "0.0.0.0";
-            port = 80;
-            ssl = false;
-          }
-          {
-            addr = "[::0]";
-            port = 80;
-            ssl = false;
-          }
-        ];
+        defaultListen =
+          lib.concatMap
+            (addr: [
+              {
+                inherit addr;
+                port = nginxInternalSSLPort;
+                ssl = true;
+                proxyProtocol = true;
+              }
+              {
+                inherit addr;
+                port = 80;
+                ssl = false;
+              }
+            ])
+            [
+              "0.0.0.0"
+              "[::0]"
+            ];
         recommendedTlsSettings = true;
         recommendedOptimisation = true;
         recommendedGzipSettings = true;
@@ -433,11 +426,10 @@ in
         recommendedProxySettings = true;
 
         commonHttpConfig = ''
-          # Trust the loopback stream proxy and take the real client IP from its
-          # PROXY-protocol header. This rewrites $remote_addr before the
-          # limit_req/limit_conn zones and the access log evaluate it, so per-IP
-          # rate-limiting, X-Forwarded-For to backends (authelia), and crowdsec
-          # nginx log parsing all see the real client instead of 127.0.0.1.
+          # Take the real client IP from the loopback stream proxy's
+          # PROXY-protocol header, rewriting $remote_addr before the
+          # limit_req/limit_conn zones and access log evaluate it — so per-IP
+          # rate-limiting, X-Forwarded-For, and crowdsec all see the real client.
           set_real_ip_from 127.0.0.1;
           set_real_ip_from ::1;
           real_ip_header proxy_protocol;
@@ -488,16 +480,13 @@ in
           };
       };
 
-      # fail2ban is trimmed to authelia only: CrowdSec owns nginx + sshd
-      # detection (crowdsecurity/nginx + crowdsecurity/sshd scenarios), so the
-      # nginx jails are dropped and the default sshd jail is disabled to avoid
-      # double-banning. Authelia stays on fail2ban because CrowdSec has no
-      # standard parser for its JSON auth log.
+      # fail2ban is disabled on the gateway for now — CrowdSec owns all
+      # intrusion detection here (sshd, nginx, authelia), with its escalating ban
+      # profile below standing in for fail2ban's bantime-increment. The authelia
+      # jail + filter are kept dormant under the disabled service so fail2ban can
+      # be flipped back on as an enforcement floor in one line.
+      services.fail2ban.enable = lib.mkForce false;
       services.fail2ban.jails = {
-        # hetzner.nix enables the sshd jail via `settings.enabled = true`, and
-        # the rendered jail takes `enabled` from settings, so the top-level
-        # `enabled` option can't turn it off — force it in settings instead.
-        sshd.settings.enabled = lib.mkForce false;
         authelia.settings = {
           filter = "authelia";
           backend = "auto";
@@ -942,23 +931,21 @@ in
         };
       };
 
-      # CrowdSec — local detection (nginx + sshd) plus the community/CAPI
+      # CrowdSec — local detection (sshd, nginx, authelia) plus the community/CAPI
       # blocklist, enforced at nftables by the firewall bouncer and surfaced to
-      # the netbird reverse proxy's embedded bouncer. The reusable crowdsec
-      # module (imported above) runs it as a native service; LAPI and metrics
-      # are moved off their defaults (8080/6060) to dodge netbird-proxy and
-      # netbird-signal.
+      # the netbird proxy's embedded bouncer. LAPI/metrics are moved off their
+      # 8080/6060 defaults (see the port bindings above).
       services.crowdsec.enable = true;
-      services.crowdsec.settings.general.api.server.listen_uri = "127.0.0.1:${toString crowdsecLapiPort}";
-      services.crowdsec.settings.general.prometheus.listen_port = crowdsecMetricsPort;
+      services.crowdsec.settings.general = {
+        api.server.listen_uri = "127.0.0.1:${toString crowdsecLapiPort}";
+        prometheus.listen_port = crowdsecMetricsPort;
+      };
 
       # crowdsecurity/linux brings the sshd parser + ssh-bf scenarios; nginx adds
-      # HTTP probing/scanner/bad-bot detection. nginx detection is only safe
-      # because the stream block now forwards the real client IP via PROXY
-      # protocol (set_real_ip_from above) — previously nginx logged 127.0.0.1 for
-      # all HTTPS, so crowdsec would ban loopback and the firewall bouncer would
-      # drop everything proxied over it. The loopback/RFC1918 whitelist (crowdsec
-      # module) + overlay whitelist (below) are belt-and-suspenders.
+      # HTTP probing/scanner/bad-bot detection. nginx detection depends on the
+      # real client IP from PROXY protocol (set_real_ip_from above) — without it
+      # nginx logs 127.0.0.1 and crowdsec would ban loopback. The whitelists
+      # (crowdsec module + overlay below) are the belt-and-suspenders backstop.
       services.crowdsec.hub.collections = [
         "crowdsecurity/linux"
         "crowdsecurity/nginx"
@@ -966,13 +953,10 @@ in
         "LePresidente/authelia"
       ];
 
-      # Data sources: sshd via journald; nginx + authelia via their log files
-      # (nginx now carrying real client IPs). authelia is read from its file
-      # rather than journald on purpose: it logs JSON, and crowdsec's journald
-      # source prefixes each line with a syslog header (`<ts> host authelia[pid]:
-      # {json}`) which breaks the LePresidente parser's JSON unmarshal — the
-      # file carries the raw JSON the parser expects. The 0600 log is made
-      # readable to the crowdsec user via the ACL in systemd.tmpfiles below.
+      # Data sources: sshd via journald; nginx + authelia via their log files.
+      # authelia is read from its file, not journald, on purpose: journald
+      # prefixes each line with a syslog header that breaks the LePresidente
+      # parser's JSON unmarshal. The 0600 log is made readable via the ACL below.
       services.crowdsec.localConfig.acquisitions = [
         {
           source = "journalctl";
@@ -1018,6 +1002,36 @@ in
         }
       ];
 
+      # Replicate fail2ban's escalating bantime (old: 1h base → 48h cap) on the
+      # remediation profiles — CrowdSec has no native increment, so the ban
+      # duration is computed per-decision by duration_expr from the offender's
+      # prior decision count. Replaces the upstream flat-4h default profiles; the
+      # whitelists above still pre-empt bans for trusted sources.
+      services.crowdsec.localConfig.profiles =
+        let
+          # 1st offense → 4h, 2nd → 8h, … capped at 48h. Ternary (not min) keeps
+          # the result an integer so Sprintf '%dh' is valid across expr versions.
+          escalatingBan =
+            "GetDecisionsCount(Alert.GetValue()) >= 11 ? '48h' "
+            + ": Sprintf('%dh', (GetDecisionsCount(Alert.GetValue()) + 1) * 4)";
+          mkProfile = name: scope: {
+            inherit name;
+            filters = [ "Alert.Remediation == true && Alert.GetScope() == '${scope}'" ];
+            decisions = [
+              {
+                type = "ban";
+                duration = "4h";
+              }
+            ];
+            duration_expr = escalatingBan;
+            on_success = "break";
+          };
+        in
+        [
+          (mkProfile "default_ip_remediation" "Ip")
+          (mkProfile "default_range_remediation" "Range")
+        ];
+
       # crowdsec reads the journal (sshd) via systemd-journal and the nginx logs
       # (nginx:nginx 0640 in a 0750 dir) via the nginx group.
       systemd.services.crowdsec.serviceConfig.SupplementaryGroups = [
@@ -1025,21 +1039,17 @@ in
         "systemd-journal"
       ];
 
-      # Firewall bouncer: drops CrowdSec decisions (local + community blocklist)
-      # at nftables. Turnkey — it auto-registers with the LAPI, picks the
-      # nftables backend (networking.nftables.enable = true), creates its own
-      # drop-sets, and reads api_url from the LAPI listen_uri above.
+      # Firewall bouncer: enforces CrowdSec decisions (local + community
+      # blocklist) at nftables. Auto-registers with the LAPI and self-configures.
       services.crowdsec-firewall-bouncer.enable = true;
 
       services.crowdsec.declarativeBouncers.netbird-proxy.keyFile =
         config.sops.secrets."crowdsec/bouncer_key".path;
-      # CrowdSec Console: enrollment is a one-time imperative bootstrap that
-      # also requires approving the machine in the Console web UI, so it is NOT
-      # encoded here. Enroll once on the host with a token from
-      # app.crowdsec.net (Security Engines → Enroll engine):
+      # CrowdSec Console enrollment is a one-time manual bootstrap (also needs
+      # approving the machine in the web UI), so it isn't declared here. Enroll
+      # once with a token from app.crowdsec.net (Security Engines → Enroll):
       #   sudo cscli console enroll <token> --name gateway
-      # The sharing config below is declarative (it's a real config file) and
-      # takes effect once enrolled; dial it back to keep data local.
+      # The sharing config below takes effect once enrolled; trim to keep local.
       services.crowdsec.settings.console.configuration = {
         share_manual_decisions = true;
         share_tainted = true;
