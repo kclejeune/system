@@ -40,6 +40,8 @@ in
       # netbird-signal respectively on this host, so move both.
       crowdsecLapiPort = 8090;
       crowdsecMetricsPort = 9060;
+      alertmanagerPort = 9093;
+      karmaPort = 8082; # karma's default 8080 collides with netbird-proxy
 
       mkHttpsVhost = extra: {
         forceSSL = true;
@@ -82,6 +84,11 @@ in
           80 # HTTP
           443 # HTTPS
         ];
+        # No per-interface openings: the internal web UIs (grafana, lldap,
+        # prometheus, alertmanager, karma) bind 0.0.0.0 but are reached only by
+        # the host-network netbird-proxy over loopback. The default-drop policy
+        # keeps them off both the public NIC and direct overlay access, so the
+        # only way in is via netbird-proxy (NetBird SSO).
         extraInputRules = ''
           tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
           tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
@@ -541,9 +548,13 @@ in
       services.lldap = {
         enable = true;
         settings = {
+          # Raw LDAP stays on loopback (only authelia consumes it locally). The
+          # web UI binds all interfaces so the host-network netbird-proxy can
+          # reach it over loopback; the firewall's default-drop keeps it off the
+          # public NIC and direct overlay access (in only via netbird-proxy).
           ldap_host = "127.0.0.1";
           ldap_port = lldapPort;
-          http_host = "127.0.0.1";
+          http_host = "0.0.0.0";
           http_port = lldapHttpPort;
           http_url = "https://lldap.${domain}";
           ldap_base_dn = baseDN;
@@ -610,6 +621,10 @@ in
       # Grafana Alloy - collects logs and metrics, ships to Loki
       services.alloy = {
         enable = true;
+        # UI stays on loopback (default 127.0.0.1:12345): the pipeline carries
+        # raw logs (auth events, client IPs, request paths) and Alloy's
+        # live-debugging UI can surface them, so it's not exposed to the overlay.
+        # Reach it for debugging via `ssh -L 12345:127.0.0.1:12345`.
         extraFlags = [ "--stability.level=generally-available" ];
       };
 
@@ -708,7 +723,10 @@ in
       # Prometheus - metrics scraping
       services.prometheus = {
         enable = true;
-        listenAddress = "127.0.0.1";
+        # All interfaces so the host-network netbird-proxy can reach it over
+        # loopback; the firewall's default-drop keeps it off the public NIC and
+        # direct overlay access. No built-in auth — front it via netbird-proxy.
+        listenAddress = "0.0.0.0";
         port = prometheusPort;
         retentionTime = "30d";
         scrapeConfigs = [
@@ -723,6 +741,48 @@ in
           (mkScrapeConfig "netbird-signal" "127.0.0.1:${toString netbirdSignalMetricsPort}")
           (mkScrapeConfig "crowdsec" "127.0.0.1:${toString crowdsecMetricsPort}")
         ];
+        alertmanagers = [
+          { static_configs = [ { targets = [ "127.0.0.1:${toString alertmanagerPort}" ]; } ]; }
+        ];
+        # Binds all interfaces so the host-network netbird-proxy can reach it
+        # (whether it dials 127.0.0.1 or the gateway's peer IP) when fronting it
+        # at alerts.kclj.dev; the firewall's default-drop keeps it off the public
+        # NIC and direct overlay access — only the local proxy/prometheus/karma
+        # reach it via loopback. No alerting rules are defined yet, so it'll be
+        # empty until you add services.prometheus.rules / ruleFiles.
+        alertmanager = {
+          enable = true;
+          listenAddress = "0.0.0.0";
+          port = alertmanagerPort;
+          webExternalUrl = "https://alerts.kclj.dev";
+          configuration = {
+            # Minimal no-op: alerts still show as active (so karma can display
+            # them), but nothing is notified yet. Add receivers/routes for notifs.
+            route.receiver = "null";
+            receivers = [ { name = "null"; } ];
+          };
+        };
+      };
+
+      # Karma — dashboard UI over Alertmanager. Binds all interfaces so the
+      # host-network netbird-proxy can reach it; the firewall's default-drop
+      # keeps it off the public NIC and off direct overlay access (only the local
+      # proxy reaches it via loopback), so it's served via a netbird dashboard
+      # Service rather than the overlay. No built-in auth.
+      services.karma = {
+        enable = true;
+        settings = {
+          listen = {
+            address = "0.0.0.0";
+            port = karmaPort;
+          };
+          alertmanager.servers = [
+            {
+              name = "gateway";
+              uri = "http://127.0.0.1:${toString alertmanagerPort}";
+            }
+          ];
+        };
       };
 
       # Grafana - dashboards and visualization
@@ -730,7 +790,11 @@ in
         enable = true;
         settings = {
           server = {
-            http_addr = "127.0.0.1";
+            # All interfaces so the host-network netbird-proxy can reach it over
+            # loopback; the firewall's default-drop keeps it off the public NIC
+            # and direct overlay access. The existing public grafana.${domain}
+            # vhost still proxies via 127.0.0.1.
+            http_addr = "0.0.0.0";
             http_port = grafanaPort;
             inherit domain;
             root_url = "https://grafana.${domain}";
