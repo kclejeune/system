@@ -744,12 +744,46 @@ in
         alertmanagers = [
           { static_configs = [ { targets = [ "127.0.0.1:${toString alertmanagerPort}" ]; } ]; }
         ];
+        # Starter alert rules so the stack has live alerts to view/silence across
+        # Prometheus (/alerts), Alertmanager, Karma, and Grafana. Expand as needed
+        # — Grafana-authored rules route to the same Alertmanager (see datasource).
+        rules = [
+          (builtins.toJSON {
+            groups = [
+              {
+                name = "gateway-basics";
+                rules = [
+                  {
+                    alert = "InstanceDown";
+                    expr = "up == 0";
+                    for = "5m";
+                    labels.severity = "critical";
+                    annotations.summary = "Scrape target {{ $labels.job }} ({{ $labels.instance }}) is down";
+                  }
+                  {
+                    alert = "SystemdUnitFailed";
+                    expr = ''node_systemd_unit_state{state="failed"} == 1'';
+                    for = "5m";
+                    labels.severity = "warning";
+                    annotations.summary = "systemd unit {{ $labels.name }} is failed on {{ $labels.instance }}";
+                  }
+                  {
+                    alert = "DiskSpaceLow";
+                    expr = ''node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs|overlay"} / node_filesystem_size_bytes < 0.10'';
+                    for = "15m";
+                    labels.severity = "warning";
+                    annotations.summary = "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} has <10% free";
+                  }
+                ];
+              }
+            ];
+          })
+        ];
         # Binds all interfaces so the host-network netbird-proxy can reach it
         # (whether it dials 127.0.0.1 or the gateway's peer IP) when fronting it
         # at alerts.kclj.dev; the firewall's default-drop keeps it off the public
         # NIC and direct overlay access — only the local proxy/prometheus/karma
-        # reach it via loopback. No alerting rules are defined yet, so it'll be
-        # empty until you add services.prometheus.rules / ruleFiles.
+        # reach it via loopback.
         alertmanager = {
           enable = true;
           listenAddress = "0.0.0.0";
@@ -822,7 +856,11 @@ in
                 access = "proxy";
                 url = "http://127.0.0.1:${toString lokiPort}";
                 isDefault = true;
-                jsonData = { };
+                # Loki has no ruler configured (it's for logs/dashboards, not
+                # alerting), so stop Grafana's Alerting tab from probing its ruler
+                # API — that probe is what errors. Querying Loki in Explore /
+                # dashboards is unaffected.
+                jsonData.manageAlerts = false;
               }
               {
                 name = "Prometheus";
@@ -832,6 +870,22 @@ in
                 url = "http://127.0.0.1:${toString prometheusPort}";
                 jsonData = { };
               }
+              {
+                # Lets Grafana's Alerting UI view + silence the same Alertmanager
+                # that Prometheus fires to (and that Karma reads). With
+                # handleGrafanaManagedAlerts, alert rules authored in Grafana also
+                # route here, so every alert is visible/silenceable from Grafana,
+                # Karma, and Alertmanager's own UI alike.
+                name = "Alertmanager";
+                type = "alertmanager";
+                uid = "alertmanager";
+                access = "proxy";
+                url = "http://127.0.0.1:${toString alertmanagerPort}";
+                jsonData = {
+                  implementation = "prometheus";
+                  handleGrafanaManagedAlerts = true;
+                };
+              }
             ];
             deleteDatasources = [
               {
@@ -840,6 +894,10 @@ in
               }
               {
                 name = "Prometheus";
+                orgId = 1;
+              }
+              {
+                name = "Alertmanager";
                 orgId = 1;
               }
             ];
