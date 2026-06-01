@@ -13,7 +13,12 @@ in
       autheliaInstance = "main";
       autheliaUser = "authelia-${autheliaInstance}";
       autheliaStateDir = "/var/lib/authelia-${autheliaInstance}";
-      autheliaLogFile = "${autheliaStateDir}/authelia.log";
+      # Log lives in a dedicated dir, NOT the state dir: the state dir holds
+      # db.sqlite3 (TOTP/WebAuthn/session data, world-readable 0644), so granting
+      # crowdsec traverse there to read the log would also expose the auth DB.
+      # A log-only dir lets crowdsec read the log without reaching any secrets.
+      autheliaLogDir = "/var/log/authelia-${autheliaInstance}";
+      autheliaLogFile = "${autheliaLogDir}/authelia.log";
       domain = "kclj.io";
       autheliaPort = 9091;
       lldapPort = 3890;
@@ -378,6 +383,10 @@ in
         serviceConfig.EnvironmentFile = [
           config.sops.templates."authelia-smtp.env".path
         ];
+        # ProtectSystem=strict makes /var/log read-only in the sandbox; re-open
+        # the dedicated authelia log dir for writing (the log moved out of the
+        # state dir so crowdsec can read it without reaching db.sqlite3).
+        serviceConfig.ReadWritePaths = [ autheliaLogDir ];
       };
 
       # ACME / Let's Encrypt via Cloudflare DNS-01 challenge
@@ -397,28 +406,36 @@ in
         # The SNI stream block (below) terminates the client TCP connection and
         # re-proxies to the internal SSL port from 127.0.0.1, so it sends a
         # PROXY-protocol header to carry the real client IP. The internal SSL
-        # listeners must therefore expect proxy_protocol; port 80 (direct, not
-        # behind the stream) must NOT. real_ip (below) then rewrites $remote_addr
-        # to the real client for logs, rate-limits, and crowdsec.
+        # listener therefore expects proxy_protocol and is bound to loopback —
+        # only the stream (upstream nginx_https = 127.0.0.1:${port}) ever reaches
+        # it, so there's no reason to expose it on all interfaces (the firewall
+        # drops it externally too; loopback removes the reliance on that rule).
+        # Port 80 is the public HTTP entrypoint (ACME + redirects) and stays
+        # externally bound; it must NOT expect proxy_protocol. real_ip (below)
+        # rewrites $remote_addr to the real client for logs, rate-limits, crowdsec.
         defaultListen =
-          lib.concatMap
-            (addr: [
-              {
-                inherit addr;
-                port = nginxInternalSSLPort;
-                ssl = true;
-                proxyProtocol = true;
-              }
-              {
+          map
+            (addr: {
+              inherit addr;
+              port = nginxInternalSSLPort;
+              ssl = true;
+              proxyProtocol = true;
+            })
+            [
+              "127.0.0.1"
+              "[::1]"
+            ]
+          ++
+            map
+              (addr: {
                 inherit addr;
                 port = 80;
                 ssl = false;
-              }
-            ])
-            [
-              "0.0.0.0"
-              "[::0]"
-            ];
+              })
+              [
+                "0.0.0.0"
+                "[::0]"
+              ];
         recommendedTlsSettings = true;
         recommendedOptimisation = true;
         recommendedGzipSettings = true;
@@ -978,11 +995,17 @@ in
         }
       ];
 
-      # Authelia writes its log 0600 in a 0700 state dir, so the sandboxed
-      # crowdsec user can't read it. Grant it via ACL (traverse the dir + read
-      # the log); the default ACL covers the file if authelia ever recreates it.
+      # Create the dedicated authelia log dir (tmpfiles, so it exists before the
+      # ACL is applied and before authelia starts) and grant crowdsec read on it
+      # — this dir holds only the log, no secrets. The default ACL covers the log
+      # file when authelia (re)creates it. ProtectSystem=strict on authelia makes
+      # /var/log read-only in its sandbox, so ReadWritePaths re-opens this dir for
+      # writing. The old ACL on the state dir is removed; revoke any lingering
+      # grant there with `setfacl -b ${autheliaStateDir}` (tmpfiles `a+` is
+      # additive and won't retract it on its own).
       systemd.tmpfiles.rules = [
-        "a+ ${autheliaStateDir} - - - - u:crowdsec:rx,d:u:crowdsec:r"
+        "d ${autheliaLogDir} 0750 ${autheliaUser} ${autheliaUser} - -"
+        "a+ ${autheliaLogDir} - - - - u:crowdsec:rx,d:u:crowdsec:r"
         "a+ ${autheliaLogFile} - - - - u:crowdsec:r"
       ];
 
