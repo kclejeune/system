@@ -13,6 +13,31 @@ _: {
     }:
     let
       cfg = config.services.crowdsec;
+
+      # The upstream module links each generated localConfig file into a scanned
+      # dir as `<store-hash>-<name>.yaml` via a tmpfiles `L+` rule, but never
+      # removes the old-hash link when the content changes across a rebuild — so
+      # parsers/scenarios with duplicate names pile up (CrowdSec then warns and
+      # ignores one of them). Wipe every nix-store-pointing symlink from the
+      # scanned dirs (hub links point at /var/lib and are left alone), then let
+      # tmpfiles recreate only the current generation's. Wired as an activation
+      # script (below) rather than tied to crowdsec start: a whitelist/parser-only
+      # change doesn't alter crowdsec's unit, so it wouldn't restart on that
+      # switch — yet that's exactly when a stale link appears. Activation runs on
+      # every switch and boot, so the prune always fires when it's needed.
+      pruneLocalConfig = pkgs.writeShellScript "crowdsec-prune-localconfig" ''
+        for dir in \
+          /etc/crowdsec/parsers/s00-raw \
+          /etc/crowdsec/parsers/s01-parse \
+          /etc/crowdsec/parsers/s02-enrich \
+          /etc/crowdsec/scenarios \
+          /etc/crowdsec/postoverflows/s01-whitelist \
+          /etc/crowdsec/contexts \
+          /etc/crowdsec/notifications; do
+          [ -d "$dir" ] && ${pkgs.findutils}/bin/find "$dir" -maxdepth 1 -type l -lname '/nix/store/*' -delete
+        done
+        ${config.systemd.package}/bin/systemd-tmpfiles --create /etc/tmpfiles.d/10-crowdsec.conf
+      '';
     in
     {
       options.services.crowdsec.declarativeBouncers = lib.mkOption {
@@ -91,6 +116,14 @@ _: {
         systemd.tmpfiles.settings."99-crowdsec-cscli-config"."/etc/crowdsec/config.yaml"."L+".argument =
           toString
             ((pkgs.formats.yaml { }).generate "crowdsec.yaml" config.services.crowdsec.settings.general);
+
+        # Drop stale localConfig links on every activation (after /etc is the new
+        # generation, so the current tmpfiles config is in place). See
+        # pruneLocalConfig above for the why.
+        system.activationScripts.crowdsec-prune-localconfig = {
+          deps = [ "etc" ];
+          text = "${pruneLocalConfig}";
+        };
 
         systemd.services = {
           # The upstream module pairs DynamicUser=true with a static

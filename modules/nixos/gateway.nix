@@ -597,7 +597,7 @@ in
       };
 
       environment.etc."alloy/config.alloy".text = ''
-        // Scrape journald logs (sshd, fail2ban, authelia, nginx, systemd)
+        // Scrape journald logs (sshd, crowdsec, authelia, nginx, systemd)
         // Route authelia's JSON-on-stdout through a parser stage that extracts
         // level/remote_ip as labels and tags the stream with job="authelia".
         loki.source.journal "journald" {
