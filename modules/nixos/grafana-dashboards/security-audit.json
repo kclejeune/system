@@ -183,7 +183,7 @@
       }
     },
     {
-      "title": "fail2ban Bans (24h)",
+      "title": "New CrowdSec Bans (24h)",
       "type": "stat",
       "gridPos": {
         "h": 4,
@@ -192,12 +192,12 @@
         "y": 1
       },
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
       },
       "targets": [
         {
-          "expr": "count_over_time({unit=\"fail2ban.service\"} |~ \"Ban \" [24h])",
+          "expr": "sum(increase(cs_bucket_overflowed_total[24h]))",
           "refId": "A"
         }
       ],
@@ -401,8 +401,8 @@
       ]
     },
     {
-      "title": "fail2ban Banned IPs",
-      "type": "table",
+      "title": "Recent CrowdSec Bans",
+      "type": "logs",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -415,7 +415,7 @@
       },
       "targets": [
         {
-          "expr": "{unit=\"fail2ban.service\"} |~ \"Ban \"",
+          "expr": "{unit=~\"crowdsec.*\"} |~ \"(?i)ban\"",
           "refId": "A"
         }
       ]
@@ -790,7 +790,7 @@
       }
     },
     {
-      "title": "fail2ban Unbans (24h)",
+      "title": "CrowdSec Active Bans",
       "type": "stat",
       "gridPos": {
         "h": 4,
@@ -799,16 +799,16 @@
         "y": 48
       },
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
       },
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "expr": "count_over_time({unit=\"fail2ban.service\"} |~ \"Unban \" [24h])",
+          "expr": "sum(cs_active_decisions{action=\"ban\"})",
           "refId": "A"
         }
       ],
@@ -831,7 +831,7 @@
       }
     },
     {
-      "title": "fail2ban Bans by Jail",
+      "title": "CrowdSec Bans by Scenario",
       "type": "timeseries",
       "gridPos": {
         "h": 8,
@@ -840,18 +840,18 @@
         "y": 52
       },
       "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "type": "prometheus",
+        "uid": "prometheus"
       },
       "targets": [
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
-          "expr": "sum by (jail) (count_over_time({unit=\"fail2ban.service\"} |~ \"Ban \" | pattern `<_> [<jail>] Ban <_>` [$__interval]))",
+          "expr": "sum by (name) (rate(cs_bucket_overflowed_total[5m]))",
           "refId": "A",
-          "legendFormat": "{{ jail }}"
+          "legendFormat": "{{ name }}"
         }
       ],
       "fieldConfig": {

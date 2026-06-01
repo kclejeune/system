@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  flakeCfg = config;
+in
+{
   flake.nixosModules.gateway =
     {
       config,
@@ -9,7 +13,12 @@ _: {
       autheliaInstance = "main";
       autheliaUser = "authelia-${autheliaInstance}";
       autheliaStateDir = "/var/lib/authelia-${autheliaInstance}";
-      autheliaLogFile = "${autheliaStateDir}/authelia.log";
+      # Log lives in a dedicated dir, NOT the state dir: the state dir holds
+      # db.sqlite3 (TOTP/WebAuthn/session data, world-readable 0644), so granting
+      # crowdsec traverse there to read the log would also expose the auth DB.
+      # A log-only dir lets crowdsec read the log without reaching any secrets.
+      autheliaLogDir = "/var/log/authelia-${autheliaInstance}";
+      autheliaLogFile = "${autheliaLogDir}/authelia.log";
       domain = "kclj.io";
       autheliaPort = 9091;
       lldapPort = 3890;
@@ -27,6 +36,13 @@ _: {
       netbirdMgmtMetricsPort = 9190;
       netbirdSignalMetricsPort = 9191;
       nginxInternalSSLPort = 4443;
+      # 8080/6060 (crowdsec defaults) collide with netbird-proxy and
+      # netbird-signal respectively on this host, so move both.
+      crowdsecLapiPort = 8090;
+      crowdsecMetricsPort = 9060;
+      alertmanagerPort = 9093;
+      karmaPort = 8082; # karma's default 8080 collides with netbird-proxy
+      ntfyPort = 2586; # ntfy's conventional port (default :80 collides with nginx)
 
       mkHttpsVhost = extra: {
         forceSSL = true;
@@ -38,17 +54,10 @@ _: {
         inherit job_name;
         static_configs = [ { targets = [ target ]; } ];
       };
-
-      mkNginxJail = filter: maxretry: {
-        settings = {
-          inherit filter maxretry;
-          backend = "auto";
-          logpath = "/var/log/nginx/access.log";
-          findtime = 600;
-        };
-      };
     in
     {
+      imports = [ flakeCfg.flake.nixosModules.crowdsec ];
+
       networking.hostName = "gateway";
 
       # Hetzner volume mounted early in initrd so that /nix is available before
@@ -76,6 +85,11 @@ _: {
           80 # HTTP
           443 # HTTPS
         ];
+        # No per-interface openings: the internal web UIs (grafana, lldap,
+        # prometheus, alertmanager, karma) bind 0.0.0.0 but are reached only by
+        # the host-network netbird-proxy over loopback. The default-drop policy
+        # keeps them off both the public NIC and direct overlay access, so the
+        # only way in is via netbird-proxy (NetBird SSO).
         extraInputRules = ''
           tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
           tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
@@ -146,7 +160,17 @@ _: {
           # netbird module's _secret/jq mechanism.
           "netbird/authelia_client_secret" = { };
           "netbird/proxy_token" = { };
+          # Bouncer API key shared between the CrowdSec LAPI and the netbird
+          # reverse proxy (see declarativeBouncers.netbird-proxy below).
+          # Generate with `openssl rand -hex 32`.
+          "crowdsec/bouncer_key" = { };
           "proxmox/oidc_client_secret" = { };
+          # ntfy secrets kept out of the world-readable /etc/ntfy/server.yml,
+          # injected via the EnvironmentFile (sops template) below:
+          #   web_push_private_key — VAPID private key (regenerate a real keypair)
+          #   auth_users — bcrypt user list, e.g. admin:$2b$10$...:admin,kclejeune:$2b$10$...:admin
+          "ntfy/web_push_private_key" = { };
+          "ntfy/auth_users" = { };
         };
       };
 
@@ -373,6 +397,10 @@ _: {
         serviceConfig.EnvironmentFile = [
           config.sops.templates."authelia-smtp.env".path
         ];
+        # ProtectSystem=strict makes /var/log read-only in the sandbox; re-open
+        # the dedicated authelia log dir for writing (the log moved out of the
+        # state dir so crowdsec can read it without reaching db.sqlite3).
+        serviceConfig.ReadWritePaths = [ autheliaLogDir ];
       };
 
       # ACME / Let's Encrypt via Cloudflare DNS-01 challenge
@@ -389,6 +417,39 @@ _: {
       services.nginx = {
         enable = true;
         defaultSSLListenPort = nginxInternalSSLPort;
+        # The SNI stream block (below) terminates the client TCP connection and
+        # re-proxies to the internal SSL port from 127.0.0.1, so it sends a
+        # PROXY-protocol header to carry the real client IP. The internal SSL
+        # listener therefore expects proxy_protocol and is bound to loopback —
+        # only the stream (upstream nginx_https = 127.0.0.1:${port}) ever reaches
+        # it, so there's no reason to expose it on all interfaces (the firewall
+        # drops it externally too; loopback removes the reliance on that rule).
+        # Port 80 is the public HTTP entrypoint (ACME + redirects) and stays
+        # externally bound; it must NOT expect proxy_protocol. real_ip (below)
+        # rewrites $remote_addr to the real client for logs, rate-limits, crowdsec.
+        defaultListen =
+          map
+            (addr: {
+              inherit addr;
+              port = nginxInternalSSLPort;
+              ssl = true;
+              proxyProtocol = true;
+            })
+            [
+              "127.0.0.1"
+              "[::1]"
+            ]
+          ++
+            map
+              (addr: {
+                inherit addr;
+                port = 80;
+                ssl = false;
+              })
+              [
+                "0.0.0.0"
+                "[::0]"
+              ];
         recommendedTlsSettings = true;
         recommendedOptimisation = true;
         recommendedGzipSettings = true;
@@ -396,6 +457,14 @@ _: {
         recommendedProxySettings = true;
 
         commonHttpConfig = ''
+          # Take the real client IP from the loopback stream proxy's
+          # PROXY-protocol header, rewriting $remote_addr before the
+          # limit_req/limit_conn zones and access log evaluate it — so per-IP
+          # rate-limiting, X-Forwarded-For, and crowdsec all see the real client.
+          set_real_ip_from 127.0.0.1;
+          set_real_ip_from ::1;
+          real_ip_header proxy_protocol;
+
           limit_req_zone $binary_remote_addr zone=general:10m rate=30r/s;
           limit_req_zone $binary_remote_addr zone=authelia_api:10m rate=10r/s;
           limit_conn_zone $binary_remote_addr zone=per_ip:10m;
@@ -442,10 +511,13 @@ _: {
           };
       };
 
+      # fail2ban is disabled on the gateway for now — CrowdSec owns all
+      # intrusion detection here (sshd, nginx, authelia), with its escalating ban
+      # profile below standing in for fail2ban's bantime-increment. The authelia
+      # jail + filter are kept dormant under the disabled service so fail2ban can
+      # be flipped back on as an enforcement floor in one line.
+      services.fail2ban.enable = lib.mkForce false;
       services.fail2ban.jails = {
-        nginx-http-auth = mkNginxJail "nginx-http-auth" 5;
-        nginx-botsearch = mkNginxJail "nginx-botsearch" 5;
-        nginx-bad-request = mkNginxJail "nginx-bad-request" 10;
         authelia.settings = {
           filter = "authelia";
           backend = "auto";
@@ -483,9 +555,13 @@ _: {
       services.lldap = {
         enable = true;
         settings = {
+          # Raw LDAP stays on loopback (only authelia consumes it locally). The
+          # web UI binds all interfaces so the host-network netbird-proxy can
+          # reach it over loopback; the firewall's default-drop keeps it off the
+          # public NIC and direct overlay access (in only via netbird-proxy).
           ldap_host = "127.0.0.1";
           ldap_port = lldapPort;
-          http_host = "127.0.0.1";
+          http_host = "0.0.0.0";
           http_port = lldapHttpPort;
           http_url = "https://lldap.${domain}";
           ldap_base_dn = baseDN;
@@ -552,11 +628,15 @@ _: {
       # Grafana Alloy - collects logs and metrics, ships to Loki
       services.alloy = {
         enable = true;
+        # UI stays on loopback (default 127.0.0.1:12345): the pipeline carries
+        # raw logs (auth events, client IPs, request paths) and Alloy's
+        # live-debugging UI can surface them, so it's not exposed to the overlay.
+        # Reach it for debugging via `ssh -L 12345:127.0.0.1:12345`.
         extraFlags = [ "--stability.level=generally-available" ];
       };
 
       environment.etc."alloy/config.alloy".text = ''
-        // Scrape journald logs (sshd, fail2ban, authelia, nginx, systemd)
+        // Scrape journald logs (sshd, crowdsec, authelia, nginx, systemd)
         // Route authelia's JSON-on-stdout through a parser stage that extracts
         // level/remote_ip as labels and tags the stream with job="authelia".
         loki.source.journal "journald" {
@@ -650,7 +730,10 @@ _: {
       # Prometheus - metrics scraping
       services.prometheus = {
         enable = true;
-        listenAddress = "127.0.0.1";
+        # All interfaces so the host-network netbird-proxy can reach it over
+        # loopback; the firewall's default-drop keeps it off the public NIC and
+        # direct overlay access. No built-in auth — front it via netbird-proxy.
+        listenAddress = "0.0.0.0";
         port = prometheusPort;
         retentionTime = "30d";
         scrapeConfigs = [
@@ -663,7 +746,84 @@ _: {
           (mkScrapeConfig "cloudflared" "127.0.0.1:2000")
           (mkScrapeConfig "netbird-management" "127.0.0.1:${toString netbirdMgmtMetricsPort}")
           (mkScrapeConfig "netbird-signal" "127.0.0.1:${toString netbirdSignalMetricsPort}")
+          (mkScrapeConfig "crowdsec" "127.0.0.1:${toString crowdsecMetricsPort}")
         ];
+        alertmanagers = [
+          { static_configs = [ { targets = [ "127.0.0.1:${toString alertmanagerPort}" ]; } ]; }
+        ];
+        # Starter alert rules so the stack has live alerts to view/silence across
+        # Prometheus (/alerts), Alertmanager, Karma, and Grafana. Expand as needed
+        # — Grafana-authored rules route to the same Alertmanager (see datasource).
+        rules = [
+          (builtins.toJSON {
+            groups = [
+              {
+                name = "gateway-basics";
+                rules = [
+                  {
+                    alert = "InstanceDown";
+                    expr = "up == 0";
+                    for = "5m";
+                    labels.severity = "critical";
+                    annotations.summary = "Scrape target {{ $labels.job }} ({{ $labels.instance }}) is down";
+                  }
+                  {
+                    alert = "SystemdUnitFailed";
+                    expr = ''node_systemd_unit_state{state="failed"} == 1'';
+                    for = "5m";
+                    labels.severity = "warning";
+                    annotations.summary = "systemd unit {{ $labels.name }} is failed on {{ $labels.instance }}";
+                  }
+                  {
+                    alert = "DiskSpaceLow";
+                    expr = ''node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs|overlay"} / node_filesystem_size_bytes < 0.10'';
+                    for = "15m";
+                    labels.severity = "warning";
+                    annotations.summary = "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} has <10% free";
+                  }
+                ];
+              }
+            ];
+          })
+        ];
+        # Binds all interfaces so the host-network netbird-proxy can reach it
+        # (whether it dials 127.0.0.1 or the gateway's peer IP) when fronting it
+        # at alerts.kclj.dev; the firewall's default-drop keeps it off the public
+        # NIC and direct overlay access — only the local proxy/prometheus/karma
+        # reach it via loopback.
+        alertmanager = {
+          enable = true;
+          listenAddress = "0.0.0.0";
+          port = alertmanagerPort;
+          webExternalUrl = "https://alerts.kclj.dev";
+          configuration = {
+            # Minimal no-op: alerts still show as active (so karma can display
+            # them), but nothing is notified yet. Add receivers/routes for notifs.
+            route.receiver = "null";
+            receivers = [ { name = "null"; } ];
+          };
+        };
+      };
+
+      # Karma — dashboard UI over Alertmanager. Binds all interfaces so the
+      # host-network netbird-proxy can reach it; the firewall's default-drop
+      # keeps it off the public NIC and off direct overlay access (only the local
+      # proxy reaches it via loopback), so it's served via a netbird dashboard
+      # Service rather than the overlay. No built-in auth.
+      services.karma = {
+        enable = true;
+        settings = {
+          listen = {
+            address = "0.0.0.0";
+            port = karmaPort;
+          };
+          alertmanager.servers = [
+            {
+              name = "gateway";
+              uri = "http://127.0.0.1:${toString alertmanagerPort}";
+            }
+          ];
+        };
       };
 
       # Grafana - dashboards and visualization
@@ -671,7 +831,11 @@ _: {
         enable = true;
         settings = {
           server = {
-            http_addr = "127.0.0.1";
+            # All interfaces so the host-network netbird-proxy can reach it over
+            # loopback; the firewall's default-drop keeps it off the public NIC
+            # and direct overlay access. The existing public grafana.${domain}
+            # vhost still proxies via 127.0.0.1.
+            http_addr = "0.0.0.0";
             http_port = grafanaPort;
             inherit domain;
             root_url = "https://grafana.${domain}";
@@ -699,7 +863,11 @@ _: {
                 access = "proxy";
                 url = "http://127.0.0.1:${toString lokiPort}";
                 isDefault = true;
-                jsonData = { };
+                # Loki has no ruler configured (it's for logs/dashboards, not
+                # alerting), so stop Grafana's Alerting tab from probing its ruler
+                # API — that probe is what errors. Querying Loki in Explore /
+                # dashboards is unaffected.
+                jsonData.manageAlerts = false;
               }
               {
                 name = "Prometheus";
@@ -709,6 +877,22 @@ _: {
                 url = "http://127.0.0.1:${toString prometheusPort}";
                 jsonData = { };
               }
+              {
+                # Lets Grafana's Alerting UI view + silence the same Alertmanager
+                # that Prometheus fires to (and that Karma reads). With
+                # handleGrafanaManagedAlerts, alert rules authored in Grafana also
+                # route here, so every alert is visible/silenceable from Grafana,
+                # Karma, and Alertmanager's own UI alike.
+                name = "Alertmanager";
+                type = "alertmanager";
+                uid = "alertmanager";
+                access = "proxy";
+                url = "http://127.0.0.1:${toString alertmanagerPort}";
+                jsonData = {
+                  implementation = "prometheus";
+                  handleGrafanaManagedAlerts = true;
+                };
+              }
             ];
             deleteDatasources = [
               {
@@ -717,6 +901,10 @@ _: {
               }
               {
                 name = "Prometheus";
+                orgId = 1;
+              }
+              {
+                name = "Alertmanager";
                 orgId = 1;
               }
             ];
@@ -740,6 +928,65 @@ _: {
           proxyWebsockets = true;
         };
       };
+
+      # ntfy-sh — self-hosted push notifications at https://ntfy.kclj.dev, fronted
+      # by netbird-proxy (*.kclj.dev → proxy → gateway:${toString ntfyPort}, behind
+      # NetBird SSO). Binds all interfaces so the host-network proxy reaches it over
+      # loopback; the firewall's default-drop keeps it off the public NIC and direct
+      # overlay access. Non-secret config is here (rendered to the world-readable
+      # /etc/ntfy/server.yml); the VAPID private key, the bcrypt auth-users, and the
+      # Fastmail SMTP creds are injected via the sops EnvironmentFile, out of the store.
+      services.ntfy-sh = {
+        enable = true;
+        settings = {
+          base-url = "https://ntfy.kclj.dev";
+          listen-http = ":${toString ntfyPort}";
+          behind-proxy = true;
+          upstream-base-url = "https://ntfy.sh";
+          message-size-limit = "4096";
+          keepalive-interval = "45s";
+
+          # Login required, deny-all by default; only "up*" topics are writable
+          # unauthenticated (the wildcard rule from server.yml).
+          auth-default-access = "deny-all";
+          enable-login = true;
+          enable-signup = false;
+          enable-reservations = true;
+          require-login = true;
+          auth-access = [ "*:up*:write-only" ];
+
+          # Attachment blobs in the CacheDirectory; message cache in StateDirectory.
+          attachment-cache-dir = "/var/cache/ntfy-sh";
+          attachment-file-size-limit = "20M";
+          attachment-total-size-limit = "10G";
+          attachment-expiry-duration = "4h";
+          cache-file = "/var/lib/ntfy-sh/cache.db";
+          cache-duration = "24h";
+
+          # Web push (public key is safe in the store; private key via env below).
+          web-push-public-key = "BPdEZgJlsAC_xA7_ctmlQVcCJbC9y6eCIr2W48XKJTqEEQ1uMYnZOa84MwEzL-_lXDlyV1jYDSTd70eOQ1p5Igs";
+          web-push-file = "/var/lib/ntfy-sh/webpush.db";
+          web-push-email-address = "admin@kclj.io";
+
+          # Outgoing email notifications via Fastmail — same submission host +
+          # account as authelia; user/pass injected via the EnvironmentFile.
+          smtp-sender-addr = "smtp.fastmail.com:587";
+          smtp-sender-from = "noreply+ntfy@kclj.io";
+        };
+        environmentFile = config.sops.templates."ntfy.env".path;
+      };
+      # Attachment blobs live in a CacheDirectory the module doesn't declare.
+      systemd.services.ntfy-sh.serviceConfig.CacheDirectory = "ntfy-sh";
+
+      # Secrets for ntfy's EnvironmentFile, out of the world-readable store. SMTP
+      # creds are shared with authelia's Fastmail account; the ntfy/* values must
+      # be added to secrets/gateway.yaml.
+      sops.templates."ntfy.env".content = ''
+        NTFY_WEB_PUSH_PRIVATE_KEY=${config.sops.placeholder."ntfy/web_push_private_key"}
+        NTFY_AUTH_USERS=${config.sops.placeholder."ntfy/auth_users"}
+        NTFY_SMTP_SENDER_USER=${config.sops.placeholder."authelia/smtp_username"}
+        NTFY_SMTP_SENDER_PASS=${config.sops.placeholder."authelia/smtp_password"}
+      '';
 
       # Gateway acts as a Tailscale subnet router / exit node, not just a client.
       services.tailscale.useRoutingFeatures = lib.mkForce "both";
@@ -889,9 +1136,148 @@ _: {
         };
       };
 
+      # CrowdSec — local detection (sshd, nginx, authelia) plus the community/CAPI
+      # blocklist, enforced at nftables by the firewall bouncer and surfaced to
+      # the netbird proxy's embedded bouncer. LAPI/metrics are moved off their
+      # 8080/6060 defaults (see the port bindings above).
+      services.crowdsec.enable = true;
+      services.crowdsec.settings.general = {
+        api.server.listen_uri = "127.0.0.1:${toString crowdsecLapiPort}";
+        prometheus.listen_port = crowdsecMetricsPort;
+      };
+
+      # crowdsecurity/linux brings the sshd parser + ssh-bf scenarios; nginx adds
+      # HTTP probing/scanner/bad-bot detection. nginx detection depends on the
+      # real client IP from PROXY protocol (set_real_ip_from above) — without it
+      # nginx logs 127.0.0.1 and crowdsec would ban loopback. The whitelists
+      # (crowdsec module + overlay below) are the belt-and-suspenders backstop.
+      services.crowdsec.hub.collections = [
+        "crowdsecurity/linux"
+        "crowdsecurity/nginx"
+        # Community collection: authelia parser + auth brute-force scenarios.
+        "LePresidente/authelia"
+      ];
+
+      # Data sources: sshd via journald; nginx + authelia via their log files.
+      # authelia is read from its file, not journald, on purpose: journald
+      # prefixes each line with a syslog header that breaks the LePresidente
+      # parser's JSON unmarshal. The 0600 log is made readable via the ACL below.
+      services.crowdsec.localConfig.acquisitions = [
+        {
+          source = "journalctl";
+          journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
+          labels.type = "syslog";
+        }
+        {
+          source = "file";
+          filenames = [ autheliaLogFile ];
+          labels.type = "authelia";
+        }
+        {
+          source = "file";
+          filenames = [
+            "/var/log/nginx/access.log"
+            "/var/log/nginx/error.log"
+          ];
+          labels.type = "nginx";
+        }
+      ];
+
+      # Create the dedicated authelia log dir (tmpfiles, so it exists before the
+      # ACL is applied and before authelia starts) and grant crowdsec read on it
+      # — this dir holds only the log, no secrets. The default ACL covers the log
+      # file when authelia (re)creates it. ProtectSystem=strict on authelia makes
+      # /var/log read-only in its sandbox, so ReadWritePaths re-opens this dir for
+      # writing. The old ACL on the state dir is removed; revoke any lingering
+      # grant there with `setfacl -b ${autheliaStateDir}` (tmpfiles `a+` is
+      # additive and won't retract it on its own).
+      systemd.tmpfiles.rules = [
+        "d ${autheliaLogDir} 0750 ${autheliaUser} ${autheliaUser} - -"
+        "a+ ${autheliaLogDir} - - - - u:crowdsec:rx,d:u:crowdsec:r"
+        "a+ ${autheliaLogFile} - - - - u:crowdsec:r"
+      ];
+
+      # Whitelist the overlay ranges (on top of the loopback/RFC1918 baseline in
+      # the crowdsec module) so a tailscale/netbird peer can never be banned.
+      services.crowdsec.localConfig.parsers.s02Enrich = [
+        {
+          name = "gateway/trusted-overlay";
+          description = "Never ban tailscale/netbird overlay sources";
+          whitelist = {
+            reason = "trusted overlay networks (tailscale / netbird)";
+            cidr = [
+              "100.64.0.0/10"
+              "100.100.0.0/16"
+            ];
+          };
+        }
+      ];
+
+      # Replicate fail2ban's escalating bantime (old: 1h base → 48h cap) on the
+      # remediation profiles — CrowdSec has no native increment, so the ban
+      # duration is computed per-decision by duration_expr from the offender's
+      # prior decision count. Replaces the upstream flat-4h default profiles; the
+      # whitelists above still pre-empt bans for trusted sources.
+      services.crowdsec.localConfig.profiles =
+        let
+          # 1st offense → 4h, 2nd → 8h, … capped at 48h. Ternary (not min) keeps
+          # the result an integer so Sprintf '%dh' is valid across expr versions.
+          escalatingBan =
+            "GetDecisionsCount(Alert.GetValue()) >= 11 ? '48h' "
+            + ": Sprintf('%dh', (GetDecisionsCount(Alert.GetValue()) + 1) * 4)";
+          mkProfile = name: scope: {
+            inherit name;
+            filters = [ "Alert.Remediation == true && Alert.GetScope() == '${scope}'" ];
+            decisions = [
+              {
+                type = "ban";
+                duration = "4h";
+              }
+            ];
+            duration_expr = escalatingBan;
+            on_success = "break";
+          };
+        in
+        [
+          (mkProfile "default_ip_remediation" "Ip")
+          (mkProfile "default_range_remediation" "Range")
+        ];
+
+      # crowdsec reads the journal (sshd) via systemd-journal and the nginx logs
+      # (nginx:nginx 0640 in a 0750 dir) via the nginx group.
+      systemd.services.crowdsec.serviceConfig.SupplementaryGroups = [
+        "nginx"
+        "systemd-journal"
+      ];
+
+      # Firewall bouncer: enforces CrowdSec decisions (local + community
+      # blocklist) at nftables. Auto-registers with the LAPI and self-configures.
+      services.crowdsec-firewall-bouncer.enable = true;
+
+      services.crowdsec.declarativeBouncers.netbird-proxy.keyFile =
+        config.sops.secrets."crowdsec/bouncer_key".path;
+      # CrowdSec Console enrollment is a one-time manual bootstrap (also needs
+      # approving the machine in the web UI), so it isn't declared here. Enroll
+      # once with a token from app.crowdsec.net (Security Engines → Enroll):
+      #   sudo cscli console enroll <token> --name gateway
+      # The sharing config below takes effect once enrolled; trim to keep local.
+      services.crowdsec.settings.console.configuration = {
+        share_manual_decisions = true;
+        share_tainted = true;
+        share_context = true;
+        share_custom = true;
+        # Receive console-managed decisions and blocklists over PAPI. CrowdSec
+        # delivers the community blocklist (and any you subscribe to in the
+        # console) via this channel, so without it the engine enrols but applies
+        # no console blocklists. Requires the machine to be enrolled.
+        console_management = true;
+      };
+
       # Netbird reverse proxy — runs as OCI container, handles its own TLS
       virtualisation.oci-containers.containers.netbird-proxy = {
-        image = "netbirdio/reverse-proxy:latest";
+        # Tag tracks the netbird management package version from nixpkgs so
+        # the proxy stays in lockstep with the server components.
+        image = "netbirdio/reverse-proxy:${config.services.netbird.server.management.package.version}";
         environmentFiles = [ config.sops.templates."netbird-proxy.env".path ];
         volumes = [
           "netbird-proxy-certs:/certs"
@@ -906,6 +1292,9 @@ _: {
         ];
       };
 
+      # CrowdSec env vars are appended only when crowdsec is enabled, so the
+      # proxy cleanly loses its bouncer wiring (and the secret reference) if the
+      # module is dropped.
       sops.templates."netbird-proxy.env".content = ''
         NB_PROXY_TOKEN=${config.sops.placeholder."netbird/proxy_token"}
         NB_PROXY_DOMAIN=${netbirdProxyDomain}
@@ -914,7 +1303,29 @@ _: {
         NB_PROXY_ACME_CERTIFICATES=true
         NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
         NB_PROXY_ALLOW_INSECURE=true
+        NB_PROXY_PROXY_PROTOCOL=true
+        NB_PROXY_TRUSTED_PROXIES=127.0.0.1/32,::1/128
+      ''
+      + lib.optionalString config.services.crowdsec.enable ''
+        NB_PROXY_CROWDSEC_API_URL=http://127.0.0.1:${toString crowdsecLapiPort}
+        NB_PROXY_CROWDSEC_API_KEY=${config.sops.placeholder."crowdsec/bouncer_key"}
       '';
+
+      systemd.services.podman-netbird-proxy = lib.mkMerge [
+        {
+          # Restart the container when its env (sops template) changes. NixOS
+          # oci-containers only restart on unit/image changes, not env-file
+          # *content* changes — so without this, an env edit (e.g. enabling
+          # PROXY protocol) silently doesn't take effect until a manual restart.
+          restartTriggers = [ config.sops.templates."netbird-proxy.env".content ];
+        }
+        # Start the proxy only after its bouncer is registered with LAPI, so the
+        # CrowdSec API key is valid the moment the proxy comes up.
+        (lib.mkIf config.services.crowdsec.enable {
+          after = [ "crowdsec-register-netbird-proxy.service" ];
+          wants = [ "crowdsec-register-netbird-proxy.service" ];
+        })
+      ];
 
       # Nginx stream block: SNI-based routing on port 443
       # *.kclj.dev → TLS passthrough to netbird-proxy (handles its own TLS)
@@ -938,6 +1349,11 @@ _: {
         server {
           listen 443;
           listen [::]:443;
+          # Emit a PROXY-protocol header to the chosen backend so the real
+          # client IP survives the loopback re-proxy. Both backends must accept
+          # it: nginx_https via defaultListen proxyProtocol, netbird-proxy via
+          # NB_PROXY_PROXY_PROTOCOL. ssl_preread reads SNI before this.
+          proxy_protocol on;
           ssl_preread on;
           limit_conn stream_per_ip 20;
           proxy_connect_timeout 10s;
