@@ -35,6 +35,7 @@ _: {
           grype
           jetbrains-mono
           kotlin
+          lfk
           luajit
           nixpacks
           nodejs_22
