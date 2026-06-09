@@ -36,7 +36,7 @@ _: {
         initLua = ./assets/yazi/init.lua;
         theme.mgr.preview_hovered.underline = false;
         settings = {
-          prepend_previewers = [
+          plugin.prepend_previewers = [
             {
               mime = "application/*zip";
               run = "ouch";

@@ -4,22 +4,22 @@ _: {
       enable = true;
       enableDefaultConfig = false;
       includes = [ "conf.d/*" ];
-      matchBlocks = {
+      settings = {
         "ssh.github.com" = {
-          hostname = "ssh.github.com";
-          user = "git";
-          port = 443;
+          HostName = "ssh.github.com";
+          User = "git";
+          Port = 443;
         };
         "*" = {
-          forwardAgent = true;
-          compression = false;
-          serverAliveInterval = 30;
-          serverAliveCountMax = 3;
-          hashKnownHosts = false;
-          userKnownHostsFile = "~/.ssh/known_hosts";
-          controlMaster = "auto";
-          controlPath = "~/.ssh/master-%C";
-          controlPersist = "10m";
+          ForwardAgent = true;
+          Compression = false;
+          ServerAliveInterval = 30;
+          ServerAliveCountMax = 3;
+          HashKnownHosts = false;
+          UserKnownHostsFile = "~/.ssh/known_hosts";
+          ControlMaster = "auto";
+          ControlPath = "~/.ssh/master-%C";
+          ControlPersist = "10m";
         };
       };
     };
