@@ -26,6 +26,7 @@ updates:
           - "nixpkgs"
           - "stable"
           - "unstable"
+          - "nh"
       # Build/format/CI plumbing — low blast radius, frequent tiny bumps.
       dev:
         patterns:
@@ -34,7 +35,6 @@ updates:
           - "flake-compat"
           - "treefmt-nix"
           - "git-hooks"
-          - "nh"
           - "disko"
           - "sops-nix"
           - "lanzaboote"
