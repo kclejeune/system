@@ -6,3 +6,4 @@
 .pre-commit-config.yaml
 .playwright-mcp/
 .claude/
+/result-*
