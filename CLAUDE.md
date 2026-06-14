@@ -237,6 +237,28 @@ across multiple systems via `lib.map` + `lib.mergeAttrsList`.
 - Cross-eval a darwin config from a Linux box: add `--impure` and use
   `builtins.getFlake` so `pkgs` imports work without system-matching.
 
+## Updating custom packages (`pkgs/`)
+
+The custom packages under `pkgs/` (`cb`, `fnox`, `sem-cli`, `weave`) are
+wired into the overlay and exposed via `legacyPackages`, so build them by
+bare attr name: `nix build .#fnox`. To bump one to a new release:
+
+1. Find the latest release tag with `gh`:
+   ```bash
+   gh release view --repo jdx/fnox --json tagName -q .tagName
+   ```
+2. Get the new `src` hash with `nurl` (handles `fetchFromGitHub`'s
+   top-level-dir stripping correctly — `nix-prefetch-url --unpack` does
+   NOT and yields a wrong hash):
+   ```bash
+   nurl https://github.com/jdx/fnox v1.26.0
+   ```
+   Update `version` and the `src` `hash` from its output.
+3. For Rust packages, the `cargoHash` can't be prefetched — set it to a
+   fake (`sha256-AAAA…AAA=`), run `nix build .#<name>`, and copy the
+   `got:` hash from the mismatch error into `cargoHash`. Then rebuild to
+   confirm it's clean.
+
 ## Gotchas
 
 - **`flake.nix` uncommitted changes** are not picked up until `git add`ed —

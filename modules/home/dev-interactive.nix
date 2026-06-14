@@ -22,7 +22,7 @@ _: {
           clang-tools
           cmake
           dive
-          dix
+          stable.dix
           ffmpeg
           flamegraph
           flamelens
