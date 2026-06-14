@@ -236,11 +236,11 @@ in
       # affects PID 1). LogLevel/LogTarget similarly only filter what
       # the user manager itself emits, not its unit-status lines.
       # Together: no status, no info chatter, journal-only routing.
-      systemd.user.extraConfig = ''
-        LogLevel=err
-        LogTarget=journal
-        ShowStatus=no
-      '';
+      systemd.user.settings.Manager = {
+        LogLevel = "err";
+        LogTarget = "journal";
+        ShowStatus = "no";
+      };
 
       # uwsm logs its own startup chatter at INFO level
       # ("Selected compositor ID: hyprland.desktop", "Created dir
