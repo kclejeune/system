@@ -85,11 +85,11 @@ in
           80 # HTTP
           443 # HTTPS
         ];
-        # No per-interface openings: the internal web UIs (grafana, lldap,
-        # prometheus, alertmanager, karma) bind 0.0.0.0 but are reached only by
-        # the host-network netbird-proxy over loopback. The default-drop policy
-        # keeps them off both the public NIC and direct overlay access, so the
-        # only way in is via netbird-proxy (NetBird SSO).
+        # The internal web UIs (grafana, prometheus, alertmanager, karma, lldap,
+        # ntfy) bind 0.0.0.0 so the NetBird proxy reaches them over the mesh, but
+        # aren't opened here — so default-drop keeps them off the public NIC while
+        # trustedInterfaces (wt0/tailscale0) admits the overlay. NetBird ACLs +
+        # proxy SSO gate who on the overlay reaches them.
         extraInputRules = ''
           tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
           tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
@@ -102,6 +102,10 @@ in
       # profile-personal); gateway opts into installing them on root too as
       # a rescue fallback since it's the only public-facing host.
       identity.enableRootSshKeys = true;
+
+      # Base sets PermitRootLogin="no" (mkDefault), which would make the rescue
+      # keys above inert. Allow key-only root login (never password).
+      services.openssh.settings.PermitRootLogin = lib.mkForce "prohibit-password";
 
       users.users.${config.user.name} = {
         isNormalUser = true;
@@ -138,6 +142,10 @@ in
             owner = autheliaUser;
           };
           "lldap/jwt_secret" = { };
+          # World-readable (0444) on purpose: lldap runs as a DynamicUser, so a
+          # static "lldap" group to chown this to collides with the dynamic one
+          # (217/USER on start). Group-read would need a separately-named
+          # SupplementaryGroup; without that, 0444 is the workable option.
           "lldap/ldap_user_pass" = {
             mode = "0444";
           };
@@ -185,6 +193,21 @@ in
           log.file_path = autheliaLogFile;
           log.keep_stdout = true;
           default_2fa_method = "webauthn";
+
+          # Brute-force regulation. ip mode (Authelia's recommendation) over the
+          # default user mode: bans the offending source IP rather than the
+          # account, so a known username can't be locked out by a third party.
+          # Authelia sees the real client IP via nginx X-Forwarded-For (real_ip
+          # from PROXY protocol). This is the in-app first line; CrowdSec
+          # (LePresidente/authelia) adds escalating nftables bans from the log.
+          # The built-in server.endpoints.rate_limits are left at their defaults
+          # (all enabled).
+          regulation = {
+            modes = [ "ip" ];
+            max_retries = 3;
+            find_time = "2m";
+            ban_time = "10m";
+          };
 
           authentication_backend = {
             password_reset.disable = true;
@@ -322,7 +345,7 @@ in
                 client_id = "netbird";
                 client_name = "Netbird";
                 client_secret = "$pbkdf2-sha512$310000$eR/0.KCdrZkDNlG4UxJHZA$RnhRovxssPf8MHatxmR2mAd8hLhMX0MZ0ZtwDsvoEr/auAdTMBHNuXo3avAnwB6sP4YsE0FWTJL.zot0YyLhTA";
-                authorization_policy = "one_factor";
+                authorization_policy = "two_factor";
                 consent_mode = "implicit";
                 claims_policy = "netbird";
                 response_types = [ "code" ];
@@ -344,7 +367,7 @@ in
                 client_name = "Cloudflare Access";
                 # pbkdf2 hash of the plaintext secret stored in sops at cloudflare/access_oidc_client_secret
                 client_secret = "$pbkdf2-sha512$310000$xnyghfozygQnVb0ytelIyQ$jti2tS0TS.3bCAoLOqNSxhKRtnJM9T/oeaV0f1buy2GmS/NJunNY0npb6ptAcRx4IpecQfOL.1Z.uTRtUqAvoQ";
-                authorization_policy = "one_factor";
+                authorization_policy = "two_factor";
                 consent_mode = "implicit";
                 claims_policy = "cloudflare";
                 redirect_uris = [
@@ -555,10 +578,8 @@ in
       services.lldap = {
         enable = true;
         settings = {
-          # Raw LDAP stays on loopback (only authelia consumes it locally). The
-          # web UI binds all interfaces so the host-network netbird-proxy can
-          # reach it over loopback; the firewall's default-drop keeps it off the
-          # public NIC and direct overlay access (in only via netbird-proxy).
+          # Raw LDAP on loopback (authelia-only). Web UI on 0.0.0.0, overlay-only
+          # (not opened publicly; see firewall comment).
           ldap_host = "127.0.0.1";
           ldap_port = lldapPort;
           http_host = "0.0.0.0";
@@ -588,6 +609,11 @@ in
         enable = true;
         configuration = {
           auth_enabled = false;
+          # Loki has no auth and ingests sensitive data (auth events, client
+          # IPs). Only Grafana + Alloy consume it, both over loopback, so bind it
+          # to 127.0.0.1 — never all interfaces — so the firewall isn't the sole
+          # thing keeping it off the public NIC and the trusted overlay.
+          server.http_listen_address = "127.0.0.1";
           server.http_listen_port = lokiPort;
 
           common = {
@@ -730,9 +756,7 @@ in
       # Prometheus - metrics scraping
       services.prometheus = {
         enable = true;
-        # All interfaces so the host-network netbird-proxy can reach it over
-        # loopback; the firewall's default-drop keeps it off the public NIC and
-        # direct overlay access. No built-in auth — front it via netbird-proxy.
+        # No built-in auth; overlay-only (not opened publicly; see firewall comment).
         listenAddress = "0.0.0.0";
         port = prometheusPort;
         retentionTime = "30d";
@@ -786,11 +810,7 @@ in
             ];
           })
         ];
-        # Binds all interfaces so the host-network netbird-proxy can reach it
-        # (whether it dials 127.0.0.1 or the gateway's peer IP) when fronting it
-        # at alerts.kclj.dev; the firewall's default-drop keeps it off the public
-        # NIC and direct overlay access — only the local proxy/prometheus/karma
-        # reach it via loopback.
+        # No built-in auth; overlay-only (not opened publicly; see firewall comment).
         alertmanager = {
           enable = true;
           listenAddress = "0.0.0.0";
@@ -805,11 +825,8 @@ in
         };
       };
 
-      # Karma — dashboard UI over Alertmanager. Binds all interfaces so the
-      # host-network netbird-proxy can reach it; the firewall's default-drop
-      # keeps it off the public NIC and off direct overlay access (only the local
-      # proxy reaches it via loopback), so it's served via a netbird dashboard
-      # Service rather than the overlay. No built-in auth.
+      # Karma — dashboard over Alertmanager, no built-in auth. Overlay-only
+      # (not opened publicly; see firewall comment).
       services.karma = {
         enable = true;
         settings = {
@@ -831,25 +848,28 @@ in
         enable = true;
         settings = {
           server = {
-            # All interfaces so the host-network netbird-proxy can reach it over
-            # loopback; the firewall's default-drop keeps it off the public NIC
-            # and direct overlay access. The existing public grafana.${domain}
-            # vhost still proxies via 127.0.0.1.
+            # Overlay-only (not opened publicly; see firewall comment); the
+            # auth.proxy whitelist below pins header trust to the NetBird range.
             http_addr = "0.0.0.0";
             http_port = grafanaPort;
-            inherit domain;
-            root_url = "https://grafana.${domain}";
+            domain = netbirdProxyDomain;
+            root_url = "https://grafana.${netbirdProxyDomain}";
           };
           security = {
             admin_user = "admin";
             secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
           };
+          # SSO via the NetBird proxy: it authenticates the user and stamps the
+          # email into X-NetBird-User. whitelist pins header trust to the NetBird
+          # CGNAT range (100.64.0.0/10) so only the proxy can assert an identity.
           "auth.proxy" = {
             enabled = true;
-            header_name = "cf-access-authenticated-user-email";
+            header_name = "X-NetBird-User";
             header_property = "email";
+            headers = "Groups:X-NetBird-Groups";
             auto_sign_up = true;
             enable_login_token = false;
+            whitelist = "100.64.0.0/10";
           };
         };
         provision = {
@@ -919,23 +939,17 @@ in
         };
       };
 
-      # lldap web UI: not exposed via nginx — access via SSH tunnel (ssh -L 17170:127.0.0.1:17170)
-      # or add to cloudflared tunnel with Cloudflare Access protection before exposing publicly.
-
-      services.nginx.virtualHosts."grafana.${domain}" = mkHttpsVhost "" // {
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString grafanaPort}";
-          proxyWebsockets = true;
-        };
-      };
+      # Grafana is served only through the NetBird proxy (grafana.kclj.dev, SSO),
+      # not a public nginx vhost. In the dashboard use target TYPE = Peer (the
+      # gateway), not Host/IP — a same-peer Host/Subnet target 502s (no
+      # self-targeted ACL).
 
       # ntfy-sh — self-hosted push notifications at https://ntfy.kclj.dev, fronted
-      # by netbird-proxy (*.kclj.dev → proxy → gateway:${toString ntfyPort}, behind
-      # NetBird SSO). Binds all interfaces so the host-network proxy reaches it over
-      # loopback; the firewall's default-drop keeps it off the public NIC and direct
-      # overlay access. Non-secret config is here (rendered to the world-readable
-      # /etc/ntfy/server.yml); the VAPID private key, the bcrypt auth-users, and the
-      # Fastmail SMTP creds are injected via the sops EnvironmentFile, out of the store.
+      # by the NetBird proxy (overlay-only; see firewall comment). Non-secret
+      # config is here (rendered to the
+      # world-readable /etc/ntfy/server.yml); the VAPID private key, the bcrypt
+      # auth-users, and the Fastmail SMTP creds are injected via the sops
+      # EnvironmentFile, out of the store.
       services.ntfy-sh = {
         enable = true;
         settings = {
@@ -1103,6 +1117,12 @@ in
           denied-peer-ip=169.254.0.0-169.254.255.255
           denied-peer-ip=172.16.0.0-172.31.255.255
           denied-peer-ip=192.168.0.0-192.168.255.255
+          # IPv6: deny loopback, link-local (fe80::/10) and ULA (fc00::/7) so the
+          # TURN relay can't be abused to reach internal v6 targets (SSRF). The
+          # IPv4 ranges above don't cover these; coturn takes start-end ranges.
+          denied-peer-ip=::1
+          denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+          denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
           no-loopback-peers
           no-multicast-peers
           stale-nonce=600
