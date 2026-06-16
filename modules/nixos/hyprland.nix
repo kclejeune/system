@@ -60,6 +60,29 @@ in
             magick ${./assets/regreet-background.png} -blur 0x16 $out
           '';
 
+      # regreet 0.4.0 renders the [background] through GTK4's
+      # GStreamer media backend (GstPlay → playbin3), even for a
+      # static PNG. The nixpkgs package only lists gtk4/librsvg/etc.
+      # as buildInputs, so gstreamer comes in transitively (via gtk4)
+      # but wrapGAppsHook4 never sees a gstreamer *direct* dep and so
+      # never registers GST_PLUGIN_SYSTEM_PATH_1_0 on the wrapper.
+      # playbin3 (gst-plugins-base) is then "No such element", regreet
+      # aborts on first frame, cage's Wayland pipe breaks, and greetd
+      # loops "greeter exited without creating a session" until the
+      # systemd start-limit kills the service. Adding the gstreamer
+      # plugin packages as buildInputs makes wrapGAppsHook4 set the
+      # plugin path: base = playbin3 + typefind, good = pngdec/jpeg
+      # for the actual background decode, core = base elements.
+      regreet = pkgs.regreet.overrideAttrs (old: {
+        buildInputs =
+          (old.buildInputs or [ ])
+          ++ (with pkgs.gst_all_1; [
+            gstreamer
+            gst-plugins-base
+            gst-plugins-good
+          ]);
+      });
+
       greeterCommand = pkgs.writeShellScript "greeter-session" ''
         exec 2> >(${pkgs.systemd}/bin/systemd-cat -t greeter-session)
 
@@ -77,7 +100,7 @@ in
         # redraws plymouth's retained splash (from `plymouth quit
         # --retain-splash`) into the cage→hyprland gap.
         ${pkgs.dbus}/bin/dbus-run-session \
-          ${lib.getExe pkgs.cage} -s -m last -- ${lib.getExe pkgs.regreet}
+          ${lib.getExe pkgs.cage} -s -m last -- ${lib.getExe regreet}
       '';
     in
     {
