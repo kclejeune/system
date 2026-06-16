@@ -289,7 +289,7 @@ in
           # fallback for any monitor not covered by such a rule and
           # always sorts last via `lib.mkAfter`.
           monitor = lib.mkAfter [
-            ", preferred, auto, 1.5"
+            ", preferred, auto, 1.25"
           ];
 
           general = {
