@@ -55,6 +55,18 @@ in
       boot.kernel.sysctl."net.core.rmem_max" = 2097152;
       boot.kernel.sysctl."net.core.rmem_default" = 1048576;
 
+      # ARP flux fix for when wired + wifi are both up on the same subnet
+      # (docked: enp8s0 + wlp0s20f3 both lease 192.168.1.0/24). Default
+      # `arp_ignore=0` lets either NIC answer ARP for the other's IP, so the
+      # switch learns an IP's MAC on the wrong port and return traffic lands
+      # on the idle interface — long-lived connections (Slack, SSH, the WARP
+      # underlay) stall until the ARP table re-settles. arp_ignore=1 only
+      # answers for the receiving NIC's own IP; arp_announce=2 sources
+      # announcements from the outgoing interface's address. Wifi stays up
+      # as a fallback.
+      boot.kernel.sysctl."net.ipv4.conf.all.arp_ignore" = 1;
+      boot.kernel.sysctl."net.ipv4.conf.all.arp_announce" = 2;
+
       # Propagate log level + target as env vars to PID 1 so they
       # survive into `systemd-shutdown`. The `systemd.log_level=` /
       # `systemd.log_target=` kernel cmdline directives apply to PID 1
