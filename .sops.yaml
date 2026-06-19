@@ -4,6 +4,11 @@ keys:
   - &gateway age1xawelux9hmvjmq3ry9yu0uh0njyjx87hskdlnlknjh3ud2rm74fs5jc8vk
   - &klejeune age10suv000jwsgzq546kmj5jxltmxawsx90nvdmyzc42nhsayyfa4rq720w54
   - &standalone age17t0ghmx3ze62epewm9p5rdaywv9u6wjcjvrj5e734uqzkst6hvtqhwtdkz
+  # Homelab nodes — fill in after first install:
+  #   ssh kclejeune@haven 'ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub'
+  # then add the key below, uncomment it in haven's creation rule, and run
+  #   sops updatekeys secrets/haven.yaml
+  # - &haven age1...
 
 creation_rules:
   - path_regex: secrets/gateway\.yaml$
@@ -11,3 +16,8 @@ creation_rules:
       - age:
           - *kclejeune
           - *gateway
+  - path_regex: secrets/haven\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          # - *haven   # uncomment once the host key is enrolled (see keys above)

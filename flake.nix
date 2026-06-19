@@ -204,6 +204,32 @@
           ];
         };
 
+        # Homelab home-automation node — bare-metal Lenovo P3 Tiny replacing
+        # the Proxmox cluster. Runs homebridge + uptime-kuma natively and
+        # Home Assistant OS as an Incus VM. First of four planned nodes
+        # (haven / forge / vault / atlas).
+        flake.nixosConfigurations.haven = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            config.flake.nixosModules.hardware-p3-tiny
+            config.flake.nixosModules.server-base
+
+            config.flake.nixosModules.haven
+            config.flake.nixosModules.profile-personal
+            # config.flake.nixosModules.backup
+
+            config.flake.nixosModules.tailscale
+            config.flake.nixosModules.netbird
+          ];
+        };
+
         flake.darwinConfigurations = lib.mergeAttrsList (
           lib.map (system: {
             "kclejeune@${system}" = inputs.darwin.lib.darwinSystem {
