@@ -57,5 +57,13 @@ _: {
       # netbird-proxy container.
       virtualisation.podman.enable = true;
       virtualisation.oci-containers.backend = "podman";
+
+      # Installer-image only: resolve the PermitRootLogin clash when building
+      # `nh os build-image --image-variant=iso-installer`. default.nix sets
+      # mkDefault "no" and the upstream installation-device profile sets
+      # mkDefault "yes" — two equal-priority mkDefaults collide. mkForce wins,
+      # and because this lives under image.modules.iso-installer it applies
+      # ONLY to the live installer; the installed system keeps "no".
+      image.modules.iso-installer.services.openssh.settings.PermitRootLogin = lib.mkForce "yes";
     };
 }
