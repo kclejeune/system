@@ -321,6 +321,8 @@ in
                 claims_policy = "beszel";
                 redirect_uris = [
                   "https://beszel.kclj.dev/api/oauth2-redirect"
+                  # Beszel iOS companion app deep link (native PKCE flow).
+                  "beszel-companion://redirect"
                 ];
                 scopes = [
                   "openid"
