@@ -223,6 +223,7 @@
             config.flake.nixosModules.server-base
 
             config.flake.nixosModules.haven
+            config.flake.nixosModules.caddy-lan
             config.flake.nixosModules.profile-personal
             # config.flake.nixosModules.backup
 

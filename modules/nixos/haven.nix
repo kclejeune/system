@@ -6,38 +6,11 @@ _: {
   flake.nixosModules.haven =
     {
       config,
-      lib,
-      pkgs,
       ...
     }:
     let
       homebridgeUiPort = 8581;
       uptimeKumaPort = 3001;
-
-      # Caddy built with the Cloudflare DNS plugin so it can solve ACME DNS-01
-      # challenges. DNS-01 is what lets these internal *.lan.kclj.io hosts get
-      # real Let's Encrypt certs without any inbound HTTP exposure. To bump:
-      # check `proxy.golang.org/github.com/caddy-dns/cloudflare/@latest`, update
-      # the version, set hash to lib.fakeHash, rebuild, copy the `got:` hash.
-      caddyWithCloudflare = pkgs.caddy.withPlugins {
-        plugins = [ "github.com/caddy-dns/cloudflare@v0.2.4" ];
-        hash = "sha256-8yZDrejNKsaUnUaTUFYbarWNmxafqp2z2rWo+XRsxV8=";
-      };
-
-      # Shared ACME DNS-01 tls block reused by every *.lan.kclj.io vhost.
-      # *.lan.kclj.io is internal split-horizon DNS, and this LAN intercepts
-      # outbound port-53, so Caddy's propagation self-check can never see the
-      # public ACME TXT (the local resolver answers authoritatively for
-      # lan.kclj.io with no such record). The record *does* propagate publicly,
-      # so disable the self-check (propagation_timeout -1) and just wait a fixed
-      # delay before asking Let's Encrypt, which validates against real public DNS.
-      caddyLanTls = ''
-        tls {
-          dns cloudflare {env.CF_DNS_API_TOKEN}
-          propagation_delay 60s
-          propagation_timeout -1
-        }
-      '';
     in
     {
       networking.hostName = "haven";
@@ -128,29 +101,16 @@ _: {
         uiSettings.port = homebridgeUiPort;
       };
 
-      # --- Reverse proxy (Caddy, ACME DNS-01 via Cloudflare) ---
-      # Fronts haven's web UIs at https://<svc>.lan.kclj.io with real Let's
-      # Encrypt certs. Certs are issued over the Cloudflare DNS-01 challenge
-      # (no inbound :80/:443 needed for issuance), using the same CF token the
-      # gateway uses — stored in haven's sops file as CF_DNS_API_TOKEN and fed in
-      # via the unit's EnvironmentFile. br0 is already a trusted interface, so
-      # LAN/overlay clients reach Caddy's :80/:443 without extra firewall rules.
-      sops.secrets."cloudflare/api-token" = { };
-      services.caddy = {
+      # --- Reverse proxy (caddy-lan: ACME DNS-01 + UniFi DDNS) ---
+      # dynamicDns stays off here until unifi/* secrets are added to
+      # secrets/haven.yaml; certs + proxying work without them.
+      services.caddyLan = {
         enable = true;
-        package = caddyWithCloudflare;
-        email = "kc.lejeune@gmail.com";
-        virtualHosts."homebridge.lan.kclj.io".extraConfig = ''
-          ${caddyLanTls}
-          reverse_proxy 127.0.0.1:${toString homebridgeUiPort}
-        '';
-        virtualHosts."status.lan.kclj.io".extraConfig = ''
-          ${caddyLanTls}
-          reverse_proxy 127.0.0.1:${toString uptimeKumaPort}
-        '';
+        proxies = {
+          homebridge = "127.0.0.1:${toString homebridgeUiPort}";
+          status = "127.0.0.1:${toString uptimeKumaPort}";
+        };
       };
-      systemd.services.caddy.serviceConfig.EnvironmentFile =
-        config.sops.secrets."cloudflare/api-token".path;
 
       # --- Uptime Kuma (native module) ---
       services.uptime-kuma = {
