@@ -93,6 +93,56 @@ _: {
         };
       };
 
+      # --- HAOS VM bring-up runbook (imperative, run once over SSH) ---
+      # Incus instances can't be declared via preseed (it only does pools/
+      # profiles/networks), so the HAOS VM is created by hand. Host SSH is
+      # already set up (kclejeune@haven / haven.lan.kclj.io), and the LAN
+      # bridge + dir pool + br0-bridged `default` profile above are all this
+      # needs. We import HAOS as a proper Incus image (split image: a tiny
+      # metadata tarball + the qcow2 as rootfs) and launch from it — the
+      # canonical route, no raw conversion or poking at root.img.
+      #
+      # 1. Fetch + decompress the latest HAOS OVA qcow2 (bump the version):
+      #      cd /var/tmp
+      #      curl -fL -o haos.qcow2.xz \
+      #        https://github.com/home-assistant/operating-system/releases/download/18.0/haos_ova-18.0.qcow2.xz
+      #      unxz haos.qcow2.xz          # -> haos_ova-18.0.qcow2
+      #
+      # 2. Build metadata + import as an Incus image:
+      #      cat > metadata.yaml <<'EOF'
+      #      architecture: x86_64
+      #      creation_date: 1700000000
+      #      properties:
+      #        description: Home Assistant OS
+      #        os: HAOS
+      #        release: "18.0"
+      #      EOF
+      #      tar -czf metadata.tar.gz metadata.yaml
+      #      incus image import metadata.tar.gz haos_ova-18.0.qcow2 --alias haos
+      #
+      # 3. Launch the VM. security.secureboot=false because HAOS isn't signed
+      #    for Incus secureboot; the `default` profile already bridges eth0
+      #    onto br0 so the VM gets its own LAN DHCP lease:
+      #      incus launch haos homeassistant --vm \
+      #        -c security.secureboot=false -d root,size=32GiB
+      #      incus stop homeassistant -f
+      #      incus config set homeassistant limits.cpu=2 limits.memory=4GiB
+      #      incus config set homeassistant boot.autostart=true
+      #      incus start homeassistant
+      #      incus console --show-log homeassistant   # watch boot; Ctrl-a q
+      #      incus list homeassistant                 # grab eth0 LAN IPv4
+      #
+      # 4. Restore the previous install: browse to http://<vm-ip>:8123 ->
+      #    "Restore from backup" -> upload the HA native .tar (config +
+      #    add-ons + HACS). You can't SSH/incus-exec into HAOS directly —
+      #    after restore, enable HA's "SSH & Web Terminal" add-on for a shell.
+      #
+      # 5. Cleanup once it boots clean: rm /var/tmp/haos.* /var/tmp/metadata.*
+      #    (the imported image stays cached; see `incus image list`).
+      #
+      # Resources are deliberately small (2 vCPU / 4 GiB / 32 GiB) — bump via
+      # `incus config set` if heavier add-ons (Frigate, etc.) need it.
+
       # --- Homebridge (native module) ---
       # State at /var/lib/homebridge (covered by the backup module's /var/lib
       # sweep). UI + HAP ports are reachable over the trusted LAN/overlays.
