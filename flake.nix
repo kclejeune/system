@@ -233,6 +233,30 @@
           ];
         };
 
+        # forge — general / dev-utilities node (P3 Tiny).
+        flake.nixosConfigurations.forge = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            config.flake.nixosModules.hardware-p3-tiny
+            config.flake.nixosModules.server-base
+
+            config.flake.nixosModules.forge
+            config.flake.nixosModules.profile-personal
+            config.flake.nixosModules.backup
+
+            config.flake.nixosModules.tailscale
+            config.flake.nixosModules.netbird
+            config.flake.nixosModules.beszel-agent
+          ];
+        };
+
         flake.darwinConfigurations = lib.mergeAttrsList (
           lib.map (system: {
             "kclejeune@${system}" = inputs.darwin.lib.darwinSystem {
