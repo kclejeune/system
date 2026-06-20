@@ -158,10 +158,11 @@ _: {
         uiSettings.port = homebridgeUiPort;
       };
 
-      # --- Reverse proxy (caddy-lan: ACME DNS-01 + UniFi DDNS) ---
-      # unifi/* are now in secrets/haven.yaml, so self-register the proxied
-      # subdomains into UniFi local DNS. interface is br0 (haven's physical
-      # NIC is enslaved to br0, which holds the host's DHCP lease), not eno*.
+      # --- Reverse proxy (caddy-lan: ACME DNS-01) ---
+      # haven.lan.kclj.io resolves via UniFi's local domain automatically.
+      # homebridge/homeassistant already resolve to their devices via UniFi
+      # client DNS; status needs a UniFi Local DNS Record -> haven to route
+      # through caddy/TLS.
       services.caddyLan = {
         enable = true;
         proxies = {
@@ -172,10 +173,6 @@ _: {
           # homeassistant.lan.kclj.io -> the VM's own br0 lease, which would
           # clobber this proxy record. `hass` sidesteps that collision.
           hass = haVmAddr;
-        };
-        dynamicDns = {
-          enable = true;
-          interface = "br0";
         };
       };
 

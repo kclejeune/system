@@ -1,11 +1,21 @@
-{ config, ... }:
-{
+_: {
   # Reusable LAN-facing Caddy: real Let's Encrypt certs for *.lan.kclj.io via
-  # Cloudflare ACME DNS-01, plus optional UniFi dynamic-DNS self-registration.
+  # Cloudflare ACME DNS-01, reverse-proxying LAN services by name.
+  #
+  # Name resolution is NOT done here. lan.kclj.io is the UniFi network's local
+  # domain (Default LAN `domain_name = lan.kclj.io`), so UniFi is authoritative
+  # for it (split-horizon) and auto-resolves every DHCP client's <hostname>.
+  # That covers the host names (haven.lan.kclj.io etc.) for free. UniFi's DNS
+  # policy API refuses to create ANY record under its own local domain
+  # (`api.dns.policy.validation.overlap-with-local-dns`), so caddy cannot
+  # self-register — proxied subdomains that have no matching client hostname
+  # (e.g. attic, status) must be added as UniFi *Local DNS Records* pointing at
+  # the caddy host. Hosts here just set services.caddyLan.proxies.
+  #
   # The ACME propagation check is pinned to public resolvers (1.1.1.1/1.0.0.1)
   # because this LAN intercepts :53 and answers lan.kclj.io authoritatively
   # without the ACME TXT — querying public DNS directly lets the check run
-  # normally instead of disabling it. Hosts set services.caddyLan.proxies.
+  # normally instead of disabling it.
   flake.nixosModules.caddy-lan =
     {
       config,
@@ -16,8 +26,13 @@
     let
       cfg = config.services.caddyLan;
 
-      # Caddy + the five plugins (versions pinned in the plan's Global
-      # Constraints). To bump: set hash = lib.fakeHash, rebuild, copy `got:`.
+      # Caddy + plugins. cloudflare is the ACME DNS-01 provider; ratelimit/l4
+      # are kept for planned use. unifi + caddy-dynamicdns are retained but
+      # currently UNUSED: lan.kclj.io is UniFi's local domain, so its DNS API
+      # rejects any record caddy tries to write under it (see module header) —
+      # they're kept so re-enabling self-registration later (e.g. if the local
+      # domain moves off lan.kclj.io) needs no caddy rebuild. To bump a plugin:
+      # set hash = lib.fakeHash, rebuild, copy `got:`.
       caddyLan = pkgs.caddy.withPlugins {
         plugins = [
           "github.com/caddy-dns/cloudflare@v0.2.4"
@@ -46,7 +61,7 @@
     in
     {
       options.services.caddyLan = {
-        enable = lib.mkEnableOption "LAN Caddy (Cloudflare DNS-01 + UniFi dynamic DNS)";
+        enable = lib.mkEnableOption "LAN Caddy (Cloudflare DNS-01 reverse proxy)";
 
         baseDomain = lib.mkOption {
           type = lib.types.str;
@@ -60,41 +75,34 @@
           example = lib.literalExpression ''{ attic = "127.0.0.1:8080"; }'';
           description = ''
             subdomain -> upstream "host:port". Each becomes a
-            <subdomain>.<baseDomain> vhost with DNS-01 TLS + reverse_proxy,
-            and (when dynamicDns.enable) a UniFi DNS record.
+            <subdomain>.<baseDomain> vhost with DNS-01 TLS + reverse_proxy.
+            The name must resolve to this host: either it matches a UniFi DHCP
+            client hostname, or add a UniFi Local DNS Record for it.
           '';
-        };
-
-        dynamicDns = {
-          enable = lib.mkEnableOption "self-register proxied subdomains into UniFi local DNS";
-          interface = lib.mkOption {
-            type = lib.types.str;
-            example = "eno1";
-            description = "LAN interface whose IPv4 to publish to UniFi.";
-          };
         };
       };
 
       config = lib.mkIf cfg.enable {
-        sops.secrets = {
-          "cloudflare/api-token" = { };
-        }
-        // lib.optionalAttrs cfg.dynamicDns.enable {
-          "unifi/api-key" = { };
-          "unifi/base-url" = { };
-          "unifi/site-id" = { };
-        };
+        # Make caddy reachable on the LAN. haven happens to expose these via
+        # `firewall.trustedInterfaces = [ "br0" ]`, but forge/vault/atlas don't
+        # trust their NIC, so without this their :443 is blocked and proxied
+        # vhosts time out. Open the ports centrally so every caddy-lan host is
+        # reachable regardless of per-host firewall posture.
+        networking.firewall.allowedTCPPorts = [
+          80
+          443
+        ];
 
-        # EnvironmentFile assembled from sops so the token(s) never hit the
-        # store. Cloudflare always; UniFi only when dynamic DNS is on.
+        sops.secrets."cloudflare/api-token" = { };
+
+        # EnvironmentFile assembled from sops so the token never hits the store.
         sops.templates."caddy-lan.env".content = ''
           CF_DNS_API_TOKEN=${config.sops.placeholder."cloudflare/api-token"}
-        ''
-        + lib.optionalString cfg.dynamicDns.enable ''
-          UNIFI_API_KEY=${config.sops.placeholder."unifi/api-key"}
-          UNIFI_BASE_URL=${config.sops.placeholder."unifi/base-url"}
-          UNIFI_SITE_ID=${config.sops.placeholder."unifi/site-id"}
         '';
+        # systemd only reads EnvironmentFile at process start, so caddy must be
+        # restarted (not just reloaded) when these secrets change — otherwise a
+        # deploy re-renders the env but caddy keeps running the old values.
+        sops.templates."caddy-lan.env".restartUnits = [ "caddy.service" ];
 
         services.caddy = {
           enable = true;
@@ -110,26 +118,6 @@
               '';
             }
           ) cfg.proxies;
-
-          # Only emit dynamic_dns when there's at least one proxy to register —
-          # an empty `domains` block risks managing the zone apex, and multiple
-          # bare-infra hosts would then fight over it.
-          globalConfig = lib.mkIf (cfg.dynamicDns.enable && cfg.proxies != { }) ''
-            dynamic_dns {
-              provider unifi {
-                api_key {env.UNIFI_API_KEY}
-                base_url {env.UNIFI_BASE_URL}
-                site_id {env.UNIFI_SITE_ID}
-              }
-              domains {
-                ${cfg.baseDomain} ${lib.concatStringsSep " " (lib.attrNames cfg.proxies)}
-              }
-              ip_source interface ${cfg.dynamicDns.interface}
-              versions ipv4
-              check_interval 5m
-              ttl 300s
-            }
-          '';
         };
 
         systemd.services.caddy.serviceConfig.EnvironmentFile = config.sops.templates."caddy-lan.env".path;

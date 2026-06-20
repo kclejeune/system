@@ -39,17 +39,13 @@ _: {
         };
       };
 
-      # --- Reverse proxy (caddy-lan) + UniFi self-registration ---
+      # --- Reverse proxy (caddy-lan: ACME DNS-01) ---
+      # forge.lan.kclj.io resolves via UniFi's local domain automatically.
+      # attic has no matching client hostname, so it needs a UniFi Local DNS
+      # Record -> forge for the cache to be reachable by name through caddy.
       services.caddyLan = {
         enable = true;
         proxies.attic = "127.0.0.1:${toString atticPort}";
-        dynamicDns = {
-          # unifi/* are set in secrets/forge.yaml, so publish attic.lan.kclj.io
-          # into UniFi local DNS (otherwise the proxied cache isn't reachable
-          # by name).
-          enable = true;
-          interface = "eno2"; # P3 Tiny on-board NIC (verified on forge)
-        };
       };
 
       # --- AirPrint (CUPS + avahi; network printer, not USB) ---
