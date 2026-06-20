@@ -13,6 +13,8 @@ _: {
       identity.enableRootSshKeys = true;
 
       sops.defaultSopsFile = ../../secrets/atlas.yaml;
+      # backup (restic/*) stays off in flake.nix until real restic repo /
+      # password / R2 creds exist; beszel-agent is on (token in sops).
 
       system.stateVersion = "25.11";
     };

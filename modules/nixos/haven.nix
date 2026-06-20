@@ -152,13 +152,18 @@ _: {
       };
 
       # --- Reverse proxy (caddy-lan: ACME DNS-01 + UniFi DDNS) ---
-      # dynamicDns stays off here until unifi/* secrets are added to
-      # secrets/haven.yaml; certs + proxying work without them.
+      # unifi/* are now in secrets/haven.yaml, so self-register the proxied
+      # subdomains into UniFi local DNS. interface is br0 (haven's physical
+      # NIC is enslaved to br0, which holds the host's DHCP lease), not eno*.
       services.caddyLan = {
         enable = true;
         proxies = {
           homebridge = "127.0.0.1:${toString homebridgeUiPort}";
           status = "127.0.0.1:${toString uptimeKumaPort}";
+        };
+        dynamicDns = {
+          enable = true;
+          interface = "br0";
         };
       };
 

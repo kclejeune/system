@@ -7,6 +7,9 @@ keys:
   # Homelab nodes — derived from each host's SSH host key via
   #   ssh kclejeune@<host> 'ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub'
   - &haven age1gkukfdfl9dnhuzh5punz94jh6v537lc9u36d2pxfzrkt9lj25pjsx8flkh
+  - &forge age1xudmzkc43eurpv9dm6srjrf33v4duqze7rwnjv6c562z74z5uv0sfzafux
+  - &vault age1xyx9372g3wqg48vzpgg59egep356fehnxh980mqaktz2dxzhmcgse3apsv
+  - &atlas age1afy2wg2f7vrvs8yd7fxka9neqs4nqg4dpu9uegsj7n86mxmk9fpsuagj3r
 
 creation_rules:
   - path_regex: secrets/gateway\.yaml$
@@ -19,3 +22,18 @@ creation_rules:
       - age:
           - *kclejeune
           - *haven
+  - path_regex: secrets/forge\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *forge
+  - path_regex: secrets/vault\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *vault
+  - path_regex: secrets/atlas\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *atlas

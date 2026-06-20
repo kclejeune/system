@@ -44,8 +44,10 @@ _: {
         enable = true;
         proxies.attic = "127.0.0.1:${toString atticPort}";
         dynamicDns = {
-          enable = true;
-          interface = "eno1"; # verify on hardware; see Task 8
+          # Off until unifi/* are filled in secrets/forge.yaml (UniFi OS:
+          # Settings -> Control Plane -> Integrations -> Create API Key).
+          enable = false;
+          interface = "eno2"; # P3 Tiny on-board NIC (verified on forge)
         };
       };
 

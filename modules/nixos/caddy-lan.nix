@@ -29,12 +29,18 @@
         hash = "sha256-15NibrL5VXWrNj+PQH8md3ronxNo+B4v817LW/XdUy4=";
       };
 
-      # Shared per-vhost TLS block: DNS-01 via Cloudflare, propagation check
-      # against public resolvers (see module comment).
+      # Shared per-vhost TLS block: DNS-01 via Cloudflare. This LAN intercepts
+      # outbound :53 and REFUSES queries to public resolvers (1.1.1.1/1.0.0.1
+      # -> "connection refused"), and answers lan.kclj.io locally without the
+      # ACME TXT — so Caddy's propagation self-check can never see the record.
+      # Disable the self-check (propagation_timeout -1) and just wait a fixed
+      # delay; Let's Encrypt then validates against real public DNS, which the
+      # Cloudflare TXT does reach. (Do NOT use `resolvers` here — see git log.)
       tlsBlock = ''
         tls {
           dns cloudflare {env.CF_DNS_API_TOKEN}
-          resolvers 1.1.1.1 1.0.0.1
+          propagation_delay 60s
+          propagation_timeout -1
         }
       '';
     in
@@ -118,7 +124,7 @@
               ip_source interface ${cfg.dynamicDns.interface}
               versions ipv4
               check_interval 5m
-              ttl 300
+              ttl 300s
             }
           '';
         };
