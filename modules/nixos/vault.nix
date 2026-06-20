@@ -16,6 +16,18 @@ _: {
       # backup (restic/*) stays off in flake.nix until real restic repo /
       # password / R2 creds exist; beszel-agent is on (token in sops).
 
+      # caddy-lan: DNS-01 + UniFi DDNS infra. No proxies yet (vault has no web
+      # UIs); add entries to `proxies` as services land (syncthing, etc.) and
+      # each gets a LE cert + UniFi DNS record automatically.
+      services.caddyLan = {
+        enable = true;
+        proxies = { };
+        dynamicDns = {
+          enable = true;
+          interface = "eno2";
+        };
+      };
+
       system.stateVersion = "25.11";
     };
 }

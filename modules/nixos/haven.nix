@@ -11,6 +11,10 @@ _: {
     let
       homebridgeUiPort = 8581;
       uptimeKumaPort = 3001;
+      # HAOS VM's own DHCP lease on br0 — reserve it in UniFi so this upstream
+      # stays valid. HA also needs use_x_forwarded_for + trusted_proxies (br0
+      # IP) in its configuration.yaml to accept the reverse proxy.
+      haVmAddr = "192.168.1.60:8123";
     in
     {
       networking.hostName = "haven";
@@ -160,6 +164,7 @@ _: {
         proxies = {
           homebridge = "127.0.0.1:${toString homebridgeUiPort}";
           status = "127.0.0.1:${toString uptimeKumaPort}";
+          homeassistant = haVmAddr;
         };
         dynamicDns = {
           enable = true;

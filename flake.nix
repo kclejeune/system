@@ -275,6 +275,7 @@
             config.flake.nixosModules.server-base
 
             config.flake.nixosModules.vault
+            config.flake.nixosModules.caddy-lan
             config.flake.nixosModules.profile-personal
             # backup needs real restic/* in secrets/vault.yaml; enable once set.
             # config.flake.nixosModules.backup
@@ -300,6 +301,7 @@
             config.flake.nixosModules.server-base
 
             config.flake.nixosModules.atlas
+            config.flake.nixosModules.caddy-lan
             config.flake.nixosModules.profile-personal
             # backup needs real restic/* in secrets/atlas.yaml; enable once set.
             # config.flake.nixosModules.backup

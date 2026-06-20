@@ -5,9 +5,9 @@ _: {
     { config, ... }:
     let
       atticPort = 8080;
-      # Same Cloudflare account as the restic R2 repo; new bucket for the cache.
-      r2Account = "R2_ACCOUNT_ID"; # fill from restic/repository's <id> subdomain
-      atticBucket = "nix-cache";
+      # Same Cloudflare account as the restic R2 repo; dedicated cache bucket.
+      r2Account = "14613cda02f216f5620eca979a286eaf";
+      atticBucket = "attic";
     in
     {
       networking.hostName = "forge";
@@ -44,9 +44,10 @@ _: {
         enable = true;
         proxies.attic = "127.0.0.1:${toString atticPort}";
         dynamicDns = {
-          # Off until unifi/* are filled in secrets/forge.yaml (UniFi OS:
-          # Settings -> Control Plane -> Integrations -> Create API Key).
-          enable = false;
+          # unifi/* are set in secrets/forge.yaml, so publish attic.lan.kclj.io
+          # into UniFi local DNS (otherwise the proxied cache isn't reachable
+          # by name).
+          enable = true;
           interface = "eno2"; # P3 Tiny on-board NIC (verified on forge)
         };
       };

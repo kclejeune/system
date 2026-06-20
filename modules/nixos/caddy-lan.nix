@@ -111,7 +111,10 @@
             }
           ) cfg.proxies;
 
-          globalConfig = lib.mkIf cfg.dynamicDns.enable ''
+          # Only emit dynamic_dns when there's at least one proxy to register —
+          # an empty `domains` block risks managing the zone apex, and multiple
+          # bare-infra hosts would then fight over it.
+          globalConfig = lib.mkIf (cfg.dynamicDns.enable && cfg.proxies != { }) ''
             dynamic_dns {
               provider unifi {
                 api_key {env.UNIFI_API_KEY}
