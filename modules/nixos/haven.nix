@@ -61,6 +61,8 @@ _: {
       systemd.network.networks."20-br0" = {
         matchConfig.Name = "br0";
         networkConfig.DHCP = "yes";
+        # Static hostname wins; don't let DHCP try to set it (see server-base).
+        dhcpV4Config.UseHostname = false;
         linkConfig.RequiredForOnline = "routable";
       };
 

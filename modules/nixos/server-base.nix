@@ -38,6 +38,11 @@ _: {
       systemd.network.networks."90-dhcp-default" = {
         matchConfig.Name = "en* eth*";
         networkConfig.DHCP = "yes";
+        # These hosts set a static networking.hostName, so don't let the DHCP
+        # client try to apply the lease's hostname — hostnamed refuses to
+        # override a static hostname and logs a harmless "Could not set
+        # hostname: Access denied" at every lease otherwise.
+        dhcpV4Config.UseHostname = false;
         linkConfig.RequiredForOnline = "routable";
       };
 
