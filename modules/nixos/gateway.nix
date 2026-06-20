@@ -43,6 +43,7 @@ in
       alertmanagerPort = 9093;
       karmaPort = 8082; # karma's default 8080 collides with netbird-proxy
       ntfyPort = 2586; # ntfy's conventional port (default :80 collides with nginx)
+      beszelPort = 8091; # beszel hub web UI / agent endpoint (its 8090 default collides with crowdsecLapiPort)
 
       mkHttpsVhost = extra: {
         forceSSL = true;
@@ -86,7 +87,7 @@ in
           443 # HTTPS
         ];
         # The internal web UIs (grafana, prometheus, alertmanager, karma, lldap,
-        # ntfy) bind 0.0.0.0 so the NetBird proxy reaches them over the mesh, but
+        # ntfy, beszel) bind 0.0.0.0 so the NetBird proxy reaches them over the mesh, but
         # aren't opened here — so default-drop keeps them off the public NIC while
         # trustedInterfaces (wt0/tailscale0) admits the overlay. NetBird ACLs +
         # proxy SSO gate who on the overlay reaches them.
@@ -297,7 +298,39 @@ in
               "preferred_username"
               "groups"
             ];
+            claims_policies.beszel.id_token = [
+              "email"
+              "email_verified"
+              "name"
+              "preferred_username"
+            ];
             clients = [
+              {
+                # Beszel hub (PocketBase) OIDC login. Beszel sits behind the
+                # netbird-proxy at beszel.kclj.dev for transport SSO, AND uses
+                # this client so its dashboard users are Authelia-backed. The
+                # plaintext secret lives in sops at beszel/authelia_client_secret
+                # — paste it into Beszel's UI when adding the OIDC provider
+                # (PocketBase stores it in its own DB; Authelia keeps only the
+                # pbkdf2 hash below). PocketBase's callback is /api/oauth2-redirect.
+                client_id = "beszel";
+                client_name = "Beszel";
+                client_secret = "$pbkdf2-sha512$310000$fMrobSxiOm/Y4AJfZZGiVA$hC9cyxI1.qN7/O09Jy0lcT1dc87lw12138OAUaC0G6ihI5iHBMkzU/zXfUIGD7Ezsrk6FfJa3GziuKqBgtOB2A";
+                authorization_policy = "two_factor";
+                consent_mode = "implicit";
+                claims_policy = "beszel";
+                redirect_uris = [
+                  "https://beszel.kclj.dev/api/oauth2-redirect"
+                ];
+                scopes = [
+                  "openid"
+                  "profile"
+                  "email"
+                ];
+                token_endpoint_auth_method = "client_secret_basic";
+                require_pkce = true;
+                pkce_challenge_method = "S256";
+              }
               {
                 client_id = "proxmox";
                 client_name = "Proxmox";
@@ -1001,6 +1034,38 @@ in
         NTFY_SMTP_SENDER_USER=${config.sops.placeholder."authelia/smtp_username"}
         NTFY_SMTP_SENDER_PASS=${config.sops.placeholder."authelia/smtp_password"}
       '';
+
+      # --- Beszel hub (server monitoring) ---
+      # Web UI + agent endpoint on 0.0.0.0:${toString beszelPort}. Like the other
+      # internal UIs it binds all interfaces but isn't in allowedTCPPorts, so the
+      # public NIC default-drops it while the trusted overlay (wt0/tailscale0)
+      # admits it: agents connect in over the tailnet (WebSocket + per-host
+      # token), and humans reach it via beszel.kclj.dev through the netbird-proxy
+      # (register beszel.kclj.dev -> 127.0.0.1:${toString beszelPort} in the NetBird
+      # dashboard, same as grafana.kclj.dev). State (PocketBase db) lives in
+      # /var/lib/beszel-hub. Agents enroll via flake.nixosModules.beszel-agent.
+      # Agent for the hub's own host (enrolled via flake.nixosModules.beszel-agent
+      # in flake.nix). Talk to the local hub directly instead of hairpinning
+      # through the tailnet; needs gateway's own beszel/token in secrets/gateway.yaml.
+      services.beszel.agent.environment.HUB_URL = "http://127.0.0.1:${toString beszelPort}";
+
+      services.beszel.hub = {
+        enable = true;
+        host = "0.0.0.0";
+        port = beszelPort;
+        environment = {
+          # Public URL behind the netbird-proxy — used for OIDC redirect/callback,
+          # links/notifications, and the agent-config snippet the UI generates.
+          APP_URL = "https://beszel.kclj.dev";
+          # Auto-create the Beszel user on first successful Authelia OIDC login.
+          # The Authelia client (id `beszel`) is declared above; finish wiring by
+          # adding the OIDC provider in Beszel's users-collection Options (secret
+          # from sops beszel/authelia_client_secret). Password auth is left on so
+          # the superuser console at /_/ keeps working; flip on DISABLE_PASSWORD_AUTH
+          # once OIDC login is confirmed if you want OIDC-only dashboard users.
+          USER_CREATION = "true";
+        };
+      };
 
       # Gateway acts as a Tailscale subnet router / exit node, not just a client.
       services.tailscale.useRoutingFeatures = lib.mkForce "both";

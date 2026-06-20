@@ -201,6 +201,7 @@
 
             config.flake.nixosModules.tailscale
             config.flake.nixosModules.netbird
+            config.flake.nixosModules.beszel-agent
           ];
         };
 
@@ -227,6 +228,7 @@
 
             config.flake.nixosModules.tailscale
             config.flake.nixosModules.netbird
+            config.flake.nixosModules.beszel-agent
           ];
         };
 
