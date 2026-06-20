@@ -49,6 +49,9 @@ _: {
         };
       };
 
+      # --- AirPrint (CUPS + avahi; network printer, not USB) ---
+      services.airprint.enable = true;
+
       system.stateVersion = "25.11";
     };
 }

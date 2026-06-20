@@ -249,6 +249,8 @@
 
             config.flake.nixosModules.forge
             config.flake.nixosModules.caddy-lan
+            config.flake.nixosModules.avahi
+            config.flake.nixosModules.airprint
             config.flake.nixosModules.profile-personal
             config.flake.nixosModules.backup
 
