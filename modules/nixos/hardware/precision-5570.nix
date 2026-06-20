@@ -20,6 +20,17 @@ _: {
       ];
       boot.kernelModules = [ "kvm-intel" ];
 
+      # Revert the Alder Lake-P iGPU (8086:46a6) from the experimental `xe`
+      # KMD back to the mature `i915`. nixos-hardware's dell-precision-5570
+      # module defaults `hardware.intelgpu.driver = "xe"` on kernels >= 6.8,
+      # but `xe` is unstable on this Gen12 part: the render engine (rcs)
+      # repeatedly hits GT0 job timeouts / GPU resets, which invalidate the
+      # GL/EGL context and SIGABRT Hyprland in CHyprOpenGLImpl::begin()
+      # (and crash noctalia/quickshell). Forcing i915 also drops the
+      # `i915.force_probe=!46a6` / `xe.force_probe=46a6` kernelParams, which
+      # nixos-hardware only adds when driver == "xe".
+      hardware.intelgpu.driver = lib.mkForce "i915";
+
       # initrd-side systemd is required for the FIDO2-unlocked LUKS
       # prompt the disko config below relies on. Plymouth + quiet boot
       # / kernel params are owned by desktop-base.nix so the theme
