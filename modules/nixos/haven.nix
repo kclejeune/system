@@ -12,8 +12,11 @@ _: {
       homebridgeUiPort = 8581;
       uptimeKumaPort = 3001;
       # HAOS VM's own DHCP lease on br0 — reserve it in UniFi so this upstream
-      # stays valid. HA also needs use_x_forwarded_for + trusted_proxies (br0
-      # IP) in its configuration.yaml to accept the reverse proxy.
+      # stays valid. Caddy runs on the haven HOST, so HA sees proxied requests
+      # coming from haven's br0 IP, not the VM's. HA's configuration.yaml
+      # therefore needs use_x_forwarded_for: true + trusted_proxies listing
+      # haven's host br0 IP (192.168.1.80) plus the tailscale/netbird subnets.
+      # That `http:` block is edited directly in the VM (HAOS isn't Nix-managed).
       haVmAddr = "192.168.1.60:8123";
     in
     {
@@ -164,7 +167,11 @@ _: {
         proxies = {
           homebridge = "127.0.0.1:${toString homebridgeUiPort}";
           status = "127.0.0.1:${toString uptimeKumaPort}";
-          homeassistant = haVmAddr;
+          # Subdomain is `hass`, not `homeassistant`: the HAOS VM's DHCP
+          # hostname is `homeassistant`, so UniFi auto-registers
+          # homeassistant.lan.kclj.io -> the VM's own br0 lease, which would
+          # clobber this proxy record. `hass` sidesteps that collision.
+          hass = haVmAddr;
         };
         dynamicDns = {
           enable = true;
