@@ -4,7 +4,7 @@ _: {
     {
       services.tailscale = {
         enable = true;
-        useRoutingFeatures = "client";
+        useRoutingFeatures = "both";
         openFirewall = true;
       };
 
