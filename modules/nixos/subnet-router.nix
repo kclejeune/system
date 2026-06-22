@@ -26,55 +26,38 @@ _: {
         "net.ipv4.conf.default.rp_filter" = 2;
       };
 
+      # ethtool kept on router nodes for manual offload inspection
+      # (`ethtool -k <dev>`); the GRO tuning itself is declarative below.
       environment.systemPackages = [ pkgs.ethtool ];
 
-      # Tailscale warns "UDP GRO forwarding is suboptimally configured on
-      # <dev>" because it only auto-tunes the offload when running as a
-      # subnet-router/exit-node (useRoutingFeatures = "server"/"both") and
-      # skips bridge devices entirely — neither applies here. Apply the tweak
-      # ourselves on the default-route interface (and, if it's a bridge like
-      # haven's br0, its physical members, where rx offload actually lands).
-      # See https://tailscale.com/s/ethtool-config-udp-gro — pure throughput
-      # optimisation, independent of whether routing itself works.
-      systemd.services.tailscale-udp-gro = {
-        description = "Tune UDP GRO forwarding on the default-route interface for overlay subnet routing";
-        after = [
-          "network-online.target"
-          "tailscaled.service"
-        ];
-        wants = [ "network-online.target" ];
-        wantedBy = [ "multi-user.target" ];
-        path = [
-          pkgs.ethtool
-          pkgs.iproute2
-          pkgs.gawk # `awk` to parse the default-route line
-          pkgs.coreutils # `basename` for bridge members
-        ];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-        script = ''
-          set -eu
-          dev=$(ip -o route show default | awk '{print $5; exit}')
-          [ -n "''${dev:-}" ] || { echo "no default-route interface; skipping"; exit 0; }
-
-          tune() {
-            echo "tuning UDP GRO forwarding on $1"
-            # Errors (e.g. a bridge that doesn't expose the flag) are non-fatal.
-            ethtool -K "$1" rx-udp-gro-forwarding on rx-gro-list off || true
-          }
-
-          tune "$dev"
-
-          # If the default route is via a bridge, also tune the enslaved NICs —
-          # that's where receive offload is actually performed.
-          if [ -d "/sys/class/net/$dev/bridge" ]; then
-            for member in /sys/class/net/"$dev"/brif/*; do
-              [ -e "$member" ] && tune "$(basename "$member")"
-            done
-          fi
-        '';
-      };
+      # UDP GRO forwarding offload — tailscale warns "UDP GRO forwarding is
+      # suboptimally configured on <dev>" and recommends
+      # `ethtool -K <dev> rx-udp-gro-forwarding on rx-gro-list off`
+      # (https://tailscale.com/s/ethtool-config-udp-gro) for subnet-router
+      # throughput. systemd 260 exposes rx-udp-gro-forwarding as the .link
+      # [Link] key GenericReceiveOffloadUDPForwarding (verified accepted by the
+      # 260.1 parser; the matching rx-gro-list key isn't in 260.1 yet, but
+      # rx-gro-list defaults off — exactly what tailscale wants — so it needs no
+      # action).
+      #
+      # Delivered as a DROP-IN to systemd's shipped 99-default.link, NOT a
+      # standalone .link, for two reasons:
+      #   1. Only the first matching .link is applied. A standalone .link
+      #      matching en*/eth* would beat 99-default.link and, lacking
+      #      NamePolicy, leave NICs on kernel names (eth0 not eno2) — breaking
+      #      the en*/eth* matches in server-base/haven. A drop-in merges into
+      #      99-default.link's [Link] section, so its NamePolicy is preserved
+      #      (verified: `udevadm test-builtin net_setup_link` still yields
+      #      ID_NET_NAME=eno2).
+      #   2. nixpkgs' typed `systemd.network.links.*.linkConfig` predates the
+      #      systemd-260 key and hard-errors on it; environment.etc has no such
+      #      validation.
+      # udev applies it when the NIC appears (no oneshot / PATH deps). It hits
+      # every NIC 99-default.link governs on the host; unsupported devices skip
+      # it. Verify post-deploy with `ethtool -k <dev> | grep rx-udp-gro`.
+      environment.etc."systemd/network/99-default.link.d/10-udp-gro-forwarding.conf".text = ''
+        [Link]
+        GenericReceiveOffloadUDPForwarding=yes
+      '';
     };
 }

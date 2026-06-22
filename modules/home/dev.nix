@@ -33,6 +33,7 @@ _: {
           curlie
           stable.d2
           diffutils
+          dnsutils
           doxx
           dust
           fd
