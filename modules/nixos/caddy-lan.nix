@@ -58,6 +58,31 @@ _: {
           propagation_timeout -1
         }
       '';
+
+      # Upstreams are plain "host:port" (proxied over http). An upstream written
+      # as "https://host:port" instead gets a TLS transport with verification
+      # skipped — for backends that serve their own self-signed cert on a
+      # loopback listener (e.g. Incus's API/UI on 127.0.0.1:8443) that we still
+      # want to front with a real lan.kclj.io cert. Caddy terminates the browser
+      # TLS here; the Caddy->backend hop is the self-signed leg.
+      mkReverseProxy =
+        upstream:
+        if lib.hasPrefix "https://" upstream then
+          ''
+            reverse_proxy ${upstream} {
+              transport http {
+                tls_insecure_skip_verify
+              }
+              # Preserve the public Host to the backend. Proxying to an https://
+              # upstream, Caddy otherwise sends the upstream's address as the
+              # Host/:authority, so backends that build absolute URLs from the
+              # request (e.g. Incus's OIDC redirect_uri) emit the loopback
+              # address instead of <sub>.<baseDomain>. Force the original host.
+              header_up Host {http.request.host}
+            }
+          ''
+        else
+          "reverse_proxy ${upstream}";
     in
     {
       options.services.caddyLan = {
@@ -72,12 +97,16 @@ _: {
         proxies = lib.mkOption {
           type = lib.types.attrsOf lib.types.str;
           default = { };
-          example = lib.literalExpression ''{ attic = "127.0.0.1:8080"; }'';
+          example = lib.literalExpression ''{ attic = "127.0.0.1:8080"; incus = "https://127.0.0.1:8443"; }'';
           description = ''
             subdomain -> upstream "host:port". Each becomes a
             <subdomain>.<baseDomain> vhost with DNS-01 TLS + reverse_proxy.
             The name must resolve to this host: either it matches a UniFi DHCP
             client hostname, or add a UniFi Local DNS Record for it.
+
+            Prefix the upstream with "https://" if the backend serves its own
+            (self-signed) TLS — Caddy then proxies over TLS with verification
+            skipped instead of plain http.
           '';
         };
       };
@@ -114,7 +143,7 @@ _: {
             lib.nameValuePair "${sub}.${cfg.baseDomain}" {
               extraConfig = ''
                 ${tlsBlock}
-                reverse_proxy ${upstream}
+                ${mkReverseProxy upstream}
               '';
             }
           ) cfg.proxies;

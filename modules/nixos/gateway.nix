@@ -304,6 +304,19 @@ in
               "name"
               "preferred_username"
             ];
+            # Incus LTS has no per-user authorization — any authenticated OIDC
+            # identity is a full admin — so the ONLY access gate is here:
+            # restrict the `incus` client to members of lldap_admin. kclejeune
+            # and admin are members; everyone else is denied at login.
+            authorization_policies.incus_admins = {
+              default_policy = "deny";
+              rules = [
+                {
+                  policy = "two_factor";
+                  subject = [ "group:lldap_admin" ];
+                }
+              ];
+            };
             clients = [
               {
                 # Beszel hub (PocketBase) OIDC login. Beszel sits behind the
@@ -414,6 +427,49 @@ in
                   "email"
                 ];
                 token_endpoint_auth_method = "client_secret_basic";
+                require_pkce = true;
+                pkce_challenge_method = "S256";
+              }
+              {
+                # Incus API/UI on haven (incus.lan.kclj.io). Mirrors Authelia's
+                # official Incus integration guide, with one deviation: access
+                # is gated to lldap_admin via the incus_admins policy (Incus LTS
+                # has no per-user authorization, so any authenticated OIDC user
+                # is full admin — the gate must live here). PUBLIC client: this
+                # Incus LTS supports only `oidc.client.id` (no secret), so PKCE +
+                # no secret — nothing in sops.
+                #
+                # access_token_signed_response_alg = RS256 is REQUIRED: incusd
+                # verifies the *access token* offline as a JWT against the issuer
+                # JWKS. Authelia's default opaque access tokens fail that check,
+                # so every post-login API call is rejected "untrusted" and the
+                # UI spins forever. The audience must be an absolute URI matching
+                # haven's oidc.audience, and offline_access yields the refresh
+                # token incusd stores. Callback path /oidc/callback is incusd's
+                # OIDC handler. See modules/nixos/haven.nix for the server side.
+                client_id = "incus";
+                client_name = "Incus";
+                public = true;
+                authorization_policy = "incus_admins";
+                consent_mode = "implicit";
+                redirect_uris = [
+                  "https://incus.lan.kclj.io/oidc/callback"
+                ];
+                audience = [ "https://incus.lan.kclj.io" ];
+                scopes = [
+                  "openid"
+                  "offline_access"
+                  "email"
+                  "profile"
+                ];
+                response_types = [ "code" ];
+                grant_types = [
+                  "authorization_code"
+                  "refresh_token"
+                ];
+                access_token_signed_response_alg = "RS256";
+                userinfo_signed_response_alg = "none";
+                token_endpoint_auth_method = "none";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
               }

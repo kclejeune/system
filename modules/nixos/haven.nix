@@ -73,6 +73,32 @@ _: {
         enable = true;
         ui.enable = true;
         preseed = {
+          # Server config. The HTTPS API/UI listener is bound to loopback only —
+          # Caddy (incus.lan.kclj.io) is the sole ingress, so the raw API never
+          # touches the LAN. OIDC points at gateway's Authelia: with this Incus
+          # LTS there is NO fine-grained authorization (`incus auth` doesn't
+          # exist; only an authorization scriptlet would), so ANY identity that
+          # successfully authenticates via OIDC is a full admin. The access gate
+          # therefore lives in Authelia — the `incus` client there is restricted
+          # to the `lldap_admin` group (see modules/nixos/gateway.nix). Incus is
+          # a PUBLIC OIDC client (no client secret key exists), so nothing secret
+          # lands in the store here. See [[incus-haven-oidc]].
+          config = {
+            "core.https_address" = "127.0.0.1:8443";
+            "oidc.issuer" = "https://auth.kclj.io";
+            "oidc.client.id" = "incus";
+            # Absolute-URI audience, matching the Authelia `incus` client's
+            # `audience` whitelist; incusd validates the JWT access token's `aud`
+            # against this.
+            "oidc.audience" = "https://incus.lan.kclj.io";
+            # Pin the requested scopes to EXACTLY the set the Authelia client
+            # allows. Don't leave this at Incus's default — that default
+            # requests `groups`, which the client no longer offers, and Authelia
+            # then rejects the whole auth with `invalid_scope`. `groups` isn't
+            # needed: the lldap_admin gate is evaluated by Authelia from LDAP,
+            # not from a token scope.
+            "oidc.scopes" = "openid offline_access email profile";
+          };
           storage_pools = [
             {
               name = "default";
@@ -173,6 +199,13 @@ _: {
           # homeassistant.lan.kclj.io -> the VM's own br0 lease, which would
           # clobber this proxy record. `hass` sidesteps that collision.
           hass = haVmAddr;
+          # Incus API/UI. https:// upstream because incusd serves its own
+          # self-signed cert on the loopback listener (core.https_address
+          # above); caddy-lan fronts it with a real lan.kclj.io cert and
+          # proxies the last hop with tls_insecure_skip_verify. Auth is OIDC
+          # via Authelia (see the incus preseed config above). Needs a UniFi
+          # Local DNS Record: incus.lan.kclj.io -> haven.
+          incus = "https://127.0.0.1:8443";
         };
       };
 
