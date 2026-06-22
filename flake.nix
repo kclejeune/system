@@ -201,6 +201,7 @@
 
             config.flake.nixosModules.tailscale
             config.flake.nixosModules.netbird
+            config.flake.nixosModules.subnet-router
             config.flake.nixosModules.beszel-agent
           ];
         };

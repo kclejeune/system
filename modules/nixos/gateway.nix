@@ -1125,8 +1125,10 @@ in
         };
       };
 
-      # Gateway acts as a Tailscale subnet router / exit node, not just a client.
-      services.tailscale.useRoutingFeatures = lib.mkForce "both";
+      # Gateway acts as a Tailscale exit node, not just a client. IP forwarding
+      # (and the rest of the router/exit-node tuning) comes from the subnet-router
+      # role module enrolled in flake.nix, so useRoutingFeatures stays at the
+      # "client" default set by tailscale.nix — no override needed here.
 
       # Netbird - self-hosted control server (management + signal + dashboard + TURN)
       services.netbird.server = {

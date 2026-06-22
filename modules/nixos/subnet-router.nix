@@ -1,9 +1,10 @@
 _: {
-  # Host role: overlay subnet router. Enrolled on the homelab nodes that
+  # Host role: overlay router / exit node. Enrolled on the homelab P3 nodes that
   # forward Tailscale / NetBird traffic onto the LAN (haven / forge / atlas /
-  # vault). Bundles the kernel + NIC tuning that subnet routing needs but the
-  # tailscale/netbird modules don't set, so the relaxations stay scoped to
-  # router nodes and don't ship to laptops (phil/wally) or the gateway.
+  # vault) and on the Hetzner gateway, which forwards as a Tailscale exit node.
+  # Bundles the kernel + NIC tuning that forwarding needs but the tailscale/
+  # netbird modules don't set (they stay at "client"), so the relaxations stay
+  # scoped to routing nodes and don't ship to laptops (phil/wally).
   flake.nixosModules.subnet-router =
     { pkgs, ... }:
     {

@@ -4,7 +4,17 @@ _: {
     {
       services.tailscale = {
         enable = true;
-        useRoutingFeatures = "both";
+        # "client", not "both" or "server". useRoutingFeatures only toggles
+        # host-global knobs: "client"/"both" sets networking.firewall
+        # .checkReversePath = "loose" (wanted on every node — any client may use
+        # an exit node), while "server"/"both" additionally sets the IP-forwarding
+        # sysctls. Forwarding is a *router* capability, so it's owned solely by the
+        # subnet-router role module (enrolled on the homelab P3 nodes and the
+        # Hetzner gateway exit node), keeping it off laptops. Leaving the VPN
+        # daemons at "client" also means tailscale and netbird no longer both
+        # define net.ipv{4,6}.conf.all.forwarding, which used to collide (that
+        # value type rejects a second definition even when both are `true`).
+        useRoutingFeatures = "client";
         openFirewall = true;
       };
 
