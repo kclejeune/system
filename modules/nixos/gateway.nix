@@ -32,6 +32,13 @@ in
       netbirdDomain = "netbird.${domain}";
       netbirdProxyDomain = "kclj.dev";
       netbirdProxyPort = 8443;
+      # Fixed inbound WireGuard port for the proxy's embedded peer (private /
+      # NetBird-Only Access mode). 51820 is already taken by the host's own
+      # NetBird client (wt0) and 49152-49263 by coturn's relay range, so the
+      # proxy peer gets 51821. A fixed port (vs the default random) only works
+      # for single-account deployments — which this is — and lets the firewall
+      # admit direct peer→proxy connections instead of forcing TURN relay.
+      netbirdProxyWgPort = 51821;
       netbirdMgmtPort = 8011;
       netbirdMgmtMetricsPort = 9190;
       netbirdSignalMetricsPort = 9191;
@@ -86,6 +93,10 @@ in
           80 # HTTP
           443 # HTTPS
         ];
+        # The netbird-proxy embedded peer's WireGuard listen port. Opening it
+        # lets mesh peers reach the private-service proxy directly (UDP hole
+        # punch to gateway's public IP) rather than relaying through coturn.
+        allowedUDPPorts = [ netbirdProxyWgPort ];
         # The internal web UIs (grafana, prometheus, alertmanager, karma, lldap,
         # ntfy, beszel) bind 0.0.0.0 so the NetBird proxy reaches them over the mesh, but
         # aren't opened here — so default-drop keeps them off the public NIC while
@@ -1426,6 +1437,13 @@ in
         environmentFiles = [ config.sops.templates."netbird-proxy.env".path ];
         volumes = [
           "netbird-proxy-certs:/certs"
+          # Embedded NetBird peer state (WireGuard identity, active profile,
+          # geolocation DB). The container rootfs is --read-only, so without a
+          # writable mount the embedded peer logs "read-only file system" on
+          # /var/lib/netbird and can't persist its identity across restarts.
+          # Required for private-service (NetBird-Only Access) mode, where the
+          # proxy joins the mesh as a peer and serves over the WireGuard tunnel.
+          "netbird-proxy-state:/var/lib/netbird"
         ];
         extraOptions = [
           "--network=host"
@@ -1449,7 +1467,8 @@ in
         NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
         NB_PROXY_ALLOW_INSECURE=true
         NB_PROXY_PROXY_PROTOCOL=true
-        NB_PROXY_PROXY_PRIVATE=true
+        NB_PROXY_PRIVATE=true
+        NB_PROXY_WG_PORT=${toString netbirdProxyWgPort}
         NB_PROXY_TRUSTED_PROXIES=127.0.0.1/32,::1/128
       ''
       + lib.optionalString config.services.crowdsec.enable ''
