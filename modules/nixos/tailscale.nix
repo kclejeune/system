@@ -27,6 +27,9 @@ _: {
       systemd.services.tailscaled.environment.TS_DEBUG_FIREWALL_MODE =
         lib.mkIf config.networking.nftables.enable "nftables";
 
-      networking.firewall.trustedInterfaces = [ config.services.tailscale.interfaceName ];
+      networking.firewall.trustedInterfaces = [
+        config.services.tailscale.interfaceName
+        config.services.netbird.clients.default.interface
+      ];
     };
 }
