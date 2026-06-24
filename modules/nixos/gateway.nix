@@ -1324,6 +1324,7 @@ in
         NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
         NB_PROXY_ALLOW_INSECURE=true
         NB_PROXY_PROXY_PROTOCOL=true
+        NB_PROXY_PROXY_PRIVATE=true
         NB_PROXY_TRUSTED_PROXIES=127.0.0.1/32,::1/128
       ''
       + lib.optionalString config.services.crowdsec.enable ''
