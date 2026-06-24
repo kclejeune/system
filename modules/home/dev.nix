@@ -24,8 +24,10 @@ _: {
           cachix
           cb
           clang
+          claude-code
           cmake
           codespell
+          codex
           coreutils-full
           curl
           curlie
