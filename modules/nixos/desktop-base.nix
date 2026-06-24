@@ -376,6 +376,7 @@ in
         pkgs.brave
         pkgs.dmidecode
         pkgs.firefox-devedition
+        pkgs.google-chrome
         pkgs.kitty
         pkgs.obsidian
         pkgs.pulseaudio
