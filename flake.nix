@@ -61,7 +61,7 @@
 
     # UEFI Secure Boot via signed unified kernel images. Replaces
     # systemd-boot on hosts that enroll modules/nixos/secure-boot.nix.
-    lanzaboote.url = "github:nix-community/lanzaboote/v1.0.0";
+    lanzaboote.url = "github:nix-community/lanzaboote/v1.1.0";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
 
     # Noctalia Wayland desktop shell (bar, notifications, launcher, lock,
