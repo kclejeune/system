@@ -345,6 +345,7 @@ in
                 claims_policy = "beszel";
                 redirect_uris = [
                   "https://beszel.kclj.dev/api/oauth2-redirect"
+                  "https://beszel.tailf0779.ts.net/api/oauth2-redirect"
                   # Beszel iOS companion app deep link (native PKCE flow).
                   "beszel-companion://redirect"
                 ];
@@ -1134,6 +1135,30 @@ in
           # once OIDC login is confirmed if you want OIDC-only dashboard users.
           USER_CREATION = "true";
         };
+      };
+      # nginx forward-auth via tailnet identity — gateway-only.
+      services.tailscaleAuth.enable = true;
+
+      # Shared tailscale server-role config (cert for serve, --ssh/--operator,
+      # exit-node + app-connector advertisement, --accept-dns) comes from
+      # flake.nixosModules.tailscale-server. The gateway is a full client that
+      # accepts tailnet subnet routes and advertises no LAN of its own, so just
+      # pin acceptRoutes (the module default, kept explicit beside haven's).
+      services.tailscale.server.acceptRoutes = true;
+
+      # Expose internal admin/monitoring UIs over the tailnet via `tailscale
+      # serve` — each becomes an svc: VIP with a MagicDNS name + auto-HTTPS
+      # (e.g. https://beszel.tailf0779.ts.net). beszel + lldap self-authenticate;
+      # prometheus/alertmanager/karma have no auth of their own and rely on
+      # tailnet device identity as the gate. Grafana is deliberately NOT here:
+      # its auth.proxy trusts an X-NetBird-User header that `tailscale serve`
+      # wouldn't supply, so it stays on the netbird proxy (grafana.kclj.dev).
+      services.tailscale.serve.services = {
+        beszel.endpoints."tcp:443" = "http://localhost:${toString beszelPort}";
+        lldap.endpoints."tcp:443" = "http://localhost:${toString lldapHttpPort}";
+        prometheus.endpoints."tcp:443" = "http://localhost:${toString prometheusPort}";
+        alertmanager.endpoints."tcp:443" = "http://localhost:${toString alertmanagerPort}";
+        karma.endpoints."tcp:443" = "http://localhost:${toString karmaPort}";
       };
 
       # Gateway acts as a Tailscale exit node, not just a client. IP forwarding

@@ -13,10 +13,11 @@ _: {
       services.beszel.agent = {
         enable = true;
         environment = {
-          # Remote hosts reach the hub over the tailnet (MagicDNS `gateway`).
-          # The hub's own host overrides this to http://127.0.0.1:8091 so it
-          # doesn't hairpin through the overlay to monitor itself.
-          HUB_URL = lib.mkDefault "http://gateway.netbird.selfhosted:8091";
+          # Remote hosts reach the hub over the tailnet via its `tailscale serve`
+          # service VIP (svc:beszel -> auto-HTTPS). The hub's own host overrides
+          # this to http://127.0.0.1:8091 so it doesn't hairpin through the
+          # overlay to monitor itself.
+          HUB_URL = lib.mkDefault "https://beszel.tailf0779.ts.net";
           # Hub's ed25519 public key — public and stable across all agents
           # (from the hub UI / GET /api/beszel/getkey).
           KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHuyt8ZnZRxhok4vQJ4nSFZKshbtG1wTbzpPI4cD72Eb";

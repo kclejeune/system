@@ -45,6 +45,19 @@ _: {
         dhcpV4Config.UseHostname = false;
         linkConfig.RequiredForOnline = "routable";
       };
+      # Tailscale server/subnet-router config (serve cert, exit node, advertise
+      # 192.168.1.0/24, don't accept routes) is shared across the P3 LAN nodes —
+      # it comes from flake.nixosModules.tailscale-server + server-base. haven
+      # only adds its host-specific serve services below.
+
+      # Expose haven's self-authenticating web UIs over the tailnet (svc: VIPs,
+      # auto-HTTPS), alongside their caddy-lan LAN vhosts. homebridge + status
+      # have their own logins. hass/incus stay off serve: incus's OIDC redirect
+      # is pinned to incus.lan.kclj.io, and the HAOS VM owns its own hostname.
+      services.tailscale.serve.services = {
+        homebridge.endpoints."tcp:443" = "http://localhost:${toString homebridgeUiPort}";
+        status.endpoints."tcp:443" = "http://localhost:${toString uptimeKumaPort}";
+      };
 
       # Trust the LAN bridge + overlays. This is a dedicated home-automation
       # node: HomeKit/mDNS (homebridge, HA) needs broad LAN reachability incl.
