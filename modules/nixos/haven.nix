@@ -55,8 +55,8 @@ _: {
       # have their own logins. hass/incus stay off serve: incus's OIDC redirect
       # is pinned to incus.lan.kclj.io, and the HAOS VM owns its own hostname.
       services.tailscale.serve.services = {
-        homebridge.endpoints."tcp:443" = "http://localhost:${toString homebridgeUiPort}";
-        status.endpoints."tcp:443" = "http://localhost:${toString uptimeKumaPort}";
+        homebridge.endpoints."tcp:443" = "http://127.0.0.1:${toString homebridgeUiPort}";
+        status.endpoints."tcp:443" = "http://127.0.0.1:${toString uptimeKumaPort}";
       };
 
       # Trust the LAN bridge + overlays. This is a dedicated home-automation

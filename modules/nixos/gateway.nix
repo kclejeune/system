@@ -1153,12 +1153,17 @@ in
       # tailnet device identity as the gate. Grafana is deliberately NOT here:
       # its auth.proxy trusts an X-NetBird-User header that `tailscale serve`
       # wouldn't supply, so it stays on the netbird proxy (grafana.kclj.dev).
+      #
+      # Backends are 127.0.0.1, NOT localhost: localhost resolves to ::1 first,
+      # but these services bind IPv4 (0.0.0.0 / 127.0.0.1), so a localhost
+      # upstream makes tailscale's proxy hop fail to connect and serve's HTTPS
+      # never comes up. Pin IPv4 explicitly.
       services.tailscale.serve.services = {
-        beszel.endpoints."tcp:443" = "http://localhost:${toString beszelPort}";
-        lldap.endpoints."tcp:443" = "http://localhost:${toString lldapHttpPort}";
-        prometheus.endpoints."tcp:443" = "http://localhost:${toString prometheusPort}";
-        alertmanager.endpoints."tcp:443" = "http://localhost:${toString alertmanagerPort}";
-        karma.endpoints."tcp:443" = "http://localhost:${toString karmaPort}";
+        beszel.endpoints."tcp:443" = "http://127.0.0.1:${toString beszelPort}";
+        lldap.endpoints."tcp:443" = "http://127.0.0.1:${toString lldapHttpPort}";
+        prometheus.endpoints."tcp:443" = "http://127.0.0.1:${toString prometheusPort}";
+        alertmanager.endpoints."tcp:443" = "http://127.0.0.1:${toString alertmanagerPort}";
+        karma.endpoints."tcp:443" = "http://127.0.0.1:${toString karmaPort}";
       };
 
       # Gateway acts as a Tailscale exit node, not just a client. IP forwarding
