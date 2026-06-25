@@ -11,9 +11,31 @@ _: {
   # NOT enrolled on personal laptops — they keep the plain `tailscale` module
   # (client, no serve, no operator/ssh/exit-node advertisement).
   flake.nixosModules.tailscale-server =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       cfg = config.services.tailscale.server;
+      tailscale = lib.getExe config.services.tailscale.package;
+
+      # Build the imperative `tailscale serve` invocation for one service +
+      # endpoint. The endpoint key is "<proto>:<port>" (e.g. "tcp:443"); the
+      # value is the local target (e.g. "http://127.0.0.1:8091").
+      mkServeCmd =
+        svcName: epKey: target:
+        let
+          port = lib.last (lib.splitString ":" epKey);
+        in
+        "${tailscale} serve --service=svc:${svcName} --https=${port} ${target}";
+
+      serveCmds = lib.flatten (
+        lib.mapAttrsToList (
+          svcName: svcCfg: lib.mapAttrsToList (mkServeCmd svcName) svcCfg.endpoints
+        ) config.services.tailscale.serve.services
+      );
     in
     {
       options.services.tailscale.server = {
@@ -47,31 +69,57 @@ _: {
         };
       };
 
-      config = {
-        services.tailscale = {
-          # Provision a Let's Encrypt cert for `tailscale serve` and let the
-          # primary user drive `tailscale` without sudo (TS_PERMIT_CERT_UID +
-          # --operator). Both are server-role concerns, off on laptops.
-          permitCertUid = config.user.name;
+      config = lib.mkMerge [
+        {
+          services.tailscale = {
+            # Provision a Let's Encrypt cert for `tailscale serve` and let the
+            # primary user drive `tailscale` without sudo (TS_PERMIT_CERT_UID +
+            # --operator). Both are server-role concerns, off on laptops.
+            permitCertUid = config.user.name;
 
-          # Enable Tailscale Serve wherever the host actually declares services
-          # to expose. Upstream asserts serve.services is non-empty when serve is
-          # enabled, so a host that declares none simply leaves serve off — the
-          # cert above is still provisioned for ad-hoc `tailscale serve`.
-          serve.enable = lib.mkDefault (config.services.tailscale.serve.services != { });
+            # Enable Tailscale Serve wherever the host actually declares services
+            # to expose. Upstream asserts serve.services is non-empty when serve
+            # is enabled, so a host that declares none simply leaves serve off —
+            # the cert above is still provisioned for ad-hoc `tailscale serve`.
+            serve.enable = lib.mkDefault (config.services.tailscale.serve.services != { });
 
-          extraSetFlags = [
-            "--accept-dns"
-            "--advertise-connector"
-            "--ssh"
-            "--operator=${config.user.name}"
-            "--accept-routes=${lib.boolToString cfg.acceptRoutes}"
-          ]
-          ++ lib.optional cfg.advertiseExitNode "--advertise-exit-node"
-          ++ lib.optional (cfg.advertiseRoutes != [ ]) (
-            "--advertise-routes=${lib.concatStringsSep "," cfg.advertiseRoutes}"
+            extraSetFlags = [
+              "--accept-dns"
+              "--advertise-connector"
+              "--ssh"
+              "--operator=${config.user.name}"
+              "--accept-routes=${lib.boolToString cfg.acceptRoutes}"
+            ]
+            ++ lib.optional cfg.advertiseExitNode "--advertise-exit-node"
+            ++ lib.optional (cfg.advertiseRoutes != [ ]) (
+              "--advertise-routes=${lib.concatStringsSep "," cfg.advertiseRoutes}"
+            );
+          };
+        }
+
+        # Override the upstream tailscale-serve unit's ExecStart. Upstream runs
+        # `tailscale serve set-config --all <json>`, but that path sets up the
+        # "tcp:<port>" endpoints as raw TCP forwarders — it does NOT terminate
+        # TLS — so an https:// client to the service VIP never completes. Drive
+        # serve imperatively instead, one `tailscale serve --service=svc:<name>
+        # --https=<port> <target>` per endpoint, which terminates TLS on <port>
+        # (using the permitCertUid cert) and reverse-proxies to the local HTTP
+        # target. `--bg` is implied once --service is set, and a service is
+        # auto-advertised by `serve` (no separate `advertise` call needed).
+        #
+        # The command path is baked from the Nix-rendered service set, so any
+        # change to serve.services changes ExecStart and systemd re-applies on
+        # switch. NOTE: this is additive — dropping a service from Nix leaves its
+        # serve config on the node until cleared with `tailscale serve clear
+        # svc:<name>`.
+        (lib.mkIf config.services.tailscale.serve.enable {
+          systemd.services.tailscale-serve.serviceConfig.ExecStart = lib.mkForce (
+            pkgs.writeShellScript "tailscale-serve-apply" ''
+              set -euo pipefail
+              ${lib.concatStringsSep "\n" serveCmds}
+            ''
           );
-        };
-      };
+        })
+      ];
     };
 }
