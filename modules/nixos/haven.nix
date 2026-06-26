@@ -46,9 +46,9 @@ _: {
         linkConfig.RequiredForOnline = "routable";
       };
       # Tailscale server/subnet-router config (serve cert, exit node, advertise
-      # 192.168.1.0/24, don't accept routes) is shared across the P3 LAN nodes —
-      # it comes from flake.nixosModules.tailscale-server + server-base. haven
-      # only adds its host-specific serve services below.
+      # the LAN, don't accept routes) is shared across the P3 LAN nodes — it
+      # comes from flake.nixosModules.homelab-node. haven only adds its
+      # host-specific serve services below.
 
       # Expose haven's self-authenticating web UIs over the tailnet (svc: VIPs,
       # auto-HTTPS), alongside their caddy-lan LAN vhosts. homebridge + status
@@ -66,16 +66,12 @@ _: {
       # modules. Tighten to specific ports later if the threat model changes.
       networking.firewall.trustedInterfaces = [ "br0" ];
 
-      # Normal user; incus-admin lets it drive `incus` without sudo.
-      users.users.${config.user.name} = {
-        isNormalUser = true;
-        extraGroups = [
-          "wheel"
-          "incus-admin"
-        ];
-      };
-      # Headless box — keep rescue root SSH keys like the gateway does.
-      identity.enableRootSshKeys = true;
+      # homelab-node sets isNormalUser + rescue root keys; append incus-admin
+      # so this user can drive `incus` without sudo.
+      users.users.${config.user.name}.extraGroups = [
+        "wheel"
+        "incus-admin"
+      ];
 
       # --- Incus (Home Assistant OS VM) ---
       # The HAOS image is imported imperatively after install (see notes
@@ -202,24 +198,22 @@ _: {
       # homebridge/homeassistant already resolve to their devices via UniFi
       # client DNS; status needs a UniFi Local DNS Record -> haven to route
       # through caddy/TLS.
-      services.caddyLan = {
-        enable = true;
-        proxies = {
-          homebridge = "127.0.0.1:${toString homebridgeUiPort}";
-          status = "127.0.0.1:${toString uptimeKumaPort}";
-          # Subdomain is `hass`, not `homeassistant`: the HAOS VM's DHCP
-          # hostname is `homeassistant`, so UniFi auto-registers
-          # homeassistant.lan.kclj.io -> the VM's own br0 lease, which would
-          # clobber this proxy record. `hass` sidesteps that collision.
-          hass = haVmAddr;
-          # Incus API/UI. https:// upstream because incusd serves its own
-          # self-signed cert on the loopback listener (core.https_address
-          # above); caddy-lan fronts it with a real lan.kclj.io cert and
-          # proxies the last hop with tls_insecure_skip_verify. Auth is OIDC
-          # via Authelia (see the incus preseed config above). Needs a UniFi
-          # Local DNS Record: incus.lan.kclj.io -> haven.
-          incus = "https://127.0.0.1:8443";
-        };
+      # caddy-lan is enabled by homelab-node; just declare the proxies.
+      services.caddyLan.proxies = {
+        homebridge = "127.0.0.1:${toString homebridgeUiPort}";
+        status = "127.0.0.1:${toString uptimeKumaPort}";
+        # Subdomain is `hass`, not `homeassistant`: the HAOS VM's DHCP
+        # hostname is `homeassistant`, so UniFi auto-registers
+        # homeassistant.lan.kclj.io -> the VM's own br0 lease, which would
+        # clobber this proxy record. `hass` sidesteps that collision.
+        hass = haVmAddr;
+        # Incus API/UI. https:// upstream because incusd serves its own
+        # self-signed cert on the loopback listener (core.https_address
+        # above); caddy-lan fronts it with a real lan.kclj.io cert and
+        # proxies the last hop with tls_insecure_skip_verify. Auth is OIDC
+        # via Authelia (see the incus preseed config above). Needs a UniFi
+        # Local DNS Record: incus.lan.kclj.io -> haven.
+        incus = "https://127.0.0.1:8443";
       };
 
       # --- Uptime Kuma (native module) ---
@@ -238,7 +232,5 @@ _: {
       # Home Assistant's own backup feature (push to R2 or an NFS share on a
       # storage node) for a consistent HA snapshot.
       sops.defaultSopsFile = ../../secrets/haven.yaml;
-
-      system.stateVersion = "25.11";
     };
 }

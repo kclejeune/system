@@ -19,6 +19,7 @@ in
         flakeCfg.flake.nixosModules.primary-user
         flakeCfg.flake.nixosModules.identity
         flakeCfg.flake.nixosModules.nixpkgs-wiring
+        flakeCfg.flake.nixosModules.site
       ];
 
       nix.settings = {

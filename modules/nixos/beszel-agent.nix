@@ -17,7 +17,7 @@ _: {
           # service VIP (svc:beszel -> auto-HTTPS). The hub's own host overrides
           # this to http://127.0.0.1:8091 so it doesn't hairpin through the
           # overlay to monitor itself.
-          HUB_URL = lib.mkDefault "https://beszel.tailf0779.ts.net";
+          HUB_URL = lib.mkDefault "https://beszel.${config.site.tailnetDomain}";
           # Hub's ed25519 public key — public and stable across all agents
           # (from the hub UI / GET /api/beszel/getkey).
           KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHuyt8ZnZRxhok4vQJ4nSFZKshbtG1wTbzpPI4cD72Eb";

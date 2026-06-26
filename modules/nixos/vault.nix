@@ -1,30 +1,13 @@
 _: {
   # vault — data / storage node. Bare-metal Lenovo P3 Tiny. Role scaffolding
   # only this round (syncthing / DBs / NFS land later).
-  flake.nixosModules.vault =
-    { config, ... }:
-    {
-      networking.hostName = "vault";
-
-      users.users.${config.user.name} = {
-        isNormalUser = true;
-        extraGroups = [ "wheel" ];
-      };
-      identity.enableRootSshKeys = true;
-
-      sops.defaultSopsFile = ../../secrets/vault.yaml;
-      # backup (restic/*) stays off in flake.nix until real restic repo /
-      # password / R2 creds exist; beszel-agent is on (token in sops).
-
-      # caddy-lan: ACME DNS-01 reverse proxy. No proxies yet (vault has no web
-      # UIs); add entries to `proxies` as services land (syncthing, etc.) and
-      # each gets a LE cert. vault.lan.kclj.io already resolves via UniFi's
-      # local domain; proxied subdomains may need a UniFi Local DNS Record.
-      services.caddyLan = {
-        enable = true;
-        proxies = { };
-      };
-
-      system.stateVersion = "25.11";
-    };
+  # The common P3 stack (user, caddy-lan, VPN, state version) comes from
+  # flake.nixosModules.homelab-node; this file holds only vault-specifics.
+  flake.nixosModules.vault = _: {
+    networking.hostName = "vault";
+    sops.defaultSopsFile = ../../secrets/vault.yaml;
+    # No caddy-lan proxies yet (vault has no web UIs); add to
+    # services.caddyLan.proxies as services land (syncthing, etc.). backup
+    # stays off in flake.nix until real restic/* creds exist.
+  };
 }

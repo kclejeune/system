@@ -221,19 +221,9 @@
             config.flake.nixosModules.host-baseline
             config.flake.nixosModules.default
 
-            config.flake.nixosModules.hardware-p3-tiny
-            config.flake.nixosModules.server-base
+            config.flake.nixosModules.homelab-node
 
             config.flake.nixosModules.haven
-            config.flake.nixosModules.caddy-lan
-            config.flake.nixosModules.profile-personal
-            # config.flake.nixosModules.backup
-
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
-            config.flake.nixosModules.subnet-router
-            config.flake.nixosModules.tailscale-server
-            config.flake.nixosModules.beszel-agent
           ];
         };
 
@@ -248,21 +238,12 @@
             config.flake.nixosModules.host-baseline
             config.flake.nixosModules.default
 
-            config.flake.nixosModules.hardware-p3-tiny
-            config.flake.nixosModules.server-base
+            config.flake.nixosModules.homelab-node
 
             config.flake.nixosModules.forge
-            config.flake.nixosModules.caddy-lan
             config.flake.nixosModules.avahi
             config.flake.nixosModules.airprint
-            config.flake.nixosModules.profile-personal
             config.flake.nixosModules.backup
-
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
-            config.flake.nixosModules.subnet-router
-            config.flake.nixosModules.tailscale-server
-            config.flake.nixosModules.beszel-agent
           ];
         };
 
@@ -277,20 +258,11 @@
             config.flake.nixosModules.host-baseline
             config.flake.nixosModules.default
 
-            config.flake.nixosModules.hardware-p3-tiny
-            config.flake.nixosModules.server-base
+            config.flake.nixosModules.homelab-node
 
             config.flake.nixosModules.vault
-            config.flake.nixosModules.caddy-lan
-            config.flake.nixosModules.profile-personal
             # backup needs real restic/* in secrets/vault.yaml; enable once set.
             # config.flake.nixosModules.backup
-
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
-            config.flake.nixosModules.subnet-router
-            config.flake.nixosModules.tailscale-server
-            config.flake.nixosModules.beszel-agent
           ];
         };
 
@@ -305,20 +277,11 @@
             config.flake.nixosModules.host-baseline
             config.flake.nixosModules.default
 
-            config.flake.nixosModules.hardware-p3-tiny
-            config.flake.nixosModules.server-base
+            config.flake.nixosModules.homelab-node
 
             config.flake.nixosModules.atlas
-            config.flake.nixosModules.caddy-lan
-            config.flake.nixosModules.profile-personal
             # backup needs real restic/* in secrets/atlas.yaml; enable once set.
             # config.flake.nixosModules.backup
-
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
-            config.flake.nixosModules.subnet-router
-            config.flake.nixosModules.tailscale-server
-            config.flake.nixosModules.beszel-agent
           ];
         };
 

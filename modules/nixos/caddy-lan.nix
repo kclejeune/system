@@ -125,13 +125,15 @@ _: {
         sops.secrets."cloudflare/api-token" = { };
 
         # EnvironmentFile assembled from sops so the token never hits the store.
-        sops.templates."caddy-lan.env".content = ''
-          CF_DNS_API_TOKEN=${config.sops.placeholder."cloudflare/api-token"}
-        '';
         # systemd only reads EnvironmentFile at process start, so caddy must be
-        # restarted (not just reloaded) when these secrets change — otherwise a
+        # restarted (not just reloaded) when the secret changes — otherwise a
         # deploy re-renders the env but caddy keeps running the old values.
-        sops.templates."caddy-lan.env".restartUnits = [ "caddy.service" ];
+        sops.templates."caddy-lan.env" = {
+          content = ''
+            CF_DNS_API_TOKEN=${config.sops.placeholder."cloudflare/api-token"}
+          '';
+          restartUnits = [ "caddy.service" ];
+        };
 
         services.caddy = {
           enable = true;

@@ -52,21 +52,6 @@ _: {
       boot.kernel.sysctl."net.ipv4.conf.all.arp_ignore" = 1;
       boot.kernel.sysctl."net.ipv4.conf.all.arp_announce" = 2;
 
-      # Homelab LAN subnet-router posture. Every server-base host is a P3 node on
-      # 192.168.1.0/24 (haven/forge/vault/atlas), so each advertises the LAN as a
-      # subnet router — redundant routers, Tailscale elects a primary with
-      # failover — and does NOT accept tailnet routes, since it's already on that
-      # LAN and accepting it back would pull its own LAN over the tunnel. The
-      # option declarations (and the shared serve/cert/exit-node/ssh/operator
-      # flags) come from flake.nixosModules.tailscale-server, which every
-      # server-base host also enrolls. mkDefault so a host can opt out. (The
-      # cloud gateway is the inverse — accepts routes, advertises none — and
-      # deliberately does NOT use server-base.)
-      services.tailscale.server = {
-        acceptRoutes = lib.mkDefault false;
-        advertiseRoutes = lib.mkDefault [ "192.168.1.0/24" ];
-      };
-
       # Persistent journal so post-incident debugging survives reboots.
       services.journald.extraConfig = ''
         Storage=persistent

@@ -6,18 +6,11 @@ _: {
     let
       atticPort = 8080;
       # Same Cloudflare account as the restic R2 repo; dedicated cache bucket.
-      r2Account = "14613cda02f216f5620eca979a286eaf";
+      r2Account = config.site.cloudflareAccountId;
       atticBucket = "attic";
     in
     {
       networking.hostName = "forge";
-
-      users.users.${config.user.name} = {
-        isNormalUser = true;
-        extraGroups = [ "wheel" ];
-      };
-      identity.enableRootSshKeys = true;
-
       sops.defaultSopsFile = ../../secrets/forge.yaml;
 
       # --- attic (R2-backed nix binary cache) ---
@@ -43,14 +36,10 @@ _: {
       # forge.lan.kclj.io resolves via UniFi's local domain automatically.
       # attic has no matching client hostname, so it needs a UniFi Local DNS
       # Record -> forge for the cache to be reachable by name through caddy.
-      services.caddyLan = {
-        enable = true;
-        proxies.attic = "127.0.0.1:${toString atticPort}";
-      };
+      # caddy-lan is enabled by homelab-node; just declare the proxy.
+      services.caddyLan.proxies.attic = "127.0.0.1:${toString atticPort}";
 
       # --- AirPrint (CUPS + avahi; network printer, not USB) ---
       services.airprint.enable = true;
-
-      system.stateVersion = "25.11";
     };
 }
