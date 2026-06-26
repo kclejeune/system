@@ -40,6 +40,7 @@ _: {
           nodejs_22
           pyright
           rustup
+          src-cli
           trivy
           uv
           (python3.withPackages (
