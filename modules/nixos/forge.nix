@@ -52,7 +52,9 @@ _: {
       # set; the VIP resolves as cups.${config.site.tailnetDomain}. Target the
       # backend over HTTPS too (https+insecure://, CUPS's self-signed :631) for
       # the same reason as the caddy hop — CUPS rejects admin over plain http.
-      services.tailscale.serve.services.cups.endpoints."tcp:443" = "https+insecure://127.0.0.1:631";
+      services.tailscale.serve.services = {
+        cups.endpoints."tcp:443" = "https+insecure://127.0.0.1:631";
+      };
 
       # --- AirPrint (CUPS + avahi; network printer, not USB) ---
       services.airprint.enable = true;

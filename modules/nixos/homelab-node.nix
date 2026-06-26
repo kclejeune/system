@@ -51,5 +51,8 @@ in
         acceptRoutes = lib.mkDefault false;
         advertiseRoutes = lib.mkDefault [ config.site.lanCidr ];
       };
+
+      # expose local unifi console to tailnet
+      services.tailscale.serve.services.ui.endpoints."tcp:443" = "https+insecure://192.168.1.1";
     };
 }
