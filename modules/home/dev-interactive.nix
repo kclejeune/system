@@ -13,7 +13,6 @@ _: {
     {
       config = lib.mkIf config.desktop.enable {
         home.packages = with pkgs; [
-          attic
           basedpyright
           beads
           bento

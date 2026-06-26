@@ -24,11 +24,6 @@
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.follows = "unstable";
 
-    # NOTE: Don't override ANY inputs for attic - it requires specific versions
-    # with compatible C++ bindings. nixpkgs-unstable has nix 2.31+ which has
-    # breaking API changes (nix::openStore, nix::settings removed).
-    attic.url = "github:kclejeune/attic?ref=kcl/worker-impl";
-
     nh.url = "github:nix-community/nh";
     nh.inputs.nixpkgs.follows = "unstable";
 
@@ -58,6 +53,11 @@
 
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
+
+    # Remote activation for the headless NixOS hosts (gateway + the homelab
+    # nodes). Wired into flake.deploy.nodes below; `deploy` is in the devShell.
+    deploy-rs.url = "github:serokell/deploy-rs";
+    deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
     # UEFI Secure Boot via signed unified kernel images. Replaces
     # systemd-boot on hosts that enroll modules/nixos/secure-boot.nix.
@@ -201,8 +201,119 @@
 
             config.flake.nixosModules.tailscale
             config.flake.nixosModules.netbird
+            config.flake.nixosModules.subnet-router
+            config.flake.nixosModules.tailscale-server
+            config.flake.nixosModules.beszel-agent
           ];
         };
+
+        # Homelab home-automation node — bare-metal Lenovo P3 Tiny replacing
+        # the Proxmox cluster. Runs homebridge + uptime-kuma natively and
+        # Home Assistant OS as an Incus VM. First of four planned nodes
+        # (haven / forge / vault / atlas).
+        flake.nixosConfigurations.haven = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            config.flake.nixosModules.homelab-node
+
+            config.flake.nixosModules.haven
+          ];
+        };
+
+        # forge — general / dev-utilities node (P3 Tiny).
+        flake.nixosConfigurations.forge = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            config.flake.nixosModules.homelab-node
+
+            config.flake.nixosModules.forge
+            config.flake.nixosModules.avahi
+            config.flake.nixosModules.airprint
+            config.flake.nixosModules.backup
+          ];
+        };
+
+        # vault — data / storage node (P3 Tiny). Scaffolding only this round.
+        flake.nixosConfigurations.vault = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            config.flake.nixosModules.homelab-node
+
+            config.flake.nixosModules.vault
+            # backup needs real restic/* in secrets/vault.yaml; enable once set.
+            # config.flake.nixosModules.backup
+          ];
+        };
+
+        # atlas — infra / backup node (P3 Tiny). Scaffolding only this round.
+        flake.nixosConfigurations.atlas = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            config.flake.nixosModules.homelab-node
+
+            config.flake.nixosModules.atlas
+            # backup needs real restic/* in secrets/atlas.yaml; enable once set.
+            # config.flake.nixosModules.backup
+          ];
+        };
+
+        # deploy-rs targets — the headless hosts only (phil/wally are laptops,
+        # rebuilt locally). Root SSH is disabled on these, so log in as the
+        # kclejeune user and let deploy-rs activate as root via passwordless
+        # sudo. All five are x86_64-linux. Deploy with `deploy '.#<host>'`, or
+        # `deploy '.#haven' --hostname <ip>` to override the address.
+        flake.deploy.nodes =
+          let
+            # hostname == attr name; bare names resolve via tailscale MagicDNS /
+            # the LAN search domain. Override per deploy with `--hostname`.
+            mkNode = subdomain: host: {
+              hostname = "${host}.${subdomain}";
+              sshUser = "kclejeune";
+              user = "root";
+              sshOpts = [
+                "-o"
+                "StrictHostKeyChecking=accept-new"
+              ];
+              profiles.system.path =
+                inputs.deploy-rs.lib.x86_64-linux.activate.nixos
+                  config.flake.nixosConfigurations.${host};
+            };
+          in
+          lib.genAttrs [
+            "gateway"
+            "haven"
+            "forge"
+            "vault"
+            "atlas"
+          ] (mkNode "tailf0779.ts.net");
 
         flake.darwinConfigurations = lib.mergeAttrsList (
           lib.map (system: {
@@ -289,16 +400,16 @@
             legacyPackages = pkgs;
 
             overlayAttrs = {
-              inherit (inputs.attic.packages.${system}) attic attic-client attic-server;
+              # deploy = inputs.deploy-rs.packages.${system}.default;
+              determinate-nixd = inputs.determinate.packages.${system}.default;
+              nh = inputs.nh.packages.${system}.default;
+              nix = inputs.determinate.inputs.nix.packages.${system}.default;
+              stable = inputs.stable.legacyPackages.${system};
 
               cb = pkgs.callPackage ./pkgs/cb/package.nix { };
               fnox = pkgs.callPackage ./pkgs/fnox/package.nix { };
               sem-cli = pkgs.callPackage ./pkgs/sem-cli/package.nix { };
               weave = pkgs.callPackage ./pkgs/weave/package.nix { };
-              stable = inputs.stable.legacyPackages.${system};
-              determinate-nixd = inputs.determinate.packages.${system}.default;
-              nix = inputs.determinate.inputs.nix.packages.${system}.default;
-              nh = inputs.nh.packages.${system}.default;
             };
 
             devShells.default = pkgs.mkShell {
@@ -314,8 +425,33 @@
                 })
                 ++ config.pre-commit.settings.enabledPackages
                 ++ (lib.attrValues config.treefmt.build.programs)
-                ++ (lib.attrValues config.packages);
+                ++ (lib.attrValues config.packages)
+                ++ [ inputs.deploy-rs.packages.${system}.default ];
               shellHook = config.pre-commit.installationScript;
+            };
+
+            # `nix run .#deploy` with no args deploys every node; pass targets
+            # to scope it, e.g. `nix run .#deploy -- '.#forge'`.
+            apps.deploy = {
+              type = "app";
+              program = lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "deploy";
+                  runtimeInputs = [ inputs.deploy-rs.packages.${system}.default ];
+                  text = ''
+                    # deploy-rs's built-in pre-check runs a full `nix flake check`
+                    # over the ENTIRE flake (every system + host) on each deploy
+                    # — slow, unscoped, and it hides deploy progress until it
+                    # finishes. Skip it here (deploy-rs still builds each node's
+                    # profile, so what's deployed is validated); run `nix flake
+                    # check`, or plain `deploy` from `nix develop`, for the full
+                    # gate.
+                    # Default to all nodes in this flake when no target is given.
+                    if [ "$#" -eq 0 ]; then set -- "."; fi
+                    exec deploy --skip-checks "$@"
+                  '';
+                }
+              );
             };
 
             treefmt = {
@@ -364,6 +500,10 @@
               ))
               // (lib.mapAttrs (_: cfg: cfg.config.system.build.toplevel) (
                 filterSystem (self.darwinConfigurations // self.nixosConfigurations)
+              ))
+              # deploy-rs schema + activation checks (all nodes are x86_64-linux).
+              // (lib.optionalAttrs (system == "x86_64-linux") (
+                inputs.deploy-rs.lib.${system}.deployChecks self.deploy
               ));
           };
       }

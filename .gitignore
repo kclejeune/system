@@ -7,3 +7,5 @@
 .playwright-mcp/
 .claude/
 /result-*
+/docs/superpowers
+/.superpowers

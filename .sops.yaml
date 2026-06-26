@@ -4,10 +4,55 @@ keys:
   - &gateway age1xawelux9hmvjmq3ry9yu0uh0njyjx87hskdlnlknjh3ud2rm74fs5jc8vk
   - &klejeune age10suv000jwsgzq546kmj5jxltmxawsx90nvdmyzc42nhsayyfa4rq720w54
   - &standalone age17t0ghmx3ze62epewm9p5rdaywv9u6wjcjvrj5e734uqzkst6hvtqhwtdkz
+  # Homelab nodes — derived from each host's SSH host key via
+  #   ssh kclejeune@<host> 'ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub'
+  - &haven age1gkukfdfl9dnhuzh5punz94jh6v537lc9u36d2pxfzrkt9lj25pjsx8flkh
+  - &forge age1xudmzkc43eurpv9dm6srjrf33v4duqze7rwnjv6c562z74z5uv0sfzafux
+  - &vault age1xyx9372g3wqg48vzpgg59egep356fehnxh980mqaktz2dxzhmcgse3apsv
+  - &atlas age1afy2wg2f7vrvs8yd7fxka9neqs4nqg4dpu9uegsj7n86mxmk9fpsuagj3r
+  # Personal desktops/laptops — derived from each host's SSH host key via
+  #   ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
+  # (phil's taken from this machine's ~/.ssh/known_hosts while it was offline).
+  - &wally age1rn77fm7knfxjhlgjqew5w87tpye9663kj340y34367dx044h0vtqdak5nl
+  - &phil age1hq5yp2pagrvyu9pctgku7vfy982lzjy6a20u9238vewypkx749fsjg84jp
 
 creation_rules:
+  # Shared user secrets (e.g. kclejeune's password hash) consumed by every
+  # personal-identity NixOS host via profile-personal — encrypted to all of
+  # them so each can decrypt with its own SSH host key.
+  - path_regex: secrets/users\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *gateway
+          - *haven
+          - *forge
+          - *vault
+          - *atlas
+          - *wally
+          - *phil
   - path_regex: secrets/gateway\.yaml$
     key_groups:
       - age:
           - *kclejeune
           - *gateway
+  - path_regex: secrets/haven\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *haven
+  - path_regex: secrets/forge\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *forge
+  - path_regex: secrets/vault\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *vault
+  - path_regex: secrets/atlas\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *atlas
