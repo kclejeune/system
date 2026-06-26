@@ -294,8 +294,8 @@
           let
             # hostname == attr name; bare names resolve via tailscale MagicDNS /
             # the LAN search domain. Override per deploy with `--hostname`.
-            mkNode = host: {
-              hostname = host;
+            mkNode = subdomain: host: {
+              hostname = "${host}.${subdomain}";
               sshUser = "kclejeune";
               user = "root";
               sshOpts = [
@@ -313,7 +313,7 @@
             "forge"
             "vault"
             "atlas"
-          ] mkNode;
+          ] (mkNode "tailf0779.ts.net");
 
         flake.darwinConfigurations = lib.mergeAttrsList (
           lib.map (system: {
