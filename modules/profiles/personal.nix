@@ -15,15 +15,37 @@ let
     # Same key signs commits as authenticates SSH — 1password manages both.
     sshSigningKey = builtins.head sshKeys;
   };
-in
-(import ../_lib.nix).mkAspect {
-  name = "profile-personal";
-  os = _: {
+  # Shared nixos + darwin body: the personal identity (user name, ssh keys,
+  # signing key) plus the home-manager profile.
+  osBody = _: {
     identity = personalIdentity // {
       enable = true;
     };
     hm.imports = [ flakeCfg.flake.homeModules.profile-personal ];
   };
+in
+(import ../_lib.nix).mkAspect {
+  name = "profile-personal";
+  # darwin: identity only — nix-darwin doesn't manage account passwords the way
+  # NixOS does, so the hashedPasswordFile wiring below is nixos-only.
+  darwin = osBody;
+  # nixos: identity + kclejeune's login password, sourced from a sops secret
+  # shared across every personal-identity host (secrets/users.yaml, encrypted
+  # to each host's SSH host key). neededForUsers makes sops decrypt it before
+  # user creation so hashedPasswordFile can read it. Scoping this to
+  # profile-personal keeps it off any work machine that consumes this flake
+  # without enrolling the personal profile.
+  nixos =
+    { config, ... }:
+    {
+      imports = [ osBody ];
+      sops.secrets."users/kclejeune/password-hash" = {
+        sopsFile = ../../secrets/users.yaml;
+        neededForUsers = true;
+      };
+      users.users.${config.user.name}.hashedPasswordFile =
+        config.sops.secrets."users/kclejeune/password-hash".path;
+    };
   home = _: {
     # Standalone HM hosts don't go through the nixos/darwin identity
     # module, so populate the identity options directly here. The fields

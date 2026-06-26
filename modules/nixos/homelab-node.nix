@@ -35,6 +35,12 @@ in
         isNormalUser = true;
         extraGroups = lib.mkDefault [ "wheel" ];
       };
+      # Declaratively manage accounts: kclejeune's password is rewritten from
+      # profile-personal's sops hashedPasswordFile on every activation, and
+      # undeclared users are pruned. Recovery if the secret ever fails to
+      # decrypt (password slot → locked) is SSH-key login as root
+      # (identity.enableRootSshKeys below).
+      users.mutableUsers = lib.mkDefault false;
       identity.enableRootSshKeys = lib.mkDefault true;
       system.stateVersion = lib.mkDefault "25.11";
 

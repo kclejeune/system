@@ -35,7 +35,10 @@ in
             "networkmanager"
             "docker"
           ];
-          hashedPassword = "$6$1kR9R2U/NA0.$thN8N2sTo7odYaoLhipeuu5Ic4CS7hKDt1Q6ClP9y0I3eVMaFmo.dZNpPfdwNitkElkaLwDVsGpDuM2SO2GqP/";
+          # Password comes from profile-personal's sops-backed
+          # hashedPasswordFile (secrets/users.yaml), shared across every
+          # personal-identity host. With mutableUsers = false the shadow entry
+          # is rewritten from that file on each activation.
         };
       };
 
