@@ -64,7 +64,7 @@ _: {
           typescript-language-server
           vim-language-server
           vscode-langservers-extracted
-          vue-language-server
+          # vue-language-server
           zls
           ;
       };
