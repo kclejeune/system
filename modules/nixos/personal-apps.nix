@@ -16,7 +16,6 @@ in
       imports = [ flakeCfg.flake.nixosModules.keybase ];
 
       environment.systemPackages = with pkgs; [
-        anytype
         discord
         notion-app
       ];
