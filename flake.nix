@@ -402,7 +402,7 @@
             overlayAttrs = {
               # deploy = inputs.deploy-rs.packages.${system}.default;
               determinate-nixd = inputs.determinate.packages.${system}.default;
-              nh = inputs.nh.packages.${system}.default;
+              # nh = inputs.nh.packages.${system}.default;
               nix = inputs.determinate.inputs.nix.packages.${system}.default;
               stable = inputs.stable.legacyPackages.${system};
 
