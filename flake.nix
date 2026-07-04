@@ -100,6 +100,26 @@
         lib,
         ...
       }:
+      let
+        # Every NixOS host in this flake shares the same channel, arch, and
+        # baseline module pair — a host block lists only what makes it
+        # distinct. Extend the signature (e.g. with a `system` arg) when a
+        # non-x86 host shows up, not before.
+        mkNixosHost =
+          modules:
+          inputs.nixos-unstable.lib.nixosSystem {
+            system = "x86_64-linux";
+            specialArgs = {
+              inherit self inputs;
+              nixpkgs = inputs.nixos-unstable;
+            };
+            modules = [
+              config.flake.nixosModules.host-baseline
+              config.flake.nixosModules.default
+            ]
+            ++ modules;
+          };
+      in
       {
         imports = [
           inputs.home-manager.flakeModules.home-manager
@@ -140,169 +160,99 @@
           "aarch64-darwin"
         ];
 
-        flake.nixosConfigurations.phil = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
+        flake.nixosConfigurations.phil = mkNixosHost [
+          inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
+          config.flake.nixosModules.hardware-thinkpad-t460s
 
-            inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
-            config.flake.nixosModules.hardware-thinkpad-t460s
+          config.flake.nixosModules.desktop
+          config.flake.nixosModules.personal-apps
+          config.flake.nixosModules.profile-personal
 
-            config.flake.nixosModules.desktop
-            config.flake.nixosModules.personal-apps
-            config.flake.nixosModules.profile-personal
+          config.flake.nixosModules.tailscale
+          config.flake.nixosModules.netbird
 
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
+          {
+            networking.hostName = "phil";
+            # Host-level: pin phil's Hyprland panel/kanshi overlay. The
+            # hardware module stays generic so any T460s could reuse it.
+            hm.imports = [ config.flake.homeModules.hyprland-host-phil ];
+          }
+        ];
 
-            {
-              networking.hostName = "phil";
-              # Host-level: pin phil's Hyprland panel/kanshi overlay. The
-              # hardware module stays generic so any T460s could reuse it.
-              hm.imports = [ config.flake.homeModules.hyprland-host-phil ];
-            }
-          ];
-        };
+        flake.nixosConfigurations.wally = mkNixosHost [
+          inputs.nixos-hardware.nixosModules.dell-precision-5570
+          config.flake.nixosModules.hardware-precision-5570
 
-        flake.nixosConfigurations.wally = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
+          config.flake.nixosModules.desktop
+          config.flake.nixosModules.personal-apps
+          config.flake.nixosModules.profile-personal
 
-            inputs.nixos-hardware.nixosModules.dell-precision-5570
-            config.flake.nixosModules.hardware-precision-5570
+          # disable pending disko partition update
+          # config.flake.nixosModules.secure-boot
 
-            config.flake.nixosModules.desktop
-            config.flake.nixosModules.personal-apps
-            config.flake.nixosModules.profile-personal
+          config.flake.nixosModules.tailscale
+          config.flake.nixosModules.netbird
 
-            # disable pending disko partition update
-            # config.flake.nixosModules.secure-boot
+          {
+            networking.hostName = "wally";
+            # Host-level: pin the precision-5570 + home Dell U2718Q panel
+            # / kanshi / workspace overlay. Hardware module stays generic.
+            hm.imports = [ config.flake.homeModules.displays-5570-home ];
+          }
+        ];
 
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
+        flake.nixosConfigurations.gateway = mkNixosHost [
+          config.flake.nixosModules.hetzner
 
-            {
-              networking.hostName = "wally";
-              # Host-level: pin the precision-5570 + home Dell U2718Q panel
-              # / kanshi / workspace overlay. Hardware module stays generic.
-              hm.imports = [ config.flake.homeModules.displays-5570-home ];
-            }
-          ];
-        };
+          config.flake.nixosModules.gateway
+          config.flake.nixosModules.profile-personal
 
-        flake.nixosConfigurations.gateway = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
+          config.flake.nixosModules.nix-ld
 
-            config.flake.nixosModules.hetzner
-
-            config.flake.nixosModules.gateway
-            config.flake.nixosModules.profile-personal
-
-            config.flake.nixosModules.nix-ld
-
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
-            config.flake.nixosModules.subnet-router
-            config.flake.nixosModules.tailscale-server
-            config.flake.nixosModules.beszel-agent
-          ];
-        };
+          config.flake.nixosModules.tailscale
+          config.flake.nixosModules.netbird
+          config.flake.nixosModules.subnet-router
+          config.flake.nixosModules.tailscale-server
+          config.flake.nixosModules.beszel-agent
+        ];
 
         # Homelab home-automation node — bare-metal Lenovo P3 Tiny replacing
         # the Proxmox cluster. Runs homebridge + uptime-kuma natively and
         # Home Assistant OS as an Incus VM. First of four planned nodes
         # (haven / forge / vault / atlas).
-        flake.nixosConfigurations.haven = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
+        flake.nixosConfigurations.haven = mkNixosHost [
+          config.flake.nixosModules.homelab-node
 
-            config.flake.nixosModules.homelab-node
-
-            config.flake.nixosModules.haven
-          ];
-        };
+          config.flake.nixosModules.haven
+        ];
 
         # forge — general / dev-utilities node (P3 Tiny).
-        flake.nixosConfigurations.forge = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
+        flake.nixosConfigurations.forge = mkNixosHost [
+          config.flake.nixosModules.homelab-node
 
-            config.flake.nixosModules.homelab-node
-
-            config.flake.nixosModules.forge
-            config.flake.nixosModules.avahi
-            config.flake.nixosModules.airprint
-            config.flake.nixosModules.backup
-          ];
-        };
+          config.flake.nixosModules.forge
+          config.flake.nixosModules.avahi
+          config.flake.nixosModules.airprint
+          config.flake.nixosModules.backup
+        ];
 
         # vault — data / storage node (P3 Tiny). Scaffolding only this round.
-        flake.nixosConfigurations.vault = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
+        flake.nixosConfigurations.vault = mkNixosHost [
+          config.flake.nixosModules.homelab-node
 
-            config.flake.nixosModules.homelab-node
-
-            config.flake.nixosModules.vault
-            # backup needs real restic/* in secrets/vault.yaml; enable once set.
-            # config.flake.nixosModules.backup
-          ];
-        };
+          config.flake.nixosModules.vault
+          # backup needs real restic/* in secrets/vault.yaml; enable once set.
+          # config.flake.nixosModules.backup
+        ];
 
         # atlas — infra / backup node (P3 Tiny). Scaffolding only this round.
-        flake.nixosConfigurations.atlas = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
+        flake.nixosConfigurations.atlas = mkNixosHost [
+          config.flake.nixosModules.homelab-node
 
-            config.flake.nixosModules.homelab-node
-
-            config.flake.nixosModules.atlas
-            # backup needs real restic/* in secrets/atlas.yaml; enable once set.
-            # config.flake.nixosModules.backup
-          ];
-        };
+          config.flake.nixosModules.atlas
+          # backup needs real restic/* in secrets/atlas.yaml; enable once set.
+          # config.flake.nixosModules.backup
+        ];
 
         # deploy-rs targets — the headless hosts only (phil/wally are laptops,
         # rebuilt locally). Root SSH is disabled on these, so log in as the
@@ -312,19 +262,25 @@
         flake.deploy.nodes =
           let
             # hostname == attr name; bare names resolve via tailscale MagicDNS /
-            # the LAN search domain. Override per deploy with `--hostname`.
-            mkNode = subdomain: host: {
-              hostname = "${host}.${subdomain}";
-              sshUser = "kclejeune";
-              user = "root";
-              sshOpts = [
-                "-o"
-                "StrictHostKeyChecking=accept-new"
-              ];
-              profiles.system.path =
-                inputs.deploy-rs.lib.x86_64-linux.activate.nixos
-                  config.flake.nixosConfigurations.${host};
-            };
+            # the LAN search domain (site.tailnetDomain, read back from the
+            # node's own config so the literal lives only in site.nix).
+            # Override per deploy with `--hostname`.
+            mkNode =
+              host:
+              let
+                hostConfig = config.flake.nixosConfigurations.${host};
+              in
+              {
+                hostname = "${host}.${hostConfig.config.site.tailnetDomain}";
+                # Log in as the primary user (root SSH is disabled on these).
+                sshUser = hostConfig.config.user.name;
+                user = "root";
+                sshOpts = [
+                  "-o"
+                  "StrictHostKeyChecking=accept-new"
+                ];
+                profiles.system.path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos hostConfig;
+              };
           in
           lib.genAttrs [
             "gateway"
@@ -332,7 +288,7 @@
             "forge"
             "vault"
             "atlas"
-          ] (mkNode "tailf0779.ts.net");
+          ] mkNode;
 
         flake.darwinConfigurations = lib.mergeAttrsList (
           lib.map (system: {
@@ -366,15 +322,11 @@
               in
               {
                 "kclejeune@${system}" = inputs.home-manager.lib.homeManagerConfiguration {
-                  pkgs = import inputs.nixpkgs {
-                    inherit system;
-                    config = {
-                      allowUnsupportedSystem = true;
-                      allowUnfree = true;
-                      allowBroken = false;
-                    };
-                    overlays = [ self.overlays.default ];
-                  };
+                  # Same allow-flags + overlay as the nixos/darwin hosts get
+                  # via nixpkgs-wiring — mkNixpkgsArgs is the single source.
+                  pkgs = import inputs.nixpkgs (
+                    { inherit system; } // (import ./modules/_lib.nix).mkNixpkgsArgs { inherit self; }
+                  );
                   extraSpecialArgs = {
                     inherit self inputs;
                     nixpkgs = inputs.nixpkgs;
