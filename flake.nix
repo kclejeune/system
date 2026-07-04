@@ -334,10 +334,22 @@
                   modules = [
                     config.flake.homeModules.default
                     config.flake.homeModules.profile-personal
-                    ({ pkgs, ... }: {
-                      nix.package = pkgs.nix;
-                      home = { inherit username homeDirectory; };
-                    })
+                    (
+                      { pkgs, ... }:
+                      {
+                        nix.package = pkgs.nix;
+                        home = { inherit username homeDirectory; };
+
+                        # Standalone HM runs on machines nix doesn't otherwise
+                        # manage — let `mise bootstrap` converge the day-0
+                        # layer there, starting with the ~/.nixpkgs checkout
+                        # that dotfiles.path and programs.nh.flake expect.
+                        mise.bootstrap = {
+                          enable = true;
+                          repos."~/.nixpkgs".url = "https://github.com/kclejeune/system";
+                        };
+                      }
+                    )
                   ];
                 };
               }

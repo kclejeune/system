@@ -27,6 +27,7 @@ in
         flakeCfg.flake.homeModules.fzf
         flakeCfg.flake.homeModules.git
         flakeCfg.flake.homeModules.identity
+        flakeCfg.flake.homeModules.mise
         flakeCfg.flake.homeModules.nushell
         flakeCfg.flake.homeModules.nvim
         flakeCfg.flake.homeModules.shell
