@@ -105,9 +105,14 @@
           (inputs.import-tree ./modules)
           # flake-parts doesn't declare flake.darwinModules upstream; declare
           # it here so files under modules/darwin/ can each contribute a
-          # named entry that merges into the attrset.
+          # named entry that merges into the attrset. Same for flake.lib, which
+          # multiple shared modules contribute helpers to (mkTheme, mkAspect).
           {
             options.flake.darwinModules = lib.mkOption {
+              type = lib.types.lazyAttrsOf lib.types.unspecified;
+              default = { };
+            };
+            options.flake.lib = lib.mkOption {
               type = lib.types.lazyAttrsOf lib.types.unspecified;
               default = { };
             };
