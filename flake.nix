@@ -24,6 +24,9 @@
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.follows = "unstable";
 
+    # NOTE: Don't override ANY inputs for attic — it requires specific versions.
+    attic.url = "github:kclejeune/attic?ref=kcl/worker-impl";
+
     nh.url = "github:nix-community/nh";
     nh.inputs.nixpkgs.follows = "unstable";
 
@@ -410,6 +413,8 @@
               # nh = inputs.nh.packages.${system}.default;
               nix = inputs.determinate.inputs.nix.packages.${system}.default;
               stable = inputs.stable.legacyPackages.${system};
+
+              inherit (inputs.attic.packages.${system}) attic attic-client attic-server;
 
               cb = pkgs.callPackage ./pkgs/cb/package.nix { };
               fnox = pkgs.callPackage ./pkgs/fnox/package.nix { };

@@ -19,6 +19,7 @@ _: {
           alejandra
           asciidoctor
           ast-grep
+          attic-client
           bfs
           cacert
           cachix
