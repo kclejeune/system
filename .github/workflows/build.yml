@@ -49,10 +49,7 @@ jobs:
         run: nix profile install --accept-flake-config .#nimbus
 
       - name: Log in to nimbus
-        env:
-          NIMBUS_ENDPOINT: ${{ env.NIMBUS_ENDPOINT }}
-          NIMBUS_TOKEN: ${{ secrets.NIMBUS_TOKEN }}
-        run: nimbus login default ${NIMBUS_ENDPOINT} ${NIMBUS_TOKEN}
+        run: nimbus login default ${{ vars.NIMBUS_ENDPOINT }} ${{ secrets.NIMBUS_AUTH_TOKEN }}
 
       - name: Run flake checks
         run: |
