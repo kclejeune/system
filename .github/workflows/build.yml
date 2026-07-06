@@ -38,15 +38,26 @@ jobs:
             extra-substituters = https://kclejeune.cachix.org
             extra-trusted-public-keys = kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=
 
-      - name: Set up Cachix
-        uses: cachix/cachix-action@v17
-        with:
-          name: kclejeune
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Disabled while nimbus is the push target — re-enable to dual-publish.
+      # - name: Set up Cachix
+      #   uses: cachix/cachix-action@v17
+      #   with:
+      #     name: kclejeune
+      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Install nimbus
+        run: nix profile install --accept-flake-config .#nimbus
+
+      - name: Log in to nimbus
+        env:
+          NIMBUS_ENDPOINT: ${{ env.NIMBUS_ENDPOINT }}
+          NIMBUS_TOKEN: ${{ secrets.NIMBUS_TOKEN }}
+        run: nimbus login default ${NIMBUS_ENDPOINT} ${NIMBUS_TOKEN}
 
       - name: Run flake checks
         run: |
-          nix flake check \
+          nimbus watch-exec kclejeune -- \
+            nix flake check \
             --system ${{ matrix.system }} \
             --print-build-logs \
             --show-trace \

@@ -16,7 +16,7 @@ _:
         cloudflareAccountId = lib.mkOption {
           type = lib.types.str;
           default = "14613cda02f216f5620eca979a286eaf";
-          description = "Cloudflare account id backing the R2 buckets (attic cache, restic repos).";
+          description = "Cloudflare account id backing the R2 buckets (nimbus cache, restic repos).";
         };
 
         lanCidr = lib.mkOption {

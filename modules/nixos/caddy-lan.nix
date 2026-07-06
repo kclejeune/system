@@ -9,7 +9,7 @@ _: {
   # policy API refuses to create ANY record under its own local domain
   # (`api.dns.policy.validation.overlap-with-local-dns`), so caddy cannot
   # self-register — proxied subdomains that have no matching client hostname
-  # (e.g. attic, status) must be added as UniFi *Local DNS Records* pointing at
+  # (e.g. cups, status) must be added as UniFi *Local DNS Records* pointing at
   # the caddy host. Hosts here just set services.caddyLan.proxies.
   #
   # The ACME propagation check is pinned to public resolvers (1.1.1.1/1.0.0.1)
@@ -97,7 +97,7 @@ _: {
         proxies = lib.mkOption {
           type = lib.types.attrsOf lib.types.str;
           default = { };
-          example = lib.literalExpression ''{ attic = "127.0.0.1:8080"; incus = "https://127.0.0.1:8443"; }'';
+          example = lib.literalExpression ''{ status = "127.0.0.1:8080"; incus = "https://127.0.0.1:8443"; }'';
           description = ''
             subdomain -> upstream "host:port". Each becomes a
             <subdomain>.<baseDomain> vhost with DNS-01 TLS + reverse_proxy.
