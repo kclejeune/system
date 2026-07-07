@@ -86,6 +86,38 @@ _: {
 
       hardware.cpu.intel.updateMicrocode = true;
 
+      # e1000e TX unit hang workaround. The P3 Tiny's onboard Intel I219 LAN
+      # (e1000e, PCI 00:1f.6 — the only wired NIC on these boxes) intermittently
+      # wedges its hardware TX ring: the kernel logs "e1000e ... eno2: Detected
+      # Hardware Unit Hang" and, on the firmware these units carry, the driver's
+      # watchdog never successfully resets the adapter — so TX stays dead until a
+      # power cycle. On 2026-07-06 haven's eno2 hung at 08:51 and spammed the hang
+      # message every ~2s for 8.5h (15k times, zero "Reset adapter"); since eno2 is
+      # the sole uplink (enslaved to br0), the node fell off the LAN entirely and
+      # needed a forced reboot. Disabling TSO/GSO is the well-documented fix — it
+      # keeps segmentation in software and off the buggy hardware TSO engine
+      # (https://tailscale.com/s/ethtool-config-udp-gro-style ethtool -K tso/gso off).
+      #
+      # Delivered as a DROP-IN to systemd's shipped 99-default.link, for the same
+      # reasons subnet-router.nix's GRO drop-in is (see its comment): only the
+      # first matching .link applies, so a standalone .link would beat
+      # 99-default.link and, lacking NamePolicy, revert the NIC to its kernel name
+      # (eth0) — breaking the by-name br0 member match in haven.nix and taking the
+      # node off the LAN, i.e. re-causing this very outage. A drop-in merges into
+      # 99-default.link's [Link] section, preserving NamePolicy and coexisting with
+      # the GRO drop-in. It nominally hits every NIC 99-default governs, but these
+      # boxes have only the one physical NIC (wifi is down/unused, virtual devices
+      # skip it), so this is effectively eno2-only. Drop-ins can't carry their own
+      # [Match], so per-driver scoping isn't available without the standalone-file
+      # trap above. udev applies it when the NIC appears; verify post-deploy with
+      #   ethtool -k eno2 | grep -E 'tcp-segmentation|generic-seg'
+      # and apply live without a reboot via `ethtool -K eno2 tso off gso off`.
+      environment.etc."systemd/network/99-default.link.d/20-e1000e-tx-hang.conf".text = ''
+        [Link]
+        TCPSegmentationOffload=no
+        GenericSegmentationOffload=no
+      '';
+
       nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
     };
 }
