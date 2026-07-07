@@ -55,7 +55,7 @@ jobs:
 
       - name: Run flake checks
         run: |
-          nimbus watch-exec kclejeune -- nix flake check \
+          nimbus watch-exec kclejeune nix flake check \
             --system ${{ matrix.system }} \
             --print-build-logs \
             --show-trace \
