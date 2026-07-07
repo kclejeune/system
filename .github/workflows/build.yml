@@ -22,15 +22,18 @@ jobs:
           - system: x86_64-linux
             runner: namespace-profile-default
             jobs: 2
-            eval-workers: 2
+            eval-workers: 1
+            eval-max-memory: 8192
           - system: aarch64-linux
             runner: namespace-profile-default-arm64
             jobs: 2
             eval-workers: 2
+            eval-max-memory: 4096
           - system: aarch64-darwin
             runner: namespace-profile-darwin-aarch64
             jobs: 4
             eval-workers: 3
+            eval-max-memory: 4096
     steps:
       - uses: actions/checkout@v7
 
@@ -60,5 +63,5 @@ jobs:
             --no-nom \
             --skip-cached \
             --eval-workers ${{ matrix.eval-workers }} \
-            --eval-max-memory-size 4096 \
+            --eval-max-memory-size ${{ matrix.eval-max-memory }} \
             -j ${{ matrix.jobs }}
