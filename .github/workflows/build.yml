@@ -21,10 +21,13 @@ jobs:
         include:
           - system: x86_64-linux
             runner: namespace-profile-default
+            jobs: 2
           - system: aarch64-linux
             runner: namespace-profile-default-arm64
+            jobs: 2
           - system: aarch64-darwin
             runner: namespace-profile-darwin-aarch64
+            jobs: 4
     steps:
       - uses: actions/checkout@v7
 
@@ -53,4 +56,4 @@ jobs:
             --print-build-logs \
             --show-trace \
             --accept-flake-config \
-            -j 2
+            -j ${{ matrix.jobs }}
