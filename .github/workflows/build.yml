@@ -20,11 +20,11 @@ jobs:
       matrix:
         include:
           - system: x86_64-linux
-            runner: ubuntu-latest
+            runner: namespace-profile-default
           - system: aarch64-linux
-            runner: ubuntu-24.04-arm
+            runner: namespace-profile-default-arm64
           - system: aarch64-darwin
-            runner: macos-14
+            runner: namespace-profile-darwin-aarch64
     steps:
       - uses: actions/checkout@v7
 
@@ -35,8 +35,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           extra-conf: |
             accept-flake-config = true
-            extra-substituters = https://kclejeune.cachix.org
-            extra-trusted-public-keys = kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=
+            extra-substituters = https://cache.kclj.io/kclejeune
+            extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk=
 
       # Disabled while nimbus is the push target — re-enable to dual-publish.
       # - name: Set up Cachix
