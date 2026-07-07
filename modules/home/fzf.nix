@@ -1,6 +1,11 @@
 _: {
   flake.homeModules.fzf =
-    { config, pkgs, lib, ... }:
+    {
+      config,
+      pkgs,
+      lib,
+      ...
+    }:
     let
       fd = lib.getExe pkgs.fd;
     in
