@@ -56,4 +56,5 @@ jobs:
             --print-build-logs \
             --show-trace \
             --accept-flake-config \
-            -j ${{ matrix.jobs }}
+            -j ${{ matrix.jobs }} \
+            --max-substitution-jobs 4
