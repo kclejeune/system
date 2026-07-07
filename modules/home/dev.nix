@@ -19,7 +19,6 @@ _: {
           alejandra
           asciidoctor
           ast-grep
-          attic-client
           bfs
           cacert
           cachix
@@ -64,6 +63,7 @@ _: {
           mmv
           mosh
           nil
+          nimbus
           nix-inspect
           nix-output-monitor
           nix-tree

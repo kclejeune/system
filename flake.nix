@@ -4,13 +4,13 @@
   nixConfig = {
     extra-substituters = [
       "https://cache.kclj.io/kclejeune"
-      "https://kclejeune.cachix.org"
+      # "https://kclejeune.cachix.org"
       "https://install.determinate.systems"
       "https://noctalia.cachix.org"
     ];
     extra-trusted-public-keys = [
       "kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk="
-      "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
+      # "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
     ];
@@ -24,8 +24,9 @@
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.follows = "unstable";
 
-    # NOTE: Don't override ANY inputs for attic — it requires specific versions.
-    attic.url = "github:kclejeune/attic?ref=kcl/worker-impl";
+    # Nix binary cache CLI; the server side is the nimbus Cloudflare worker.
+    nimbus.url = "github:kclejeune/nimbus";
+    nimbus.inputs.nixpkgs.follows = "unstable";
 
     nh.url = "github:nix-community/nh";
     nh.inputs.nixpkgs.follows = "unstable";
@@ -414,7 +415,7 @@
               nix = inputs.determinate.inputs.nix.packages.${system}.default;
               stable = inputs.stable.legacyPackages.${system};
 
-              inherit (inputs.attic.packages.${system}) attic attic-client attic-server;
+              inherit (inputs.nimbus.packages.${system}) nimbus;
 
               cb = pkgs.callPackage ./pkgs/cb/package.nix { };
               fnox = pkgs.callPackage ./pkgs/fnox/package.nix { };

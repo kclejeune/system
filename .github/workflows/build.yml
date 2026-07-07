@@ -38,11 +38,18 @@ jobs:
             extra-substituters = https://kclejeune.cachix.org
             extra-trusted-public-keys = kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko=
 
-      - name: Set up Cachix
-        uses: cachix/cachix-action@v17
-        with:
-          name: kclejeune
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Disabled while nimbus is the push target — re-enable to dual-publish.
+      # - name: Set up Cachix
+      #   uses: cachix/cachix-action@v17
+      #   with:
+      #     name: kclejeune
+      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Install nimbus
+        run: nix profile install --accept-flake-config .#nimbus
+
+      - name: Log in to nimbus
+        run: nimbus login default ${{ vars.NIMBUS_ENDPOINT }} ${{ secrets.NIMBUS_AUTH_TOKEN }}
 
       - name: Run flake checks
         run: |
@@ -52,3 +59,13 @@ jobs:
             --show-trace \
             --accept-flake-config \
             -j auto
+
+      # The checks were just built by flake check, so their outPaths are valid
+      # in the store; evaluating them is enough for one batched push.
+      - name: Push build outputs to nimbus
+        run: |
+          nix eval .#checks.${{ matrix.system }} \
+            --apply 'checks: map (c: c.outPath) (builtins.attrValues checks)' \
+            --json --accept-flake-config \
+            | jq -r '.[]' \
+            | nimbus push kclejeune --stdin
