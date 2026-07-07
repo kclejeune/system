@@ -22,12 +22,15 @@ jobs:
           - system: x86_64-linux
             runner: namespace-profile-default
             jobs: 2
+            eval-workers: 2
           - system: aarch64-linux
             runner: namespace-profile-default-arm64
             jobs: 2
+            eval-workers: 2
           - system: aarch64-darwin
             runner: namespace-profile-darwin-aarch64
             jobs: 4
+            eval-workers: 3
     steps:
       - uses: actions/checkout@v7
 
@@ -40,21 +43,22 @@ jobs:
           # extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
           extra-conf: |
             accept-flake-config = true
+            max-substitution-jobs = 4
             extra-substituters = https://cache.kclj.io/kclejeune https://install.determinate.systems https://noctalia.cachix.org
             extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
 
-      - name: Install nimbus
-        run: nix profile add --accept-flake-config .#nimbus
+      - name: Install nimbus and nix-fast-build
+        run: nix profile add --accept-flake-config --inputs-from . .#nimbus nixpkgs#nix-fast-build
 
       - name: Run flake checks
         env:
           NIMBUS_ENDPOINT: ${{ vars.NIMBUS_ENDPOINT }}
           NIMBUS_AUTH_TOKEN: ${{ secrets.NIMBUS_AUTH_TOKEN }}
         run: |
-          nimbus watch-exec kclejeune nix flake check \
-            --system ${{ matrix.system }} \
-            --print-build-logs \
-            --show-trace \
-            --accept-flake-config \
-            -j ${{ matrix.jobs }} \
-            --max-substitution-jobs 4
+          nimbus watch-exec kclejeune nix-fast-build \
+            --flake ".#checks.${{ matrix.system }}" \
+            --no-nom \
+            --skip-cached \
+            --eval-workers ${{ matrix.eval-workers }} \
+            --eval-max-memory-size 4096 \
+            -j ${{ matrix.jobs }}
