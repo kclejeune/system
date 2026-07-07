@@ -40,20 +40,13 @@ jobs:
             extra-substituters = https://cache.kclj.io/kclejeune https://install.determinate.systems https://noctalia.cachix.org
             extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
 
-      # Disabled while nimbus is the push target — re-enable to dual-publish.
-      # - name: Set up Cachix
-      #   uses: cachix/cachix-action@v17
-      #   with:
-      #     name: kclejeune
-      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
       - name: Install nimbus
-        run: nix profile install --accept-flake-config .#nimbus
-
-      - name: Log in to nimbus
-        run: nimbus login default ${{ vars.NIMBUS_ENDPOINT }} ${{ secrets.NIMBUS_AUTH_TOKEN }}
+        run: nix profile add --accept-flake-config .#nimbus
 
       - name: Run flake checks
+        env:
+          NIMBUS_ENDPOINT: ${{ vars.NIMBUS_ENDPOINT }}
+          NIMBUS_AUTH_TOKEN: ${{ secrets.NIMBUS_AUTH_TOKEN }}
         run: |
           nimbus watch-exec kclejeune nix flake check \
             --system ${{ matrix.system }} \
