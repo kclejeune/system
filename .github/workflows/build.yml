@@ -53,4 +53,4 @@ jobs:
             --print-build-logs \
             --show-trace \
             --accept-flake-config \
-            -j auto
+            -j 2
