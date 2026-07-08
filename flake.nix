@@ -403,15 +403,15 @@
         # through perSystem's pkgs (which applies this overlay) and recurse.
         flake.overlays = {
           default = final: prev: {
-            determinate-nixd = inputs.determinate.packages.${prev.system}.default;
-            nix = inputs.determinate.inputs.nix.packages.${prev.system}.default;
-            stable = inputs.stable.legacyPackages.${prev.system};
+            determinate-nixd = inputs.determinate.packages.${prev.stdenv.hostPlatform.system}.default;
+            nix = inputs.determinate.inputs.nix.packages.${prev.stdenv.hostPlatform.system}.default;
+            stable = inputs.stable.legacyPackages.${prev.stdenv.hostPlatform.system};
 
             cb = final.callPackage ./pkgs/cb/package.nix {};
             fnox = final.callPackage ./pkgs/fnox/package.nix {};
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix {};
             weave = final.callPackage ./pkgs/weave/package.nix {};
-            nimbus = inputs.nimbus.packages.${prev.system}.nimbus;
+            nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
           };
         };
 
