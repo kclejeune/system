@@ -80,6 +80,9 @@ return {
         },
     },
     config = function(_, opts)
+        -- no jsonc grammar in nixpkgs; json5 is a superset (comments,
+        -- trailing commas) so it highlights jsonc fine
+        vim.treesitter.language.register("json5", "jsonc")
         vim.filetype.add({
             extension = {
                 gotmpl = "gotmpl",

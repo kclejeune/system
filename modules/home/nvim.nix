@@ -111,7 +111,83 @@ _: {
         in
         result;
 
-      nvim-treesitter = pkgs.vimPlugins.nvim-treesitter.withAllGrammars;
+      # Deliberately not withAllGrammars: each grammar ships an
+      # allowSubstitutes=false queries drv that CI rebuilds on every fresh
+      # store (~310 of them). Batteries-included set covering the LSP
+      # toolchains above, common config/doc formats, and nvim's required
+      # runtime grammars (c, lua, vim, vimdoc, query, markdown).
+      nvim-treesitter = pkgs.vimPlugins.nvim-treesitter.withPlugins (
+        p:
+        builtins.attrValues {
+          inherit (p)
+            angular
+            astro
+            awk
+            bash
+            bibtex
+            c
+            cmake
+            comment
+            cpp
+            css
+            csv
+            cue
+            diff
+            dockerfile
+            editorconfig
+            git_config
+            git_rebase
+            gitattributes
+            gitcommit
+            gitignore
+            go
+            gomod
+            gosum
+            gotmpl
+            gowork
+            graphql
+            hcl
+            helm
+            html
+            http
+            hyprlang
+            ini
+            java
+            javascript
+            jq
+            jsdoc
+            json
+            json5
+            latex
+            lua
+            luadoc
+            make
+            markdown
+            markdown_inline
+            mermaid
+            nix
+            proto
+            python
+            query
+            regex
+            ruby
+            rust
+            scss
+            sql
+            ssh_config
+            svelte
+            terraform
+            toml
+            tsx
+            typescript
+            vim
+            vimdoc
+            xml
+            yaml
+            zig
+            ;
+        }
+      );
       nvim-treesitter-grammars = pkgs.symlinkJoin {
         name = "nvim-treesitter-grammars";
         paths = nvim-treesitter.dependencies;

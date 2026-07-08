@@ -104,9 +104,19 @@
         imports = [
           inputs.home-manager.flakeModules.home-manager
           inputs.treefmt-nix.flakeModule
-          inputs.flake-parts.flakeModules.easyOverlay
           inputs.git-hooks.flakeModule
           (inputs.import-tree ./modules)
+          # `cacheable` is the CI build set (host toplevels, HM activation
+          # packages, devShells) transposed to `flake.cacheable.<system>` so
+          # nix-fast-build can target it without dragging it into `checks`.
+          (inputs.flake-parts.lib.mkTransposedPerSystemModule {
+            name = "cacheable";
+            option = lib.mkOption {
+              type = lib.types.lazyAttrsOf lib.types.package;
+              default = { };
+            };
+            file = ./flake.nix;
+          })
           # flake-parts doesn't declare flake.darwinModules upstream; declare
           # it here so files under modules/darwin/ can each contribute a
           # named entry that merges into the attrset. Same for flake.lib, which
@@ -372,13 +382,10 @@
                   modules = [
                     config.flake.homeModules.default
                     config.flake.homeModules.profile-personal
-                    (
-                      { pkgs, ... }:
-                      {
-                        nix.package = pkgs.nix;
-                        home = { inherit username homeDirectory; };
-                      }
-                    )
+                    ({ pkgs, ... }: {
+                      nix.package = pkgs.nix;
+                      home = { inherit username homeDirectory; };
+                    })
                   ];
                 };
               }
@@ -390,38 +397,54 @@
             ]
         );
 
+        # Self-contained: custom packages resolve through the overlay's own
+        # `final` fixpoint. Referencing self.packages here instead would loop
+        # through perSystem's pkgs (which applies this overlay) and recurse.
+        flake.overlays = {
+          default = final: prev: {
+            determinate-nixd = inputs.determinate.packages.${prev.stdenv.hostPlatform.system}.default;
+            nix = inputs.determinate.inputs.nix.packages.${prev.stdenv.hostPlatform.system}.default;
+            stable = inputs.stable.legacyPackages.${prev.stdenv.hostPlatform.system};
+
+            cb = final.callPackage ./pkgs/cb/package.nix { };
+            fnox = final.callPackage ./pkgs/fnox/package.nix { };
+            sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
+            weave = final.callPackage ./pkgs/weave/package.nix { };
+            nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
+          };
+        };
+
         perSystem =
           {
             config,
             pkgs,
             system,
+            self',
             ...
           }:
           let
-            filterSystem = lib.filterAttrs (_: drv: drv.pkgs.system == system);
+            filterSystem = lib.filterAttrs (_: drv: drv.pkgs.stdenv.hostPlatform.system == system);
           in
           {
             _module.args.pkgs = import inputs.nixpkgs {
               inherit system;
-              overlays = [ self.overlays.default ];
+              overlays = [
+                inputs.deploy-rs.overlays.default
+                self.overlays.default
+              ];
+            };
+
+            packages = {
+              inherit (pkgs)
+                cb
+                fnox
+                sem-cli
+                weave
+                nimbus
+                ;
             };
 
             legacyPackages = pkgs;
-
-            overlayAttrs = {
-              # deploy = inputs.deploy-rs.packages.${system}.default;
-              determinate-nixd = inputs.determinate.packages.${system}.default;
-              # nh = inputs.nh.packages.${system}.default;
-              nix = inputs.determinate.inputs.nix.packages.${system}.default;
-              stable = inputs.stable.legacyPackages.${system};
-
-              inherit (inputs.nimbus.packages.${system}) nimbus;
-
-              cb = pkgs.callPackage ./pkgs/cb/package.nix { };
-              fnox = pkgs.callPackage ./pkgs/fnox/package.nix { };
-              sem-cli = pkgs.callPackage ./pkgs/sem-cli/package.nix { };
-              weave = pkgs.callPackage ./pkgs/weave/package.nix { };
-            };
 
             devShells.default = pkgs.mkShell {
               packages =
@@ -432,12 +455,14 @@
                     ripgrep
                     uv
                     nh
+                    nix-fast-build
+                    nimbus
                     ;
+                  inherit (pkgs.deploy-rs) deploy-rs;
                 })
                 ++ config.pre-commit.settings.enabledPackages
                 ++ (lib.attrValues config.treefmt.build.programs)
-                ++ (lib.attrValues config.packages)
-                ++ [ inputs.deploy-rs.packages.${system}.default ];
+                ++ (lib.attrValues config.packages);
               shellHook = config.pre-commit.installationScript;
             };
 
@@ -448,7 +473,7 @@
               program = lib.getExe (
                 pkgs.writeShellApplication {
                   name = "deploy";
-                  runtimeInputs = [ inputs.deploy-rs.packages.${system}.default ];
+                  runtimeInputs = [ pkgs.deploy-rs.deploy-rs ];
                   text = ''
                     # deploy-rs's built-in pre-check runs a full `nix flake check`
                     # over the ENTIRE flake (every system + host) on each deploy
@@ -505,17 +530,18 @@
               };
             };
 
-            checks =
+            cacheable =
               (lib.mapAttrs' (name: cfg: lib.nameValuePair "${name}_home" cfg.activationPackage) (
                 filterSystem self.homeConfigurations
               ))
               // (lib.mapAttrs (_: cfg: cfg.config.system.build.toplevel) (
                 filterSystem (self.darwinConfigurations // self.nixosConfigurations)
               ))
-              # deploy-rs schema + activation checks (all nodes are x86_64-linux).
-              // (lib.optionalAttrs (system == "x86_64-linux") (
-                inputs.deploy-rs.lib.${system}.deployChecks self.deploy
-              ));
+              // self'.devShells;
+            # deploy-rs schema + activation checks; only wired on x86_64-linux
+            # since every deploy node is x86_64-linux and the activation check
+            # depends on building their toplevels.
+            checks = lib.optionalAttrs (system == "x86_64-linux") (pkgs.deploy-rs.lib.deployChecks self.deploy);
           };
       }
     );
