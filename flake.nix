@@ -91,14 +91,16 @@
     };
   };
 
-  outputs = inputs:
-    inputs.flake-parts.lib.mkFlake {inherit inputs;} (
+  outputs =
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } (
       {
         self,
         config,
         lib,
         ...
-      }: {
+      }:
+      {
         imports = [
           inputs.home-manager.flakeModules.home-manager
           inputs.treefmt-nix.flakeModule
@@ -111,7 +113,7 @@
             name = "cacheable";
             option = lib.mkOption {
               type = lib.types.lazyAttrsOf lib.types.package;
-              default = {};
+              default = { };
             };
             file = ./flake.nix;
           })
@@ -122,11 +124,11 @@
           {
             options.flake.darwinModules = lib.mkOption {
               type = lib.types.lazyAttrsOf lib.types.unspecified;
-              default = {};
+              default = { };
             };
             options.flake.lib = lib.mkOption {
               type = lib.types.lazyAttrsOf lib.types.unspecified;
-              default = {};
+              default = { };
             };
           }
         ];
@@ -162,7 +164,7 @@
               networking.hostName = "phil";
               # Host-level: pin phil's Hyprland panel/kanshi overlay. The
               # hardware module stays generic so any T460s could reuse it.
-              hm.imports = [config.flake.homeModules.hyprland-host-phil];
+              hm.imports = [ config.flake.homeModules.hyprland-host-phil ];
             }
           ];
         };
@@ -194,7 +196,7 @@
               networking.hostName = "wally";
               # Host-level: pin the precision-5570 + home Dell U2718Q panel
               # / kanshi / workspace overlay. Hardware module stays generic.
-              hm.imports = [config.flake.homeModules.displays-5570-home];
+              hm.imports = [ config.flake.homeModules.displays-5570-home ];
             }
           ];
         };
@@ -307,22 +309,23 @@
         # kclejeune user and let deploy-rs activate as root via passwordless
         # sudo. All five are x86_64-linux. Deploy with `deploy '.#<host>'`, or
         # `deploy '.#haven' --hostname <ip>` to override the address.
-        flake.deploy.nodes = let
-          # hostname == attr name; bare names resolve via tailscale MagicDNS /
-          # the LAN search domain. Override per deploy with `--hostname`.
-          mkNode = subdomain: host: {
-            hostname = "${host}.${subdomain}";
-            sshUser = "kclejeune";
-            user = "root";
-            sshOpts = [
-              "-o"
-              "StrictHostKeyChecking=accept-new"
-            ];
-            profiles.system.path =
-              inputs.deploy-rs.lib.x86_64-linux.activate.nixos
-              config.flake.nixosConfigurations.${host};
-          };
-        in
+        flake.deploy.nodes =
+          let
+            # hostname == attr name; bare names resolve via tailscale MagicDNS /
+            # the LAN search domain. Override per deploy with `--hostname`.
+            mkNode = subdomain: host: {
+              hostname = "${host}.${subdomain}";
+              sshUser = "kclejeune";
+              user = "root";
+              sshOpts = [
+                "-o"
+                "StrictHostKeyChecking=accept-new"
+              ];
+              profiles.system.path =
+                inputs.deploy-rs.lib.x86_64-linux.activate.nixos
+                  config.flake.nixosConfigurations.${host};
+            };
+          in
           lib.genAttrs [
             "gateway"
             "haven"
@@ -349,53 +352,49 @@
                 config.flake.darwinModules.apps
               ];
             };
-          }) ["aarch64-darwin"]
+          }) [ "aarch64-darwin" ]
         );
 
         flake.homeConfigurations = lib.mergeAttrsList (
           lib.map
-          (
-            system: let
-              isDarwin = lib.hasSuffix "darwin" system;
-              username = "kclejeune";
-              homeDirectory = "${
-                if isDarwin
-                then "/Users"
-                else "/home"
-              }/${username}";
-            in {
-              "kclejeune@${system}" = inputs.home-manager.lib.homeManagerConfiguration {
-                pkgs = import inputs.nixpkgs {
-                  inherit system;
-                  config = {
-                    allowUnsupportedSystem = true;
-                    allowUnfree = true;
-                    allowBroken = false;
+            (
+              system:
+              let
+                isDarwin = lib.hasSuffix "darwin" system;
+                username = "kclejeune";
+                homeDirectory = "${if isDarwin then "/Users" else "/home"}/${username}";
+              in
+              {
+                "kclejeune@${system}" = inputs.home-manager.lib.homeManagerConfiguration {
+                  pkgs = import inputs.nixpkgs {
+                    inherit system;
+                    config = {
+                      allowUnsupportedSystem = true;
+                      allowUnfree = true;
+                      allowBroken = false;
+                    };
+                    overlays = [ self.overlays.default ];
                   };
-                  overlays = [self.overlays.default];
-                };
-                extraSpecialArgs = {
-                  inherit self inputs;
-                  nixpkgs = inputs.nixpkgs;
-                };
-                modules = [
-                  config.flake.homeModules.default
-                  config.flake.homeModules.profile-personal
-                  (
-                    {pkgs, ...}: {
+                  extraSpecialArgs = {
+                    inherit self inputs;
+                    nixpkgs = inputs.nixpkgs;
+                  };
+                  modules = [
+                    config.flake.homeModules.default
+                    config.flake.homeModules.profile-personal
+                    ({ pkgs, ... }: {
                       nix.package = pkgs.nix;
-                      home = {inherit username homeDirectory;};
-                    }
-                  )
-                ];
-              };
-            }
-          )
-          [
-            "x86_64-linux"
-            "aarch64-linux"
-            "aarch64-darwin"
-          ]
+                      home = { inherit username homeDirectory; };
+                    })
+                  ];
+                };
+              }
+            )
+            [
+              "x86_64-linux"
+              "aarch64-linux"
+              "aarch64-darwin"
+            ]
         );
 
         # Self-contained: custom packages resolve through the overlay's own
@@ -407,142 +406,143 @@
             nix = inputs.determinate.inputs.nix.packages.${prev.stdenv.hostPlatform.system}.default;
             stable = inputs.stable.legacyPackages.${prev.stdenv.hostPlatform.system};
 
-            cb = final.callPackage ./pkgs/cb/package.nix {};
-            fnox = final.callPackage ./pkgs/fnox/package.nix {};
-            sem-cli = final.callPackage ./pkgs/sem-cli/package.nix {};
-            weave = final.callPackage ./pkgs/weave/package.nix {};
+            cb = final.callPackage ./pkgs/cb/package.nix { };
+            fnox = final.callPackage ./pkgs/fnox/package.nix { };
+            sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
+            weave = final.callPackage ./pkgs/weave/package.nix { };
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
           };
         };
 
-        perSystem = {
-          config,
-          pkgs,
-          system,
-          self',
-          ...
-        }: let
-          filterSystem = lib.filterAttrs (_: drv: drv.pkgs.stdenv.hostPlatform.system == system);
-        in {
-          _module.args.pkgs = import inputs.nixpkgs {
-            inherit system;
-            overlays = [
-              inputs.deploy-rs.overlays.default
-              self.overlays.default
-            ];
-          };
+        perSystem =
+          {
+            config,
+            pkgs,
+            system,
+            self',
+            ...
+          }:
+          let
+            filterSystem = lib.filterAttrs (_: drv: drv.pkgs.stdenv.hostPlatform.system == system);
+          in
+          {
+            _module.args.pkgs = import inputs.nixpkgs {
+              inherit system;
+              overlays = [
+                inputs.deploy-rs.overlays.default
+                self.overlays.default
+              ];
+            };
 
-          packages = {
-            inherit
-              (pkgs)
-              cb
-              fnox
-              sem-cli
-              weave
-              nimbus
-              ;
-          };
+            packages = {
+              inherit (pkgs)
+                cb
+                fnox
+                sem-cli
+                weave
+                nimbus
+                ;
+            };
 
-          legacyPackages = pkgs;
+            legacyPackages = pkgs;
 
-          devShells.default = pkgs.mkShell {
-            packages =
-              (builtins.attrValues {
-                inherit
-                  (pkgs)
-                  bashInteractive
-                  fd
-                  ripgrep
-                  uv
-                  nh
-                  nix-fast-build
-                  nimbus
-                  ;
-                inherit (pkgs.deploy-rs) deploy-rs;
-              })
-              ++ config.pre-commit.settings.enabledPackages
-              ++ (lib.attrValues config.treefmt.build.programs)
-              ++ (lib.attrValues config.packages);
-            shellHook = config.pre-commit.installationScript;
-          };
+            devShells.default = pkgs.mkShell {
+              packages =
+                (builtins.attrValues {
+                  inherit (pkgs)
+                    bashInteractive
+                    fd
+                    ripgrep
+                    uv
+                    nh
+                    nix-fast-build
+                    nimbus
+                    ;
+                  inherit (pkgs.deploy-rs) deploy-rs;
+                })
+                ++ config.pre-commit.settings.enabledPackages
+                ++ (lib.attrValues config.treefmt.build.programs)
+                ++ (lib.attrValues config.packages);
+              shellHook = config.pre-commit.installationScript;
+            };
 
-          # `nix run .#deploy` with no args deploys every node; pass targets
-          # to scope it, e.g. `nix run .#deploy -- '.#forge'`.
-          apps.deploy = {
-            type = "app";
-            program = lib.getExe (
-              pkgs.writeShellApplication {
-                name = "deploy";
-                runtimeInputs = [pkgs.deploy-rs.deploy-rs];
-                text = ''
-                  # deploy-rs's built-in pre-check runs a full `nix flake check`
-                  # over the ENTIRE flake (every system + host) on each deploy
-                  # — slow, unscoped, and it hides deploy progress until it
-                  # finishes. Skip it here (deploy-rs still builds each node's
-                  # profile, so what's deployed is validated); run `nix flake
-                  # check`, or plain `deploy` from `nix develop`, for the full
-                  # gate.
-                  # Default to all nodes in this flake when no target is given.
-                  if [ "$#" -eq 0 ]; then set -- "."; fi
-                  exec deploy --skip-checks "$@"
-                '';
-              }
-            );
-          };
+            # `nix run .#deploy` with no args deploys every node; pass targets
+            # to scope it, e.g. `nix run .#deploy -- '.#forge'`.
+            apps.deploy = {
+              type = "app";
+              program = lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "deploy";
+                  runtimeInputs = [ pkgs.deploy-rs.deploy-rs ];
+                  text = ''
+                    # deploy-rs's built-in pre-check runs a full `nix flake check`
+                    # over the ENTIRE flake (every system + host) on each deploy
+                    # — slow, unscoped, and it hides deploy progress until it
+                    # finishes. Skip it here (deploy-rs still builds each node's
+                    # profile, so what's deployed is validated); run `nix flake
+                    # check`, or plain `deploy` from `nix develop`, for the full
+                    # gate.
+                    # Default to all nodes in this flake when no target is given.
+                    if [ "$#" -eq 0 ]; then set -- "."; fi
+                    exec deploy --skip-checks "$@"
+                  '';
+                }
+              );
+            };
 
-          treefmt = {
-            programs = {
-              deadnix = {
-                enable = true;
-                no-lambda-arg = true;
-                no-lambda-pattern-names = true;
+            treefmt = {
+              programs = {
+                deadnix = {
+                  enable = true;
+                  no-lambda-arg = true;
+                  no-lambda-pattern-names = true;
+                };
+                nixfmt.enable = true;
+                oxfmt.enable = true;
+                ruff-check.enable = true;
+                ruff-format.enable = true;
+                shellcheck.enable = true;
+                shfmt.enable = true;
+                stylua.enable = true;
               };
-              nixfmt.enable = true;
-              oxfmt.enable = true;
-              ruff-check.enable = true;
-              ruff-format.enable = true;
-              shellcheck.enable = true;
-              shfmt.enable = true;
-              stylua.enable = true;
+
+              settings.excludes = [
+                ".envrc"
+                ".env"
+                ".vscode/*.json"
+                "**/Spoons/**/*.json"
+                "**/zed/**/*.json"
+              ];
+              settings.on-unmatched = "info";
+              settings.formatter.ruff-check.options = [
+                # sort imports
+                "--extend-select"
+                "I"
+              ];
             };
 
-            settings.excludes = [
-              ".envrc"
-              ".env"
-              ".vscode/*.json"
-              "**/Spoons/**/*.json"
-              "**/zed/**/*.json"
-            ];
-            settings.on-unmatched = "info";
-            settings.formatter.ruff-check.options = [
-              # sort imports
-              "--extend-select"
-              "I"
-            ];
-          };
-
-          pre-commit = {
-            settings.package = pkgs.prek;
-            settings.hooks.treefmt = {
-              enable = true;
-              pass_filenames = false;
-              settings.no-cache = false;
+            pre-commit = {
+              settings.package = pkgs.prek;
+              settings.hooks.treefmt = {
+                enable = true;
+                pass_filenames = false;
+                settings.no-cache = false;
+              };
             };
-          };
 
-          cacheable =
-            (lib.mapAttrs' (name: cfg: lib.nameValuePair "${name}_home" cfg.activationPackage) (
-              filterSystem self.homeConfigurations
-            ))
-            // (lib.mapAttrs (_: cfg: cfg.config.system.build.toplevel) (
-              filterSystem (self.darwinConfigurations // self.nixosConfigurations)
-            ))
-            // self'.devShells;
-          # deploy-rs schema + activation checks; only wired on x86_64-linux
-          # since every deploy node is x86_64-linux and the activation check
-          # depends on building their toplevels.
-          checks = lib.optionalAttrs (system == "x86_64-linux") (pkgs.deploy-rs.lib.deployChecks self.deploy);
-        };
+            cacheable =
+              (lib.mapAttrs' (name: cfg: lib.nameValuePair "${name}_home" cfg.activationPackage) (
+                filterSystem self.homeConfigurations
+              ))
+              // (lib.mapAttrs (_: cfg: cfg.config.system.build.toplevel) (
+                filterSystem (self.darwinConfigurations // self.nixosConfigurations)
+              ))
+              // self'.devShells;
+            # deploy-rs schema + activation checks; only wired on x86_64-linux
+            # since every deploy node is x86_64-linux and the activation check
+            # depends on building their toplevels.
+            checks = lib.optionalAttrs (system == "x86_64-linux") (pkgs.deploy-rs.lib.deployChecks self.deploy);
+          };
       }
     );
 }
