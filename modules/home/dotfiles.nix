@@ -27,6 +27,16 @@ _: {
             source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/raycast";
             target = ".local/bin/raycast";
           };
+          # Out-of-store so Claude Code can write through the symlink
+          # (plugin toggles, /config, hookify) and edits land in the repo.
+          "claude-settings" = {
+            source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/claude/settings.json";
+            target = ".claude/settings.json";
+          };
+          "claude-md" = {
+            source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/claude/CLAUDE.md";
+            target = ".claude/CLAUDE.md";
+          };
           zfunc = {
             source = ./assets/dotfiles/zfunc;
             target = ".zfunc";

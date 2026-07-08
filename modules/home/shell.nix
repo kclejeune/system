@@ -14,9 +14,6 @@ _: {
         if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init ${shell})"; fi
       '';
 
-      slinkyInstall = shell: ''
-        if command -v slinky >/dev/null 2>&1; then eval "$(command slinky config hook ${shell})"; fi
-      '';
       onNixos = osConfig != null && pkgs.stdenvNoCC.hostPlatform.isLinux;
       ageKey = "${config.xdg.configHome}/sops/age/keys.txt";
     in
@@ -123,7 +120,6 @@ _: {
           setopt CHASE_LINKS
           setopt CHASE_DOTS
           ${wtInstall "zsh"}
-          # ${slinkyInstall "zsh"}
         '';
         oh-my-zsh = {
           enable = true;
@@ -171,7 +167,6 @@ _: {
         initExtra = ''
           eval "$(mise activate bash)"
           ${wtInstall "bash"}
-          # ${slinkyInstall "bash"}
         '';
       };
     };

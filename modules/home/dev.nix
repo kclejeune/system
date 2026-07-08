@@ -23,9 +23,7 @@ _: {
           cacert
           cachix
           cb
-          clang
           claude-code
-          cmake
           codespell
           codex
           coreutils-full
