@@ -126,15 +126,23 @@ _: {
             bash
             bibtex
             c
+            caddy
             cmake
             comment
             cpp
             css
             csv
             cue
+            dhall
             diff
             dockerfile
+            doxygen
+            earthfile
             editorconfig
+            eex
+            elixir
+            erlang
+            fennel
             git_config
             git_rebase
             gitattributes
@@ -146,45 +154,71 @@ _: {
             gotmpl
             gowork
             graphql
+            groovy
             hcl
+            heex
             helm
             html
             http
             hyprlang
             ini
             java
+            javadoc
             javascript
+            jinja
+            jinja_inline
             jq
             jsdoc
             json
             json5
+            just
+            kotlin
             latex
+            llvm
             lua
             luadoc
+            luap
             make
             markdown
             markdown_inline
             mermaid
+            meson
+            nginx
+            nickel
+            ninja
             nix
+            passwd
+            pem
+            perl
+            printf
+            promql
             proto
             python
             query
             regex
+            requirements
             ruby
             rust
             scss
+            sparql
             sql
             ssh_config
             svelte
+            tera
             terraform
+            tmux
             toml
             tsx
             typescript
+            typst
+            udev
             vim
             vimdoc
+            vue
             xml
             yaml
             zig
+            zsh
             ;
         }
       );
