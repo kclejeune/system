@@ -376,6 +376,10 @@ in
                 claims_policy = "nimbus";
                 redirect_uris = [
                   "https://app.cache.kclj.io/api/auth/oauth2/callback/oidc"
+                  # Local nimbus dev (`vite dev` with OIDC_* in .dev.vars).
+                  # Authelia only requires redirect URIs to be absolute, so
+                  # loopback http is fine on a confidential client.
+                  "http://localhost:5173/api/auth/oauth2/callback/oidc"
                 ];
                 scopes = [
                   "openid"
