@@ -41,7 +41,7 @@ _: {
           "github.com/mholt/caddy-ratelimit@v0.1.0"
           "github.com/mholt/caddy-l4@v0.1.1"
         ];
-        hash = "sha256-15NibrL5VXWrNj+PQH8md3ronxNo+B4v817LW/XdUy4=";
+        hash = "sha256-3YNjsWjbwtcj4qIHnZPHbmLtszPvX6ggvH28m+TieBo=";
       };
 
       # Shared per-vhost TLS block: DNS-01 via Cloudflare. This LAN intercepts
