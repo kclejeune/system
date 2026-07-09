@@ -178,6 +178,13 @@ in
           # Generate with `openssl rand -hex 32`.
           "crowdsec/bouncer_key" = { };
           "proxmox/oidc_client_secret" = { };
+          # Plaintext OIDC client secret for the nimbus worker
+          # (app.cache.kclj.io) — nothing on this host consumes it; the sops
+          # file is its system of record. Feed it to the worker with
+          # `sops -d --extract '["nimbus"]["oidc_client_secret"]'
+          # secrets/gateway.yaml | wrangler secret put OIDC_CLIENT_SECRET`.
+          # Authelia keeps only the pbkdf2 hash in the client config below.
+          "nimbus/oidc_client_secret" = { };
         };
       };
 
@@ -302,6 +309,12 @@ in
               "name"
               "preferred_username"
             ];
+            claims_policies.nimbus.id_token = [
+              "email"
+              "email_verified"
+              "name"
+              "preferred_username"
+            ];
             # Incus LTS has no per-user authorization — any authenticated OIDC
             # identity is a full admin — so the ONLY access gate is here:
             # restrict the `incus` client to members of lldap_admin. kclejeune
@@ -342,6 +355,34 @@ in
                   "email"
                 ];
                 token_endpoint_auth_method = "client_secret_basic";
+                require_pkce = true;
+                pkce_challenge_method = "S256";
+              }
+              {
+                # Nimbus web app (Cloudflare Worker Nix binary cache) at
+                # app.cache.kclj.io. Uses better-auth's genericOAuth plugin
+                # (providerId "oidc"), which sends client credentials in the
+                # token-request body — hence client_secret_post — and whose
+                # callback is the fixed /api/auth/oauth2/callback/<providerId>
+                # path. Plaintext secret lives in sops at
+                # nimbus/oidc_client_secret (see the sops.secrets comment for
+                # how to push it to the worker); Authelia keeps only the
+                # pbkdf2 hash below.
+                client_id = "nimbus";
+                client_name = "Nimbus";
+                client_secret = "$pbkdf2-sha512$310000$wvfEcQQoFVxjnfA8Hch69A$VqUp/2iWKwIiyObavoOZxE0/T/juTtR7X4LZZ0Arm73435hrr7zdLs1g/5m78n9EbCOnxgN9mUBTZjEFJFlJGw";
+                authorization_policy = "two_factor";
+                consent_mode = "implicit";
+                claims_policy = "nimbus";
+                redirect_uris = [
+                  "https://app.cache.kclj.io/api/auth/oauth2/callback/oidc"
+                ];
+                scopes = [
+                  "openid"
+                  "profile"
+                  "email"
+                ];
+                token_endpoint_auth_method = "client_secret_post";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
               }
