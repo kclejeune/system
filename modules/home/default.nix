@@ -20,7 +20,6 @@ in
         flakeCfg.flake.homeModules.clipboard
         flakeCfg.flake.homeModules.desktop-flag
         flakeCfg.flake.homeModules.dev
-        flakeCfg.flake.homeModules.dev-interactive
         flakeCfg.flake.homeModules.direnv
         flakeCfg.flake.homeModules.dotfiles
         flakeCfg.flake.homeModules.email
@@ -37,10 +36,8 @@ in
         flakeCfg.flake.homeModules.nixpkgs
       ];
 
-      # Package lists live in `homeModules.dev` (always-on) and
-      # `homeModules.dev-interactive` (desktop-only, gated on
-      # `desktop.enable`). Imports above pull both in; only the
-      # interactive set's body is no-op'd on headless hosts.
+      # Package lists live in `homeModules.dev` (always-on, imported
+      # above).
       home.stateVersion = "26.05";
 
       fonts.fontconfig.enable = true;

@@ -6,8 +6,7 @@ _: {
       # `nixosModules.desktop-base` (Linux GUI hosts) and `darwinModules.default`
       # (all darwin hosts), defaults to false elsewhere — so the headless
       # `gateway` evaluates with desktop.enable = false and skips kitty /
-      # ghostty / vicinae / zed dotfiles and the heavy dev-interactive
-      # package set.
+      # ghostty / vicinae / zed dotfiles.
       options.desktop.enable = lib.mkEnableOption "desktop-mode home-manager";
     };
 }
