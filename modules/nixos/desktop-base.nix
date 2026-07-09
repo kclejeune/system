@@ -22,6 +22,7 @@ in
 
       services.libinput.enable = true;
       services.printing.enable = true;
+      services.netbird.clients.default.autoStart = false;
 
       # -- Timezone --
       # automatic-timezoned + GeoClue flaps because beacondb doesn't know
