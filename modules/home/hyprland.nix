@@ -837,6 +837,7 @@ in
       };
 
       home.pointerCursor = {
+        enable = true;
         gtk.enable = true;
         name = theme.gtk.cursorName;
         package = pkgs.catppuccin-cursors.mochaDark;
