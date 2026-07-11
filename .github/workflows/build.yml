@@ -69,10 +69,19 @@ jobs:
       # binary cache. Write nix-cache-info so the substituter queries Nix makes
       # during install/build resolve cleanly on the cold run; `nix copy` fills
       # in the actual NARs afterwards. No-op once the volume is warm.
+      #
+      # nar/ must exist (runner-owned) BEFORE the daemon starts: opening a
+      # file:// store — even read-only as a substituter — mkdirs nar/ if it's
+      # missing, and the daemon runs as root, leaving a root-owned nar/ the
+      # later runner-level `nix copy` can't write into (Permission denied on
+      # .nar.zst.tmp files). The chown also heals a volume already poisoned
+      # by a root-owned nar/ from a previous run.
       - name: Initialize local nix cache
         if: runner.os == 'macOS'
         run: |
-          mkdir -p "$HOME/nix-cache"
+          mkdir -p "$HOME/nix-cache/nar" 2>/dev/null \
+            || sudo mkdir -p "$HOME/nix-cache/nar"
+          sudo chown -R "$(id -u):$(id -g)" "$HOME/nix-cache"
           if [ ! -f "$HOME/nix-cache/nix-cache-info" ]; then
             printf 'StoreDir: /nix/store\nWantMassQuery: 1\nPriority: 10\n' \
               > "$HOME/nix-cache/nix-cache-info"
