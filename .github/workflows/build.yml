@@ -20,11 +20,11 @@ jobs:
       matrix:
         include:
           - system: x86_64-linux
-            runner: namespace-profile-default
+            runner: namespace-profile-linux-amd64
             eval-workers: 1
             eval-max-memory: 8192
           - system: aarch64-linux
-            runner: namespace-profile-default-arm64
+            runner: namespace-profile-linux-arm64
             eval-workers: 2
             eval-max-memory: 4096
           - system: aarch64-darwin
@@ -33,6 +33,26 @@ jobs:
             eval-max-memory: 4096
     steps:
       - uses: actions/checkout@v7
+
+      # Persist /nix (store + user cache) on a Namespace cache volume. Must run
+      # after checkout (which wipes the workspace) and before the Nix installer.
+      - name: Mount /nix cache volume
+        uses: namespacelabs/nscloud-cache-action@v1
+        with:
+          cache: nix
+
+      # On a warm cache the previous run's /nix/receipt.json survives inside the
+      # volume, which makes nix-installer-action skip installation entirely —
+      # but the daemon, /etc/nix, and build users don't exist on a fresh runner.
+      # Drop the stale receipt so the installer runs for real; it handles a
+      # pre-populated /nix/store. Keep the receipt when nix actually works
+      # (e.g. an image with Nix preinstalled), matching the action's own check.
+      - name: Remove stale nix-installer receipt
+        run: |
+          if [ -f /nix/receipt.json ] && ! nix --version >/dev/null 2>&1; then
+            echo "stale receipt found on cache volume; removing"
+            sudo rm -f /nix/receipt.json
+          fi
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v22
