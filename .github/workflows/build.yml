@@ -21,12 +21,13 @@ jobs:
         include:
           - system: x86_64-linux
             runner: namespace-profile-linux-amd64
-            # 9 cacheable attrs (7 nixos toplevels + home + devshell) on a 4-core
-            # box: evaluate them in parallel. Workers are memory-bound, not
-            # core-bound — at 8192 MB only one fit in 8 GB, forcing serial eval.
-            # 2 workers x 3500 MB peaks ~7 GB, staying under the machine's 8 GB.
-            eval-workers: 2
-            eval-max-memory: 3500
+            # Single worker: the ~9 cacheable attrs share a dominant single-
+            # threaded base eval (nixpkgs import + module fixpoint) that doesn't
+            # divide across workers — 2 workers measured the same wall time and
+            # only added `eval-cache … is busy` SQLite contention. Real intra-eval
+            # parallelism needs `eval-cores`, which nix-eval-jobs 2.34.3 rejects.
+            eval-workers: 1
+            eval-max-memory: 8192
             # Linux persists the whole /nix store on the volume, so it needs no
             # extra local substituter.
             local-substituter: ""
