@@ -42,28 +42,36 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Persist /nix (store + user cache) on a Namespace cache volume. Must run
-      # after checkout (which wipes the workspace) and before the Nix installer.
-      # Linux only: the mode's symlink mount can't create /nix on macOS's
-      # sealed root (that requires synthetic.conf + reboot).
-      - name: Mount /nix cache volume
+      # Persist the Nix eval / narinfo / fetcher caches (~/.cache/nix) on EVERY
+      # platform, and mount them BEFORE the installer runs. These live in $HOME,
+      # not /nix, so they survive reinstalling Nix each run. Mounting them as
+      # their own volume path — decoupled from the store mounts below — means the
+      # large store persistence can be dropped or GC'd without also throwing away
+      # the eval cache.
+      - name: Mount nix user cache
+        uses: namespacelabs/nscloud-cache-action@v1
+        with:
+          path: ~/.cache/nix
+
+      # Linux: persist the whole /nix store on the volume (bind-mounted before the
+      # installer, which then populates it). Kept separate from the user cache so
+      # the two can be managed independently.
+      - name: Mount /nix store
         if: runner.os == 'Linux'
         uses: namespacelabs/nscloud-cache-action@v1
         with:
-          cache: nix
+          path: /nix
 
-      # macOS can't persist the store itself, so persist two writable dirs the
-      # cache volume CAN link over: the flake eval cache (~/.cache/nix) and a
-      # file:// binary cache (~/nix-cache) we populate after each build. On warm
-      # runs the closure is served from local NVMe instead of re-substituted
-      # over the network — the darwin equivalent of the Linux /nix mount.
-      - name: Mount nix caches
+      # macOS can't mount the volume over the sealed-root /nix (that needs
+      # synthetic.conf + reboot), so keep a file:// binary cache on the volume
+      # instead and populate it after each build. On warm runs the closure is
+      # served from local NVMe rather than re-substituted over the network — the
+      # darwin equivalent of the Linux /nix mount.
+      - name: Mount macOS nix binary cache
         if: runner.os == 'macOS'
         uses: namespacelabs/nscloud-cache-action@v1
         with:
-          path: |
-            ~/.cache/nix
-            ~/nix-cache
+          path: ~/nix-cache
 
       # A freshly-mounted ~/nix-cache is an empty dir, which is not yet a valid
       # binary cache. Write nix-cache-info so the substituter queries Nix makes
