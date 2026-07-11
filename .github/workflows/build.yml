@@ -21,15 +21,13 @@ jobs:
         include:
           - system: x86_64-linux
             runner: namespace-profile-linux-amd64
-            # Single worker: the ~9 cacheable attrs share a dominant single-
-            # threaded base eval (nixpkgs import + module fixpoint) that doesn't
-            # divide across workers — 2 workers measured the same wall time and
-            # only added `eval-cache … is busy` SQLite contention. Real intra-eval
-            # parallelism needs `eval-cores`, which nix-eval-jobs 2.34.3 rejects.
+            # Single worker: the cacheable attrs share one dominant single-
+            # threaded base eval, so extra workers duplicate it (measured no
+            # speedup) and contend on the eval-cache sqlite. Splitting it needs
+            # eval-cores, which nix-eval-jobs 2.34.3 rejects.
             eval-workers: 1
             eval-max-memory: 8192
-            # Linux persists the whole /nix store on the volume, so it needs no
-            # extra local substituter.
+            # Linux persists the whole store, so no local substituter is needed.
             local-substituter: ""
           - system: aarch64-linux
             runner: namespace-profile-linux-arm64
@@ -40,55 +38,43 @@ jobs:
             runner: namespace-profile-darwin-aarch64
             eval-workers: 3
             eval-max-memory: 4096
-            # macOS can't mount the cache volume over the sealed-root /nix, so
-            # instead we keep a file:// binary cache on the volume and prefer it
-            # (low priority number = higher priority) over the network caches.
+            # macOS can't mount the volume over the sealed-root /nix, so prefer a
+            # file:// cache on the volume ahead of the network caches instead.
             local-substituter: "file:///Users/runner/nix-cache?trusted=1&priority=10"
     steps:
       - uses: actions/checkout@v7
 
-      # Persist the Nix eval / narinfo / fetcher caches (~/.cache/nix) on EVERY
-      # platform, and mount them BEFORE the installer runs. These live in $HOME,
-      # not /nix, so they survive reinstalling Nix each run. Mounting them as
-      # their own volume path — decoupled from the store mounts below — means the
-      # large store persistence can be dropped or GC'd without also throwing away
-      # the eval cache.
+      # Persist the eval / narinfo / fetcher caches (~/.cache/nix) on every
+      # platform. They live in $HOME, so they survive reinstalling Nix, and
+      # keeping them a separate mount from the store means the store can later
+      # be dropped or GC'd without losing them.
       - name: Mount nix user cache
         uses: namespacelabs/nscloud-cache-action@v1
         with:
           path: ~/.cache/nix
 
-      # Linux: persist the whole /nix store on the volume (bind-mounted before the
-      # installer, which then populates it). Kept separate from the user cache so
-      # the two can be managed independently.
+      # Linux persists the whole /nix store, kept separate from the user cache
+      # above so the two can be managed independently.
       - name: Mount /nix store
         if: runner.os == 'Linux'
         uses: namespacelabs/nscloud-cache-action@v1
         with:
           path: /nix
 
-      # macOS can't mount the volume over the sealed-root /nix (that needs
-      # synthetic.conf + reboot), so keep a file:// binary cache on the volume
-      # instead and populate it after each build. On warm runs the closure is
-      # served from local NVMe rather than re-substituted over the network — the
-      # darwin equivalent of the Linux /nix mount.
+      # macOS can't mount the volume over the sealed-root /nix, so keep a file://
+      # binary cache on the volume and populate it after each build — the darwin
+      # equivalent of the Linux /nix mount, served from local NVMe on warm runs.
       - name: Mount macOS nix binary cache
         if: runner.os == 'macOS'
         uses: namespacelabs/nscloud-cache-action@v1
         with:
           path: ~/nix-cache
 
-      # A freshly-mounted ~/nix-cache is an empty dir, which is not yet a valid
-      # binary cache. Write nix-cache-info so the substituter queries Nix makes
-      # during install/build resolve cleanly on the cold run; `nix copy` fills
-      # in the actual NARs afterwards. No-op once the volume is warm.
-      #
-      # nar/ must exist (runner-owned) BEFORE the daemon starts: opening a
-      # file:// store — even read-only as a substituter — mkdirs nar/ if it's
-      # missing, and the daemon runs as root, leaving a root-owned nar/ the
-      # later runner-level `nix copy` can't write into (Permission denied on
-      # .nar.zst.tmp files). The chown also heals a volume already poisoned
-      # by a root-owned nar/ from a previous run.
+      # Make ~/nix-cache a valid (empty) binary cache before Nix reads it. nar/
+      # must exist runner-owned before Install Nix: the root daemon opens the
+      # store as a substituter and would otherwise create nar/ root-owned, which
+      # the later runner-level `nix copy` can't write. chown also heals a volume
+      # left root-owned by an earlier run.
       - name: Initialize local nix cache
         if: runner.os == 'macOS'
         run: |
@@ -100,12 +86,10 @@ jobs:
               > "$HOME/nix-cache/nix-cache-info"
           fi
 
-      # On a warm cache the previous run's /nix/receipt.json survives inside the
-      # volume, which makes nix-installer-action skip installation entirely —
-      # but the daemon, /etc/nix, and build users don't exist on a fresh runner.
-      # Drop the stale receipt so the installer runs for real; it handles a
-      # pre-populated /nix/store. Keep the receipt when nix actually works
-      # (e.g. an image with Nix preinstalled), matching the action's own check.
+      # A warm volume carries the previous run's /nix/receipt.json, which makes
+      # the installer skip install — but a fresh runner has no daemon, config, or
+      # build users. Drop the receipt unless nix actually works, so the installer
+      # runs for real over the pre-populated store.
       - name: Remove stale nix-installer receipt
         if: runner.os == 'Linux'
         run: |
@@ -142,10 +126,8 @@ jobs:
             --eval-workers ${{ matrix.eval-workers }} \
             --eval-max-memory-size ${{ matrix.eval-max-memory }} \
 
-      # Seed the file:// cache on the volume with everything now in the store.
-      # `nix copy` is incremental (it skips paths already in the target), so the
+      # Seed the file:// cache with the store. `nix copy` is incremental, so the
       # first run copies the full closure and later runs only add new paths.
-      # zstd keeps the CPU cost down vs the default xz.
       - name: Populate local nix cache
         if: runner.os == 'macOS'
         run: |
