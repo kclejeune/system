@@ -36,10 +36,21 @@ jobs:
 
       # Persist /nix (store + user cache) on a Namespace cache volume. Must run
       # after checkout (which wipes the workspace) and before the Nix installer.
+      # Linux only: the mode's symlink mount can't create /nix on macOS's
+      # sealed root (that requires synthetic.conf + reboot).
       - name: Mount /nix cache volume
+        if: runner.os == 'Linux'
         uses: namespacelabs/nscloud-cache-action@v1
         with:
           cache: nix
+
+      # macOS can't persist the store, but the flake eval cache lives in a
+      # writable location the cache volume can link over.
+      - name: Mount nix eval cache volume
+        if: runner.os == 'macOS'
+        uses: namespacelabs/nscloud-cache-action@v1
+        with:
+          path: ~/.cache/nix
 
       # On a warm cache the previous run's /nix/receipt.json survives inside the
       # volume, which makes nix-installer-action skip installation entirely —
@@ -48,6 +59,7 @@ jobs:
       # pre-populated /nix/store. Keep the receipt when nix actually works
       # (e.g. an image with Nix preinstalled), matching the action's own check.
       - name: Remove stale nix-installer receipt
+        if: runner.os == 'Linux'
         run: |
           if [ -f /nix/receipt.json ] && ! nix --version >/dev/null 2>&1; then
             echo "stale receipt found on cache volume; removing"
