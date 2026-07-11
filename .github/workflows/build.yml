@@ -23,14 +23,22 @@ jobs:
             runner: namespace-profile-linux-amd64
             eval-workers: 1
             eval-max-memory: 8192
+            # Linux persists the whole /nix store on the volume, so it needs no
+            # extra local substituter.
+            local-substituter: ""
           - system: aarch64-linux
             runner: namespace-profile-linux-arm64
             eval-workers: 2
             eval-max-memory: 4096
+            local-substituter: ""
           - system: aarch64-darwin
             runner: namespace-profile-darwin-aarch64
             eval-workers: 3
             eval-max-memory: 4096
+            # macOS can't mount the cache volume over the sealed-root /nix, so
+            # instead we keep a file:// binary cache on the volume and prefer it
+            # (low priority number = higher priority) over the network caches.
+            local-substituter: "file:///Users/runner/nix-cache?trusted=1&priority=10"
     steps:
       - uses: actions/checkout@v7
 
@@ -44,13 +52,31 @@ jobs:
         with:
           cache: nix
 
-      # macOS can't persist the store, but the flake eval cache lives in a
-      # writable location the cache volume can link over.
-      - name: Mount nix eval cache volume
+      # macOS can't persist the store itself, so persist two writable dirs the
+      # cache volume CAN link over: the flake eval cache (~/.cache/nix) and a
+      # file:// binary cache (~/nix-cache) we populate after each build. On warm
+      # runs the closure is served from local NVMe instead of re-substituted
+      # over the network — the darwin equivalent of the Linux /nix mount.
+      - name: Mount nix caches
         if: runner.os == 'macOS'
         uses: namespacelabs/nscloud-cache-action@v1
         with:
-          path: ~/.cache/nix
+          path: |
+            ~/.cache/nix
+            ~/nix-cache
+
+      # A freshly-mounted ~/nix-cache is an empty dir, which is not yet a valid
+      # binary cache. Write nix-cache-info so the substituter queries Nix makes
+      # during install/build resolve cleanly on the cold run; `nix copy` fills
+      # in the actual NARs afterwards. No-op once the volume is warm.
+      - name: Initialize local nix cache
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p "$HOME/nix-cache"
+          if [ ! -f "$HOME/nix-cache/nix-cache-info" ]; then
+            printf 'StoreDir: /nix/store\nWantMassQuery: 1\nPriority: 10\n' \
+              > "$HOME/nix-cache/nix-cache-info"
+          fi
 
       # On a warm cache the previous run's /nix/receipt.json survives inside the
       # volume, which makes nix-installer-action skip installation entirely —
@@ -76,7 +102,7 @@ jobs:
           extra-conf: |
             accept-flake-config = true
             max-substitution-jobs = 4
-            extra-substituters = https://cache.kclj.io/kclejeune https://install.determinate.systems https://noctalia.cachix.org
+            extra-substituters = https://cache.kclj.io/kclejeune https://install.determinate.systems https://noctalia.cachix.org ${{ matrix.local-substituter }}
             extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
 
       - name: Install nimbus and nix-fast-build
@@ -93,3 +119,13 @@ jobs:
             --skip-cached \
             --eval-workers ${{ matrix.eval-workers }} \
             --eval-max-memory-size ${{ matrix.eval-max-memory }} \
+
+      # Seed the file:// cache on the volume with everything now in the store.
+      # `nix copy` is incremental (it skips paths already in the target), so the
+      # first run copies the full closure and later runs only add new paths.
+      # zstd keeps the CPU cost down vs the default xz.
+      - name: Populate local nix cache
+        if: runner.os == 'macOS'
+        run: |
+          nix copy --all --no-check-sigs \
+            --to "file:///Users/runner/nix-cache?compression=zstd&parallel-compression=true"
