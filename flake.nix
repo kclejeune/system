@@ -3,14 +3,13 @@
 
   nixConfig = {
     extra-substituters = [
-      "https://cache.kclj.io/kclejeune"
-      # "https://kclejeune.cachix.org"
+      "https://cache.kclj.io"
       "https://install.determinate.systems"
       "https://noctalia.cachix.org"
     ];
     extra-trusted-public-keys = [
+      "cache.kclj.io-1:StGAmbogIZLS5IAQD2IQCbbmIjv3Sq8rl/AVEw4Sy7s="
       "kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk="
-      # "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
     ];

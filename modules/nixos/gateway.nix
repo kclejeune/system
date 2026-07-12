@@ -394,6 +394,7 @@ in
               "email_verified"
               "name"
               "preferred_username"
+              "groups"
             ];
             # Incus LTS has no per-user authorization — any authenticated OIDC
             # identity is a full admin — so the ONLY access gate is here:
@@ -465,6 +466,7 @@ in
                   "openid"
                   "profile"
                   "email"
+                  "groups"
                 ];
                 token_endpoint_auth_method = "client_secret_post";
                 require_pkce = true;
