@@ -199,6 +199,28 @@ in
           log.file_path = autheliaLogFile;
           log.keep_stdout = true;
           default_2fa_method = "webauthn";
+          webauthn = {
+            enable_passkey_login = true;
+            # A passkey login on its own counts as only ONE factor, so every
+            # resource here (all two_factor) would still prompt for the password
+            # afterward. This flag lets a passkey that performs user verification
+            # (Touch ID / Windows Hello / phone PIN — "have" + "are/know" in a
+            # single gesture) satisfy the two_factor access-control policy by
+            # itself, so a UV passkey login grants access with no password step.
+            # The access_control rules and every client's two_factor
+            # authorization_policy below stay unchanged — Authelia has no
+            # per-method authz rule, so this is the only knob.
+            #
+            # CAVEAT: still flagged experimental/unsupported upstream and "may
+            # cause startup failure in future versions". This host tracks
+            # nixos-unstable, so re-check the webauthn docs after Authelia bumps.
+            experimental_enable_passkey_uv_two_factors = true;
+            # Force user verification during the WebAuthn ceremony so the
+            # authenticator actually reports UV — required for the flag above to
+            # elevate the login to two_factor. The default "preferred" would let
+            # a non-UV passkey silently fall back to the password prompt.
+            selection_criteria.user_verification = "required";
+          };
 
           # Brute-force regulation. ip mode (Authelia's recommendation) over the
           # default user mode: bans the offending source IP rather than the
@@ -206,13 +228,68 @@ in
           # Authelia sees the real client IP via nginx X-Forwarded-For (real_ip
           # from PROXY protocol). This is the in-app first line; CrowdSec
           # (LePresidente/authelia) adds escalating nftables bans from the log.
-          # The built-in server.endpoints.rate_limits are left at their defaults
-          # (all enabled).
+          # Application-level endpoint rate limits (server.endpoints.rate_limits)
+          # are pinned explicitly just below for the sensitive flows; every
+          # other endpoint keeps its upstream default (all enabled).
           regulation = {
             modes = [ "ip" ];
             max_retries = 3;
             find_time = "2m";
             ban_time = "10m";
+          };
+
+          # Pin the app-level rate limits for the sensitive endpoints so an
+          # upstream default change on nixos-unstable can't silently loosen
+          # them. This is a PIN, not a tightening — these values ARE the current
+          # upstream defaults (docs example block). Listing a subset is a
+          # partial override: unlisted endpoints keep their built-in defaults,
+          # they are NOT disabled. reset_password_* is now actually exercised
+          # since self-service reset is enabled; openid_connect_token guards the
+          # OIDC token endpoint. This sits under nginx limit_req (authelia_api
+          # zone) and CrowdSec as the most targeted, per-endpoint layer.
+          server.endpoints.rate_limits = {
+            reset_password_start.buckets = [
+              {
+                period = "10 minutes";
+                requests = 5;
+              }
+              {
+                period = "15 minutes";
+                requests = 10;
+              }
+              {
+                period = "30 minutes";
+                requests = 15;
+              }
+            ];
+            reset_password_finish.buckets = [
+              {
+                period = "1 minute";
+                requests = 10;
+              }
+              {
+                period = "2 minutes";
+                requests = 15;
+              }
+            ];
+            openid_connect_token.buckets = [
+              {
+                period = "1 minute";
+                requests = 30;
+              }
+              {
+                period = "2 minutes";
+                requests = 40;
+              }
+              {
+                period = "10 minutes";
+                requests = 50;
+              }
+              {
+                period = "1 hour";
+                requests = 100;
+              }
+            ];
           };
 
           authentication_backend = {
