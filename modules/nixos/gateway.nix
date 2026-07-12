@@ -216,7 +216,10 @@ in
           };
 
           authentication_backend = {
-            password_reset.disable = true;
+            # allow self-service password reset for non-admin users
+            # requires lldap_pasword_manager group permissions for authelia service account
+            password_reset.disable = false;
+            password_change.disable = false;
             ldap = {
               implementation = "lldap";
               address = "ldap://127.0.0.1:${toString lldapPort}";
