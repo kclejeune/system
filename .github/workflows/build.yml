@@ -31,12 +31,12 @@ jobs:
             local-substituter: ""
           - system: aarch64-linux
             runner: namespace-profile-linux-arm64
-            eval-workers: 2
+            eval-workers: 1
             eval-max-memory: 4096
             local-substituter: ""
           - system: aarch64-darwin
             runner: namespace-profile-darwin-aarch64
-            eval-workers: 3
+            eval-workers: 1
             eval-max-memory: 4096
             # macOS can't mount the volume over the sealed-root /nix, so prefer a
             # file:// cache on the volume ahead of the network caches instead.
@@ -103,13 +103,11 @@ jobs:
         with:
           determinate: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # extra-substituters = https://cache.kclj.io/kclejeune https://kclejeune.cachix.org https://install.determinate.systems https://noctalia.cachix.org
-          # extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
           extra-conf: |
             accept-flake-config = true
             max-substitution-jobs = 4
-            extra-substituters = https://cache.kclj.io https://install.determinate.systems https://noctalia.cachix.org ${{ matrix.local-substituter }}
-            extra-trusted-public-keys = cache.kclj.io-1:StGAmbogIZLS5IAQD2IQCbbmIjv3Sq8rl/AVEw4Sy7s= kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
+            extra-substituters = https://cache.kclj.io ${{ matrix.local-substituter }}
+            extra-trusted-public-keys = cache.kclj.io-1:StGAmbogIZLS5IAQD2IQCbbmIjv3Sq8rl/AVEw4Sy7s= kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
 
       - name: Install nimbus and nix-fast-build
         run: nix profile add --accept-flake-config --inputs-from . .#nimbus .#nix-fast-build
@@ -131,5 +129,6 @@ jobs:
       - name: Populate local nix cache
         if: runner.os == 'macOS'
         run: |
-          nix copy --all --no-check-sigs \
-            --to "file:///Users/runner/nix-cache?compression=zstd&parallel-compression=true"
+          nix copy --all \
+                   --no-check-sigs \
+                   --to "file:///Users/runner/nix-cache?compression=zstd&parallel-compression=true"
