@@ -376,7 +376,7 @@ in
       environment.systemPackages = [
         pkgs.brave
         pkgs.dmidecode
-        pkgs.firefox-devedition
+        pkgs.firefox
         pkgs.google-chrome
         pkgs.kitty
         pkgs.obsidian

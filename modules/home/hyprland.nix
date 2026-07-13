@@ -585,6 +585,7 @@ in
           # B — Browsers
           windowrule = match:class brave-browser, workspace name:B
           windowrule = match:class firefox, workspace name:B
+          # kept for an easy switch back to firefox-devedition
           windowrule = match:class firefox-devedition, workspace name:B
           windowrule = match:class chromium-browser, workspace name:B
 

@@ -106,6 +106,16 @@ jobs:
           extra-conf: |
             accept-flake-config = true
             max-substitution-jobs = 4
+            # Auto-GC the store under space pressure. The Nix store lives on a
+            # fixed-size Namespace cache volume; a from-source build of a heavy
+            # leaf (e.g. firefox-devedition when Hydra hasn't cached that day's
+            # beta yet) has a ~30 GB object tree that can overflow it. When free
+            # space drops below min-free the daemon deletes dead paths until
+            # max-free is available, reclaiming room mid-build instead of failing
+            # with "No space left on device". Warm paths survive until there is
+            # real pressure. Values in bytes: 5 GiB / 20 GiB.
+            min-free = 5368709120
+            max-free = 21474836480
             extra-substituters = https://cache.kclj.io ${{ matrix.local-substituter }}
             extra-trusted-public-keys = cache.kclj.io-1:StGAmbogIZLS5IAQD2IQCbbmIjv3Sq8rl/AVEw4Sy7s= kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
 

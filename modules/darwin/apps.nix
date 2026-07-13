@@ -6,7 +6,7 @@ _: {
         "brave-browser"
         "discord"
         "dropbox"
-        "firefox@developer-edition"
+        "firefox"
         "google-chrome"
         "google-drive"
         "keybase"
