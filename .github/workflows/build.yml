@@ -108,8 +108,8 @@ jobs:
           extra-conf: |
             accept-flake-config = true
             max-substitution-jobs = 4
-            extra-substituters = https://cache.kclj.io/kclejeune https://install.determinate.systems https://noctalia.cachix.org ${{ matrix.local-substituter }}
-            extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
+            extra-substituters = https://cache.kclj.io https://install.determinate.systems https://noctalia.cachix.org ${{ matrix.local-substituter }}
+            extra-trusted-public-keys = cache.kclj.io-1:StGAmbogIZLS5IAQD2IQCbbmIjv3Sq8rl/AVEw4Sy7s= kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
 
       - name: Install nimbus and nix-fast-build
         run: nix profile add --accept-flake-config --inputs-from . .#nimbus .#nix-fast-build
