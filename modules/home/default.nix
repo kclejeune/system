@@ -34,6 +34,7 @@ in
         flakeCfg.flake.homeModules.tmux
         flakeCfg.flake.homeModules.yazi
         flakeCfg.flake.homeModules.nixpkgs
+        flakeCfg.flake.homeModules.launchd
       ];
 
       # Package lists live in `homeModules.dev` (always-on, imported

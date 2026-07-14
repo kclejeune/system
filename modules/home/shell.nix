@@ -69,7 +69,6 @@ _: {
         daemon.enable = true;
         flags = [ ];
       };
-      launchd.agents.atuin-daemon.domain = "gui";
 
       xdg =
         let
