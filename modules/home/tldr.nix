@@ -10,5 +10,6 @@ _: {
         updates.auto_update = true;
       };
     };
+    launchd.agents.tldr-update.domain = "gui";
   };
 }
