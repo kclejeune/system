@@ -409,6 +409,32 @@
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             weave = final.callPackage ./pkgs/weave/package.nix { };
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
+
+            # catppuccin 2.5.0's __init__ eagerly imports its matplotlib extra
+            # whenever matplotlib is importable, and that extra touches
+            # matplotlib.style.core — removed in matplotlib 3.11 — so `import
+            # catppuccin` (and thus the catppuccin-gtk build that imports it)
+            # dies with AttributeError. Nothing here uses the matplotlib styles,
+            # only the palette, so disable the extra registration. Drop once
+            # catppuccin is matplotlib-3.11 compatible upstream.
+            pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+              (_: pyprev: {
+                catppuccin = pyprev.catppuccin.overridePythonAttrs (old: {
+                  postPatch = (old.postPatch or "") + ''
+                    substituteInPlace catppuccin/__init__.py \
+                      --replace-fail 'if importlib.util.find_spec("matplotlib") is not None:' 'if False:'
+                  '';
+                  # The matplotlib extra (and its tests) are the broken part; we
+                  # disabled the extra above, so skip its now-inapplicable tests.
+                  disabledTestPaths = (old.disabledTestPaths or [ ]) ++ [ "tests/test_matplotlib.py" ];
+                });
+              })
+            ];
+
+            # catppuccin-gtk 1.0.3's build.py passes a `type=` kwarg to
+            # argparse.BooleanOptionalAction, which Python 3.14 removed. Build it
+            # (and the catppuccin lib it imports) on 3.13 until it is 3.14-ready.
+            catppuccin-gtk = prev.catppuccin-gtk.override { python3 = final.python313; };
           };
         };
 
