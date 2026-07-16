@@ -427,11 +427,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784081472,
-        "narHash": "sha256-YGSDlCzzEUylPXuBzjkfQNEfqiy2EOUN9VjJDAKomoU=",
+        "lastModified": 1784082661,
+        "narHash": "sha256-RMVtEFRB56zCnzSc+uuyk23XIyFy9J6cGRIWdVrEkNI=",
         "owner": "kclejeune",
         "repo": "nimbus",
-        "rev": "c9df5b37fe7a5d4d03c6cd5c185794418c9d9360",
+        "rev": "a9d8db8a6e380d73ae55d722f673178f0ffe11f6",
         "type": "github"
       },
       "original": {
