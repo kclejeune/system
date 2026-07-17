@@ -21,25 +21,23 @@ updates:
           - "darwin"
           - "home-manager"
           - "nix-index-database"
-          - "nixos-hardware"
           - "nixos-unstable"
           - "nixpkgs"
           - "stable"
           - "unstable"
-          - "nh"
       # Build/format/CI plumbing — low blast radius, frequent tiny bumps.
       dev:
         patterns:
-          - "flake-parts"
-          - "import-tree"
-          - "flake-compat"
-          - "treefmt-nix"
-          - "git-hooks"
-          - "disko"
-          - "sops-nix"
-          - "lanzaboote"
-      # Both feed modules/shared/theme.nix via flake.lib.mkTheme.
-      theming:
-        patterns:
           - "base16"
+          - "disko"
+          - "flake-compat"
+          - "flake-parts"
+          - "git-hooks"
+          - "import-tree"
+          - "lanzaboote"
+          - "nh"
+          - "nimbus"
+          - "nixos-hardware"
+          - "sops-nix"
           - "tinted-schemes"
+          - "treefmt-nix"
