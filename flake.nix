@@ -405,7 +405,6 @@
             stable = inputs.stable.legacyPackages.${prev.stdenv.hostPlatform.system};
 
             cb = final.callPackage ./pkgs/cb/package.nix { };
-            fnox = final.callPackage ./pkgs/fnox/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             weave = final.callPackage ./pkgs/weave/package.nix { };
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
