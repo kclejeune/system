@@ -16,6 +16,7 @@ in
     {
       imports = [
         inputs.nix-index-database.homeModules.nix-index
+        flakeCfg.flake.homeModules.atuin
         flakeCfg.flake.homeModules.bat
         flakeCfg.flake.homeModules.clipboard
         flakeCfg.flake.homeModules.desktop-flag

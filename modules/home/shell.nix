@@ -63,13 +63,6 @@ _: {
         };
       };
 
-      programs.atuin = {
-        enable = true;
-        package = pkgs.atuin;
-        daemon.enable = true;
-        flags = [ ];
-      };
-
       xdg =
         let
           mkZshPlugin =

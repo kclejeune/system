@@ -24,6 +24,7 @@ in
         # Every darwin host is GUI, so fonts go here. NixOS hosts get
         # them via desktop-base so headless `gateway` stays clean.
         flakeCfg.flake.darwinModules.fonts
+        flakeCfg.flake.darwinModules.nix-caches
       ];
 
       hm.imports = [ flakeCfg.flake.homeModules.onepassword ];

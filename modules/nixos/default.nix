@@ -21,6 +21,7 @@ in
         flakeCfg.flake.nixosModules.nixpkgs-wiring
         flakeCfg.flake.nixosModules.site
         flakeCfg.flake.nixosModules.resolv-reload
+        flakeCfg.flake.nixosModules.nix-caches
       ];
 
       nix.settings = {
