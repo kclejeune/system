@@ -434,6 +434,7 @@ in
                   "openid"
                   "profile"
                   "email"
+                  "groups"
                 ];
                 token_endpoint_auth_method = "client_secret_basic";
                 require_pkce = true;
@@ -469,38 +470,6 @@ in
                   "groups"
                 ];
                 token_endpoint_auth_method = "client_secret_post";
-                require_pkce = true;
-                pkce_challenge_method = "S256";
-              }
-              {
-                client_id = "proxmox";
-                client_name = "Proxmox";
-                # pbkdf2 hash of the plaintext secret stored in sops at proxmox/oidc_client_secret
-                client_secret = "$pbkdf2-sha512$310000$9fPLzfyYkz8dgfVewaw1yg$Z7Vj8UKPSqEou.1TMOElWKDB3zYWzNM0CJXXgOY71UZ/KVLG18Xb73L/Ra/1qGJvFnmtRtcdhX8IDpl4w5DgjA";
-                authorization_policy = "two_factor";
-                consent_mode = "implicit";
-                claims_policy = "proxmox";
-                redirect_uris = [
-                  "https://pve-01.lan.kclj.io:8006"
-                  "https://pve-02.lan.kclj.io:8006"
-                  "https://pve-03.lan.kclj.io:8006"
-                  "https://pbs.lan.kclj.io:8007"
-                  "https://pve-01.lan.kclj.io"
-                  "https://pve-02.lan.kclj.io"
-                  "https://pve-03.lan.kclj.io"
-                  "https://pbs.lan.kclj.io"
-                  "https://pve-01.kclj.dev"
-                  "https://pve-02.kclj.dev"
-                  "https://pve-03.kclj.dev"
-                  "https://pbs.kclj.dev"
-                ];
-                scopes = [
-                  "openid"
-                  "profile"
-                  "email"
-                  "groups"
-                ];
-                token_endpoint_auth_method = "client_secret_basic";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
               }
@@ -551,6 +520,7 @@ in
                   "openid"
                   "profile"
                   "email"
+                  "groups"
                 ];
                 token_endpoint_auth_method = "client_secret_basic";
                 require_pkce = true;
