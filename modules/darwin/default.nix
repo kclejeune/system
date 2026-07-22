@@ -57,23 +57,6 @@ in
         };
       };
 
-      hm.home.sessionVariables.SDKROOT = "$(xcrun --show-sdk-path)";
-
-      hm.home.sessionSearchVariables = {
-        LIBRARY_PATH = [
-          "${config.homebrew.prefix}/lib"
-          "$SDKROOT/usr/lib"
-          "/usr/local/lib"
-          "/usr/lib"
-        ];
-        CPATH = [
-          "${config.homebrew.prefix}/include"
-          "$SDKROOT/usr/include"
-          "/usr/local/include"
-          "/usr/lib"
-        ];
-      };
-
       hm.nix.registry.darwin.flake = inputs.darwin;
 
       security.pam.services.sudo_local.touchIdAuth = true;
