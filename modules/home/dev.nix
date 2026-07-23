@@ -36,10 +36,10 @@ _: {
           coreutils-full
           curl
           curlie
-          stable.d2
+          d2
+          deadnix
           diffutils
           dive
-          stable.dix
           dnsutils
           doxx
           dust
@@ -54,6 +54,7 @@ _: {
           fx
           gawk
           gdu
+          dix
           git-absorb
           gnugrep
           gnupg
