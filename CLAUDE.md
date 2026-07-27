@@ -215,12 +215,18 @@ across multiple systems via `lib.map` + `lib.mergeAttrsList`.
   nix build .#darwinConfigurations."kclejeune@aarch64-darwin".config.system.build.toplevel
   nix build .#homeConfigurations."kclejeune@x86_64-linux".activationPackage
   ```
-- Activate (run on the target host):
+- Activate (run on the target host) — always via `nh`, never the raw
+  `nixos-rebuild` / `darwin-rebuild` / `home-manager` commands:
   ```bash
-  sudo nixos-rebuild switch --flake .#phil
-  darwin-rebuild switch --flake .#kclejeune@aarch64-darwin
-  home-manager switch --flake .#kclejeune@x86_64-linux
+  nh os switch .#phil
+  nh darwin switch '.#kclejeune@aarch64-darwin'
+  nh home switch '.#kclejeune@x86_64-linux'
   ```
+  There is no `--hostname` flag — the target is the installable's attrpath.
+  `NH_FLAKE` is already exported to `~/.nixpkgs`, so a bare `nh os switch`
+  resolves against this repo from anywhere.
+  `nh` is also what reads `/etc/specialisation` to pick the right activation
+  script — see the specialisation-tagging note above.
 - Eval-only drvPath diff (useful for refactors — run before and after to
   prove a change is semantically transparent):
   ```bash
