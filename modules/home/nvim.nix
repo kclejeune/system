@@ -206,7 +206,6 @@ _: {
             svelte
             tera
             terraform
-            tmux
             toml
             tsx
             typescript
