@@ -13,6 +13,10 @@ _: {
     { pkgs, ... }:
     {
       programs.nix-ld.enable = true;
+      # envfs mounts /usr/bin and /bin from $PATH so foreign scripts with
+      # /usr/bin/* shebangs work — the interpreter half of what nix-ld does
+      # for dynamically linked ELF binaries.
+      services.envfs.enable = true;
       programs.nix-ld.libraries = with pkgs; [
         stdenv.cc.cc.lib
         zlib
