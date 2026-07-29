@@ -409,6 +409,17 @@
             weave = final.callPackage ./pkgs/weave/package.nix { };
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
 
+            # worktrunk 0.68.0's shell-probe tests walk the host process table
+            # (sysctl KERN_PROC on darwin, /proc on linux) to resolve their own
+            # pid and a spawned child's name. The build sandbox hides both, so
+            # they panic. Drop once upstream gates them behind a sandbox check.
+            worktrunk = prev.worktrunk.overrideAttrs (old: {
+              checkFlags = (old.checkFlags or [ ]) ++ [
+                "--skip=shell::utils::tests::test_process_name_and_ppid_self"
+                "--skip=shell::utils::tests::test_probe_reports_invoked_name_for_sh"
+              ];
+            });
+
             # catppuccin 2.5.0's __init__ eagerly imports its matplotlib extra
             # whenever matplotlib is importable, and that extra touches
             # matplotlib.style.core — removed in matplotlib 3.11 — so `import
