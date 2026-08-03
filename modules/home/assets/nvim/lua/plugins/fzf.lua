@@ -1,11 +1,7 @@
 return {
     "ibhagwan/fzf-lua",
-    -- optional for icon support
+    -- icons come from mini.icons via MiniIcons.mock_nvim_web_devicons()
     dependencies = {
-        {
-            "nvim-tree/nvim-web-devicons",
-            dir = require("lazy-nix-helper").get_plugin_path("nvim-web-devicons"),
-        },
         {
             "nvim-treesitter/nvim-treesitter-context",
             dir = require("lazy-nix-helper").get_plugin_path("nvim-treesitter-context"),

@@ -29,6 +29,7 @@ return {
                 "diagnosticls",
                 "docker_compose_language_service",
                 "docker_language_server",
+                "gopls",
                 "html",
                 "jdtls",
                 "jsonls",
@@ -116,76 +117,80 @@ return {
                 dir = require("lazy-nix-helper").get_plugin_path("blink-cmp-conventional-commits"),
             },
         },
-        opts = {
-            keymap = {
-                preset = "super-tab",
-                ["<CR>"] = { "accept", "fallback" },
-                ["<C-u>"] = { "scroll_signature_up", "fallback" },
-                ["<C-d>"] = { "scroll_signature_down", "fallback" },
-            },
-            completion = {
-                documentation = {
-                    auto_show = false,
+        -- opts as a function: the env provider requires blink.cmp.types,
+        -- which is only on the rtp once blink itself loads. A plain table
+        -- would require() at spec-parse time and only works when a stale
+        -- vim.loader cache happens to resolve it (fails on fresh installs).
+        opts = function()
+            return {
+                keymap = {
+                    preset = "super-tab",
+                    ["<CR>"] = { "accept", "fallback" },
+                    ["<C-u>"] = { "scroll_signature_up", "fallback" },
+                    ["<C-d>"] = { "scroll_signature_down", "fallback" },
                 },
-                list = {
-                    selection = {
-                        preselect = function(ctx)
-                            return not require("blink.cmp").snippet_active({ direction = 1 })
-                        end,
+                completion = {
+                    documentation = {
+                        auto_show = false,
                     },
-                },
-            },
-            signature = {
-                enabled = true,
-                trigger = {
-                    show_on_insert = true,
-                    show_on_insert_on_trigger_character = true,
-                },
-            },
-            sources = {
-                -- add lazydev to your completion providers
-                default = { "lazydev", "lsp", "path", "snippets", "buffer", "conventional_commits" },
-                providers = {
-                    lazydev = {
-                        name = "LazyDev",
-                        module = "lazydev.integrations.blink",
-                        -- make lazydev completions top priority (see `:h blink.cmp`)
-                        score_offset = 100,
-                    },
-                    env = {
-                        name = "Env",
-                        module = "blink-cmp-env",
-                        --- @type blink-cmp-env.Options
-                        opts = {
-                            item_kind = require("blink.cmp.types").CompletionItemKind.Variable,
-                            show_braces = true,
-                            show_documentation_window = true,
+                    list = {
+                        selection = {
+                            preselect = function(ctx)
+                                return not require("blink.cmp").snippet_active({ direction = 1 })
+                            end,
                         },
                     },
-                    conventional_commits = {
-                        name = "Conventional Commits",
-                        module = "blink-cmp-conventional-commits",
-                        enabled = function()
-                            return vim.bo.filetype == "gitcommit"
-                        end,
-                        ---@module 'blink-cmp-conventional-commits'
-                        ---@type blink-cmp-conventional-commits.Options
-                        opts = {}, -- none so far
+                },
+                signature = {
+                    enabled = true,
+                    trigger = {
+                        show_on_insert = true,
+                        show_on_insert_on_trigger_character = true,
                     },
                 },
-            },
-        },
+                sources = {
+                    -- add lazydev to your completion providers
+                    default = { "lazydev", "lsp", "path", "snippets", "buffer", "conventional_commits" },
+                    providers = {
+                        lazydev = {
+                            name = "LazyDev",
+                            module = "lazydev.integrations.blink",
+                            -- make lazydev completions top priority (see `:h blink.cmp`)
+                            score_offset = 100,
+                        },
+                        env = {
+                            name = "Env",
+                            module = "blink-cmp-env",
+                            --- @type blink-cmp-env.Options
+                            opts = {
+                                item_kind = require("blink.cmp.types").CompletionItemKind.Variable,
+                                show_braces = true,
+                                show_documentation_window = true,
+                            },
+                        },
+                        conventional_commits = {
+                            name = "Conventional Commits",
+                            module = "blink-cmp-conventional-commits",
+                            enabled = function()
+                                return vim.bo.filetype == "gitcommit"
+                            end,
+                            ---@module 'blink-cmp-conventional-commits'
+                            ---@type blink-cmp-conventional-commits.Options
+                            opts = {}, -- none so far
+                        },
+                    },
+                },
+            }
+        end,
     },
     {
         "coder/claudecode.nvim",
         dir = require("lazy-nix-helper").get_plugin_path("claudecode.nvim"),
-        dependencies = {
-            {
-                "folke/snacks.nvim",
-                dir = require("lazy-nix-helper").get_plugin_path("snacks.nvim"),
-            },
+        opts = {
+            -- snacks.nvim was only pulled in as the terminal provider;
+            -- the native terminal drops that whole dependency
+            terminal = { provider = "native" },
         },
-        config = true,
         keys = {
             { "<leader>a", nil, desc = "AI/Claude Code" },
             { "<leader>ac", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" },

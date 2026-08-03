@@ -91,7 +91,10 @@ _: {
       };
       direnv-nvim = pkgs.vimUtils.buildVimPlugin {
         pname = "direnv.nvim";
-        version = "unstable-2025-04-28";
+        # date-only version: a leading "unstable-" makes parseDrvName treat
+        # it as part of the name, so lazy-nix-helper's sanitized key becomes
+        # "direnv.nvim-unstable" and lazy falls back to a GitHub clone
+        version = "2025-04-28";
         src = pkgs.fetchFromGitHub {
           owner = "NotAShelf";
           repo = "direnv.nvim";
@@ -251,6 +254,15 @@ _: {
           source = "${nvim-treesitter-grammars}/parser";
           recursive = true;
         };
+        # highlight/indent/fold queries. The grammar drvs above ship only
+        # parser/*.so; upstream's :TSInstall copies these from the plugin's
+        # runtime/queries into install_dir, which we bypass entirely — without
+        # this the highlighter attaches with zero queries and buffers render
+        # unhighlighted (regex syntax is disabled once treesitter starts).
+        "nvim/queries" = {
+          source = "${nvim-treesitter}/runtime/queries";
+          recursive = true;
+        };
       };
 
       programs.neovim = {
@@ -276,23 +288,20 @@ _: {
             ;
           inherit (pkgs.vimPlugins)
             # basics
-            comment-nvim
             conform-nvim
+            mini-nvim
             nvim-autopairs
-            vim-fugitive
             vim-nix
-            vim-sandwich
-            vim-sensible
             # configurable plugins
             lazy-nvim
             guess-indent-nvim
             fzf-lua
             vimtex
-            nvim-lspconfig
             indent-blankline-nvim
+            nvim-lspconfig
+            # queries only — the textobject engine is mini.ai
             nvim-treesitter-textobjects
             nvim-treesitter-context
-            nvim-web-devicons
             mason-nvim
             mason-lspconfig-nvim
             onedark-nvim
@@ -304,12 +313,8 @@ _: {
             blink-cmp-conventional-commits
             tiny-inline-diagnostic-nvim
             plenary-nvim
-            snacks-nvim
-            which-key-nvim
             yazi-nvim
             ;
-
-          inherit (pkgs.stable.vimPlugins) lualine-nvim;
         };
 
         initLua = lib.mkBefore ''
