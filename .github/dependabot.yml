@@ -21,6 +21,7 @@ updates:
           - "darwin"
           - "home-manager"
           - "nix-index-database"
+          - "nixos-hardware"
           - "nixos-unstable"
           - "nixpkgs"
           - "stable"
@@ -29,6 +30,8 @@ updates:
       dev:
         patterns:
           - "base16"
+          - "deploy-rs"
+          - "determinate"
           - "disko"
           - "flake-compat"
           - "flake-parts"
@@ -37,7 +40,7 @@ updates:
           - "lanzaboote"
           - "nh"
           - "nimbus"
-          - "nixos-hardware"
+          - "noctalia"
           - "sops-nix"
           - "tinted-schemes"
           - "treefmt-nix"

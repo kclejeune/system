@@ -25,8 +25,6 @@ return {
         -- still parse on demand.
         local disabled_langs = {
             csv = true,
-            typescript = true,
-            tsx = true,
         }
 
         vim.api.nvim_create_autocmd("FileType", {
