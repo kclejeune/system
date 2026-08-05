@@ -407,15 +407,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1785695587,
-        "narHash": "sha256-GyjkIaU6RG4t/wy+IrpEgbhbiJI9gduwiNYvNLafkwY=",
-        "owner": "nix-community",
+        "lastModified": 1785782097,
+        "narHash": "sha256-lJeJEp2T5WgMHa7S5Knc7l8NxBsRQlfdXZFarXKn7/I=",
+        "owner": "kclejeune",
         "repo": "nh",
-        "rev": "249c954e65acb251eb3ceb6bdf587701ce4705c9",
+        "rev": "35cfd54d8a897022b2fd6645e6de9ecb39e6f8ec",
         "type": "github"
       },
       "original": {
-        "owner": "nix-community",
+        "owner": "kclejeune",
+        "ref": "fix/remote-diff-ssh-ng-protocol-mismatch",
         "repo": "nh",
         "type": "github"
       }

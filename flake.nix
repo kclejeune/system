@@ -26,7 +26,8 @@
     nimbus.url = "github:kclejeune/nimbus";
     nimbus.inputs.nixpkgs.follows = "unstable";
 
-    nh.url = "github:nix-community/nh";
+    # pin to resolve --target-host deploy ssh-ng MaxSessions flooding
+    nh.url = "github:kclejeune/nh/fix/remote-diff-ssh-ng-protocol-mismatch";
     nh.inputs.nixpkgs.follows = "unstable";
 
     flake-compat.url = "github:nix-community/flake-compat";
@@ -408,6 +409,9 @@
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             weave = final.callPackage ./pkgs/weave/package.nix { };
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
+            # Fork build of nh (see the input pin above); replaces nixpkgs' nh
+            # for both programs.nh in home-manager and the devShell.
+            nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
 
             # worktrunk 0.68.0's shell-probe tests walk the host process table
             # (sysctl KERN_PROC on darwin, /proc on linux) to resolve their own
