@@ -1151,6 +1151,11 @@ in
         console_management = true;
       };
 
+      # Podman ships with no unqualified-search registries, so a short image
+      # name like netbirdio/reverse-proxy fails to resolve at pull time.
+      # Search Docker Hub for short names (the only registry in play here).
+      virtualisation.containers.registries.search = [ "docker.io" ];
+
       # Netbird reverse proxy — runs as OCI container, handles its own TLS
       virtualisation.oci-containers.containers.netbird-proxy = {
         # Tag tracks the netbird management package version from nixpkgs so
