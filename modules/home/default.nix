@@ -46,8 +46,28 @@ in
 
       programs = {
         home-manager.enable = true;
+        # Two diff renderers with deliberately different git roles, because
+        # `diff.external` replaces git's diff *output* — which silently breaks
+        # every line-oriented consumer (`grep '^+'`, patch parsers, CI scripts)
+        # with exit 0 and no error. So:
+        #   - delta is the *pager*: git skips pagers when stdout isn't a TTY,
+        #     so piped/scripted `git diff` stays plain unified automatically.
+        #   - difftastic is the *difftool*: structural diffs on demand via
+        #     `git difftool`, never in `git diff`/`log -p`/`show`.
+        # `difftastic.git.enable` stays off because home-manager asserts it's
+        # mutually exclusive with delta's git integration — an over-broad check
+        # that ignores `git.mode = "difftool"`, which cannot conflict with a
+        # pager. The difftool is wired manually in `git.nix` instead.
         difftastic.enable = true;
-        difftastic.git.enable = true;
+        delta = {
+          enable = true;
+          enableGitIntegration = true;
+          options = {
+            navigate = true;
+            line-numbers = true;
+            hyperlinks = true;
+          };
+        };
         dircolors.enable = true;
         eza = {
           enable = true;

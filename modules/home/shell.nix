@@ -104,6 +104,21 @@ _: {
           ${wtInstall "zsh"}
           # ${slinkyInstall "zsh"}
         '';
+        # .zshrc is only sourced by *interactive* shells, so none of the
+        # options above reach `zsh -c` (CI, scripts, agent tool calls). Two
+        # zsh defaults are actively hostile to non-interactive one-liners:
+        #   NOMATCH — an unmatched glob aborts the ENTIRE command, so
+        #     `rg pat a/*.yml b/*.yml` runs nothing if only one dir is empty.
+        #     bash/sh instead pass the pattern through literally.
+        #   EQUALS  — a word starting with `=` expands as a command lookup, so
+        #     the ubiquitous `echo ===` separator dies with "== not found".
+        # Scoped to non-interactive only: interactive sessions keep NOMATCH's
+        # typo protection, which is worth having at a prompt.
+        envExtra = ''
+          if [[ ! -o interactive ]]; then
+            setopt NO_NOMATCH NO_EQUALS
+          fi
+        '';
         oh-my-zsh = {
           enable = true;
           extraConfig = ''

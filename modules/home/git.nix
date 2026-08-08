@@ -4,7 +4,7 @@ let
 in
 {
   flake.homeModules.git =
-    { pkgs, ... }:
+    { pkgs, lib, ... }:
     {
       imports = [ flakeCfg.flake.homeModules.weave ];
 
@@ -32,7 +32,18 @@ in
           pull.rebase = true;
           push.followTags = true;
           push.autoSetupRemote = true;
+          # Structural diffs on demand: `git difftool` (or `git dt`). Wired by
+          # hand rather than via `programs.difftastic.git.enable` because that
+          # option trips home-manager's assertion against delta's git
+          # integration even in difftool-only mode. Deliberately NOT
+          # `diff.external` — that would replace `git diff` output everywhere
+          # and make it unparseable by grep/patch tooling, silently and with
+          # exit 0. delta stays the pager (see modules/home/default.nix).
+          diff.tool = "difftastic";
+          difftool.prompt = false;
+          difftool.difftastic.cmd = "${lib.getExe pkgs.difftastic} $LOCAL $REMOTE";
           alias = {
+            dt = "difftool";
             fix = "commit --amend --no-edit";
             ignore = "!gi() { curl -sL https://www.toptal.com/developers/gitignore/api/$@ ;}; gi";
             oops = "reset HEAD~1";
