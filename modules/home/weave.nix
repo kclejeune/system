@@ -1,6 +1,83 @@
 _: {
   flake.homeModules.weave =
-    { pkgs, lib, ... }:
+    {
+      config,
+      pkgs,
+      lib,
+      ...
+    }:
+    let
+      # Mirrors upstream `weave setup` (crates/weave-cli/src/commands/setup.rs).
+      # Update when bumping the weave package if upstream adds/removes parsers.
+      supportedPatterns = [
+        # TypeScript / JavaScript
+        "*.ts"
+        "*.tsx"
+        "*.js"
+        "*.mjs"
+        "*.cjs"
+        "*.jsx"
+        # Python / Go / Rust
+        "*.py"
+        "*.go"
+        "*.rs"
+        # Java / C / C++
+        "*.java"
+        "*.c"
+        "*.h"
+        "*.cpp"
+        "*.cc"
+        "*.cxx"
+        "*.hpp"
+        "*.hh"
+        "*.hxx"
+        # Ruby / C# / PHP / Swift / Elixir / Shell
+        "*.rb"
+        "*.cs"
+        "*.php"
+        "*.swift"
+        "*.ex"
+        "*.exs"
+        "*.sh"
+        # Fortran
+        "*.f90"
+        "*.f95"
+        "*.f03"
+        "*.f08"
+        # XML family
+        "*.xml"
+        "*.plist"
+        "*.svg"
+        "*.csproj"
+        "*.fsproj"
+        "*.vbproj"
+        # Data / config
+        "*.json"
+        "*.yaml"
+        "*.yml"
+        "*.toml"
+        # Docs
+        "*.md"
+        # Scala family
+        "*.scala"
+        "*.sc"
+        "*.sbt"
+        "*.kojo"
+        "*.mill"
+        # Dart
+        "*.dart"
+      ];
+
+      # Opt-in attributes file: NOT `programs.git.attributes` (that writes
+      # ~/.config/git/attributes, which git reads unconditionally and would make
+      # weave the default merge driver everywhere). Pointed at explicitly by the
+      # `git weave` alias below via `-c core.attributesFile=…`.
+      #
+      # core.attributesFile sits *below* in-tree `.gitattributes` and
+      # `$GIT_DIR/info/attributes` in git's precedence order, so a repo that
+      # configures its own merge drivers still wins.
+      weaveAttributes = "${config.xdg.configHome}/git/attributes-weave";
+    in
     {
       home.packages = [
         # `sem` collides with GNU parallel's semaphore wrapper (also called
@@ -10,73 +87,26 @@ _: {
         pkgs.weave
       ];
 
-      programs.git = {
-        # Mirrors upstream `weave setup` (crates/weave-cli/src/commands/setup.rs).
-        # Update when bumping the weave package if upstream adds/removes parsers.
-        attributes = [
-          # TypeScript / JavaScript
-          "*.ts merge=weave"
-          "*.tsx merge=weave"
-          "*.js merge=weave"
-          "*.mjs merge=weave"
-          "*.cjs merge=weave"
-          "*.jsx merge=weave"
-          # Python / Go / Rust
-          "*.py merge=weave"
-          "*.go merge=weave"
-          "*.rs merge=weave"
-          # Java / C / C++
-          "*.java merge=weave"
-          "*.c merge=weave"
-          "*.h merge=weave"
-          "*.cpp merge=weave"
-          "*.cc merge=weave"
-          "*.cxx merge=weave"
-          "*.hpp merge=weave"
-          "*.hh merge=weave"
-          "*.hxx merge=weave"
-          # Ruby / C# / PHP / Swift / Elixir / Shell
-          "*.rb merge=weave"
-          "*.cs merge=weave"
-          "*.php merge=weave"
-          "*.swift merge=weave"
-          "*.ex merge=weave"
-          "*.exs merge=weave"
-          "*.sh merge=weave"
-          # Fortran
-          "*.f90 merge=weave"
-          "*.f95 merge=weave"
-          "*.f03 merge=weave"
-          "*.f08 merge=weave"
-          # XML family
-          "*.xml merge=weave"
-          "*.plist merge=weave"
-          "*.svg merge=weave"
-          "*.csproj merge=weave"
-          "*.fsproj merge=weave"
-          "*.vbproj merge=weave"
-          # Data / config
-          "*.json merge=weave"
-          "*.yaml merge=weave"
-          "*.yml merge=weave"
-          "*.toml merge=weave"
-          # Docs
-          "*.md merge=weave"
-          # Scala family
-          "*.scala merge=weave"
-          "*.sc merge=weave"
-          "*.sbt merge=weave"
-          "*.kojo merge=weave"
-          "*.mill merge=weave"
-          # Dart
-          "*.dart merge=weave"
-        ];
+      xdg.configFile."git/attributes-weave".text =
+        lib.concatMapStringsSep "\n" (pat: "${pat} merge=weave") supportedPatterns + "\n";
 
-        settings.merge.weave = {
+      programs.git.settings = {
+        # Registering the driver is inert on its own — git only invokes it for
+        # paths whose `merge` attribute names it. A repo can opt in permanently
+        # with `weave setup --local`, or per-command via the alias below.
+        merge.weave = {
           name = "weave semantic merge driver";
-          driver = "weave-driver %O %A %B %L %P";
+          driver = "${lib.getExe' pkgs.weave "weave-driver"} %O %A %B %L %P";
           recursive = "binary";
         };
+
+        # Passthrough wrapper: prefix any git command that runs a merge to get
+        # entity-level merging for supported file types, just this once.
+        #   git weave merge feature
+        #   git weave rebase main
+        #   git weave cherry-pick abc123
+        #   git weave stash pop
+        alias.weave = "!f() { git -c core.attributesFile='${weaveAttributes}' \"$@\"; }; f";
       };
     };
 }
