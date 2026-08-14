@@ -433,14 +433,28 @@
               ];
             });
 
-            # catppuccin 2.5.0's __init__ eagerly imports its matplotlib extra
-            # whenever matplotlib is importable, and that extra touches
-            # matplotlib.style.core — removed in matplotlib 3.11 — so `import
-            # catppuccin` (and thus the catppuccin-gtk build that imports it)
-            # dies with AttributeError. Nothing here uses the matplotlib styles,
-            # only the palette, so disable the extra registration. Drop once
-            # catppuccin is matplotlib-3.11 compatible upstream.
             pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+              # nanoemoji 0.16.0 landed in nixpkgs with the src hash that
+              # googlefonts' v0.16.0 tarball had *before* upstream re-tagged it,
+              # so the fetch fails on a hash mismatch. nixpkgs 1e544d5 recorded
+              # the correct hash, but nixos-unstable hasn't cut that commit yet.
+              # Reaches us via fontconfig -> jetbrains-mono -> gftools. Drop once
+              # the channel advances past 1e544d5.
+              (_: pyprev: {
+                nanoemoji = pyprev.nanoemoji.overrideAttrs (old: {
+                  src = old.src.overrideAttrs (_: {
+                    outputHash = "sha256-FysyKC01XBnRiur5RR9fcsTxQqE8x0JJHSoe3q6JtKc=";
+                  });
+                });
+              })
+
+              # catppuccin 2.5.0's __init__ eagerly imports its matplotlib extra
+              # whenever matplotlib is importable, and that extra touches
+              # matplotlib.style.core — removed in matplotlib 3.11 — so `import
+              # catppuccin` (and thus the catppuccin-gtk build that imports it)
+              # dies with AttributeError. Nothing here uses the matplotlib styles,
+              # only the palette, so disable the extra registration. Drop once
+              # catppuccin is matplotlib-3.11 compatible upstream.
               (_: pyprev: {
                 catppuccin = pyprev.catppuccin.overridePythonAttrs (old: {
                   postPatch = (old.postPatch or "") + ''
@@ -458,6 +472,13 @@
             # argparse.BooleanOptionalAction, which Python 3.14 removed. Build it
             # (and the catppuccin lib it imports) on 3.13 until it is 3.14-ready.
             catppuccin-gtk = prev.catppuccin-gtk.override { python3 = final.python313; };
+
+            # ffmpeg 9 dropped AVCodec's pix_fmts/sample_fmts/ch_layouts in favour
+            # of avcodec_get_supported_config(), and wf-recorder 0.6.0 still reads
+            # the struct fields, so it fails to compile against the new default.
+            # nixpkgs fc31aa4 pinned ffmpeg_8 for the same reason, but
+            # nixos-unstable hasn't cut that commit yet. Drop once it does.
+            wf-recorder = prev.wf-recorder.override { ffmpeg = final.ffmpeg_8; };
           };
         };
 
