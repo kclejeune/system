@@ -84,9 +84,17 @@ _: {
               "openid"
               "profile"
               "email"
-              "groups"
             ];
-            description = "Requested scopes. Emitted comma-separated, not space-separated.";
+            description = ''
+              Requested scopes. Emitted comma-separated, not space-separated.
+              Must be a subset of the Authelia client's scopes.
+
+              No `groups`: RustFS resolves each value of a groups claim as a
+              RustFS policy name and rejects the login unless every one of them
+              already exists, so claiming groups means creating a policy named
+              after each LDAP group and keeping the two in sync forever.
+              rolePolicy grants everyone the same policy instead.
+            '';
           };
 
           rolePolicy = lib.mkOption {
@@ -168,7 +176,7 @@ _: {
 
             RUSTFS_IDENTITY_OPENID_USERNAME_CLAIM = "preferred_username";
             RUSTFS_IDENTITY_OPENID_EMAIL_CLAIM = "email";
-            RUSTFS_IDENTITY_OPENID_GROUPS_CLAIM = "groups";
+            # GROUPS_CLAIM stays unset on purpose — see the scopes option.
           };
         };
 

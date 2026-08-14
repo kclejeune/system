@@ -397,15 +397,19 @@ in
               "groups"
             ];
             # Without this the ID token carries only `sub`, and RustFS renders
-            # the opaque subject identifier as the account name. groups is
-            # included for a future GROUPS_CLAIM policy mapping; RustFS reads
-            # preferred_username today.
+            # the opaque subject identifier as the account name.
+            #
+            # Deliberately NO groups: RustFS resolves every value of a groups
+            # claim as a RustFS policy name and fails the whole login if any
+            # one is unknown ("OIDC policy mapping did not resolve to current
+            # policies"). Sending groups would mean creating and maintaining a
+            # RustFS policy named after every lldap group. The rustfs client
+            # uses a flat role_policy instead.
             claims_policies.rustfs.id_token = [
               "email"
               "email_verified"
               "name"
               "preferred_username"
-              "groups"
             ];
             # Incus LTS has no per-user authorization — any authenticated OIDC
             # identity is a full admin — so the ONLY access gate is here:
@@ -598,7 +602,6 @@ in
                   "openid"
                   "profile"
                   "email"
-                  "groups"
                 ];
                 token_endpoint_auth_method = "client_secret_post";
                 require_pkce = true;
