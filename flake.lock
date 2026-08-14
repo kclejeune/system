@@ -696,6 +696,7 @@
         "noctalia": "noctalia",
         "sops-nix": "sops-nix",
         "stable": "stable",
+        "terranix": "terranix",
         "tinted-schemes": "tinted-schemes",
         "treefmt-nix": "treefmt-nix_2",
         "unstable": "unstable"
@@ -785,6 +786,48 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default-linux",
+        "type": "github"
+      }
+    },
+    "systems_3": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "terranix": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "import-tree": [
+          "import-tree"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "systems": "systems_3"
+      },
+      "locked": {
+        "lastModified": 1784465933,
+        "narHash": "sha256-5fZTF5lCVnHisTmXICtIIjHAEsqDXx3RgD+Q/r5Bxpg=",
+        "owner": "terranix",
+        "repo": "terranix",
+        "rev": "f2f0ca1895f15e18e308769bdae77030ae093b8c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "terranix",
+        "repo": "terranix",
         "type": "github"
       }
     },

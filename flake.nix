@@ -35,6 +35,13 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     import-tree.url = "github:vic/import-tree";
 
+    terranix.url = "github:terranix/terranix";
+    terranix.inputs.nixpkgs.follows = "nixpkgs";
+    # terranix is itself flake-parts + import-tree. Its `systems` input can't
+    # dedupe — nothing at top level provides one.
+    terranix.inputs.flake-parts.follows = "flake-parts";
+    terranix.inputs.import-tree.follows = "import-tree";
+
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -104,6 +111,7 @@
           inputs.home-manager.flakeModules.home-manager
           inputs.treefmt-nix.flakeModule
           inputs.git-hooks.flakeModule
+          inputs.terranix.flakeModule
           (inputs.import-tree ./modules)
           # `cacheable` is the CI build set (host toplevels, HM activation
           # packages, devShells) transposed to `flake.cacheable.<system>` so
@@ -279,6 +287,7 @@
             config.flake.nixosModules.homelab-node
 
             config.flake.nixosModules.vault
+            config.flake.nixosModules.rustfs
             # backup needs real restic/* in secrets/vault.yaml; enable once set.
             # config.flake.nixosModules.backup
           ];
@@ -331,7 +340,7 @@
             "forge"
             "vault"
             "atlas"
-          ] (mkNode "tailf0779.ts.net");
+          ] (mkNode config.flake.lib.site.tailnetDomain);
 
         flake.darwinConfigurations = lib.mergeAttrsList (
           lib.map (system: {

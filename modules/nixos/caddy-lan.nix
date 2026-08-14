@@ -109,6 +109,17 @@ _: {
             skipped instead of plain http.
           '';
         };
+
+        extraDirectives = lib.mkOption {
+          type = lib.types.attrsOf lib.types.lines;
+          default = { };
+          example = lib.literalExpression ''{ s3 = "redir @browserRoot /rustfs/console/ 302"; }'';
+          description = ''
+            Extra Caddyfile directives for a proxied subdomain, emitted before
+            its reverse_proxy. Keyed the same as `proxies`. For backends whose
+            UI does not live at the site root.
+          '';
+        };
       };
 
       config = lib.mkIf cfg.enable {
@@ -145,6 +156,7 @@ _: {
             lib.nameValuePair "${sub}.${cfg.baseDomain}" {
               extraConfig = ''
                 ${tlsBlock}
+                ${cfg.extraDirectives.${sub} or ""}
                 ${mkReverseProxy upstream}
               '';
             }
