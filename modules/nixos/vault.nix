@@ -10,6 +10,14 @@ _: {
     services.rustfsLan = {
       enable = true;
       buckets = [ "tfstate" ];
+
+      # Key login stays enabled alongside this: auth.kclj.io is on gateway, so
+      # OIDC-only would make the console unreachable whenever Hetzner or the
+      # tunnel is down. The access/secret pair is the break-glass path.
+      oidc = {
+        enable = true;
+        configUrl = "https://auth.kclj.io";
+      };
     };
 
     # Also on the tailnet, so terraform works off-LAN without exposing the

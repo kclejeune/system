@@ -396,6 +396,17 @@ in
               "preferred_username"
               "groups"
             ];
+            # Without this the ID token carries only `sub`, and RustFS renders
+            # the opaque subject identifier as the account name. groups is
+            # included for a future GROUPS_CLAIM policy mapping; RustFS reads
+            # preferred_username today.
+            claims_policies.rustfs.id_token = [
+              "email"
+              "email_verified"
+              "name"
+              "preferred_username"
+              "groups"
+            ];
             # Incus LTS has no per-user authorization — any authenticated OIDC
             # identity is a full admin — so the ONLY access gate is here:
             # restrict the `incus` client to members of lldap_admin. kclejeune
@@ -441,15 +452,6 @@ in
                 pkce_challenge_method = "S256";
               }
               {
-                # Nimbus web app (Cloudflare Worker Nix binary cache) at
-                # app.cache.kclj.io. Uses better-auth's genericOAuth plugin
-                # (providerId "oidc"), which sends client credentials in the
-                # token-request body — hence client_secret_post — and whose
-                # callback is the fixed /api/auth/oauth2/callback/<providerId>
-                # path. Plaintext secret lives in sops at
-                # nimbus/oidc_client_secret (see the sops.secrets comment for
-                # how to push it to the worker); Authelia keeps only the
-                # pbkdf2 hash below.
                 client_id = "nimbus";
                 client_name = "Nimbus";
                 client_secret = "$pbkdf2-sha512$310000$wvfEcQQoFVxjnfA8Hch69A$VqUp/2iWKwIiyObavoOZxE0/T/juTtR7X4LZZ0Arm73435hrr7zdLs1g/5m78n9EbCOnxgN9mUBTZjEFJFlJGw";
@@ -566,6 +568,39 @@ in
                 access_token_signed_response_alg = "RS256";
                 userinfo_signed_response_alg = "none";
                 token_endpoint_auth_method = "none";
+                require_pkce = true;
+                pkce_challenge_method = "S256";
+              }
+              {
+                # RustFS console on vault. Confidential client — RustFS reads
+                # the plaintext from sops at rustfs/oidc-client-secret on vault;
+                # Authelia keeps only the pbkdf2 hash below, so the two rotate
+                # in lockstep.
+                #
+                # Both redirect_uris are registered because RustFS runs with
+                # REDIRECT_URI_DYNAMIC=on, deriving the callback from the request
+                # host so one client covers the LAN and tailnet origins. That
+                # makes this list the actual allowlist — a host RustFS invents
+                # is rejected here, which is the point. The callback path is a
+                # RustFS backend route and its last segment is the provider
+                # name; it must stay in step with modules/nixos/rustfs.nix.
+                client_id = "rustfs";
+                client_name = "RustFS";
+                claims_policy = "rustfs";
+                client_secret = "$pbkdf2-sha512$310000$F9PuuzoVd9k1.HhBtZng8g$NgOuUlxf5zHDJaqxyyXj1QeLEEU0NVPj7TFFOeJ9Ga1Py627V0OL0iYnVAmHjtZlffQNzcUVxnZgow7jdGhn5Q";
+                authorization_policy = "two_factor";
+                consent_mode = "implicit";
+                redirect_uris = [
+                  "https://s3.lan.kclj.io/rustfs/admin/v3/oidc/callback/default"
+                  "https://s3.${config.site.tailnetDomain}/rustfs/admin/v3/oidc/callback/default"
+                ];
+                scopes = [
+                  "openid"
+                  "profile"
+                  "email"
+                  "groups"
+                ];
+                token_endpoint_auth_method = "client_secret_post";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
               }
