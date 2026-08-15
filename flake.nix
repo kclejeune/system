@@ -69,6 +69,16 @@
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
+    # GitOps pull-deploy for those same hosts — they poll master and activate
+    # themselves. Not in nixpkgs, so the flake is the only source. `follows`
+    # here is lockfile hygiene only: modules/nixos/comin.nix takes the overlay
+    # rather than `comin.packages`, so the binary is built from each host's own
+    # nixpkgs and lands in the same cacheable closure CI already pushes.
+    comin.url = "github:nlewo/comin";
+    comin.inputs.nixpkgs.follows = "nixpkgs";
+    comin.inputs.treefmt-nix.follows = "treefmt-nix";
+    comin.inputs.flake-compat.follows = "flake-compat";
+
     # UEFI Secure Boot via signed unified kernel images. Replaces
     # systemd-boot on hosts that enroll modules/nixos/secure-boot.nix.
     lanzaboote.url = "github:nix-community/lanzaboote/v1.1.0";
@@ -230,6 +240,10 @@
             config.flake.nixosModules.subnet-router
             config.flake.nixosModules.tailscale-server
             config.flake.nixosModules.beszel-agent
+
+            # Enrolled here rather than via homelab-node, which gateway
+            # deliberately doesn't use.
+            config.flake.nixosModules.comin
           ];
         };
 

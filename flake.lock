@@ -18,6 +18,32 @@
         "type": "github"
       }
     },
+    "comin": {
+      "inputs": {
+        "flake-compat": [
+          "flake-compat"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "treefmt-nix": [
+          "treefmt-nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785835013,
+        "narHash": "sha256-Qkxxd7ZVF5I4AnM9dntrqeJjA8T0Yr67mCjgTl7NGpA=",
+        "owner": "nlewo",
+        "repo": "comin",
+        "rev": "e72d8cc7ad188dbb109994cba9babf026bacf6ab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nlewo",
+        "repo": "comin",
+        "type": "github"
+      }
+    },
     "crane": {
       "locked": {
         "lastModified": 1781825982,
@@ -675,6 +701,7 @@
     "root": {
       "inputs": {
         "base16": "base16",
+        "comin": "comin",
         "darwin": "darwin",
         "deploy-rs": "deploy-rs",
         "determinate": "determinate",
