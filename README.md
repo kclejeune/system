@@ -1,6 +1,6 @@
 # Nix System Configuration
 
-[![Build Status](https://api.cirrus-ci.com/github/kclejeune/system.svg?branch=master)](https://cirrus-ci.com/github/kclejeune/system)
+[![build](https://github.com/kclejeune/system/actions/workflows/build.yml/badge.svg)](https://github.com/kclejeune/system/actions/workflows/build.yml)
 
 This repository manages system configurations for all of my macOS, NixOS, and
 Linux machines.
