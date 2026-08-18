@@ -71,8 +71,15 @@
   #               radar hit silences the radio for 60s. Congestion was never
   #               the issue — external load on 52 was only ~5%.
   #   6e  ch37  — PSC channel, band measured empty. 160 not 320 MHz: 320
-  #               halves PSD and needs a clean 320 MHz block, and only 2 of 21
-  #               clients were on 6 GHz at all.
+  #               halves PSD and needs a clean 320 MHz block.
+  #
+  # Re-checked 2026-08-15 against radio_table_stats; all three still hold.
+  # External load (cu_total − cu_self) was 30% / 3% / 1%. 6 GHz has grown to 5
+  # of 25 clients, but they sit at −67…−84 dBm, so the wider band argues harder
+  # against 320 MHz than it did when only 2 clients were up there. Don't
+  # re-derive the 2.4 GHz channel from neighbour scans: a serving radio only
+  # hears its own channel (stat/rogueap returned 57 APs on ch1 and nothing
+  # elsewhere), so comparing 1/6/11 means parking the radio on each in turn.
   resource.unifi_device.udr7 = {
     mac = "1c:0b:8b:de:89:a3";
     name = "Dream Router 7";
@@ -130,6 +137,20 @@
     # reads as permanent drift.
     minrate_setting_preference = "manual";
     minimum_data_rate_2g_kbps = 6000;
+
+    # Must be declared, not omitted. The provider derives `minrate_na_enabled`
+    # from this value (`> 0`), but Read populates it from
+    # `minrate_na_data_rate_kbps` while ignoring `minrate_na_enabled` — and the
+    # controller stores 6000 there even while the floor is off. Leave this out
+    # and the field round-trips as 6000, so the first apply switches the 5 GHz
+    # floor on with an empty plan. Set 0 to genuinely disable it.
+    #
+    # 12 Mbps rather than 6: no 5 GHz client transmits below 72 Mbps and the
+    # weakest sits at −68 dBm, so nothing gets forced up. What it actually
+    # halves is beacon and broadcast/multicast airtime, which always goes out
+    # at the lowest basic rate — worth having with the HomePods and Apple TV
+    # on this radio.
+    minimum_data_rate_5g_kbps = 12000;
 
     # wpa3_support requires pmf_mode != disabled.
     wpa_mode = "wpa2";

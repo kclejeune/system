@@ -40,11 +40,11 @@ signed API requests pass straight through.
 
 ### One-time setup
 
-**1. Secrets.** `secrets/vault.yaml` already carries `unifi/api-key`,
-`unifi/base-url` and `unifi/site-id`. Add three more:
+**1. Secrets.** Two sops files feed the wrapper:
 
 ```bash
-sops secrets/vault.yaml    # rustfs/access-key, rustfs/secret-key, wifi/passphrase
+sops secrets/terraform.yaml  # unifi/api-key, wifi/passphrase (operator-only; kclejeune key)
+sops secrets/vault.yaml      # rustfs/access-key, rustfs/secret-key (state bucket; also used by vault)
 ```
 
 Generate the RustFS pair with `openssl rand -hex 32`. Write them straight into
@@ -81,6 +81,15 @@ config has drifted from live state — fix the config, not the router.
 - **`minimum_data_rate_2g_kbps` is inert unless `minrate_setting_preference =
 "manual"`.** On `auto` the controller ignores the value and reports `1000`
   back, which reads as permanent drift.
+- **An empty `plan` does not prove an apply is a no-op.** The provider sends
+  some controller booleans _derived_ from another attribute rather than read
+  from the plan — `minrate_ng_enabled` / `minrate_na_enabled` are
+  `minimum_data_rate_{2g,5g}_kbps > 0`. Read fills those kbps fields from the
+  controller while ignoring the matching `_enabled` flag, and the controller
+  keeps a non-zero rate stored even while the floor is off. So an omitted
+  `minimum_data_rate_5g_kbps` round-trips as `6000` and the first apply turns
+  the floor on with nothing shown in the diff. Declare every attribute that
+  feeds a derived field, `0` included.
 - **`radio_table` is an attributes list, not blocks** — a JSON array, which is
   what the Nix list compiles to. `channel` is a string ("auto" is legal), `ht`
   is a number.

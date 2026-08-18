@@ -26,6 +26,7 @@ in
         flakeCfg.flake.nixosModules.subnet-router
         flakeCfg.flake.nixosModules.tailscale-server
         flakeCfg.flake.nixosModules.beszel-agent
+        flakeCfg.flake.nixosModules.comin
       ];
 
       # Primary user + rescue root keys + pinned state version — identical on

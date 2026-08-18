@@ -69,6 +69,16 @@
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
+    # GitOps pull-deploy for those same hosts — they poll master and activate
+    # themselves. Not in nixpkgs, so the flake is the only source. `follows`
+    # here is lockfile hygiene only: modules/nixos/comin.nix takes the overlay
+    # rather than `comin.packages`, so the binary is built from each host's own
+    # nixpkgs and lands in the same cacheable closure CI already pushes.
+    comin.url = "github:nlewo/comin";
+    comin.inputs.nixpkgs.follows = "nixpkgs";
+    comin.inputs.treefmt-nix.follows = "treefmt-nix";
+    comin.inputs.flake-compat.follows = "flake-compat";
+
     # UEFI Secure Boot via signed unified kernel images. Replaces
     # systemd-boot on hosts that enroll modules/nixos/secure-boot.nix.
     lanzaboote.url = "github:nix-community/lanzaboote/v1.1.0";
@@ -222,6 +232,23 @@
           config.flake.nixosModules.tailscale-server
           config.flake.nixosModules.beszel-agent
         ];
+
+            config.flake.nixosModules.gateway
+            config.flake.nixosModules.profile-personal
+
+            config.flake.nixosModules.nix-ld
+
+            config.flake.nixosModules.tailscale
+            config.flake.nixosModules.netbird
+            config.flake.nixosModules.subnet-router
+            config.flake.nixosModules.tailscale-server
+            config.flake.nixosModules.beszel-agent
+
+            # Enrolled here rather than via homelab-node, which gateway
+            # deliberately doesn't use.
+            config.flake.nixosModules.comin
+          ];
+        };
 
         # Homelab home-automation node — bare-metal Lenovo P3 Tiny replacing
         # the Proxmox cluster. Runs homebridge + uptime-kuma natively and
@@ -403,14 +430,28 @@
               ];
             });
 
-            # catppuccin 2.5.0's __init__ eagerly imports its matplotlib extra
-            # whenever matplotlib is importable, and that extra touches
-            # matplotlib.style.core — removed in matplotlib 3.11 — so `import
-            # catppuccin` (and thus the catppuccin-gtk build that imports it)
-            # dies with AttributeError. Nothing here uses the matplotlib styles,
-            # only the palette, so disable the extra registration. Drop once
-            # catppuccin is matplotlib-3.11 compatible upstream.
             pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+              # nanoemoji 0.16.0 landed in nixpkgs with the src hash that
+              # googlefonts' v0.16.0 tarball had *before* upstream re-tagged it,
+              # so the fetch fails on a hash mismatch. nixpkgs 1e544d5 recorded
+              # the correct hash, but nixos-unstable hasn't cut that commit yet.
+              # Reaches us via fontconfig -> jetbrains-mono -> gftools. Drop once
+              # the channel advances past 1e544d5.
+              (_: pyprev: {
+                nanoemoji = pyprev.nanoemoji.overrideAttrs (old: {
+                  src = old.src.overrideAttrs (_: {
+                    outputHash = "sha256-FysyKC01XBnRiur5RR9fcsTxQqE8x0JJHSoe3q6JtKc=";
+                  });
+                });
+              })
+
+              # catppuccin 2.5.0's __init__ eagerly imports its matplotlib extra
+              # whenever matplotlib is importable, and that extra touches
+              # matplotlib.style.core — removed in matplotlib 3.11 — so `import
+              # catppuccin` (and thus the catppuccin-gtk build that imports it)
+              # dies with AttributeError. Nothing here uses the matplotlib styles,
+              # only the palette, so disable the extra registration. Drop once
+              # catppuccin is matplotlib-3.11 compatible upstream.
               (_: pyprev: {
                 catppuccin = pyprev.catppuccin.overridePythonAttrs (old: {
                   postPatch = (old.postPatch or "") + ''
@@ -428,6 +469,13 @@
             # argparse.BooleanOptionalAction, which Python 3.14 removed. Build it
             # (and the catppuccin lib it imports) on 3.13 until it is 3.14-ready.
             catppuccin-gtk = prev.catppuccin-gtk.override { python3 = final.python313; };
+
+            # ffmpeg 9 dropped AVCodec's pix_fmts/sample_fmts/ch_layouts in favour
+            # of avcodec_get_supported_config(), and wf-recorder 0.6.0 still reads
+            # the struct fields, so it fails to compile against the new default.
+            # nixpkgs fc31aa4 pinned ffmpeg_8 for the same reason, but
+            # nixos-unstable hasn't cut that commit yet. Drop once it does.
+            wf-recorder = prev.wf-recorder.override { ffmpeg = final.ffmpeg_8; };
           };
         };
 

@@ -48,6 +48,8 @@ in
       alertmanagerPort = 9093;
       karmaPort = 8082; # karma's default 8080 collides with netbird-proxy
       beszelPort = 8091; # beszel hub web UI / agent endpoint (its 8090 default collides with crowdsecLapiPort)
+      tracewayPort = 8095; # traceway container's :80, published on loopback for nginx
+      tracewayDomain = "traceway.${domain}";
 
       mkHttpsVhost = extra: {
         forceSSL = true;
@@ -60,7 +62,12 @@ in
         flakeCfg.flake.nixosModules.crowdsec
         flakeCfg.flake.nixosModules.monitoring-stack
         flakeCfg.flake.nixosModules.ntfy
+        flakeCfg.flake.nixosModules.smtp
+        flakeCfg.flake.nixosModules.traceway
       ];
+
+      # Fastmail submission account shared by Authelia, ntfy and Traceway.
+      smtp.host = "smtp.fastmail.com";
 
       networking.hostName = "gateway";
 
@@ -143,12 +150,9 @@ in
           "authelia/oidc_jwks_key" = {
             owner = autheliaUser;
           };
-          "authelia/smtp_password" = {
-            owner = autheliaUser;
-          };
-          "authelia/smtp_username" = {
-            owner = autheliaUser;
-          };
+          # Authelia reads the shared SMTP password by path (_FILE), so it
+          # needs to own it; the other consumers go through sops templates.
+          "smtp/password".owner = autheliaUser;
           "lldap/jwt_secret" = { };
           # World-readable (0444) on purpose: lldap runs as a DynamicUser, so a
           # static "lldap" group to chown this to collides with the dynamic one
@@ -335,7 +339,7 @@ in
           };
 
           notifier.smtp = {
-            address = "submission://smtp.fastmail.com:587";
+            address = "submission://${config.smtp.host}:${toString config.smtp.port}";
             sender = "Authelia <noreply+auth@kclj.io>";
             subject = "[Authelia] {title}";
             disable_require_tls = false;
@@ -390,6 +394,15 @@ in
               "preferred_username"
             ];
             claims_policies.nimbus.id_token = [
+              "email"
+              "email_verified"
+              "name"
+              "preferred_username"
+              "groups"
+            ];
+            # groups in the ID token so OIDC_ROLE_CLAIM=groups can map
+            # lldap_admin -> traceway admin (goth reads the ID token, not userinfo).
+            claims_policies.traceway.id_token = [
               "email"
               "email_verified"
               "name"
@@ -478,6 +491,32 @@ in
                 token_endpoint_auth_method = "client_secret_post";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
+              }
+              {
+                # Traceway dashboard login (services.traceway below).
+                # Confidential client — the container reads the plaintext from
+                # sops traceway/oidc_client_secret; Authelia keeps only the
+                # pbkdf2 hash. Rotate in lockstep (`authelia crypto hash
+                # generate pbkdf2 --variant sha512`). No PKCE: Traceway's OIDC
+                # provider (goth openidConnect) doesn't send a code_challenge,
+                # so require_pkce would reject every login. Callback path is
+                # fixed upstream as APP_BASE_URL + /api/auth/callback/oidc.
+                client_id = "traceway";
+                client_name = "Traceway";
+                client_secret = "$pbkdf2-sha512$310000$gNo7ijU5nWrmnX3jGSLU2Q$sq7sQiPcOV7kt7VC/v/9xPKCNXcgU.sqv0..u7fk.WBbpITeN7dg4FmPJiICe0we.CP7IQWqLFuhmsB/cgoUdg";
+                authorization_policy = "two_factor";
+                consent_mode = "implicit";
+                claims_policy = "traceway";
+                redirect_uris = [
+                  "https://${tracewayDomain}/api/auth/callback/oidc"
+                ];
+                scopes = [
+                  "openid"
+                  "profile"
+                  "email"
+                  "groups"
+                ];
+                token_endpoint_auth_method = "client_secret_basic";
               }
               {
                 # Upstream OIDC connector consumed by netbird's embedded
@@ -611,7 +650,7 @@ in
           };
         };
         environmentVariables = {
-          AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE = config.sops.secrets."authelia/smtp_password".path;
+          AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE = config.sops.secrets."smtp/password".path;
           AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE =
             config.sops.secrets."authelia/ldap_password".path;
         };
@@ -629,8 +668,8 @@ in
       sops.templates."authelia-smtp.env" = {
         owner = autheliaUser;
         content = ''
-          AUTHELIA_NOTIFIER_SMTP_USERNAME=${config.sops.placeholder."authelia/smtp_username"}
-          AUTHELIA_NOTIFIER_SMTP_STARTUP_CHECK_ADDRESS=${config.sops.placeholder."authelia/smtp_username"}
+          AUTHELIA_NOTIFIER_SMTP_USERNAME=${config.sops.placeholder."smtp/username"}
+          AUTHELIA_NOTIFIER_SMTP_STARTUP_CHECK_ADDRESS=${config.sops.placeholder."smtp/username"}
         '';
       };
       systemd.services."authelia-${autheliaInstance}" = {
@@ -866,6 +905,48 @@ in
           USER_CREATION = "true";
         };
       };
+      # --- Traceway (APM / error tracking) ---
+      # Public dashboard + ingest at traceway.kclj.io, DuckDB flavour, blobs on
+      # R2, login via the Authelia `traceway` client above. Sits here rather
+      # than at home because the ingest surface is an unauthenticated-from-
+      # the-network parser of SDK payloads (nimbus at Cloudflare's edge, end-
+      # user browsers) — it belongs on the DMZ box behind nginx real-ip +
+      # CrowdSec, not as a new ingress into the LAN. Bump `version` to track
+      # backend/v* releases (several a day; no dependabot lever for ghcr tags).
+      # First-run: register the owner at /register (self-hosted mode locks
+      # signup to invites once an org exists), then flip
+      # oidc.disablePasswordLogin once SSO login is verified. R2 bucket
+      # `traceway` needs a lifecycle rule on recordings/ — the recording
+      # retention worker is a no-op on S3.
+      services.traceway = {
+        domain = tracewayDomain;
+        version = "1.9.16";
+        port = tracewayPort;
+        s3 = {
+          bucket = "traceway";
+          endpoint = "https://14613cda02f216f5620eca979a286eaf.r2.cloudflarestorage.com";
+        };
+        oidc = {
+          discoveryUrl = "https://${authDomain}/.well-known/openid-configuration";
+          displayName = "Authelia";
+          roleMap.lldap_admin = "admin";
+        };
+        # bare address: the app passes it verbatim to MAIL FROM
+        smtpFrom = "noreply+traceway@${domain}";
+      };
+      # Dashboard gets the host's general per-IP limit; the module leaves the
+      # ingest locations unthrottled on purpose (shared Cloudflare egress IPs).
+      services.nginx.virtualHosts.${tracewayDomain} = {
+        extraConfig = ''
+          limit_conn per_ip 50;
+          limit_conn_status 429;
+        '';
+        locations."/".extraConfig = ''
+          limit_req zone=general burst=60 nodelay;
+          limit_req_status 429;
+        '';
+      };
+
       # nginx forward-auth via tailnet identity — gateway-only.
       services.tailscaleAuth.enable = true;
 

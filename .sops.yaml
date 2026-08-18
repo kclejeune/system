@@ -31,6 +31,22 @@ creation_rules:
           - *atlas
           - *wally
           - *phil
+  # Secrets shared by every homelab node (e.g. the LAN ACME DNS-01 token),
+  # encrypted to all four so any of them can decrypt with its own host key.
+  - path_regex: secrets/homelab\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *haven
+          - *forge
+          - *vault
+          - *atlas
+  # Operator-only secrets consumed by `nix run .#unifi.*` (terranix) from the
+  # workstation — no host key can read these.
+  - path_regex: secrets/terraform\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
   - path_regex: secrets/gateway\.yaml$
     key_groups:
       - age:

@@ -51,9 +51,9 @@ _: {
           web-push-file = "/var/lib/ntfy-sh/webpush.db";
           web-push-email-address = "admin@kclj.io";
 
-          # Outgoing email notifications via Fastmail — same submission host +
-          # account as authelia; user/pass injected via the EnvironmentFile.
-          smtp-sender-addr = "smtp.fastmail.com:587";
+          # Outgoing email via the host's shared SMTP account (nixosModules.smtp);
+          # user/pass injected via the EnvironmentFile.
+          smtp-sender-addr = "${config.smtp.host}:${toString config.smtp.port}";
           smtp-sender-from = "noreply+ntfy@kclj.io";
         };
         environmentFile = config.sops.templates."ntfy.env".path;
@@ -61,14 +61,13 @@ _: {
       # Attachment blobs live in a CacheDirectory the module doesn't declare.
       systemd.services.ntfy-sh.serviceConfig.CacheDirectory = "ntfy-sh";
 
-      # Secrets for ntfy's EnvironmentFile, out of the world-readable store. SMTP
-      # creds are shared with authelia's Fastmail account; the ntfy/* values must
-      # be added to secrets/gateway.yaml.
+      # Secrets for ntfy's EnvironmentFile, out of the world-readable store. The
+      # ntfy/* values must be added to the host's sops file.
       sops.templates."ntfy.env".content = ''
         NTFY_WEB_PUSH_PRIVATE_KEY=${config.sops.placeholder."ntfy/web_push_private_key"}
         NTFY_AUTH_USERS=${config.sops.placeholder."ntfy/auth_users"}
-        NTFY_SMTP_SENDER_USER=${config.sops.placeholder."authelia/smtp_username"}
-        NTFY_SMTP_SENDER_PASS=${config.sops.placeholder."authelia/smtp_password"}
+        NTFY_SMTP_SENDER_USER=${config.sops.placeholder."smtp/username"}
+        NTFY_SMTP_SENDER_PASS=${config.sops.placeholder."smtp/password"}
       '';
     };
 }

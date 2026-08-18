@@ -269,6 +269,11 @@ bare attr name: `nix build .#fnox`. To bump one to a new release:
 
 ## Gotchas
 
+- **haven / forge / vault / atlas / gateway pull-deploy themselves.** comin
+  polls master every 60s and switches, so anything activated out of a dirty
+  worktree with `nh os switch` or `deploy` is reverted on the next poll. Push
+  to `testing-<hostname>` to try a config without it becoming the boot
+  default. See `modules/nixos/comin.nix`.
 - **`flake.nix` uncommitted changes** are not picked up until `git add`ed —
   nix flakes only see the git index. If you see `flake ... does not provide
 attribute ...` after creating new files, run `git add` and retry.

@@ -23,20 +23,25 @@ in
           extraRuntimeInputs = [ pkgs.sops ];
 
           # Decrypted per-invocation into the wrapper's environment only —
-          # never to disk, never to the store.
+          # never to disk, never to the store. The state-bucket creds are
+          # vault's (RustFS runs there); the UniFi/Wi-Fi secrets are
+          # operator-only and live in terraform.yaml, which no host key can
+          # decrypt.
           prefixText = ''
-            secrets="''${NH_FLAKE:-$HOME/.nixpkgs}/secrets/vault.yaml"
-            if [ ! -f "$secrets" ]; then
-              echo "terranix: sops file not found: $secrets" >&2
-              exit 1
-            fi
+            secrets_dir="''${NH_FLAKE:-$HOME/.nixpkgs}/secrets"
+            for f in vault terraform; do
+              if [ ! -f "$secrets_dir/$f.yaml" ]; then
+                echo "terranix: sops file not found: $secrets_dir/$f.yaml" >&2
+                exit 1
+              fi
+            done
 
-            get() { sops -d --extract "$1" "$secrets"; }
+            get() { sops -d --extract "$2" "$secrets_dir/$1.yaml"; }
 
-            AWS_ACCESS_KEY_ID="$(get '["rustfs"]["access-key"]')"
-            AWS_SECRET_ACCESS_KEY="$(get '["rustfs"]["secret-key"]')"
-            TF_VAR_unifi_api_key="$(get '["unifi"]["api-key"]')"
-            TF_VAR_wifi_passphrase="$(get '["wifi"]["passphrase"]')"
+            AWS_ACCESS_KEY_ID="$(get vault '["rustfs"]["access-key"]')"
+            AWS_SECRET_ACCESS_KEY="$(get vault '["rustfs"]["secret-key"]')"
+            TF_VAR_unifi_api_key="$(get terraform '["unifi"]["api-key"]')"
+            TF_VAR_wifi_passphrase="$(get terraform '["wifi"]["passphrase"]')"
 
             export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
             export AWS_REGION=us-east-1

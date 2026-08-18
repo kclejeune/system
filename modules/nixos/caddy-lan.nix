@@ -133,7 +133,10 @@ _: {
           443
         ];
 
-        sops.secrets."cloudflare/api-token" = { };
+        # One DNS-01 token shared by every homelab node, so it lives in the
+        # homelab-wide sops file (encrypted to all four host keys) rather than
+        # being copied into each host's own file.
+        sops.secrets."cloudflare/api-token".sopsFile = ../../secrets/homelab.yaml;
 
         # EnvironmentFile assembled from sops so the token never hits the store.
         # systemd only reads EnvironmentFile at process start, so caddy must be
