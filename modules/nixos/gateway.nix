@@ -920,7 +920,12 @@ in
       # retention worker is a no-op on S3.
       services.traceway = {
         domain = tracewayDomain;
-        version = "1.9.16";
+        # Held at 1.9.12: from 1.9.13 (monitoring, #286) the DuckDB migration
+        # 0004_add_output_key_to_check_results does `ADD COLUMN ... NOT NULL
+        # DEFAULT ''`, which DuckDB rejects ("Adding columns with constraints
+        # not yet supported") — every -duckdb image since panics on boot.
+        # Bump once upstream drops the NOT NULL.
+        version = "1.9.12";
         port = tracewayPort;
         s3 = {
           bucket = "traceway";
