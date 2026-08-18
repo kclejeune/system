@@ -936,6 +936,7 @@ in
           discoveryUrl = "https://${authDomain}/.well-known/openid-configuration";
           displayName = "Authelia";
           roleMap.lldap_admin = "admin";
+          disablePasswordLogin = true;
         };
         # bare address: the app passes it verbatim to MAIL FROM
         smtpFrom = "noreply+traceway@${domain}";
