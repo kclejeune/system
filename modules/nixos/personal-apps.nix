@@ -1,7 +1,4 @@
 { config, ... }:
-let
-  flakeCfg = config;
-in
 {
   # Personal-only apps and services that should NOT live in the shared
   # `desktop` module, so a future work machine can opt out by enrolling
@@ -13,7 +10,7 @@ in
       ...
     }:
     {
-      imports = [ flakeCfg.flake.nixosModules.keybase ];
+      # imports = [ flakeCfg.flake.nixosModules.keybase ];
 
       environment.systemPackages = with pkgs; [
         discord

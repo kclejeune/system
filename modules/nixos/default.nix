@@ -21,6 +21,7 @@ in
         flakeCfg.flake.nixosModules.nixpkgs-wiring
         flakeCfg.flake.nixosModules.site
         flakeCfg.flake.nixosModules.resolv-reload
+        flakeCfg.flake.nixosModules.nix-caches
       ];
 
       nix.settings = {
@@ -39,6 +40,16 @@ in
       programs.gnupg.agent = {
         enable = true;
         enableSSHSupport = true;
+      };
+
+      # Root-level `nh clean all` on a timer: trims system generations (which
+      # determinate-nixd's managed GC can't — they're gcroots) and GCs the
+      # store. `clean` works without `programs.nh.enable`; the nh CLI itself
+      # comes from home-manager.
+      programs.nh.clean = {
+        enable = true;
+        dates = "daily";
+        extraArgs = "--keep 3";
       };
 
       services.openssh.enable = true;

@@ -10,35 +10,6 @@ return {
         end,
     },
     {
-        "nvim-lualine/lualine.nvim",
-        lazy = false,
-        opts = {
-            options = { theme = "auto" },
-            sections = {
-                lualine_x = {
-                    function()
-                        return require("direnv").statusline()
-                    end,
-                    "encoding",
-                    "fileformat",
-                    "filetype",
-                },
-            },
-        },
-        dir = require("lazy-nix-helper").get_plugin_path("lualine.nvim"),
-        dependencies = {
-            {
-                "nvim-tree/nvim-web-devicons",
-                dir = require("lazy-nix-helper").get_plugin_path("nvim-web-devicons"),
-            },
-        },
-    },
-    {
-        "numToStr/Comment.nvim",
-        opts = {},
-        dir = require("lazy-nix-helper").get_plugin_path("comment.nvim"),
-    },
-    {
         "stevearc/conform.nvim",
         dir = require("lazy-nix-helper").get_plugin_path("conform.nvim"),
         event = { "BufWritePre" },
@@ -133,6 +104,8 @@ return {
         },
     },
     {
+        -- guides on all indent levels + current-scope highlight; mini has
+        -- no all-levels module (mini.indentscope draws only current scope)
         "lukas-reineke/indent-blankline.nvim",
         dir = require("lazy-nix-helper").get_plugin_path("indent-blankline.nvim"),
         main = "ibl",
@@ -149,38 +122,6 @@ return {
         "windwp/nvim-autopairs",
         dir = require("lazy-nix-helper").get_plugin_path("nvim-autopairs"),
         opts = {},
-    },
-    {
-        "tpope/vim-sensible",
-        dir = require("lazy-nix-helper").get_plugin_path("vim-sensible"),
-    },
-    {
-        "tpope/vim-fugitive",
-        dir = require("lazy-nix-helper").get_plugin_path("vim-fugitive"),
-    },
-    {
-        "numToStr/Comment.nvim",
-        opts = {},
-        dir = require("lazy-nix-helper").get_plugin_path("comment-nvim"),
-    },
-    {
-        "machakann/vim-sandwich",
-        dir = require("lazy-nix-helper").get_plugin_path("vim-sandwich"),
-    },
-    {
-        "folke/which-key.nvim",
-        dir = require("lazy-nix-helper").get_plugin_path("which-key.nvim"),
-        event = "VeryLazy",
-        opts = {},
-        keys = {
-            {
-                "<leader>?",
-                function()
-                    require("which-key").show({ global = false })
-                end,
-                desc = "Buffer Local Keymaps (which-key)",
-            },
-        },
     },
     {
         "NotAShelf/direnv.nvim",

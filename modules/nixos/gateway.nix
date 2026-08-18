@@ -178,6 +178,13 @@ in
           # Generate with `openssl rand -hex 32`.
           "crowdsec/bouncer_key" = { };
           "proxmox/oidc_client_secret" = { };
+          # Plaintext OIDC client secret for the nimbus worker
+          # (app.cache.kclj.io) — nothing on this host consumes it; the sops
+          # file is its system of record. Feed it to the worker with
+          # `sops -d --extract '["nimbus"]["oidc_client_secret"]'
+          # secrets/gateway.yaml | wrangler secret put OIDC_CLIENT_SECRET`.
+          # Authelia keeps only the pbkdf2 hash in the client config below.
+          "nimbus/oidc_client_secret" = { };
         };
       };
 
@@ -192,6 +199,28 @@ in
           log.file_path = autheliaLogFile;
           log.keep_stdout = true;
           default_2fa_method = "webauthn";
+          webauthn = {
+            enable_passkey_login = true;
+            # A passkey login on its own counts as only ONE factor, so every
+            # resource here (all two_factor) would still prompt for the password
+            # afterward. This flag lets a passkey that performs user verification
+            # (Touch ID / Windows Hello / phone PIN — "have" + "are/know" in a
+            # single gesture) satisfy the two_factor access-control policy by
+            # itself, so a UV passkey login grants access with no password step.
+            # The access_control rules and every client's two_factor
+            # authorization_policy below stay unchanged — Authelia has no
+            # per-method authz rule, so this is the only knob.
+            #
+            # CAVEAT: still flagged experimental/unsupported upstream and "may
+            # cause startup failure in future versions". This host tracks
+            # nixos-unstable, so re-check the webauthn docs after Authelia bumps.
+            experimental_enable_passkey_uv_two_factors = true;
+            # Force user verification during the WebAuthn ceremony so the
+            # authenticator actually reports UV — required for the flag above to
+            # elevate the login to two_factor. The default "preferred" would let
+            # a non-UV passkey silently fall back to the password prompt.
+            selection_criteria.user_verification = "required";
+          };
 
           # Brute-force regulation. ip mode (Authelia's recommendation) over the
           # default user mode: bans the offending source IP rather than the
@@ -199,8 +228,9 @@ in
           # Authelia sees the real client IP via nginx X-Forwarded-For (real_ip
           # from PROXY protocol). This is the in-app first line; CrowdSec
           # (LePresidente/authelia) adds escalating nftables bans from the log.
-          # The built-in server.endpoints.rate_limits are left at their defaults
-          # (all enabled).
+          # Application-level endpoint rate limits (server.endpoints.rate_limits)
+          # are pinned explicitly just below for the sensitive flows; every
+          # other endpoint keeps its upstream default (all enabled).
           regulation = {
             modes = [ "ip" ];
             max_retries = 3;
@@ -208,8 +238,65 @@ in
             ban_time = "10m";
           };
 
+          # Pin the app-level rate limits for the sensitive endpoints so an
+          # upstream default change on nixos-unstable can't silently loosen
+          # them. This is a PIN, not a tightening — these values ARE the current
+          # upstream defaults (docs example block). Listing a subset is a
+          # partial override: unlisted endpoints keep their built-in defaults,
+          # they are NOT disabled. reset_password_* is now actually exercised
+          # since self-service reset is enabled; openid_connect_token guards the
+          # OIDC token endpoint. This sits under nginx limit_req (authelia_api
+          # zone) and CrowdSec as the most targeted, per-endpoint layer.
+          server.endpoints.rate_limits = {
+            reset_password_start.buckets = [
+              {
+                period = "10 minutes";
+                requests = 5;
+              }
+              {
+                period = "15 minutes";
+                requests = 10;
+              }
+              {
+                period = "30 minutes";
+                requests = 15;
+              }
+            ];
+            reset_password_finish.buckets = [
+              {
+                period = "1 minute";
+                requests = 10;
+              }
+              {
+                period = "2 minutes";
+                requests = 15;
+              }
+            ];
+            openid_connect_token.buckets = [
+              {
+                period = "1 minute";
+                requests = 30;
+              }
+              {
+                period = "2 minutes";
+                requests = 40;
+              }
+              {
+                period = "10 minutes";
+                requests = 50;
+              }
+              {
+                period = "1 hour";
+                requests = 100;
+              }
+            ];
+          };
+
           authentication_backend = {
-            password_reset.disable = true;
+            # allow self-service password reset for non-admin users
+            # requires lldap_pasword_manager group permissions for authelia service account
+            password_reset.disable = false;
+            password_change.disable = false;
             ldap = {
               implementation = "lldap";
               address = "ldap://127.0.0.1:${toString lldapPort}";
@@ -302,6 +389,28 @@ in
               "name"
               "preferred_username"
             ];
+            claims_policies.nimbus.id_token = [
+              "email"
+              "email_verified"
+              "name"
+              "preferred_username"
+              "groups"
+            ];
+            # Without this the ID token carries only `sub`, and RustFS renders
+            # the opaque subject identifier as the account name.
+            #
+            # Deliberately NO groups: RustFS resolves every value of a groups
+            # claim as a RustFS policy name and fails the whole login if any
+            # one is unknown ("OIDC policy mapping did not resolve to current
+            # policies"). Sending groups would mean creating and maintaining a
+            # RustFS policy named after every lldap group. The rustfs client
+            # uses a flat role_policy instead.
+            claims_policies.rustfs.id_token = [
+              "email"
+              "email_verified"
+              "name"
+              "preferred_username"
+            ];
             # Incus LTS has no per-user authorization — any authenticated OIDC
             # identity is a full admin — so the ONLY access gate is here:
             # restrict the `incus` client to members of lldap_admin. kclejeune
@@ -340,32 +449,25 @@ in
                   "openid"
                   "profile"
                   "email"
+                  "groups"
                 ];
                 token_endpoint_auth_method = "client_secret_basic";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
               }
               {
-                client_id = "proxmox";
-                client_name = "Proxmox";
-                # pbkdf2 hash of the plaintext secret stored in sops at proxmox/oidc_client_secret
-                client_secret = "$pbkdf2-sha512$310000$9fPLzfyYkz8dgfVewaw1yg$Z7Vj8UKPSqEou.1TMOElWKDB3zYWzNM0CJXXgOY71UZ/KVLG18Xb73L/Ra/1qGJvFnmtRtcdhX8IDpl4w5DgjA";
+                client_id = "nimbus";
+                client_name = "Nimbus";
+                client_secret = "$pbkdf2-sha512$310000$wvfEcQQoFVxjnfA8Hch69A$VqUp/2iWKwIiyObavoOZxE0/T/juTtR7X4LZZ0Arm73435hrr7zdLs1g/5m78n9EbCOnxgN9mUBTZjEFJFlJGw";
                 authorization_policy = "two_factor";
                 consent_mode = "implicit";
-                claims_policy = "proxmox";
+                claims_policy = "nimbus";
                 redirect_uris = [
-                  "https://pve-01.lan.kclj.io:8006"
-                  "https://pve-02.lan.kclj.io:8006"
-                  "https://pve-03.lan.kclj.io:8006"
-                  "https://pbs.lan.kclj.io:8007"
-                  "https://pve-01.lan.kclj.io"
-                  "https://pve-02.lan.kclj.io"
-                  "https://pve-03.lan.kclj.io"
-                  "https://pbs.lan.kclj.io"
-                  "https://pve-01.kclj.dev"
-                  "https://pve-02.kclj.dev"
-                  "https://pve-03.kclj.dev"
-                  "https://pbs.kclj.dev"
+                  "https://app.cache.kclj.io/api/auth/oauth2/callback/oidc"
+                  # Local nimbus dev (`vite dev` with OIDC_* in .dev.vars).
+                  # Authelia only requires redirect URIs to be absolute, so
+                  # loopback http is fine on a confidential client.
+                  "http://localhost:5173/api/auth/oauth2/callback/oidc"
                 ];
                 scopes = [
                   "openid"
@@ -373,7 +475,7 @@ in
                   "email"
                   "groups"
                 ];
-                token_endpoint_auth_method = "client_secret_basic";
+                token_endpoint_auth_method = "client_secret_post";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
               }
@@ -424,6 +526,7 @@ in
                   "openid"
                   "profile"
                   "email"
+                  "groups"
                 ];
                 token_endpoint_auth_method = "client_secret_basic";
                 require_pkce = true;
@@ -469,6 +572,38 @@ in
                 access_token_signed_response_alg = "RS256";
                 userinfo_signed_response_alg = "none";
                 token_endpoint_auth_method = "none";
+                require_pkce = true;
+                pkce_challenge_method = "S256";
+              }
+              {
+                # RustFS console on vault. Confidential client — RustFS reads
+                # the plaintext from sops at rustfs/oidc-client-secret on vault;
+                # Authelia keeps only the pbkdf2 hash below, so the two rotate
+                # in lockstep.
+                #
+                # Both redirect_uris are registered because RustFS runs with
+                # REDIRECT_URI_DYNAMIC=on, deriving the callback from the request
+                # host so one client covers the LAN and tailnet origins. That
+                # makes this list the actual allowlist — a host RustFS invents
+                # is rejected here, which is the point. The callback path is a
+                # RustFS backend route and its last segment is the provider
+                # name; it must stay in step with modules/nixos/rustfs.nix.
+                client_id = "rustfs";
+                client_name = "RustFS";
+                claims_policy = "rustfs";
+                client_secret = "$pbkdf2-sha512$310000$F9PuuzoVd9k1.HhBtZng8g$NgOuUlxf5zHDJaqxyyXj1QeLEEU0NVPj7TFFOeJ9Ga1Py627V0OL0iYnVAmHjtZlffQNzcUVxnZgow7jdGhn5Q";
+                authorization_policy = "two_factor";
+                consent_mode = "implicit";
+                redirect_uris = [
+                  "https://s3.lan.kclj.io/rustfs/admin/v3/oidc/callback/default"
+                  "https://s3.${config.site.tailnetDomain}/rustfs/admin/v3/oidc/callback/default"
+                ];
+                scopes = [
+                  "openid"
+                  "profile"
+                  "email"
+                ];
+                token_endpoint_auth_method = "client_secret_post";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
               }
@@ -1053,6 +1188,11 @@ in
         # no console blocklists. Requires the machine to be enrolled.
         console_management = true;
       };
+
+      # Podman ships with no unqualified-search registries, so a short image
+      # name like netbirdio/reverse-proxy fails to resolve at pull time.
+      # Search Docker Hub for short names (the only registry in play here).
+      virtualisation.containers.registries.search = [ "docker.io" ];
 
       # Netbird reverse proxy — runs as OCI container, handles its own TLS
       virtualisation.oci-containers.containers.netbird-proxy = {

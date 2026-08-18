@@ -41,7 +41,7 @@ _: {
           "github.com/mholt/caddy-ratelimit@v0.1.0"
           "github.com/mholt/caddy-l4@v0.1.1"
         ];
-        hash = "sha256-15NibrL5VXWrNj+PQH8md3ronxNo+B4v817LW/XdUy4=";
+        hash = "sha256-3YNjsWjbwtcj4qIHnZPHbmLtszPvX6ggvH28m+TieBo=";
       };
 
       # Shared per-vhost TLS block: DNS-01 via Cloudflare. This LAN intercepts
@@ -109,6 +109,17 @@ _: {
             skipped instead of plain http.
           '';
         };
+
+        extraDirectives = lib.mkOption {
+          type = lib.types.attrsOf lib.types.lines;
+          default = { };
+          example = lib.literalExpression ''{ s3 = "redir @browserRoot /rustfs/console/ 302"; }'';
+          description = ''
+            Extra Caddyfile directives for a proxied subdomain, emitted before
+            its reverse_proxy. Keyed the same as `proxies`. For backends whose
+            UI does not live at the site root.
+          '';
+        };
       };
 
       config = lib.mkIf cfg.enable {
@@ -145,6 +156,7 @@ _: {
             lib.nameValuePair "${sub}.${cfg.baseDomain}" {
               extraConfig = ''
                 ${tlsBlock}
+                ${cfg.extraDirectives.${sub} or ""}
                 ${mkReverseProxy upstream}
               '';
             }

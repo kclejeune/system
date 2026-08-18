@@ -19,33 +19,63 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # GitHub-hosted runners are small and have no persistent store, so
+          # every knob below is sized to the runner, not to the workload:
+          # linux-x64/arm64 are 4 vCPU / 16 GB, macOS arm64 is 3 vCPU / 7 GB.
           - system: x86_64-linux
-            runner: namespace-profile-default
+            runner: ubuntu-24.04
+            # Single worker: the cacheable attrs share one dominant single-
+            # threaded base eval, so extra workers duplicate it (measured no
+            # speedup) and contend on the eval-cache sqlite. Splitting it needs
+            # eval-cores, which nix-eval-jobs 2.34.3 rejects.
             eval-workers: 1
-            eval-max-memory: 8192
+            eval-max-memory: 6144
+            build-jobs: 2
           - system: aarch64-linux
-            runner: namespace-profile-default-arm64
+            runner: ubuntu-24.04-arm
             eval-workers: 2
-            eval-max-memory: 4096
+            eval-max-memory: 3072
+            build-jobs: 2
           - system: aarch64-darwin
-            runner: namespace-profile-darwin-aarch64
-            eval-workers: 3
-            eval-max-memory: 4096
+            runner: macos-15
+            # 7 GB total: one worker only, and two concurrent builds at most.
+            eval-workers: 1
+            eval-max-memory: 3072
+            build-jobs: 2
     steps:
       - uses: actions/checkout@v7
+
+      # The store is ephemeral here and shares the root volume with ~30 GB of
+      # preinstalled toolchains we never use. Reclaim it up front so heavy
+      # from-source builds have room before min-free GC has to kick in.
+      - name: Free disk space
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/share/boost /usr/local/lib/node_modules \
+            "$AGENT_TOOLSDIRECTORY" || true
+          df -h /
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v22
         with:
           determinate: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # extra-substituters = https://cache.kclj.io/kclejeune https://kclejeune.cachix.org https://install.determinate.systems https://noctalia.cachix.org
-          # extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
           extra-conf: |
             accept-flake-config = true
             max-substitution-jobs = 4
-            extra-substituters = https://cache.kclj.io/kclejeune https://install.determinate.systems https://noctalia.cachix.org
-            extra-trusted-public-keys = kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
+            # Auto-GC the store under space pressure. GitHub runners give ~14 GB
+            # (macOS) to ~45 GB (Linux, post-cleanup) of free space, so a
+            # from-source build of a heavy leaf can still overflow it. When free
+            # space drops below min-free the daemon deletes dead paths until
+            # max-free is available, reclaiming room mid-build instead of
+            # failing with "No space left on device". Values in bytes:
+            # 2 GiB / 6 GiB — kept well under the smallest runner's free space
+            # so a GC pass can actually reach max-free.
+            min-free = 2147483648
+            max-free = 6442450944
+            extra-substituters = https://cache.kclj.io
+            extra-trusted-public-keys = cache.kclj.io-1:StGAmbogIZLS5IAQD2IQCbbmIjv3Sq8rl/AVEw4Sy7s= kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=
 
       - name: Install nimbus and nix-fast-build
         run: nix profile add --accept-flake-config --inputs-from . .#nimbus .#nix-fast-build
@@ -61,3 +91,4 @@ jobs:
             --skip-cached \
             --eval-workers ${{ matrix.eval-workers }} \
             --eval-max-memory-size ${{ matrix.eval-max-memory }} \
+            -j ${{ matrix.build-jobs }}

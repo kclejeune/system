@@ -18,6 +18,7 @@ in
       imports = [
         flakeCfg.flake.nixosModules.hardware-p3-tiny
         flakeCfg.flake.nixosModules.server-base
+        flakeCfg.flake.nixosModules.nix-ld
         flakeCfg.flake.nixosModules.caddy-lan
         flakeCfg.flake.nixosModules.profile-personal
         flakeCfg.flake.nixosModules.tailscale

@@ -24,6 +24,7 @@ in
         # Every darwin host is GUI, so fonts go here. NixOS hosts get
         # them via desktop-base so headless `gateway` stays clean.
         flakeCfg.flake.darwinModules.fonts
+        flakeCfg.flake.darwinModules.nix-caches
       ];
 
       hm.imports = [ flakeCfg.flake.homeModules.onepassword ];
@@ -54,23 +55,6 @@ in
           garbageCollector.strategy = "automatic";
           builder.state = "enabled";
         };
-      };
-
-      hm.home.sessionVariables.SDKROOT = "$(xcrun --show-sdk-path)";
-
-      hm.home.sessionSearchVariables = {
-        LIBRARY_PATH = [
-          "${config.homebrew.prefix}/lib"
-          "$SDKROOT/usr/lib"
-          "/usr/local/lib"
-          "/usr/lib"
-        ];
-        CPATH = [
-          "${config.homebrew.prefix}/include"
-          "$SDKROOT/usr/include"
-          "/usr/local/include"
-          "/usr/lib"
-        ];
       };
 
       hm.nix.registry.darwin.flake = inputs.darwin;

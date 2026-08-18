@@ -3,14 +3,12 @@
 
   nixConfig = {
     extra-substituters = [
-      "https://cache.kclj.io/kclejeune"
-      # "https://kclejeune.cachix.org"
-      "https://install.determinate.systems"
-      "https://noctalia.cachix.org"
+      "https://cache.kclj.io"
     ];
     extra-trusted-public-keys = [
+      "cache.kclj.io-1:StGAmbogIZLS5IAQD2IQCbbmIjv3Sq8rl/AVEw4Sy7s="
       "kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk="
-      # "kclejeune.cachix.org-1:fOCrECygdFZKbMxHClhiTS6oowOkJ/I/dh9q9b1I4ko="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
     ];
@@ -28,13 +26,21 @@
     nimbus.url = "github:kclejeune/nimbus";
     nimbus.inputs.nixpkgs.follows = "unstable";
 
-    nh.url = "github:nix-community/nh";
+    # pin to resolve --target-host deploy ssh-ng MaxSessions flooding
+    nh.url = "github:kclejeune/nh/fix/remote-diff-ssh-ng-protocol-mismatch";
     nh.inputs.nixpkgs.follows = "unstable";
 
     flake-compat.url = "github:nix-community/flake-compat";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
     import-tree.url = "github:vic/import-tree";
+
+    terranix.url = "github:terranix/terranix";
+    terranix.inputs.nixpkgs.follows = "nixpkgs";
+    # terranix is itself flake-parts + import-tree. Its `systems` input can't
+    # dedupe — nothing at top level provides one.
+    terranix.inputs.flake-parts.follows = "flake-parts";
+    terranix.inputs.import-tree.follows = "import-tree";
 
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
@@ -125,6 +131,7 @@
           inputs.home-manager.flakeModules.home-manager
           inputs.treefmt-nix.flakeModule
           inputs.git-hooks.flakeModule
+          inputs.terranix.flakeModule
           (inputs.import-tree ./modules)
           # `cacheable` is the CI build set (host toplevels, HM activation
           # packages, devShells) transposed to `flake.cacheable.<system>` so
@@ -245,6 +252,13 @@
           # config.flake.nixosModules.backup
         ];
 
+            config.flake.nixosModules.vault
+            config.flake.nixosModules.rustfs
+            # backup needs real restic/* in secrets/vault.yaml; enable once set.
+            # config.flake.nixosModules.backup
+          ];
+        };
+
         # atlas — infra / backup node (P3 Tiny). Scaffolding only this round.
         flake.nixosConfigurations.atlas = mkNixosHost [
           config.flake.nixosModules.homelab-node
@@ -288,7 +302,7 @@
             "forge"
             "vault"
             "atlas"
-          ] mkNode;
+          ] (mkNode config.flake.lib.site.tailnetDomain);
 
         flake.darwinConfigurations = lib.mergeAttrsList (
           lib.map (system: {
@@ -371,10 +385,49 @@
             stable = inputs.stable.legacyPackages.${prev.stdenv.hostPlatform.system};
 
             cb = final.callPackage ./pkgs/cb/package.nix { };
-            fnox = final.callPackage ./pkgs/fnox/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             weave = final.callPackage ./pkgs/weave/package.nix { };
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
+            # Fork build of nh (see the input pin above); replaces nixpkgs' nh
+            # for both programs.nh in home-manager and the devShell.
+            nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
+
+            # worktrunk 0.68.0's shell-probe tests walk the host process table
+            # (sysctl KERN_PROC on darwin, /proc on linux) to resolve their own
+            # pid and a spawned child's name. The build sandbox hides both, so
+            # they panic. Drop once upstream gates them behind a sandbox check.
+            worktrunk = prev.worktrunk.overrideAttrs (old: {
+              checkFlags = (old.checkFlags or [ ]) ++ [
+                "--skip=shell::utils::tests::test_process_name_and_ppid_self"
+                "--skip=shell::utils::tests::test_probe_reports_invoked_name_for_sh"
+              ];
+            });
+
+            # catppuccin 2.5.0's __init__ eagerly imports its matplotlib extra
+            # whenever matplotlib is importable, and that extra touches
+            # matplotlib.style.core — removed in matplotlib 3.11 — so `import
+            # catppuccin` (and thus the catppuccin-gtk build that imports it)
+            # dies with AttributeError. Nothing here uses the matplotlib styles,
+            # only the palette, so disable the extra registration. Drop once
+            # catppuccin is matplotlib-3.11 compatible upstream.
+            pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+              (_: pyprev: {
+                catppuccin = pyprev.catppuccin.overridePythonAttrs (old: {
+                  postPatch = (old.postPatch or "") + ''
+                    substituteInPlace catppuccin/__init__.py \
+                      --replace-fail 'if importlib.util.find_spec("matplotlib") is not None:' 'if False:'
+                  '';
+                  # The matplotlib extra (and its tests) are the broken part; we
+                  # disabled the extra above, so skip its now-inapplicable tests.
+                  disabledTestPaths = (old.disabledTestPaths or [ ]) ++ [ "tests/test_matplotlib.py" ];
+                });
+              })
+            ];
+
+            # catppuccin-gtk 1.0.3's build.py passes a `type=` kwarg to
+            # argparse.BooleanOptionalAction, which Python 3.14 removed. Build it
+            # (and the catppuccin lib it imports) on 3.13 until it is 3.14-ready.
+            catppuccin-gtk = prev.catppuccin-gtk.override { python3 = final.python313; };
           };
         };
 

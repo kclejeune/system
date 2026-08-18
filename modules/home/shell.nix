@@ -60,27 +60,6 @@ _: {
         };
       };
 
-      programs.atuin = {
-        enable = true;
-        package = pkgs.atuin;
-        daemon.enable = true;
-        flags = [ ];
-      };
-      # atuin's daemon does not unlink its unix socket on bind, so a hard kill
-      # (sleep, crash, force-quit) leaves a stale socket and every subsequent
-      # `atuin daemon start` exits with EADDRINUSE — invisibly, since launchd's
-      # KeepAlive just respawns the failing process. On Linux the systemd
-      # socket unit handles this via RemoveOnStop=true; on darwin we have to
-      # remove the socket ourselves before exec.
-      launchd.agents.atuin-daemon.config.ProgramArguments =
-        lib.mkIf pkgs.stdenvNoCC.hostPlatform.isDarwin
-          (
-            lib.mkForce [
-              "/bin/sh"
-              "-c"
-              ''rm -f "${config.xdg.dataHome}/atuin/daemon.sock"; exec ${lib.getExe pkgs.atuin} daemon start''
-            ]
-          );
       xdg =
         let
           mkZshPlugin =
@@ -120,6 +99,21 @@ _: {
           setopt CHASE_LINKS
           setopt CHASE_DOTS
           ${wtInstall "zsh"}
+        '';
+        # .zshrc is only sourced by *interactive* shells, so none of the
+        # options above reach `zsh -c` (CI, scripts, agent tool calls). Two
+        # zsh defaults are actively hostile to non-interactive one-liners:
+        #   NOMATCH — an unmatched glob aborts the ENTIRE command, so
+        #     `rg pat a/*.yml b/*.yml` runs nothing if only one dir is empty.
+        #     bash/sh instead pass the pattern through literally.
+        #   EQUALS  — a word starting with `=` expands as a command lookup, so
+        #     the ubiquitous `echo ===` separator dies with "== not found".
+        # Scoped to non-interactive only: interactive sessions keep NOMATCH's
+        # typo protection, which is worth having at a prompt.
+        envExtra = ''
+          if [[ ! -o interactive ]]; then
+            setopt NO_NOMATCH NO_EQUALS
+          fi
         '';
         oh-my-zsh = {
           enable = true;

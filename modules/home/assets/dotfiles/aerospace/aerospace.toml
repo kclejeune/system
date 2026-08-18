@@ -206,6 +206,7 @@ run = 'move-node-to-workspace B'
 if.app-id = 'org.mozilla.firefox'
 run = 'move-node-to-workspace B'
 
+# kept for an easy switch back to firefox-devedition
 [[on-window-detected]]
 if.app-id = 'org.mozilla.firefoxdeveloperedition'
 run = 'move-node-to-workspace B'

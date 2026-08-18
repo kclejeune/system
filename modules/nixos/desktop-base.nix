@@ -22,6 +22,7 @@ in
 
       services.libinput.enable = true;
       services.printing.enable = true;
+      services.netbird.clients.default.autoStart = false;
 
       # -- Timezone --
       # automatic-timezoned + GeoClue flaps because beacondb doesn't know
@@ -272,6 +273,13 @@ in
         HandleLidSwitchDocked = "ignore";
       };
 
+      # `sudo` fingerprint-auths via pam_fprintd, but only inline in the
+      # TTY — a terminal program has no GUI conversation agent, so it can't
+      # draw a polkit popup. For a graphical fingerprint prompt on terminal
+      # elevation, use `run0 <cmd>` instead: run0 routes through polkit →
+      # the noctalia polkit-agent → the polkit-1 PAM stack (which also has
+      # pam_fprintd), so the noctalia overlay appears and accepts a scan.
+      # Verified: `run0 true` → `PAM:setcred grantors=pam_fprintd`.
       security.sudo.extraConfig = ''
         Defaults timestamp_timeout=30
         Defaults timestamp_type=tty
@@ -375,7 +383,7 @@ in
       environment.systemPackages = [
         pkgs.brave
         pkgs.dmidecode
-        pkgs.firefox-devedition
+        pkgs.firefox
         pkgs.google-chrome
         pkgs.kitty
         pkgs.obsidian

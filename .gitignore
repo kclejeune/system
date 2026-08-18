@@ -9,3 +9,11 @@
 /result-*
 /docs/superpowers
 /.superpowers
+
+# Terranix scratch dir. State is remote, but a failed backend init drops a
+# local copy — and it holds the UniFi API key.
+/.terranix/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
