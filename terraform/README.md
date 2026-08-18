@@ -40,11 +40,11 @@ signed API requests pass straight through.
 
 ### One-time setup
 
-**1. Secrets.** `secrets/vault.yaml` already carries `unifi/api-key`,
-`unifi/base-url` and `unifi/site-id`. Add three more:
+**1. Secrets.** Two sops files feed the wrapper:
 
 ```bash
-sops secrets/vault.yaml    # rustfs/access-key, rustfs/secret-key, wifi/passphrase
+sops secrets/terraform.yaml  # unifi/api-key, wifi/passphrase (operator-only; kclejeune key)
+sops secrets/vault.yaml      # rustfs/access-key, rustfs/secret-key (state bucket; also used by vault)
 ```
 
 Generate the RustFS pair with `openssl rand -hex 32`. Write them straight into
