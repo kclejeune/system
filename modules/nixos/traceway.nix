@@ -116,6 +116,9 @@ _: {
         # config (`authelia crypto hash generate pbkdf2 --variant sha512`).
         sops.secrets = {
           "traceway/jwt_secret" = { };
+          # Unset, this derives from JWT_SECRET, so a JWT rotation would
+          # break in-flight SSO logins.
+          "traceway/oauth_session_secret" = { };
           "traceway/s3_access_key" = { };
           "traceway/s3_secret_key" = { };
           "traceway/oidc_client_secret" = { };
@@ -126,7 +129,11 @@ _: {
         # restartTrigger covers every config change.
         sops.templates.${envTemplate}.content = ''
           JWT_SECRET=${config.sops.placeholder."traceway/jwt_secret"}
+          OAUTH_SESSION_SECRET=${config.sops.placeholder."traceway/oauth_session_secret"}
           APP_BASE_URL=https://${cfg.domain}
+
+          # Unset means allow in self-hosted mode.
+          SYNTHETICS_ALLOW_PRIVATE_TARGETS=false
 
           DUCKDB_MEMORY_LIMIT=${cfg.duckdbMemoryLimit}
           DUCKDB_THREADS=${toString cfg.duckdbThreads}
@@ -190,6 +197,22 @@ _: {
           config.sops.templates.${envTemplate}.content
         ];
 
+        # Upstream's webhook sender is an unguarded http.Client with an
+        # attacker-chosen URL, so drop routed container egress to private/
+        # CGNAT/link-local ranges (Hetzner metadata was reachable without
+        # this). Container→host traffic hits the input chain, not this hook,
+        # and is already default-dropped there.
+        networking.nftables.tables.traceway-egress = {
+          family = "inet";
+          content = ''
+            chain forward {
+              type filter hook forward priority filter - 10; policy accept;
+              iifname "podman*" ip daddr { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 } drop
+              iifname "podman*" ip6 daddr { ::1, fc00::/7, fe80::/10 } drop
+            }
+          '';
+        };
+
         # Ingress. Ingest endpoints (project-token authed) are hit by SDKs
         # running at Cloudflare's edge and in end-user browsers, so they must
         # stay genuinely public and unthrottled per-IP — nimbus egresses from
@@ -199,25 +222,51 @@ _: {
         services.nginx.virtualHosts.${cfg.domain} =
           let
             upstream = "http://127.0.0.1:${toString cfg.port}";
-            ingest = {
+            # The app trusts every X-Forwarded-For hop (no SetTrustedProxies),
+            # so send only the real client address instead of nginx's
+            # appending default. A location-level proxy_set_header cancels the
+            # inherited recommendedProxySettings set, so restate it wholesale.
+            proxyHeaders = ''
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $remote_addr;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_set_header X-Forwarded-Host $host;
+              proxy_set_header X-Forwarded-Server $hostname;
+            '';
+            proxyLoc = extra: {
               proxyPass = upstream;
-              extraConfig = ''
-                # OTLP/report batches and session-recording chunks can be large
-                # and gzip'd; don't buffer them through nginx's temp files.
-                proxy_request_buffering off;
-              '';
+              recommendedProxySettings = false;
+              extraConfig = proxyHeaders + extra;
             };
+            ingest = proxyLoc ''
+              # Keep upstream keepalive despite the cancelled include.
+              proxy_set_header Connection "";
+              # OTLP/report batches and session-recording chunks can be large
+              # and gzip'd; don't buffer them through nginx's temp files.
+              proxy_request_buffering off;
+            '';
           in
           {
             forceSSL = true;
             enableACME = true;
             # Source-map uploads and recording chunks exceed nginx's 1m default.
+            #
+            # The app sets no security headers itself and keeps its JWT in
+            # localStorage. script-src needs 'unsafe-inline' (SvelteKit inline
+            # bootstrap); connect-src 'self' still blocks exfil. An add_header
+            # in any location below would stop these inheriting.
             extraConfig = ''
               client_max_body_size 64m;
+
+              add_header Strict-Transport-Security "max-age=63072000" always;
+              add_header X-Content-Type-Options "nosniff" always;
+              add_header X-Frame-Options "DENY" always;
+              add_header Referrer-Policy "no-referrer" always;
+              add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" always;
             '';
             locations = {
-              "/" = {
-                proxyPass = upstream;
+              "/" = proxyLoc "" // {
                 proxyWebsockets = true;
               };
               "/api/report" = ingest;

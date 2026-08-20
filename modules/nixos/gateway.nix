@@ -428,6 +428,24 @@ in
             # identity is a full admin — so the ONLY access gate is here:
             # restrict the `incus` client to members of lldap_admin. kclejeune
             # and admin are members; everyone else is denied at login.
+            # Traceway auto-provisions every OIDC login into the org with
+            # write access (auto-create is fixed on and org resolution fails
+            # open), so membership is enforced here. Tiers match the
+            # OIDC_ROLE_MAP in services.traceway below; flat subject entries
+            # are OR'd.
+            authorization_policies.traceway_users = {
+              default_policy = "deny";
+              rules = [
+                {
+                  policy = "two_factor";
+                  subject = [
+                    "group:lldap_admin"
+                    "group:traceway_admin"
+                    "group:traceway_user"
+                  ];
+                }
+              ];
+            };
             authorization_policies.incus_admins = {
               default_policy = "deny";
               rules = [
@@ -504,7 +522,7 @@ in
                 client_id = "traceway";
                 client_name = "Traceway";
                 client_secret = "$pbkdf2-sha512$310000$gNo7ijU5nWrmnX3jGSLU2Q$sq7sQiPcOV7kt7VC/v/9xPKCNXcgU.sqv0..u7fk.WBbpITeN7dg4FmPJiICe0we.CP7IQWqLFuhmsB/cgoUdg";
-                authorization_policy = "two_factor";
+                authorization_policy = "traceway_users";
                 consent_mode = "implicit";
                 claims_policy = "traceway";
                 redirect_uris = [
@@ -920,12 +938,9 @@ in
       # retention worker is a no-op on S3.
       services.traceway = {
         domain = tracewayDomain;
-        # Held at 1.9.11 (last published -duckdb tag before 1.9.15; 1.9.12-14 have
-        # no duckdb image): from the monitoring PR (#286) the DuckDB migration
-        # 0004_add_output_key_to_check_results does `ADD COLUMN ... NOT NULL
-        # DEFAULT ''`, which DuckDB rejects ("Adding columns with constraints
-        # not yet supported") — every -duckdb image since panics on boot.
-        # Bump once upstream drops the NOT NULL.
+        # Held at 1.9.11: -duckdb images 1.9.15–1.9.17 panic on a migration
+        # DuckDB rejects; fixed on main (2c58eb6b) just after the 1.9.17 tag.
+        # Bump at the first -duckdb tag ≥ 1.9.18.
         version = "1.9.11";
         port = tracewayPort;
         s3 = {
@@ -935,7 +950,14 @@ in
         oidc = {
           discoveryUrl = "https://${authDomain}/.well-known/openid-configuration";
           displayName = "Authelia";
-          roleMap.lldap_admin = "admin";
+          # In lockstep with the traceway_users Authelia policy above. Higher
+          # role wins for users in both groups; re-applied on every login, so
+          # dropping lldap_admin demotes at next sign-in.
+          roleMap = {
+            lldap_admin = "admin";
+            traceway_admin = "admin";
+            traceway_user = "user";
+          };
           disablePasswordLogin = true;
         };
         # bare address: the app passes it verbatim to MAIL FROM
