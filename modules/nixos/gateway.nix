@@ -938,10 +938,7 @@ in
       # retention worker is a no-op on S3.
       services.traceway = {
         domain = tracewayDomain;
-        # Held at 1.9.11: -duckdb images 1.9.15–1.9.17 panic on a migration
-        # DuckDB rejects; fixed on main (2c58eb6b) just after the 1.9.17 tag.
-        # Bump at the first -duckdb tag ≥ 1.9.18.
-        version = "1.9.11";
+        version = "1.9.18";
         port = tracewayPort;
         s3 = {
           bucket = "traceway";

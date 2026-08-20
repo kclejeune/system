@@ -116,8 +116,6 @@ _: {
         # config (`authelia crypto hash generate pbkdf2 --variant sha512`).
         sops.secrets = {
           "traceway/jwt_secret" = { };
-          # Unset, this derives from JWT_SECRET, so a JWT rotation would
-          # break in-flight SSO logins.
           "traceway/oauth_session_secret" = { };
           "traceway/s3_access_key" = { };
           "traceway/s3_secret_key" = { };
