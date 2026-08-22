@@ -22,6 +22,12 @@ _: {
       cfg = config.services.traceway;
       stateDir = "/var/lib/traceway";
       envTemplate = "traceway.env";
+      # Fixed uid: the nftables skuid match below must be numeric — a name is
+      # resolved by `nft --check` at *build* time, inside a sandbox with no
+      # /etc/passwd entry for it (fails "User does not exist"). 400 sits above
+      # nixpkgs' static ids.nix range (<400) and far from NixOS's dynamic
+      # system-uid allocation (999 counting down).
+      tracewayUid = 400;
     in
     {
       options.services.traceway = {
@@ -177,6 +183,7 @@ _: {
         # owner across restarts.
         users.users.traceway = {
           isSystemUser = true;
+          uid = tracewayUid;
           group = "traceway";
         };
         users.groups.traceway = { };
@@ -258,12 +265,12 @@ _: {
           content = ''
             chain output {
               type filter hook output priority filter - 10; policy accept;
-              meta skuid "traceway" ct state established,related accept
-              meta skuid "traceway" oifname "lo" tcp dport { 53, 80, 443 } accept
-              meta skuid "traceway" oifname "lo" udp dport 53 accept
-              meta skuid "traceway" oifname "lo" drop
-              meta skuid "traceway" ip daddr { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 } drop
-              meta skuid "traceway" ip6 daddr { fc00::/7, fe80::/10 } drop
+              meta skuid ${toString tracewayUid} ct state established,related accept
+              meta skuid ${toString tracewayUid} oifname "lo" tcp dport { 53, 80, 443 } accept
+              meta skuid ${toString tracewayUid} oifname "lo" udp dport 53 accept
+              meta skuid ${toString tracewayUid} oifname "lo" drop
+              meta skuid ${toString tracewayUid} ip daddr { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 } drop
+              meta skuid ${toString tracewayUid} ip6 daddr { fc00::/7, fe80::/10 } drop
             }
           '';
         };
