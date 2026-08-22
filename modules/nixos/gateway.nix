@@ -938,7 +938,7 @@ in
       # retention worker is a no-op on S3.
       services.traceway = {
         domain = tracewayDomain;
-        version = "1.9.18";
+        version = "1.9.19";
         port = tracewayPort;
         s3 = {
           bucket = "traceway";
