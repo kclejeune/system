@@ -76,9 +76,10 @@
           default = null;
           description = ''
             SSH public key used to sign git commits. When set, home-manager
-            git config turns on ssh-format signing with this key. The
-            signer binary and signByDefault come from the 1password HM
-            module — this option just provides the key.
+            git config turns on ssh-format signing with this key. Hosts
+            with the 1password HM module sign via op-ssh-sign; everywhere
+            else git's stock ssh-keygen signer is used, which reaches the
+            key through the (forwarded) ssh agent.
           '';
         };
       };
@@ -143,7 +144,14 @@
             name = lib.mkDefault cfg.displayName;
             email = lib.mkDefault cfg.email;
           };
-          signing.key = lib.mkIf (cfg.sshSigningKey != null) cfg.sshSigningKey;
+          # mkDefault so the 1password HM module's op-ssh-sign wiring wins on
+          # hosts that enroll it; headless hosts fall back to git's stock
+          # ssh-keygen signer, which signs through the forwarded agent.
+          signing = lib.mkIf (cfg.sshSigningKey != null) {
+            key = cfg.sshSigningKey;
+            format = lib.mkDefault "ssh";
+            signByDefault = lib.mkDefault true;
+          };
         };
       };
     };
