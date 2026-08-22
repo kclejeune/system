@@ -431,6 +431,8 @@
             cb = final.callPackage ./pkgs/cb/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             weave = final.callPackage ./pkgs/weave/package.nix { };
+            traceway = final.callPackage ./pkgs/traceway/package.nix { };
+            traceway-cli = final.traceway.cli;
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
             # Fork build of nh (see the input pin above); replaces nixpkgs' nh
             # for both programs.nh in home-manager and the devShell.

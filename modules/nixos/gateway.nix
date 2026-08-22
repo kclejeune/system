@@ -48,7 +48,7 @@ in
       alertmanagerPort = 9093;
       karmaPort = 8082; # karma's default 8080 collides with netbird-proxy
       beszelPort = 8091; # beszel hub web UI / agent endpoint (its 8090 default collides with crowdsecLapiPort)
-      tracewayPort = 8095; # traceway container's :80, published on loopback for nginx
+      tracewayPort = 8095; # traceway backend listen port; nginx proxies to it on loopback
       tracewayDomain = "traceway.${domain}";
 
       mkHttpsVhost = extra: {
@@ -512,7 +512,7 @@ in
               }
               {
                 # Traceway dashboard login (services.traceway below).
-                # Confidential client — the container reads the plaintext from
+                # Confidential client — the traceway service reads the plaintext from
                 # sops traceway/oidc_client_secret; Authelia keeps only the
                 # pbkdf2 hash. Rotate in lockstep (`authelia crypto hash
                 # generate pbkdf2 --variant sha512`). No PKCE: Traceway's OIDC
@@ -938,7 +938,6 @@ in
       # retention worker is a no-op on S3.
       services.traceway = {
         domain = tracewayDomain;
-        version = "1.9.19";
         port = tracewayPort;
         s3 = {
           bucket = "traceway";

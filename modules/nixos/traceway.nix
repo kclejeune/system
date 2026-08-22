@@ -1,18 +1,21 @@
 _: {
-  # Traceway (APM / error tracking / session replay) as a pinned podman
-  # container. Upstream ships no server binary release and isn't in nixpkgs —
-  # only cosign-signed ghcr images cut several times a day — so a container
-  # beats packaging the SvelteKit+Go+CGO/DuckDB build.
+  # Traceway (APM / error tracking / session replay) as a native systemd
+  # service running the nix-built `pkgs.traceway` (see pkgs/traceway) — the
+  # `-duckdb` flavour: SQLite main DB + DuckDB telemetry DB, both under
+  # /var/lib/traceway. Formerly the ghcr container; packaging turned out to be
+  # tractable (the DuckDB static libs arrive through the Go module graph, so
+  # buildGoModule + buildNpmPackage cover it) and a real unit buys systemd
+  # hardening, sd_notify + watchdog supervision, and no image pulls.
   #
-  # Storage flavour is fixed by the image tag: `-duckdb` = SQLite main DB +
-  # DuckDB telemetry DB, both under /data. Switching to `-sqlite` later keeps
-  # the main DB (users/orgs/projects) but drops telemetry, so it's a decision
-  # made up front. Blobs (source maps, session recordings, AI traces) go to an
-  # S3 bucket (R2), so nothing but the two DB files lives on the host.
+  # Switching to the pure-Go sqlite flavour later keeps the main DB
+  # (users/orgs/projects) but drops telemetry, so it's a decision made up
+  # front. Blobs (source maps, session recordings, AI traces) go to an S3
+  # bucket (R2), so nothing but the two DB files lives on the host.
   flake.nixosModules.traceway =
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
@@ -22,22 +25,24 @@ _: {
     in
     {
       options.services.traceway = {
+        package = lib.mkPackageOption pkgs "traceway" { };
         domain = lib.mkOption {
           type = lib.types.str;
           description = "Public hostname for the dashboard and ingest endpoints (nginx vhost + APP_BASE_URL).";
         };
-        version = lib.mkOption {
-          type = lib.types.str;
-          description = "Upstream release (backend/v<version> tag). Image is ghcr.io/tracewayapp/traceway:v<version>-duckdb (amd64 only).";
-        };
         port = lib.mkOption {
           type = lib.types.port;
-          description = "Loopback port the container's :80 is published on for nginx.";
+          description = ''
+            Port the backend listens on (PORTS env). gin binds all interfaces,
+            not just loopback — the input chain's default drop is what keeps
+            this off the public/mesh interfaces, and nginx proxies to it over
+            127.0.0.1.
+          '';
         };
         memoryLimit = lib.mkOption {
           type = lib.types.str;
-          default = "2g";
-          description = "podman --memory cap for the container.";
+          default = "2G";
+          description = "systemd MemoryMax cap for the service.";
         };
         duckdbMemoryLimit = lib.mkOption {
           type = lib.types.str;
@@ -123,9 +128,13 @@ _: {
         };
 
         # Rendered out of the world-readable store; consumed only by the
-        # container's EnvironmentFile. Non-secret knobs live here too so one
+        # unit's EnvironmentFile. Non-secret knobs live here too so one
         # restartTrigger covers every config change.
         sops.templates.${envTemplate}.content = ''
+          PORTS=${toString cfg.port}
+          DB_TYPE=sqlite
+          SQLITE_PATH=${stateDir}/traceway.db
+
           JWT_SECRET=${config.sops.placeholder."traceway/jwt_secret"}
           OAUTH_SESSION_SECRET=${config.sops.placeholder."traceway/oauth_session_secret"}
           APP_BASE_URL=https://${cfg.domain}
@@ -163,50 +172,98 @@ _: {
           SMTP_PASSWORD=${config.sops.placeholder."smtp/password"}
         '';
 
-        # The image runs as root and only writes under /data (SQLite + DuckDB
-        # files, WAL, DuckDB spill). A bind mount rather than a named volume
-        # so the DBs sit at a fixed path for backup (`sqlite3 .backup`).
-        systemd.tmpfiles.rules = [ "d ${stateDir} 0700 root root - -" ];
-
-        virtualisation.oci-containers.containers.traceway = {
-          image = "ghcr.io/tracewayapp/traceway:v${cfg.version}-duckdb";
-          environmentFiles = [ config.sops.templates.${envTemplate}.path ];
-          # Loopback-only publish; nginx is the sole ingress. Bridge networking
-          # (not --network=host) keeps the app off the host's overlay
-          # interfaces — its synthetic monitors and notification webhooks
-          # can't reach the mesh, and it can't bind anything else on the host.
-          ports = [ "127.0.0.1:${toString cfg.port}:80" ];
-          volumes = [ "${stateDir}:/data" ];
-          extraOptions = [
-            "--memory=${cfg.memoryLimit}"
-            "--cap-drop=ALL"
-            "--cap-add=NET_BIND_SERVICE" # the image listens on :80 inside its netns
-            "--read-only"
-            # Go's os.TempDir and the source-map cache default to /tmp.
-            "--tmpfs=/tmp:rw,noexec,nosuid,size=256m"
-            "--security-opt=no-new-privileges:true"
-          ];
+        # Static user (not DynamicUser): the nftables skuid egress match below
+        # needs a stable name, and the pre-existing DB files must keep a fixed
+        # owner across restarts.
+        users.users.traceway = {
+          isSystemUser = true;
+          group = "traceway";
         };
+        users.groups.traceway = { };
 
-        # oci-containers only restarts on unit/image changes, not env-file
-        # *content* changes — without this a sops/config edit is silently
-        # inert until a manual restart.
-        systemd.services.podman-traceway.restartTriggers = [
-          config.sops.templates.${envTemplate}.content
+        # `Z` (recursive chown) rather than `d`: the DB files were written by
+        # the old container as root, and StateDirectory= only fixes the
+        # directory itself, not existing contents.
+        systemd.tmpfiles.rules = [
+          "d ${stateDir} 0700 traceway traceway - -"
+          "Z ${stateDir} 0700 traceway traceway - -"
         ];
 
+        systemd.services.traceway = {
+          wantedBy = [ "multi-user.target" ];
+          after = [ "network-online.target" ];
+          wants = [ "network-online.target" ];
+          # A sops/config edit must restart the unit even though the unit file
+          # itself is unchanged (EnvironmentFile content isn't tracked).
+          restartTriggers = [ config.sops.templates.${envTemplate}.content ];
+          serviceConfig = {
+            ExecStart = lib.getExe cfg.package;
+            # The backend sends sd_notify READY and pings the watchdog every
+            # 15s unconditionally.
+            Type = "notify";
+            WatchdogSec = "60s";
+            Restart = "always";
+            RestartSec = "5s";
+
+            User = "traceway";
+            Group = "traceway";
+            StateDirectory = "traceway";
+            WorkingDirectory = stateDir;
+            EnvironmentFile = config.sops.templates.${envTemplate}.path;
+            Environment = [ "GIN_MODE=release" ];
+
+            MemoryMax = cfg.memoryLimit;
+
+            # Go's os.TempDir and the source-map cache default to /tmp.
+            PrivateTmp = true;
+            NoNewPrivileges = true;
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            PrivateDevices = true;
+            ProtectKernelTunables = true;
+            ProtectKernelModules = true;
+            ProtectKernelLogs = true;
+            ProtectControlGroups = true;
+            ProtectClock = true;
+            ProtectHostname = true;
+            ProtectProc = "invisible";
+            ProcSubset = "pid";
+            RestrictAddressFamilies = [
+              "AF_INET"
+              "AF_INET6"
+              "AF_UNIX"
+            ];
+            RestrictNamespaces = true;
+            RestrictRealtime = true;
+            RestrictSUIDSGID = true;
+            LockPersonality = true;
+            CapabilityBoundingSet = "";
+            SystemCallFilter = [ "@system-service" ];
+            SystemCallArchitectures = "native";
+            UMask = "0077";
+          };
+        };
+
         # Upstream's webhook sender is an unguarded http.Client with an
-        # attacker-chosen URL, so drop routed container egress to private/
-        # CGNAT/link-local ranges (Hetzner metadata was reachable without
-        # this). Container→host traffic hits the input chain, not this hook,
-        # and is already default-dropped there.
+        # attacker-chosen URL, so drop this uid's egress to private/CGNAT/
+        # link-local ranges (Hetzner metadata was reachable without this) and
+        # to loopback services other than DNS (systemd-resolved's stub on
+        # 127.0.0.53:53) and nginx's own 80/443 — that matches what the old
+        # container could reach: its traffic to the host hit the default-drop
+        # input chain, with only the public nginx ports open. The
+        # established-state accept must come first or reply packets to nginx's
+        # proxy connections (skuid traceway, lo, ephemeral dport) get dropped.
         networking.nftables.tables.traceway-egress = {
           family = "inet";
           content = ''
-            chain forward {
-              type filter hook forward priority filter - 10; policy accept;
-              iifname "podman*" ip daddr { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 } drop
-              iifname "podman*" ip6 daddr { ::1, fc00::/7, fe80::/10 } drop
+            chain output {
+              type filter hook output priority filter - 10; policy accept;
+              meta skuid "traceway" ct state established,related accept
+              meta skuid "traceway" oifname "lo" tcp dport { 53, 80, 443 } accept
+              meta skuid "traceway" oifname "lo" udp dport 53 accept
+              meta skuid "traceway" oifname "lo" drop
+              meta skuid "traceway" ip daddr { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 } drop
+              meta skuid "traceway" ip6 daddr { fc00::/7, fe80::/10 } drop
             }
           '';
         };

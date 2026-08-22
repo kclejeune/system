@@ -123,6 +123,7 @@ _: {
           ssh-to-age
           sshpass
           stylua
+          traceway-cli
           tree
           trivy
           usage
