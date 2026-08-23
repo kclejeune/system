@@ -26,11 +26,9 @@ _: {
           cacert
           cachix
           cb
-          cirrus-cli
           clang
           clang-tools
           claude-code
-          cmake
           codespell
           codex
           coreutils-full

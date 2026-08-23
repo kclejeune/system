@@ -138,13 +138,15 @@ for live examples.
 
 ## Adding a new host
 
-Hosts are defined inline in `flake.nix`, not as separate files. Add a new
-attribute under `flake.nixosConfigurations` / `flake.darwinConfigurations` /
-`flake.homeConfigurations` that calls `nixosSystem` / `darwinSystem` /
-`homeManagerConfiguration` and lists the modules to enable. See the
-existing `phil` / `wally` / `gateway` (NixOS), the `kclejeune@${system}`
-`lib.map` block (darwin), and the standalone-home `lib.map` block for the
-shapes to copy.
+Hosts are defined inline in `flake.nix`, not as separate files. NixOS
+hosts go through the `mkNixosHost` helper (a `let` binding at the top of
+the `mkFlake` module), which supplies the shared system/`specialArgs`/
+baseline-module plumbing — a host block is just
+`flake.nixosConfigurations.<host> = mkNixosHost [ …modules… ];` listing
+what makes the host distinct. Darwin and standalone-home hosts call
+`darwinSystem` / `homeManagerConfiguration` directly; see the
+`kclejeune@${system}` `lib.map` block (darwin) and the standalone-home
+`lib.map` block for the shapes to copy.
 
 **Output naming**: NixOS hosts use the bare hostname
 (`nixosConfigurations.phil`, `.wally`, `.gateway`). Darwin and
