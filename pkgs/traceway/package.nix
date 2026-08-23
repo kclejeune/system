@@ -6,13 +6,13 @@
 }:
 
 let
-  version = "1.9.19";
+  version = "1.9.19-dev";
 
   src = fetchFromGitHub {
     owner = "tracewayapp";
     repo = "traceway";
-    tag = "backend/v${version}";
-    hash = "sha256-sg3XoNYtkIzbYwjFV4gZYJNAFyKJcerOK2XcoGKHUzY=";
+    rev = "d03745f92dfb2c8bd670798e681273c535bd36d0";
+    hash = "sha256-GsfpviXChRMb/umSXmcKI5maA82PcLkChlBjhW4EWVA=";
   };
 
   # Release tags commit a prebuilt frontend at backend/static/frontend, but
