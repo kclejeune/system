@@ -11,8 +11,8 @@ let
   src = fetchFromGitHub {
     owner = "tracewayapp";
     repo = "traceway";
-    rev = "d03745f92dfb2c8bd670798e681273c535bd36d0";
-    hash = "sha256-GsfpviXChRMb/umSXmcKI5maA82PcLkChlBjhW4EWVA=";
+    rev = "b69fd73118037a0c2713e2e0195fff84aa613dec";
+    hash = "sha256-LyM7/0VM1gPEIW2bATEmLcc8zo8cz2SHGX9nEJLsw+w=";
   };
 
   # Release tags commit a prebuilt frontend at backend/static/frontend, but
