@@ -179,8 +179,9 @@ _: {
       # Prometheus - metrics scraping
       services.prometheus = {
         enable = true;
-        # No built-in auth; overlay-only (not opened publicly; see firewall comment).
-        listenAddress = "0.0.0.0";
+        # No built-in auth: expose only through local Tailscale Serve / NetBird
+        # proxy backends, never as a raw overlay listener.
+        listenAddress = "127.0.0.1";
         port = prometheusPort;
         retentionTime = "30d";
         scrapeConfigs = [
@@ -233,10 +234,10 @@ _: {
             ];
           })
         ];
-        # No built-in auth; overlay-only (not opened publicly; see firewall comment).
+        # No built-in auth: Tailscale Serve and the NetBird proxy are the gates.
         alertmanager = {
           enable = true;
-          listenAddress = "0.0.0.0";
+          listenAddress = "127.0.0.1";
           port = alertmanagerPort;
           webExternalUrl = "https://alerts.kclj.dev";
           configuration = {
@@ -248,13 +249,12 @@ _: {
         };
       };
 
-      # Karma — dashboard over Alertmanager, no built-in auth. Overlay-only
-      # (not opened publicly; see firewall comment).
+      # Karma — dashboard over Alertmanager, no built-in auth. Proxy-only.
       services.karma = {
         enable = true;
         settings = {
           listen = {
-            address = "0.0.0.0";
+            address = "127.0.0.1";
             port = karmaPort;
           };
           alertmanager.servers = [
@@ -271,9 +271,10 @@ _: {
         enable = true;
         settings = {
           server = {
-            # Overlay-only (not opened publicly; see firewall comment); the
-            # auth.proxy whitelist below pins header trust to the NetBird range.
-            http_addr = "0.0.0.0";
+            # The host-networked NetBird proxy is the sole ingress. Keeping the
+            # listener on loopback prevents overlay peers from bypassing it and
+            # forging the auth-proxy identity headers below.
+            http_addr = "127.0.0.1";
             http_port = grafanaPort;
             domain = netbirdProxyDomain;
             root_url = "https://grafana.${netbirdProxyDomain}";
@@ -282,9 +283,9 @@ _: {
             admin_user = "admin";
             secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
           };
-          # SSO via the NetBird proxy: it authenticates the user and stamps the
-          # email into X-NetBird-User. whitelist pins header trust to the NetBird
-          # CGNAT range (100.64.0.0/10) so only the proxy can assert an identity.
+          # SSO via the host-networked NetBird proxy: it authenticates the user
+          # and stamps the email into X-NetBird-User. Only its loopback
+          # connection may assert an identity.
           "auth.proxy" = {
             enabled = true;
             header_name = "X-NetBird-User";
@@ -292,7 +293,7 @@ _: {
             headers = "Groups:X-NetBird-Groups";
             auto_sign_up = true;
             enable_login_token = false;
-            whitelist = "100.64.0.0/10";
+            whitelist = "127.0.0.1/32";
           };
         };
         provision = {

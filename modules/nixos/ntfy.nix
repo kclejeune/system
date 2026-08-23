@@ -23,7 +23,9 @@ _: {
         enable = true;
         settings = {
           base-url = "https://ntfy.kclj.dev";
-          listen-http = ":${toString ntfyPort}";
+          # NetBird proxy backend only; do not expose the raw HTTP listener to
+          # every peer on the trusted overlay interfaces.
+          listen-http = "127.0.0.1:${toString ntfyPort}";
           behind-proxy = true;
           upstream-base-url = "https://ntfy.sh";
           message-size-limit = "4096";

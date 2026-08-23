@@ -13,6 +13,7 @@ in
       autheliaInstance = "main";
       autheliaUser = "authelia-${autheliaInstance}";
       autheliaStateDir = "/var/lib/authelia-${autheliaInstance}";
+      lldapSecretsGroup = "lldap-secrets";
       # Log lives in a dedicated dir, NOT the state dir: the state dir holds
       # db.sqlite3 (TOTP/WebAuthn/session data, world-readable 0644), so granting
       # crowdsec traverse there to read the log would also expose the auth DB.
@@ -100,11 +101,9 @@ in
         # lets mesh peers reach the private-service proxy directly (UDP hole
         # punch to gateway's public IP) rather than relaying through coturn.
         allowedUDPPorts = [ netbirdProxyWgPort ];
-        # The internal web UIs (grafana, prometheus, alertmanager, karma, lldap,
-        # ntfy, beszel) bind 0.0.0.0 so the NetBird proxy reaches them over the mesh, but
-        # aren't opened here — so default-drop keeps them off the public NIC while
-        # trustedInterfaces (wt0/tailscale0) admits the overlay. NetBird ACLs +
-        # proxy SSO gate who on the overlay reaches them.
+        # Most internal web UIs bind loopback and are reached through the local
+        # NetBird proxy or Tailscale Serve. Traceway cannot select a bind address,
+        # so it still relies on default-drop to stay off the public NIC.
         extraInputRules = ''
           tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
           tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
@@ -154,12 +153,9 @@ in
           # needs to own it; the other consumers go through sops templates.
           "smtp/password".owner = autheliaUser;
           "lldap/jwt_secret" = { };
-          # World-readable (0444) on purpose: lldap runs as a DynamicUser, so a
-          # static "lldap" group to chown this to collides with the dynamic one
-          # (217/USER on start). Group-read would need a separately-named
-          # SupplementaryGroup; without that, 0444 is the workable option.
           "lldap/ldap_user_pass" = {
-            mode = "0444";
+            group = lldapSecretsGroup;
+            mode = "0440";
           };
           "cloudflared/tunnel-credentials" = { };
           "cloudflare/api-token" = { };
@@ -860,11 +856,11 @@ in
       services.lldap = {
         enable = true;
         settings = {
-          # Raw LDAP on loopback (authelia-only). Web UI on 0.0.0.0, overlay-only
-          # (not opened publicly; see firewall comment).
+          # Both listeners are local proxy backends. Tailscale Serve and the
+          # host-networked NetBird proxy reach the web UI over loopback.
           ldap_host = "127.0.0.1";
           ldap_port = lldapPort;
-          http_host = "0.0.0.0";
+          http_host = "127.0.0.1";
           http_port = lldapHttpPort;
           http_url = "https://lldap.${domain}";
           ldap_base_dn = baseDN;
@@ -874,6 +870,12 @@ in
         environment.LLDAP_LDAP_USER_PASS_FILE = config.sops.secrets."lldap/ldap_user_pass".path;
         environmentFile = config.sops.templates."lldap.env".path;
       };
+
+      # lldap uses DynamicUser, so give it access to the bootstrap password via
+      # a separately named static group rather than making the secret readable
+      # by every local service account.
+      users.groups.${lldapSecretsGroup} = { };
+      systemd.services.lldap.serviceConfig.SupplementaryGroups = [ lldapSecretsGroup ];
 
       sops.templates."lldap.env".content = ''
         LLDAP_JWT_SECRET=${config.sops.placeholder."lldap/jwt_secret"}
@@ -893,11 +895,9 @@ in
       # (imported above), fronted at ntfy.kclj.dev via the netbird proxy.
 
       # --- Beszel hub (server monitoring) ---
-      # Web UI + agent endpoint on 0.0.0.0:${toString beszelPort}. Like the other
-      # internal UIs it binds all interfaces but isn't in allowedTCPPorts, so the
-      # public NIC default-drops it while the trusted overlay (wt0/tailscale0)
-      # admits it: agents connect in over the tailnet (WebSocket + per-host
-      # token), and humans reach it via beszel.kclj.dev through the netbird-proxy
+      # Web UI + agent endpoint on loopback. Agents connect through the Tailscale
+      # Serve service VIP (WebSocket + per-host token), and humans reach it via
+      # beszel.kclj.dev through the host-networked NetBird proxy
       # (register beszel.kclj.dev -> 127.0.0.1:${toString beszelPort} in the NetBird
       # dashboard, same as grafana.kclj.dev). State (PocketBase db) lives in
       # /var/lib/beszel-hub. Agents enroll via flake.nixosModules.beszel-agent.
@@ -908,7 +908,7 @@ in
 
       services.beszel.hub = {
         enable = true;
-        host = "0.0.0.0";
+        host = "127.0.0.1";
         port = beszelPort;
         environment = {
           # Public URL behind the netbird-proxy — used for OIDC redirect/callback,

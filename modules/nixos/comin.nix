@@ -19,7 +19,7 @@
   #
   # Enrolled by homelab-node (haven/forge/vault/atlas) and directly by
   # gateway's module list in flake.nix. Never both for one host — see the
-  # double-import trap in CLAUDE.md.
+  # double-import trap in AGENTS.md.
   flake.nixosModules.comin =
     {
       config,
@@ -105,6 +105,10 @@
 
         services.comin = {
           enable = lib.mkDefault true;
+
+          # Prometheus may scrape this locally; deployment state should not be
+          # exposed as an unauthenticated raw endpoint to every overlay peer.
+          exporter.listen_address = "127.0.0.1";
 
           # https, not ssh: the repo is public, so there's no deploy key to
           # provision or rotate on five hosts.

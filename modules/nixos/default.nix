@@ -100,6 +100,11 @@ in
       services.openssh.settings = {
         PermitRootLogin = lib.mkDefault "no";
         PasswordAuthentication = lib.mkDefault false;
+        # Keep sshd from even offering PAM-backed challenge/response. The
+        # generated SSH PAM stack currently denies auth unconditionally, but
+        # pinning this avoids silently enabling it if that stack later gains an
+        # authentication module.
+        KbdInteractiveAuthentication = lib.mkDefault false;
         MaxAuthTries = lib.mkDefault 3;
         LoginGraceTime = lib.mkDefault 30;
         # Clean up orphaned Unix-domain sockets from prior agent-forwarded
