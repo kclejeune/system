@@ -488,13 +488,6 @@
             # argparse.BooleanOptionalAction, which Python 3.14 removed. Build it
             # (and the catppuccin lib it imports) on 3.13 until it is 3.14-ready.
             catppuccin-gtk = prev.catppuccin-gtk.override { python3 = final.python313; };
-
-            # ffmpeg 9 dropped AVCodec's pix_fmts/sample_fmts/ch_layouts in favour
-            # of avcodec_get_supported_config(), and wf-recorder 0.6.0 still reads
-            # the struct fields, so it fails to compile against the new default.
-            # nixpkgs fc31aa4 pinned ffmpeg_8 for the same reason, but
-            # nixos-unstable hasn't cut that commit yet. Drop once it does.
-            wf-recorder = prev.wf-recorder.override { ffmpeg = final.ffmpeg_8; };
           };
         };
 
