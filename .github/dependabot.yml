@@ -30,6 +30,7 @@ updates:
       dev:
         patterns:
           - "base16"
+          - "comin"
           - "deploy-rs"
           - "determinate"
           - "disko"
