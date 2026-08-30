@@ -438,6 +438,18 @@
             # for both programs.nh in home-manager and the devShell.
             nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
 
+            # tmux 3.7c requires an explicit jemalloc choice on Darwin, but the
+            # nixpkgs revision pinned by this branch predates its packaging fix.
+            # Match upstream's fix; drop once the unstable input includes it.
+            tmux = prev.tmux.overrideAttrs (old: {
+              buildInputs =
+                (old.buildInputs or [ ])
+                ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ final.jemalloc ];
+              configureFlags =
+                (old.configureFlags or [ ])
+                ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ "--enable-jemalloc" ];
+            });
+
             # worktrunk 0.68.0's shell-probe tests walk the host process table
             # (sysctl KERN_PROC on darwin, /proc on linux) to resolve their own
             # pid and a spawned child's name. The build sandbox hides both, so
