@@ -6,14 +6,24 @@
 }:
 
 let
-  version = "1.9.19-dev";
+  version = "1.9.21-dev";
 
   src = fetchFromGitHub {
-    owner = "tracewayapp";
+    owner = "kclejeune";
     repo = "traceway";
-    rev = "b69fd73118037a0c2713e2e0195fff84aa613dec";
-    hash = "sha256-LyM7/0VM1gPEIW2bATEmLcc8zo8cz2SHGX9nEJLsw+w=";
+    rev = "2aa5a5a9911588e051faf73cf144afbb2d6156a0";
+    hash = "sha256-DON2Hu4MPhEmpa0FFZv7v/obupo4CzauY10mzx0fkBY=";
   };
+
+  goPackage =
+    attrs:
+    buildGoModule (
+      {
+        inherit version src;
+        subPackages = [ "cmd/traceway" ];
+      }
+      // attrs
+    );
 
   # Release tags commit a prebuilt frontend at backend/static/frontend, but
   # build it from source so CLOUD_MODE=false is explicit and the output is
@@ -22,7 +32,7 @@ let
     pname = "traceway-frontend";
     inherit version src;
     sourceRoot = "${src.name}/frontend";
-    npmDepsHash = "sha256-P+UhmzqlI31PJv5Dj/+NSmUfLQOLut4PTZ1HUTGkyiM=";
+    npmDepsHash = "sha256-UVOkt/PSWUVim4/GaDRsaE6VzPrOs/eGQB0ygpdXkKo=";
 
     env.CLOUD_MODE = "false";
 
@@ -35,12 +45,10 @@ let
   # Pure-Go query/MCP client (`traceway login`, exceptions/logs/metrics
   # queries). Upstream tags cli/v<x> and backend/v<x> on the same commit, so
   # it shares src/version and a bump covers both.
-  cli = buildGoModule {
+  cli = goPackage {
     pname = "traceway-cli";
-    inherit version src;
 
     modRoot = "cli";
-    subPackages = [ "cmd/traceway" ];
     vendorHash = "sha256-vTv8jSywVsMal1+zAthLXpaRv+/C0HInCaLA9ToQeFI=";
 
     env.CGO_ENABLED = 0;
@@ -60,19 +68,17 @@ let
     };
   };
 in
-buildGoModule {
+goPackage {
   pname = "traceway";
-  inherit version src;
 
   passthru.cli = cli;
 
   modRoot = "backend";
-  subPackages = [ "cmd/traceway" ];
 
   # duckdb-go-bindings ships prebuilt static libraries (.a) that `go mod
   # vendor` drops; keep the module cache instead of a vendor tree.
   proxyVendor = true;
-  vendorHash = "sha256-2MsMpeVqwDJzx9xWglUs6Eylijwd7nZABcdEdCou3PA=";
+  vendorHash = "sha256-w1IkJoKj/4+QmAKVAZzAov1qDFYcXkrhLsA6fn9KWPM=";
 
   # telemetry_duckdb: SQLite main DB + DuckDB telemetry DB (the `-duckdb`
   # container flavour). DuckDB links those prebuilt glibc static libs, hence
