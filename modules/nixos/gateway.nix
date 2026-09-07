@@ -65,6 +65,9 @@ in
         flakeCfg.flake.nixosModules.ntfy
         flakeCfg.flake.nixosModules.smtp
         flakeCfg.flake.nixosModules.traceway
+        # Ships gateway's own journal + host metrics into the instance it
+        # hosts; the token comes from secrets/gateway.yaml like the rest.
+        flakeCfg.flake.nixosModules.traceway-agent
       ];
 
       # Fastmail submission account shared by Authelia, ntfy and Traceway.

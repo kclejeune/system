@@ -27,7 +27,12 @@ in
         flakeCfg.flake.nixosModules.tailscale-server
         flakeCfg.flake.nixosModules.beszel-agent
         flakeCfg.flake.nixosModules.comin
+        flakeCfg.flake.nixosModules.traceway-agent
       ];
+
+      # One Traceway ingest token for all four nodes, alongside the shared
+      # DNS-01 token in homelab.yaml rather than copied into each host file.
+      sops.secrets.${config.services.traceway.agent.tokenSecret}.sopsFile = ../../secrets/homelab.yaml;
 
       # Primary user + rescue root keys + pinned state version — identical on
       # every P3 node. Set via the users.users submodule (not the `user`

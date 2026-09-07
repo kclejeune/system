@@ -25,6 +25,7 @@ _: {
     }:
     let
       cfg = config.services.caddyLan;
+      agent = config.services.traceway.agent or { enable = false; };
 
       # Caddy + plugins. cloudflare is the ACME DNS-01 provider; ratelimit/l4
       # are kept for planned use. unifi + caddy-dynamicdns are retained but
@@ -65,6 +66,21 @@ _: {
       # loopback listener (e.g. Incus's API/UI on 127.0.0.1:8443) that we still
       # want to front with a real lan.kclj.io cert. Caddy terminates the browser
       # TLS here; the Caddy->backend hop is the self-signed leg.
+      # One server span per proxied request, named after the vhost so each
+      # LAN service is its own group in Traceway. A reverse proxy has no route
+      # pattern to offer as http.route, so endpoint rows fall back to the raw
+      # path — fine for latency/error triage, not a per-route catalogue.
+      mkTracing =
+        sub:
+        lib.optionalString agent.enable ''
+          tracing {
+            span ${sub}
+            span_attributes {
+              server.address {http.request.host}
+            }
+          }
+        '';
+
       mkReverseProxy =
         upstream:
         if lib.hasPrefix "https://" upstream then
@@ -159,6 +175,7 @@ _: {
             lib.nameValuePair "${sub}.${cfg.baseDomain}" {
               extraConfig = ''
                 ${tlsBlock}
+                ${mkTracing sub}
                 ${cfg.extraDirectives.${sub} or ""}
                 ${mkReverseProxy upstream}
               '';
@@ -167,6 +184,17 @@ _: {
         };
 
         systemd.services.caddy.serviceConfig.EnvironmentFile = config.sops.templates."caddy-lan.env".path;
+
+        # Caddy's tracing handler is configured purely through the standard
+        # OTEL_* variables. Its docs say gRPC, but the exporter is built on
+        # contrib's autoexport, which honours the protocol override — and
+        # Traceway (hence the local collector) is OTLP/HTTP only.
+        systemd.services.caddy.environment = lib.mkIf agent.enable {
+          OTEL_SERVICE_NAME = "${config.networking.hostName}-caddy";
+          OTEL_RESOURCE_ATTRIBUTES = "service.version=${caddyLan.version}";
+          OTEL_EXPORTER_OTLP_ENDPOINT = agent.otlpEndpoint;
+          OTEL_EXPORTER_OTLP_PROTOCOL = "http/protobuf";
+        };
       };
     };
 }

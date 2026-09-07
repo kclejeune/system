@@ -24,6 +24,9 @@ _: {
       cfg = config.services.rustfsLan;
       s3Port = 9000;
       consolePort = 9001;
+      # Requires flake.nixosModules.traceway-agent on the host (homelab-node
+      # enrols it); RustFS exports its own telemetry to that collector.
+      agent = config.services.traceway.agent;
 
       # Backend route, not a console route — every path under /rustfs/console/
       # returns the SPA shell, so this cannot be discovered by probing. Must
@@ -177,6 +180,17 @@ _: {
             RUSTFS_IDENTITY_OPENID_USERNAME_CLAIM = "preferred_username";
             RUSTFS_IDENTITY_OPENID_EMAIL_CLAIM = "email";
             # GROUPS_CLAIM stays unset on purpose — see the scopes option.
+          }
+          // lib.optionalAttrs agent.enable {
+            # Native OTLP/HTTP (traces, metrics, logs) to the host's collector
+            # on loopback; RustFS appends /v1/<signal> itself. No token here.
+            RUSTFS_OBS_ENDPOINT = agent.otlpEndpoint;
+            RUSTFS_OBS_SERVICE_NAME = "${config.networking.hostName}-rustfs";
+            RUSTFS_OBS_SERVICE_VERSION = config.services.rustfs.package.version;
+            RUSTFS_OBS_ENVIRONMENT = "production";
+            # In production with an OTLP endpoint RustFS stops writing to
+            # stdout; keep the journal copy for journalctl on the box.
+            RUSTFS_OBS_LOG_STDOUT_ENABLED = "true";
           };
         };
 
@@ -238,6 +252,9 @@ _: {
             '') cfg.buckets}
           '';
         };
+        # The journal copy is for local debugging only — the OTLP stream
+        # already carries every line with trace ids attached.
+        services.traceway.agent.journal.excludeUnits = lib.mkIf agent.enable [ "rustfs.service" ];
       };
     };
 }
