@@ -189,189 +189,189 @@ alt-shift-slash = 'mode join'
 
 # mnemonics T - Terminal Emulators
 [[on-window-detected]]
-if.app-id = 'org.alacritty'
+if = 'test %{app-bundle-id} = org.alacritty'
 run = 'move-node-to-workspace T'
 
 [[on-window-detected]]
-if.app-id = 'net.kovidgoyal.kitty'
+if = 'test %{app-bundle-id} = net.kovidgoyal.kitty'
 run = 'move-node-to-workspace T'
 
 # Ghostty: tabs appear as separate windows to aerospace, causing phantom tiles.
 # No automatic workspace assignment - must be managed manually.
 [[on-window-detected]]
-if.app-id = 'com.mitchellh.ghostty'
+if = 'test %{app-bundle-id} = com.mitchellh.ghostty'
 run = 'move-node-to-workspace T'
 
 # mnemonics B - browsers
 [[on-window-detected]]
-if.app-id = 'com.google.Chrome'
+if = 'test %{app-bundle-id} = com.google.Chrome'
 run = 'move-node-to-workspace B'
 
 [[on-window-detected]]
-if.app-id = 'com.brave.Browser'
+if = 'test %{app-bundle-id} = com.brave.Browser'
 run = 'move-node-to-workspace B'
 
 [[on-window-detected]]
-if.app-id = 'com.microsoft.edgemac'
+if = 'test %{app-bundle-id} = com.microsoft.edgemac'
 run = 'move-node-to-workspace B'
 
 [[on-window-detected]]
-if.app-id = 'org.mozilla.firefox'
+if = 'test %{app-bundle-id} = org.mozilla.firefox'
 run = 'move-node-to-workspace B'
 
 # kept for an easy switch back to firefox-devedition
 [[on-window-detected]]
-if.app-id = 'org.mozilla.firefoxdeveloperedition'
+if = 'test %{app-bundle-id} = org.mozilla.firefoxdeveloperedition'
 run = 'move-node-to-workspace B'
 
 [[on-window-detected]]
-if.app-id = 'com.apple.Safari'
+if = 'test %{app-bundle-id} = com.apple.Safari'
 run = 'move-node-to-workspace B'
 
 # mnemonics D - docker
 [[on-window-detected]]
-if.app-id = 'com.electron.dockerdesktop'
+if = 'test %{app-bundle-id} = com.electron.dockerdesktop'
 run = 'move-node-to-workspace D'
 
 [[on-window-detected]]
-if.app-id = 'com.docker.docker'
+if = 'test %{app-bundle-id} = com.docker.docker'
 run = 'move-node-to-workspace D'
 
 [[on-window-detected]]
-if.app-id = 'dev.kdrag0n.MacVirt'
+if = 'test %{app-bundle-id} = dev.kdrag0n.MacVirt'
 run = 'move-node-to-workspace D'
 
 # mnemonics F - files/finder
 [[on-window-detected]]
-if.app-id = 'com.apple.finder'
+if = 'test %{app-bundle-id} = com.apple.finder'
 run = 'move-node-to-workspace F'
 
 # mnemonics I - IDE
 [[on-window-detected]]
-if.app-id = 'com.jetbrains.intellij'
+if = 'test %{app-bundle-id} = com.jetbrains.intellij'
 run = 'move-node-to-workspace I'
 
 [[on-window-detected]]
-if.app-id = 'com.jetbrains.fleet'
+if = 'test %{app-bundle-id} = com.jetbrains.fleet'
 run = 'move-node-to-workspace I'
 
 [[on-window-detected]]
-if.app-id = 'com.jetbrains.pycharm'
+if = 'test %{app-bundle-id} = com.jetbrains.pycharm'
 run = 'move-node-to-workspace I'
 
 [[on-window-detected]]
-if.app-id = 'com.jetbrains.datagrip'
+if = 'test %{app-bundle-id} = com.jetbrains.datagrip'
 run = 'move-node-to-workspace I'
 
 # mnemonics P - PowerPoint
 [[on-window-detected]]
-if.app-id = 'com.microsoft.PowerPoint'
+if = 'test %{app-bundle-id} = com.microsoft.PowerPoint'
 run = 'move-node-to-workspace P'
 
 # mnemonics E - Excel
 [[on-window-detected]]
-if.app-id = 'com.microsoft.Excel'
+if = 'test %{app-bundle-id} = com.microsoft.Excel'
 run = 'move-node-to-workspace E'
 
 # mnemonics O - outlook
 [[on-window-detected]]
-if.app-id = 'com.microsoft.Outlook'
+if = 'test %{app-bundle-id} = com.microsoft.Outlook'
 run = 'move-node-to-workspace O'
 
 # lump apple mail/calendar in with it too? idk
 [[on-window-detected]]
-if.app-id = 'com.apple.iCal'
+if = 'test %{app-bundle-id} = com.apple.iCal'
 run = 'move-node-to-workspace O'
 
 [[on-window-detected]]
-if.app-id = 'com.apple.mail'
+if = 'test %{app-bundle-id} = com.apple.mail'
 run = 'move-node-to-workspace O'
 
 # mnemonics W - word
 [[on-window-detected]]
-if.app-id = 'com.microsoft.Word'
+if = 'test %{app-bundle-id} = com.microsoft.Word'
 run = 'move-node-to-workspace W'
 
 # mnemonics N - notes
 [[on-window-detected]]
-if.app-id = 'md.obsidian'
+if = 'test %{app-bundle-id} = md.obsidian'
 run = 'move-node-to-workspace N'
 
 [[on-window-detected]]
-if.app-id = 'com.apple.Notes'
+if = 'test %{app-bundle-id} = com.apple.Notes'
 run = 'move-node-to-workspace N'
 
 # mnemonics S - slack/sms
 [[on-window-detected]]
-if.app-id = 'com.tinyspeck.slackmacgap'
+if = 'test %{app-bundle-id} = com.tinyspeck.slackmacgap'
 run = 'move-node-to-workspace S'
 
 [[on-window-detected]]
-if.app-id = 'com.cisco.Jabber'
+if = 'test %{app-bundle-id} = com.cisco.Jabber'
 run = 'move-node-to-workspace S'
 
 [[on-window-detected]]
-if.app-id = 'com.apple.MobileSMS'
+if = 'test %{app-bundle-id} = com.apple.MobileSMS'
 run = 'move-node-to-workspace S'
 
 [[on-window-detected]]
-if.app-id = 'keybase.Electron'
+if = 'test %{app-bundle-id} = keybase.Electron'
 run = 'move-node-to-workspace S'
 
 [[on-window-detected]]
-if.app-id = 'com.facebook.archon.developerID'
+if = 'test %{app-bundle-id} = com.facebook.archon.developerID'
 run = 'move-node-to-workspace S'
 
 [[on-window-detected]]
-if.app-id = 'com.hnc.Discord'
+if = 'test %{app-bundle-id} = com.hnc.Discord'
 run = 'move-node-to-workspace S'
 
 [[on-window-detected]]
-if.app-id = 'org.whispersystems.signal-desktop'
+if = 'test %{app-bundle-id} = org.whispersystems.signal-desktop'
 run = 'move-node-to-workspace S'
 
 # mnemonics V - vscode + other text editors
 [[on-window-detected]]
-if.app-id = 'com.microsoft.VSCode'
+if = 'test %{app-bundle-id} = com.microsoft.VSCode'
 run = 'move-node-to-workspace V'
 
 [[on-window-detected]]
-if.app-id = 'dev.zed.Zed-Preview'
+if = 'test %{app-bundle-id} = dev.zed.Zed-Preview'
 run = 'move-node-to-workspace V'
 
 [[on-window-detected]]
-if.app-id = 'dev.zed.Zed'
+if = 'test %{app-bundle-id} = dev.zed.Zed'
 run = 'move-node-to-workspace V'
 
 # mnemonics Z - zoom
 [[on-window-detected]]
-if.app-id = 'us.zoom.xos'
+if = 'test %{app-bundle-id} = us.zoom.xos'
 run = 'move-node-to-workspace Z'
 
 [[on-window-detected]]
-if.app-id = 'com.apple.FaceTime'
+if = 'test %{app-bundle-id} = com.apple.FaceTime'
 run = 'move-node-to-workspace Z'
 
 # disable background processes that interfere with intellij
 [[on-window-detected]]
-if.app-id = 'com.jetbrains.jbr.java'
+if = 'test %{app-bundle-id} = com.jetbrains.jbr.java'
 run = 'layout floating'
 
 # these window seem to disappear and cause confusing tiling behavior
 [[on-window-detected]]
-if.app-id = 'com.cyberark.CyberArkEPMUIAgent'
+if = 'test %{app-bundle-id} = com.cyberark.CyberArkEPMUIAgent'
 run = 'layout floating'
 
 [[on-window-detected]]
-if.app-id = 'com.apple.LocalAuthentication.UIAgent'
+if = 'test %{app-bundle-id} = com.apple.LocalAuthentication.UIAgent'
 run = 'layout floating'
 
 [[on-window-detected]]
-if.app-id = 'com.okta.mobile'
+if = 'test %{app-bundle-id} = com.okta.mobile'
 run = 'layout floating'
 
 [[on-window-detected]]
-if.app-id = 'com.jamf.selfserviceplus'
+if = 'test %{app-bundle-id} = com.jamf.selfserviceplus'
 run = 'layout floating'
 
 [workspace-to-monitor-force-assignment]
