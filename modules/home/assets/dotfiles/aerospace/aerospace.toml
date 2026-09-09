@@ -4,6 +4,10 @@
 # Feel free to omit keys that you don't use in your config.
 # If the key is absent in your config the default value is taken from this config
 
+# See: https://nikitabobko.github.io/AeroSpace/guide#config-version
+# Fallback value (if you omit the key): config-version = 1
+config-version = 2
+
 # You can use it to add commands that run after login to macOS user session.
 # 'start-at-login' needs to be 'true' for 'after-login-command' to work
 # Available commands: https://nikitabobko.github.io/AeroSpace/commands.html
@@ -47,6 +51,15 @@ gaps.outer.left = 4
 gaps.outer.bottom = 4
 gaps.outer.top = 4
 gaps.outer.right = 4
+
+# Workspaces that stay alive even when empty and invisible.
+# Only available since 'config-version = 2'; fallback is [] (in config-version = 1
+# this list was inferred from the right-hand side of the keyboard bindings below).
+# Kept in sync with the 'workspace' bindings in [mode.main.binding] — C is omitted
+# because its binding is commented out.
+persistent-workspaces = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+                         "A", "B", "D", "E", "F", "G", "I", "M", "N", "O",
+                         "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide.html#binding-modes
