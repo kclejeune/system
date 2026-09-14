@@ -53,10 +53,10 @@ _: {
       boot.kernel.sysctl."net.ipv4.conf.all.arp_announce" = 2;
 
       # Persistent journal so post-incident debugging survives reboots.
-      services.journald.extraConfig = ''
-        Storage=persistent
-        SystemMaxUse=1G
-      '';
+      services.journald.settings.Journal = {
+        Storage = "persistent";
+        SystemMaxUse = "1G";
+      };
 
       # OCI container runtime — podman, matching how the gateway runs its
       # netbird-proxy container.
