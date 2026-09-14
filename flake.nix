@@ -16,11 +16,16 @@
 
   inputs = {
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-    stable.url = "github:nixos/nixpkgs/nixos-26.05";
     unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.follows = "unstable";
+
+    # Every nixpkgs revision from one input, fetched lazily per revision
+    # touched. Replaces a pinned stable channel: surfaced as `pkgs.multiverse`
+    # by the overlay, so a package pin is `pkgs.multiverse.tip.<pkg>`,
+    # `.at "26.05"`, or `.version "<pkg>" "<ver>"` at the point of use.
+    multiverse.url = "github:fzakaria/nixpkgs-multiverse";
 
     # Nix binary cache CLI; the server side is the nimbus Cloudflare worker.
     nimbus.url = "github:kclejeune/nimbus";
@@ -426,7 +431,14 @@
           default = final: prev: {
             determinate-nixd = inputs.determinate.packages.${prev.stdenv.hostPlatform.system}.default;
             nix = inputs.determinate.inputs.nix.packages.${prev.stdenv.hostPlatform.system}.default;
-            stable = inputs.stable.legacyPackages.${prev.stdenv.hostPlatform.system};
+            # Inherit the host set's unfree/broken policy so a multiverse pin
+            # of an unfree package resolves the same way `pkgs.<pkg>` does.
+            multiverse = inputs.multiverse.lib.mkMultiverse {
+              system = prev.stdenv.hostPlatform.system;
+              config = {
+                inherit (prev.config) allowUnfree allowBroken allowUnsupportedSystem;
+              };
+            };
 
             cb = final.callPackage ./pkgs/cb/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };

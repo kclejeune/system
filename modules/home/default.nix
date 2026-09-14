@@ -110,7 +110,7 @@ in
         ripgrep.enable = true;
         starship.enable = true;
         yt-dlp.enable = true;
-        yt-dlp.package = pkgs.stable.yt-dlp;
+        yt-dlp.package = pkgs.multiverse.tip.yt-dlp;
       };
     };
 }

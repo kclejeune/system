@@ -13,9 +13,9 @@ updates:
       time: "11:30"
     open-pull-requests-limit: 10
     groups:
-      # Batch the nixpkgs channels (stable/unstable/nixos-unstable/nixpkgs)
-      # plus home-manager and nix-darwin into a single PR — they track each
-      # other and should bump in lockstep.
+      # Batch the nixpkgs channels (unstable/nixos-unstable/nixpkgs), the
+      # multiverse index that tracks them, plus home-manager and nix-darwin
+      # into a single PR — they track each other and should bump in lockstep.
       nixpkgs:
         patterns:
           - "darwin"
@@ -24,7 +24,7 @@ updates:
           - "nixos-hardware"
           - "nixos-unstable"
           - "nixpkgs"
-          - "stable"
+          - "multiverse"
           - "unstable"
       # Build/format/CI plumbing — low blast radius, frequent tiny bumps.
       dev:

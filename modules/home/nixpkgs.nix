@@ -13,7 +13,7 @@ _: {
         registry = {
           home-manager.flake = inputs.home-manager;
           nixpkgs.flake = nixpkgs;
-          stable.flake = inputs.stable;
+          multiverse.flake = inputs.multiverse;
           unstable.flake = inputs.unstable;
         };
         nixPath = lib.mapAttrsToList (name: value: "${name}=${value.flake}") config.nix.registry;
