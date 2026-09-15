@@ -19,6 +19,7 @@ _: {
           alejandra
           asciidoctor
           ast-grep
+          aube
           basedpyright
           beads
           bento
