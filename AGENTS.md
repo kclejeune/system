@@ -162,9 +162,9 @@ across multiple systems via `lib.map` + `lib.mergeAttrsList`.
 - **`specialArgs`**: every host passes `{ self, inputs, nixpkgs }` as
   `specialArgs` (or `extraSpecialArgs` for standalone home). The `nixpkgs`
   arg is the per-host nixpkgs (nixos uses `inputs.nixos-unstable`,
-  darwin/standalone-home use `inputs.nixpkgs` which follows
-  `nixpkgs-unstable`). Modules that need a stable channel use
-  `pkgs.stable.<pkg>` via the overlay.
+  darwin/standalone-home use `inputs.nixpkgs`, pinned to
+  `nixpkgs-unstable`). Modules that need another nixpkgs revision use
+  `pkgs.multiverse` via the overlay.
 - **`nixConfig` stays in `flake.nix`**: it's evaluated pre-`mkFlake`, so it
   cannot move to a flake-parts module.
 - **Underscore-prefixed files are excluded** from `import-tree`. Use this

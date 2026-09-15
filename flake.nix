@@ -16,10 +16,9 @@
 
   inputs = {
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-    unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
-    nixpkgs.follows = "unstable";
 
     # Every nixpkgs revision from one input, fetched lazily per revision
     # touched. Replaces a pinned stable channel: surfaced as `pkgs.multiverse`
@@ -29,11 +28,11 @@
 
     # Nix binary cache CLI; the server side is the nimbus Cloudflare worker.
     nimbus.url = "github:kclejeune/nimbus";
-    nimbus.inputs.nixpkgs.follows = "unstable";
+    nimbus.inputs.nixpkgs.follows = "nixpkgs";
 
     # pin to resolve --target-host deploy ssh-ng MaxSessions flooding
     nh.url = "github:kclejeune/nh/fix/remote-diff-ssh-ng-protocol-mismatch";
-    nh.inputs.nixpkgs.follows = "unstable";
+    nh.inputs.nixpkgs.follows = "nixpkgs";
 
     flake-compat.url = "github:nix-community/flake-compat";
 
