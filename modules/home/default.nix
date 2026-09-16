@@ -80,6 +80,7 @@ in
         go.enable = true;
         gpg.enable = true;
         btop.enable = true;
+        herdr.enable = true;
         htop.enable = true;
         jq.enable = true;
         k9s = {
