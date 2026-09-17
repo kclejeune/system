@@ -441,6 +441,7 @@
 
             cb = final.callPackage ./pkgs/cb/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
+            tpm-keyring-unlock = final.callPackage ./pkgs/tpm-keyring-unlock/package.nix { };
             weave = final.callPackage ./pkgs/weave/package.nix { };
             traceway = final.callPackage ./pkgs/traceway/package.nix { };
             traceway-cli = final.traceway.cli;

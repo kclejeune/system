@@ -281,12 +281,13 @@ in
       # `.desktop` entry.
       environment.variables.UWSM_SILENT_START = "1";
 
-      # Greeter UX: password only. fprintd's PAM hook would otherwise
-      # stack `pam_fprintd.so sufficient` ahead of pam_unix and the
-      # user sees a fingerprint scan request alongside the password
-      # field. Sudo / TTY login still inherit fprintAuth — only the
-      # ReGreet PAM service is opted out.
-      security.pam.services.greetd.fprintAuth = false;
+      # Greeter auth is fingerprint-then-password, inherited from the `login`
+      # service that upstream's greetd module substacks for every phase.
+      # `security.pam.services.greetd.fprintAuth` is inert on greetd for the
+      # same reason (`useDefaultRules = false`, so no rule of its own to
+      # toggle) — opting out at the greeter alone means pointing its auth
+      # substack at a service other than `login`, which is what
+      # `services.tpm-keyring-unlock` does.
 
       # ReGreet bakes these paths in at compile time and crashes if
       # they don't exist. Owned by the `greeter` system user that the
@@ -671,6 +672,13 @@ in
       hardware.bluetooth.enable = true;
 
       services.gnome.gnome-keyring.enable = true;
+
+      # Enrolled here (not in desktop-base) because its assertions want
+      # greetd + fprintd + gnome-keyring, all of which this module owns.
+      # Left disabled until this host boots lanzaboote: the seal policy is
+      # PCR7-only, which isn't a lock without Secure Boot (and `seal.sh`
+      # refuses to run without it).
+      imports = [ flakeCfg.flake.nixosModules.tpm-keyring-unlock ];
 
       # Force-stop fprintd before s2idle so its in-flight Verify session
       # (bound to the pre-suspend Goodix USB handle) is torn down cleanly.
