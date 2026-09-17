@@ -104,9 +104,12 @@ in
         # lets mesh peers reach the private-service proxy directly (UDP hole
         # punch to gateway's public IP) rather than relaying through coturn.
         allowedUDPPorts = [ netbirdProxyWgPort ];
-        # Most internal web UIs bind loopback and are reached through the local
-        # NetBird proxy or Tailscale Serve. Traceway cannot select a bind address,
-        # so it still relies on default-drop to stay off the public NIC.
+        # The internal web UIs (grafana, prometheus, alertmanager, karma, lldap,
+        # ntfy, beszel) bind 0.0.0.0 — the NetBird dashboard only accepts
+        # overlay-IP backends, so the proxy dials them on gateway's wt0 address,
+        # not loopback. They aren't opened here: default-drop keeps them off the
+        # public NIC while trustedInterfaces (wt0/tailscale0) admits the overlay.
+        # NetBird ACLs + proxy SSO gate who on the overlay reaches them.
         extraInputRules = ''
           tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
           tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
@@ -859,11 +862,13 @@ in
       services.lldap = {
         enable = true;
         settings = {
-          # Both listeners are local proxy backends. Tailscale Serve and the
-          # host-networked NetBird proxy reach the web UI over loopback.
+          # Raw LDAP on loopback (authelia-only). Web UI on 0.0.0.0 so the
+          # NetBird proxy can dial it on the overlay IP (dashboard backends
+          # can't be loopback); overlay-only, not opened publicly — see the
+          # firewall comment.
           ldap_host = "127.0.0.1";
           ldap_port = lldapPort;
-          http_host = "127.0.0.1";
+          http_host = "0.0.0.0";
           http_port = lldapHttpPort;
           http_url = "https://lldap.${domain}";
           ldap_base_dn = baseDN;
@@ -898,11 +903,12 @@ in
       # (imported above), fronted at ntfy.kclj.dev via the netbird proxy.
 
       # --- Beszel hub (server monitoring) ---
-      # Web UI + agent endpoint on loopback. Agents connect through the Tailscale
+      # Web UI + agent endpoint on 0.0.0.0: not opened publicly (default-drop),
+      # reachable over the trusted overlay. Agents connect through the Tailscale
       # Serve service VIP (WebSocket + per-host token), and humans reach it via
-      # beszel.kclj.dev through the host-networked NetBird proxy
-      # (register beszel.kclj.dev -> 127.0.0.1:${toString beszelPort} in the NetBird
-      # dashboard, same as grafana.kclj.dev). State (PocketBase db) lives in
+      # beszel.kclj.dev through the NetBird proxy
+      # (register beszel.kclj.dev -> <gateway wt0 IP>:${toString beszelPort} in the
+      # NetBird dashboard, same as grafana.kclj.dev). State (PocketBase db) lives in
       # /var/lib/beszel-hub. Agents enroll via flake.nixosModules.beszel-agent.
       # Agent for the hub's own host (enrolled via flake.nixosModules.beszel-agent
       # in flake.nix). Talk to the local hub directly instead of hairpinning
@@ -911,7 +917,7 @@ in
 
       services.beszel.hub = {
         enable = true;
-        host = "127.0.0.1";
+        host = "0.0.0.0";
         port = beszelPort;
         environment = {
           # Public URL behind the netbird-proxy — used for OIDC redirect/callback,
@@ -1233,6 +1239,7 @@ in
             cidr = [
               "100.64.0.0/10"
               "100.100.0.0/16"
+              "10.64.0.0/16"
             ];
           };
         }
