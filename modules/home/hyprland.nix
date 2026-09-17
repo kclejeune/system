@@ -1048,6 +1048,10 @@ in
         exec = "signal-desktop --password-store=gnome-libsecret %U";
         icon = "signal-desktop";
         comment = "Signal Private Messenger";
+        mimeType = [
+          "x-scheme-handler/sgnl"
+          "x-scheme-handler/signalcaptcha"
+        ];
         categories = [
           "Network"
           "Chat"
@@ -1059,6 +1063,7 @@ in
         exec = "slack --password-store=gnome-libsecret -s %U";
         icon = "slack";
         comment = "Slack Client";
+        mimeType = [ "x-scheme-handler/slack" ];
         categories = [
           "Network"
           "Chat"
