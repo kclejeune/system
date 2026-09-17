@@ -41,6 +41,7 @@ _: {
           deadnix
           diffutils
           dive
+          dix
           dnsutils
           doxx
           dust
@@ -55,8 +56,8 @@ _: {
           fx
           gawk
           gdu
-          dix
           git-absorb
+          gitbutler
           gnugrep
           gnupg
           gnused
