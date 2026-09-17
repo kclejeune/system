@@ -287,10 +287,11 @@ _: {
             secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
           };
           # SSO via the NetBird proxy: it authenticates the user and stamps the
-          # email into X-NetBird-User. whitelist pins header trust to the NetBird
-          # CGNAT range (100.64.0.0/10) plus loopback. Any overlay peer that can
-          # reach this port could forge the header, so the NetBird ACL for
-          # gateway is the real gate — keep this port peer-restricted there.
+          # email into X-NetBird-User. whitelist pins header trust to the overlay
+          # ranges (100.64.0.0/10 CGNAT + 10.64.0.0/16) plus loopback. Any
+          # overlay peer that can reach this port could forge the header, so the
+          # NetBird ACL for gateway is the real gate — keep this port
+          # peer-restricted there.
           "auth.proxy" = {
             enabled = true;
             header_name = "X-NetBird-User";
@@ -298,7 +299,7 @@ _: {
             headers = "Groups:X-NetBird-Groups";
             auto_sign_up = true;
             enable_login_token = false;
-            whitelist = "100.64.0.0/10, 127.0.0.1/32";
+            whitelist = "100.64.0.0/10, 10.64.0.0/16, 127.0.0.1/32";
           };
         };
         provision = {
