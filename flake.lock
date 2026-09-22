@@ -857,11 +857,11 @@
         "systems": "systems_3"
       },
       "locked": {
-        "lastModified": 1784465933,
-        "narHash": "sha256-5fZTF5lCVnHisTmXICtIIjHAEsqDXx3RgD+Q/r5Bxpg=",
+        "lastModified": 1789068616,
+        "narHash": "sha256-9vmOUIearXFJbafvJjEd8yaQQV/dKN2J5t3rC92Hi+Y=",
         "owner": "terranix",
         "repo": "terranix",
-        "rev": "f2f0ca1895f15e18e308769bdae77030ae093b8c",
+        "rev": "7dad34c8f775a1ac776537c11977a3743f5e1ba7",
         "type": "github"
       },
       "original": {
