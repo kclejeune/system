@@ -21,7 +21,6 @@ _: {
           ast-grep
           aube
           basedpyright
-          beads
           bento
           bfs
           cacert
