@@ -43,5 +43,6 @@ updates:
           - "nimbus"
           - "noctalia"
           - "sops-nix"
+          - "terranix"
           - "tinted-schemes"
           - "treefmt-nix"
