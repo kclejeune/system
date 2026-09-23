@@ -307,6 +307,32 @@ in
       # toggle) — opting out at the greeter alone means pointing its auth
       # substack at a service other than `login`, which is what
       # `services.tpm-keyring-unlock` does.
+      #
+      # `services.greeter.fingerprint = false` does the same thing without the
+      # TPM: greetd's auth phase substacks a fingerprint-free copy of the
+      # default stack, so the typed password always reaches pam_gnome_keyring
+      # and unlocks the login keyring. Account/session/password still go
+      # through `login`, so pam_gnome_keyring's session hook finds the stashed
+      # password on the same handle.
+      assertions = [
+        {
+          assertion = config.services.greeter.fingerprint || !config.services.tpm-keyring-unlock.enable;
+          message = "services.greeter.fingerprint = false conflicts with services.tpm-keyring-unlock, which owns greetd's auth stack.";
+        }
+      ];
+      security.pam.services.greetd-password = lib.mkIf (!config.services.greeter.fingerprint) {
+        fprintAuth = false;
+        enableGnomeKeyring = true;
+      };
+      security.pam.services.greetd.rules.auth = lib.mkIf (!config.services.greeter.fingerprint) (
+        lib.mkForce {
+          password = {
+            order = 100;
+            control = "substack";
+            modulePath = "greetd-password";
+          };
+        }
+      );
 
       # ReGreet bakes these paths in at compile time and crashes if
       # they don't exist. Owned by the `greeter` system user that the
@@ -710,6 +736,16 @@ in
               eDP-1 = 2;
             };
             description = "Per-output scale applied to the greetd/regreet cage session.";
+          };
+          options.services.greeter.fingerprint = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = ''
+              Whether the greeter accepts fingerprint login. Fingerprint
+              logins can't unlock the GNOME login keyring (no password to
+              hand it), so disable this for password-only greeter auth.
+              Other PAM services (sudo, the lock screen) are unaffected.
+            '';
           };
         }
       ];

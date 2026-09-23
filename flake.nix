@@ -247,6 +247,10 @@
               # 2880x1920 panel: cage starts outputs at 1x, so scale the
               # greeter to match the Hyprland session's eDP-1 scale.
               services.greeter.outputScales.eDP-1 = 2;
+              # Password-only greeter so login always unlocks the GNOME
+              # keyring. Swap for services.tpm-keyring-unlock once this host
+              # boots with Secure Boot.
+              services.greeter.fingerprint = false;
               # Host-level: pin the Framework 13 Pro + home desk panel /
               # kanshi / workspace overlay. Hardware module stays generic.
               hm.imports = [ config.flake.homeModules.displays-framework-13-home ];
