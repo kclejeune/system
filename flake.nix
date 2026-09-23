@@ -222,6 +222,38 @@
           ];
         };
 
+        flake.nixosConfigurations.stanley = inputs.nixos-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self inputs;
+            nixpkgs = inputs.nixos-unstable;
+          };
+          modules = [
+            config.flake.nixosModules.host-baseline
+            config.flake.nixosModules.default
+
+            inputs.nixos-hardware.nixosModules.framework-intel-core-ultra-series3
+            config.flake.nixosModules.hardware-framework-13-pro
+
+            config.flake.nixosModules.desktop
+            config.flake.nixosModules.personal-apps
+            config.flake.nixosModules.profile-personal
+
+            config.flake.nixosModules.tailscale
+            config.flake.nixosModules.netbird
+
+            {
+              networking.hostName = "stanley";
+              # 2880x1920 panel: cage starts outputs at 1x, so scale the
+              # greeter to match the Hyprland session's eDP-1 scale.
+              services.greeter.outputScales.eDP-1 = 2;
+              # Host-level: pin the Framework 13 Pro + home desk panel /
+              # kanshi / workspace overlay. Hardware module stays generic.
+              hm.imports = [ config.flake.homeModules.displays-framework-13-home ];
+            }
+          ];
+        };
+
         flake.nixosConfigurations.gateway = inputs.nixos-unstable.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = {

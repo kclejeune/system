@@ -13,8 +13,11 @@ keys:
   # Personal desktops/laptops — derived from each host's SSH host key via
   #   ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
   # (phil's taken from this machine's ~/.ssh/known_hosts while it was offline).
+  # New hosts: pre-generate the host key before install and pass it to
+  # nixos-anywhere via --extra-files (see README → System bootstrapping).
   - &wally age1rn77fm7knfxjhlgjqew5w87tpye9663kj340y34367dx044h0vtqdak5nl
   - &phil age1hq5yp2pagrvyu9pctgku7vfy982lzjy6a20u9238vewypkx749fsjg84jp
+  - &stanley age12h9sa3dhhfe6pd8xrkxp5qcqf5hpa49ak956ql0h08pq8y86a9aszkv34m
 
 creation_rules:
   # Shared user secrets (e.g. kclejeune's password hash) consumed by every
@@ -31,6 +34,7 @@ creation_rules:
           - *atlas
           - *wally
           - *phil
+          - *stanley
   # Secrets shared by every homelab node (e.g. the LAN ACME DNS-01 token),
   # encrypted to all four so any of them can decrypt with its own host key.
   - path_regex: secrets/homelab\.yaml$

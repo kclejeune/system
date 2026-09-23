@@ -100,8 +100,27 @@ in
         # redraws plymouth's retained splash (from `plymouth quit
         # --retain-splash`) into the cage→hyprland gap.
         ${pkgs.dbus}/bin/dbus-run-session \
-          ${lib.getExe pkgs.cage} -s -m last -- ${lib.getExe regreet}
+          ${lib.getExe pkgs.cage} -s -m last -- ${greeterApp}
       '';
+
+      # cage has no scale flag and brings every output up at 1x, which
+      # renders regreet tiny on HiDPI panels. cage does implement
+      # wlr-output-management, so apply per-host scales with wlr-randr
+      # from inside the kiosk before regreet starts. `|| true` because
+      # the named output may be absent (e.g. lid closed on a dock).
+      greeterScales = config.services.greeter.outputScales;
+      greeterApp =
+        if greeterScales == { } then
+          lib.getExe regreet
+        else
+          pkgs.writeShellScript "regreet-scaled" ''
+            ${lib.concatStrings (
+              lib.mapAttrsToList (output: scale: ''
+                ${lib.getExe pkgs.wlr-randr} --output ${output} --scale ${toString scale} || true
+              '') greeterScales
+            )}
+            exec ${lib.getExe regreet}
+          '';
     in
     {
       programs.hyprland = {
@@ -678,7 +697,22 @@ in
       # Left disabled until this host boots lanzaboote: the seal policy is
       # PCR7-only, which isn't a lock without Secure Boot (and `seal.sh`
       # refuses to run without it).
-      imports = [ flakeCfg.flake.nixosModules.tpm-keyring-unlock ];
+      #
+      # The inline module declares the per-host greeter scale consumed by
+      # `greeterApp` in the let-block above.
+      imports = [
+        flakeCfg.flake.nixosModules.tpm-keyring-unlock
+        {
+          options.services.greeter.outputScales = lib.mkOption {
+            type = lib.types.attrsOf (lib.types.either lib.types.int lib.types.float);
+            default = { };
+            example = {
+              eDP-1 = 2;
+            };
+            description = "Per-output scale applied to the greetd/regreet cage session.";
+          };
+        }
+      ];
 
       # Force-stop fprintd before s2idle so its in-flight Verify session
       # (bound to the pre-suspend Goodix USB handle) is torn down cleanly.

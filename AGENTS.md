@@ -146,6 +146,15 @@ existing `phil` / `wally` / `gateway` (NixOS), the `kclejeune@${system}`
 `lib.map` block (darwin), and the standalone-home `lib.map` block for the
 shapes to copy.
 
+**Provisioning a new NixOS host** (full steps in `README.md` → System
+bootstrapping → NixOS): pre-generate the SSH host key locally, add its
+`ssh-to-age` key to `.sops.yaml` and `sops updatekeys` every secret file the
+host reads, then install with nixos-anywhere passing the key via
+`--extra-files`. sops-nix decrypts with `/etc/ssh/ssh_host_ed25519_key` during
+`nixos-install`; if that key is missing or not a recipient, the
+`users.yaml` password hash silently fails to install and, with
+`mutableUsers = false`, the primary user has no password.
+
 **Output naming**: NixOS hosts use the bare hostname
 (`nixosConfigurations.phil`, `.wally`, `.gateway`). Darwin and
 standalone-home use `kclejeune@<system>` because those attrs fan out

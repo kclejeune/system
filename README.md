@@ -82,13 +82,75 @@ Skip this step on NixOS, where `nix` is the package manager by default.
 
 ### NixOS
 
-Follow the installation instructions, then run:
+NixOS hosts are provisioned remotely with
+[nixos-anywhere](https://github.com/nix-community/nixos-anywhere), which
+partitions the disk from the host's disko config, builds the system locally
+and copies it over SSH.
 
-```bash
-sudo nixos-install --flake "github:kclejeune/system#phil"
-```
+1. **Pre-generate the host's SSH host key.** sops-nix decrypts secrets with
+   it during `nixos-install`, and profile-personal's login password lives in
+   `secrets/users.yaml` (`mutableUsers = false`, so there is no fallback).
+   Without the key in place at install time the user ends up with no
+   password.
 
-Replace `phil` with `wally` or `gateway` for the other hosts.
+   ```bash
+   host=<hostname>
+   keys=$(mktemp -d)
+   install -d -m755 "$keys/etc/ssh"
+   ssh-keygen -q -t ed25519 -N "" -C "root@$host" -f "$keys/etc/ssh/ssh_host_ed25519_key"
+   ssh-to-age < "$keys/etc/ssh/ssh_host_ed25519_key.pub"
+   ```
+
+2. **Enroll the key in sops.** Add the printed age key as `&<hostname>` under
+   `keys:` in `.sops.yaml`, reference it in every `creation_rules` entry the
+   host needs (at minimum `secrets/users.yaml`), then re-encrypt:
+
+   ```bash
+   sops updatekeys secrets/users.yaml
+   git add -A
+   ```
+
+3. **Boot the target into a NixOS installer ISO** (disable Secure Boot in
+   firmware if it won't boot). The minimal ISO has no NetworkManager; join
+   Wi-Fi with `sudo systemctl start wpa_supplicant` + `wpa_cli`. Set a
+   password with `passwd`, note the IP, and from the provisioning machine:
+
+   ```bash
+   ssh-copy-id nixos@<ip>
+   ```
+
+   nixos-anywhere copies these `authorized_keys` to root and reconnects as
+   root, so key auth is required — a password alone isn't enough.
+
+4. **Install.** Run from an interactive terminal: disko prompts for the LUKS
+   passphrase over the SSH tty.
+
+   ```bash
+   nix run github:nix-community/nixos-anywhere -- \
+     --flake ".#$host" \
+     --target-host nixos@<ip> \
+     --extra-files "$keys"
+   rm -rf "$keys"
+   ```
+
+   Add `--no-substitute-on-destination` if the target has LAN access to the
+   provisioning machine but no internet uplink. The installer ISO is
+   detected, so nothing is downloaded on the target. Check the install
+   output for `setting up secrets for users...` with no `Cannot read ssh
+key` / `failed to decrypt` errors after it.
+
+5. **After first boot**, enroll a FIDO2 key for LUKS unlock:
+
+   ```bash
+   sudo systemd-cryptenroll --fido2-device=auto /dev/disk/by-partlabel/disk-main-luks
+   ```
+
+**Recovering a host that installed without its secrets** (e.g. no login
+password): finish steps 1–2, boot the installer again, and rerun step 4 with
+`--disko-mode mount --phases disko,install,reboot`. That unlocks and mounts
+the existing disk instead of reformatting it (the log still prints
+"Formatting hard drive with disko"; it only asks for the passphrase once),
+places the host key and reinstalls.
 
 ### Darwin / Linux
 
