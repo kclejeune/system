@@ -13,6 +13,9 @@ _: {
       alertmanagerPort = 9093;
       karmaPort = 8082;
       netbirdProxyDomain = "kclj.dev";
+      # Overlay IP of the netbird-proxy container's embedded NetBird peer — the
+      # only source Grafana accepts the X-NetBird-User header from.
+      netbirdProxyPeerIp = "10.64.244.130";
       # Scrape targets owned by other gateway services — keep in sync with them:
       autheliaMetricsPort = 9959;
       netbirdMgmtMetricsPort = 9190;
@@ -191,7 +194,6 @@ _: {
             static_configs = [ { targets = [ "127.0.0.1:${toString autheliaMetricsPort}" ]; } ];
           }
           (mkScrapeConfig "node" "127.0.0.1:${toString config.services.prometheus.exporters.node.port}")
-          (mkScrapeConfig "cloudflared" "127.0.0.1:2000")
           (mkScrapeConfig "netbird-management" "127.0.0.1:${toString netbirdMgmtMetricsPort}")
           (mkScrapeConfig "netbird-signal" "127.0.0.1:${toString netbirdSignalMetricsPort}")
           (mkScrapeConfig "crowdsec" "127.0.0.1:${toString crowdsecMetricsPort}")
@@ -289,11 +291,11 @@ _: {
             secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
           };
           # SSO via the NetBird proxy: it authenticates the user and stamps the
-          # email into X-NetBird-User. whitelist pins header trust to the overlay
-          # ranges (100.64.0.0/10 CGNAT + 10.64.0.0/16) plus loopback. Any
-          # overlay peer that can reach this port could forge the header, so the
-          # NetBird ACL for gateway is the real gate — keep this port
-          # peer-restricted there.
+          # email into X-NetBird-User. Anyone who can send that header from a
+          # whitelisted source IS that user, so trust only the proxy's embedded
+          # peer (plus loopback) — not the NetBird or Tailscale ranges. If the
+          # proxy re-registers with a new overlay IP, logins fail closed; update
+          # netbirdProxyPeerIp from `netbird status -d | grep -A1 proxy-`.
           "auth.proxy" = {
             enabled = true;
             header_name = "X-NetBird-User";
@@ -301,8 +303,13 @@ _: {
             headers = "Groups:X-NetBird-Groups";
             auto_sign_up = true;
             enable_login_token = false;
-            whitelist = "100.64.0.0/10, 10.64.0.0/16, 127.0.0.1/32";
+            whitelist = "${netbirdProxyPeerIp}/32, 127.0.0.1/32";
           };
+          # auth.proxy is the only way in: no local login form, no basic auth
+          # (the built-in admin account would otherwise be reachable with the
+          # upstream default password baked into the store config).
+          auth.disable_login_form = true;
+          "auth.basic".enabled = false;
         };
         provision = {
           datasources.settings = {

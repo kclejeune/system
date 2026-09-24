@@ -189,7 +189,6 @@ in
             group = lldapSecretsGroup;
             mode = "0440";
           };
-          "cloudflared/tunnel-credentials" = { };
           "cloudflare/api-token" = { };
           "netbird/datastore_encryption_key" = { };
           "netbird/turn_password" = {
@@ -209,14 +208,13 @@ in
           # reverse proxy (see declarativeBouncers.netbird-proxy below).
           # Generate with `openssl rand -hex 32`.
           "crowdsec/bouncer_key" = { };
-          "proxmox/oidc_client_secret" = { };
-          # Plaintext OIDC client secret for the nimbus worker
-          # (app.cache.kclj.io) — nothing on this host consumes it; the sops
-          # file is its system of record. Feed it to the worker with
+          # nimbus/oidc_client_secret (the nimbus worker's plaintext OIDC
+          # secret) also lives in secrets/gateway.yaml as its system of record,
+          # but nothing on this host consumes it, so it isn't decrypted here.
+          # Feed it to the worker with
           # `sops -d --extract '["nimbus"]["oidc_client_secret"]'
           # secrets/gateway.yaml | wrangler secret put OIDC_CLIENT_SECRET`.
           # Authelia keeps only the pbkdf2 hash in the client config below.
-          "nimbus/oidc_client_secret" = { };
         };
       };
 
@@ -359,9 +357,11 @@ in
               {
                 inherit domain;
                 authelia_url = "https://${authDomain}";
-                inactivity = "1M";
-                expiration = "3M";
-                remember_me = "1y";
+                # The cookie covers every *.kclj.io host, so keep a stolen or
+                # forgotten session short-lived.
+                inactivity = "1w";
+                expiration = "1M";
+                remember_me = "1M";
               }
             ];
           };
@@ -406,12 +406,6 @@ in
               "email"
               "email_verified"
               "name"
-              "preferred_username"
-              "groups"
-            ];
-            claims_policies.proxmox.id_token = [
-              "email"
-              "email_verified"
               "preferred_username"
               "groups"
             ];
@@ -746,7 +740,6 @@ in
         };
       };
 
-      # Ensure nginx can read its own log files for fail2ban
       services.nginx = {
         enable = true;
         defaultSSLListenPort = nginxInternalSSLPort;
@@ -842,46 +835,6 @@ in
               '';
             };
           };
-      };
-
-      # fail2ban is disabled on the gateway for now — CrowdSec owns all
-      # intrusion detection here (sshd, nginx, authelia), with its escalating ban
-      # profile below standing in for fail2ban's bantime-increment. The authelia
-      # jail + filter are kept dormant under the disabled service so fail2ban can
-      # be flipped back on as an enforcement floor in one line.
-      services.fail2ban.enable = lib.mkForce false;
-      services.fail2ban.jails = {
-        authelia.settings = {
-          filter = "authelia";
-          backend = "auto";
-          port = "http,https";
-          logpath = autheliaLogFile;
-          maxretry = 3;
-          findtime = 300;
-        };
-      };
-
-      # Authelia fail2ban filter (matches JSON log format written to file)
-      environment.etc."fail2ban/filter.d/authelia.conf".text = ''
-        [Definition]
-        failregex = ^.*"remote_ip":"<HOST>".*"msg":"Unsuccessful .*authentication attempt.*$
-        ignoreregex =
-      '';
-
-      # Cloudflare Tunnel — exposes services without opening inbound HTTP/S ports
-      # To set up:
-      #   1. Create a tunnel: cloudflared tunnel create gateway
-      #   2. Copy the credentials JSON into sops: sops secrets/gateway.yaml
-      #      (add under cloudflared.tunnel-credentials as a string)
-      #   3. Configure DNS in Cloudflare dashboard: CNAME auth.kclj.io -> <tunnel-id>.cfargotunnel.com
-      # Once active, ports 80/443 can be removed from the firewall and ACME disabled,
-      # as Cloudflare terminates TLS at the edge.
-      services.cloudflared = {
-        enable = true;
-        tunnels.gateway = {
-          credentialsFile = config.sops.secrets."cloudflared/tunnel-credentials".path;
-          default = "http_status:404";
-        };
       };
 
       # LLDAP - lightweight LDAP server for user management
@@ -1005,9 +958,6 @@ in
           limit_req_status 429;
         '';
       };
-
-      # nginx forward-auth via tailnet identity — gateway-only.
-      services.tailscaleAuth.enable = true;
 
       # Shared tailscale server-role config (cert for serve, --ssh/--operator,
       # exit-node + app-connector advertisement, --accept-dns) comes from
@@ -1270,8 +1220,7 @@ in
         }
       ];
 
-      # Replicate fail2ban's escalating bantime (old: 1h base → 48h cap) on the
-      # remediation profiles — CrowdSec has no native increment, so the ban
+      # Escalating bantime (4h base → 48h cap) on the remediation profiles — CrowdSec has no native increment, so the ban
       # duration is computed per-decision by duration_expr from the offender's
       # prior decision count. Replaces the upstream flat-4h default profiles; the
       # whitelists above still pre-empt bans for trusted sources.

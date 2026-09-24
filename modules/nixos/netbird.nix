@@ -8,6 +8,7 @@ _: {
       # by the subnet-router role module, not the VPN daemons, so neither enables
       # it (which also avoids both redefining the forwarding sysctls and colliding).
       services.netbird.useRoutingFeatures = "client";
-      services.netbird.ui.enable = true;
+      # Tray UI only where there's a graphical session to show it in.
+      services.netbird.ui.enable = config.services.graphical-desktop.enable;
     };
 }
