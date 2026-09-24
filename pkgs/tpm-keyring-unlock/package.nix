@@ -63,6 +63,15 @@ stdenv.mkDerivation (finalAttrs: {
       --replace-fail \
         'set -euo pipefail' \
         'set -euo pipefail; export PATH=${unsealPath} TPM2TOOLS_TCTI=device:/dev/tpmrm0'
+
+    # Upstream leaves an existing PAM_AUTHTOK alone, assuming a typed password
+    # got there. The greetd stack in modules/nixos/tpm-keyring-unlock.nix runs
+    # this only after the password arm has already failed, so whatever is set
+    # is that empty/wrong attempt and must be replaced for the keyring unlock.
+    substituteInPlace pam/pam_tpm_keyring_authtok.c \
+      --replace-fail \
+        'existing != NULL) {' \
+        'existing != NULL && 0) {'
   '';
 
   buildPhase = ''

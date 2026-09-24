@@ -55,55 +55,70 @@ _: {
           permissions = "u=rx,g=,o=";
         };
 
-        # The password arm is a substack so its pam_unix rule can't consume the
-        # TPM-provided PAM_AUTHTOK that the fingerprint arm injects as an
-        # account password. It keeps upstream's default rules (so fprintAuth /
-        # enableGnomeKeyring apply here) with fingerprint switched off — that
-        # phase already ran above.
-        security.pam.services.greetd-password = {
-          fprintAuth = false;
-          enableGnomeKeyring = true;
-        };
-
-        # Fingerprint arm inline, password arm substacked. The fingerprint arm
-        # can't itself be a substack: `substack` occupies libpam's control
-        # field exclusively, leaving nowhere to hang the "succeeded → end the
-        # stack, otherwise → fall through to password" jump. Hence the
-        # bracketed control here, plus pam_permit to end the stack on success.
+        # Password first, fingerprint second. PAM (and greetd's strictly
+        # request/response IPC) can only wait on one input at a time, so the
+        # greeter opens on a password field: a correct password ends the
+        # stack, and submitting it empty (or wrong) falls through to
+        # pam_fprintd. A fingerprint match then has the TPM-unsealed password
+        # injected as PAM_AUTHTOK so pam_gnome_keyring can unlock the login
+        # keyring. The package patches the authtok module to overwrite the
+        # failed password the first arm left behind; nothing after it checks a
+        # password, so the injected token can't authenticate a login.
+        #
+        # Inline rather than a substack: `substack` occupies libpam's control
+        # field, leaving nowhere for the "success → done, else → fall through"
+        # jump. Failures use `ignore`, never a numeric skip — a skip acts like
+        # `ok` and would record the failed password in the stack's result,
+        # which a later fingerprint success can't override.
+        #
+        # unix-early prompts and sets PAM_AUTHTOK so pam_gnome_keyring can
+        # stash it before the deciding pam_unix runs; that mirrors NixOS's
+        # default stack, whose `done` would otherwise skip the stash.
         #
         # greetd's own service is `useDefaultRules = false` with a single
         # `substack login`, so mkForce is the only way to drop that entry.
-        #
-        # `default=3` skips exactly the three rules between fprintd and the
-        # password substack — keep it in sync with them. Untested; verify in a
-        # VM before enabling.
-        security.pam.services.greetd.rules.auth = lib.mkForce {
-          fprintd = {
-            order = 100;
-            control = "[success=ok default=3]";
-            modulePath = "${config.services.fprintd.package}/lib/security/pam_fprintd.so";
+        security.pam.services.greetd.rules.auth =
+          let
+            pamLib = "${pkgs.pam}/lib/security";
+            gnomeKeyring = "${pkgs.gnome-keyring}/lib/security/pam_gnome_keyring.so";
+          in
+          lib.mkForce {
+            unix-early = {
+              order = 100;
+              control = "optional";
+              modulePath = "${pamLib}/pam_unix.so";
+              settings.likeauth = true;
+            };
+            password-keyring = {
+              order = 200;
+              control = "optional";
+              modulePath = gnomeKeyring;
+            };
+            unix = {
+              order = 300;
+              control = "[success=done new_authtok_reqd=done default=ignore]";
+              modulePath = "${pamLib}/pam_unix.so";
+              settings = {
+                likeauth = true;
+                try_first_pass = true;
+              };
+            };
+            fprintd = {
+              order = 400;
+              control = "[success=ok default=die]";
+              modulePath = "${config.services.fprintd.package}/lib/security/pam_fprintd.so";
+            };
+            tpm-keyring-authtok = {
+              order = 500;
+              control = "optional";
+              modulePath = "${cfg.package}/lib/security/pam_tpm_keyring_authtok.so";
+            };
+            fingerprint-keyring = {
+              order = 600;
+              control = "optional";
+              modulePath = gnomeKeyring;
+            };
           };
-          tpm-keyring-authtok = {
-            order = 200;
-            control = "optional";
-            modulePath = "${cfg.package}/lib/security/pam_tpm_keyring_authtok.so";
-          };
-          gnome-keyring = {
-            order = 300;
-            control = "optional";
-            modulePath = "${pkgs.gnome-keyring}/lib/security/pam_gnome_keyring.so";
-          };
-          fingerprint-done = {
-            order = 400;
-            control = "sufficient";
-            modulePath = "${pkgs.pam}/lib/security/pam_permit.so";
-          };
-          password = {
-            order = 500;
-            control = "substack";
-            modulePath = "greetd-password";
-          };
-        };
       };
     };
 }
