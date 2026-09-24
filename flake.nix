@@ -19,6 +19,10 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
+    nixos-hardware.inputs.nixpkgs.follows = "nixos-unstable";
+
+    # Only here as a `follows` target so transitive `systems` inputs dedupe.
+    systems.url = "github:nix-systems/default";
 
     # Every nixpkgs revision, lazily: `pkgs.multiverse.tip.<pkg>`, `.at "26.05"`, `.version "<pkg>" "<ver>"`.
     multiverse.url = "github:fzakaria/nixpkgs-multiverse";
@@ -30,6 +34,7 @@
     nh.url = "github:kclejeune/nh/fix/remote-diff-ssh-ng-protocol-mismatch";
     nh.inputs.nixpkgs.follows = "nixpkgs";
 
+    # Only a `follows` target for inputs that still declare it.
     flake-compat.url = "github:nix-community/flake-compat";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -37,7 +42,7 @@
 
     terranix.url = "github:terranix/terranix";
     terranix.inputs.nixpkgs.follows = "nixpkgs";
-    # terranix's `systems` input can't follow; nothing at top level provides one.
+    terranix.inputs.systems.follows = "systems";
     terranix.inputs.flake-parts.follows = "flake-parts";
     terranix.inputs.import-tree.follows = "import-tree";
 
@@ -65,6 +70,8 @@
 
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
+    deploy-rs.inputs.flake-compat.follows = "flake-compat";
+    deploy-rs.inputs.utils.inputs.systems.follows = "systems";
 
     # `follows` is lockfile hygiene only; modules/nixos/comin.nix builds comin from the host's nixpkgs.
     comin.url = "github:nlewo/comin";
@@ -74,11 +81,13 @@
 
     lanzaboote.url = "github:nix-community/lanzaboote/v1.1.0";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
+    lanzaboote.inputs.pre-commit.follows = "git-hooks";
 
     # Fork for the `lockScreen.restartAuth` IPC used by hyprland.nix's
     # lock-before-sleep (fingerprint after resume). Revert once merged upstream.
     noctalia.url = "github:kclejeune/noctalia-shell/kcl/restart-auth-support";
     noctalia.inputs.nixpkgs.follows = "nixos-unstable";
+    noctalia.inputs.noctalia-qs.inputs.treefmt-nix.follows = "treefmt-nix";
 
     base16.url = "github:SenchoPens/base16.nix";
     tinted-schemes = {
@@ -359,7 +368,6 @@
             cb = final.callPackage ./pkgs/cb/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             tpm-keyring-unlock = final.callPackage ./pkgs/tpm-keyring-unlock/package.nix { };
-            weave = final.callPackage ./pkgs/weave/package.nix { };
             traceway = final.callPackage ./pkgs/traceway/package.nix { };
             traceway-cli = final.traceway.cli;
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
@@ -436,7 +444,6 @@
               inherit (pkgs)
                 cb
                 sem-cli
-                weave
                 nimbus
                 ;
             };

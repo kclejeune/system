@@ -8,18 +8,18 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "sem-cli";
-  version = "0.14.1";
+  version = "0.25.0";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
     repo = "sem";
     rev = "v${version}";
-    hash = "sha256-erTyUSzK7Q9eW0NnhDZgnzLq+KdQGVpXB7ZHhpZ8yyU=";
+    hash = "sha256-qv9xLNK74dNhffUgyMDW7stEQgn+NgzBgEHxeyqKvVw=";
   };
 
   sourceRoot = "${src.name}/crates";
 
-  cargoHash = "sha256-iNlR24RGjBL4RsMlL10ymc8VjaZxb+vlRAdSwu04VcA=";
+  cargoHash = "sha256-5g77gr5tx6owE+5kzrdg9F1sFEK6GzdtUsuDF3sRi1s=";
 
   nativeBuildInputs = [
     pkg-config
