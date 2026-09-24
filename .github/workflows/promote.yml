@@ -1,12 +1,8 @@
 name: promote
 
-# Fast-forward `deploy` to a master commit once every `build (*)` job passed
-# for it. comin on the homelab hosts and gateway tracks `deploy`, not master,
-# so a red master never reaches them and the closure is already in
-# cache.kclj.io by the time they poll.
-#
-# Only GitHub REST calls on refs that already exist upstream: nothing is
-# checked out or executed, so the write token never touches repo content.
+# comin tracks `deploy`, so only commits whose `build (*)` jobs all passed (and
+# are already in the cache) reach the servers. REST calls only: nothing is
+# checked out, so the write token never touches repo content.
 
 on: # zizmor: ignore[dangerous-triggers] -- no checkout; only REST calls on upstream refs, gated to push events
   workflow_run:
@@ -22,8 +18,7 @@ concurrency:
 
 jobs:
   promote:
-    # `branches` matches head_branch only, which a fork PR named `master` also
-    # satisfies — require a push to this repository.
+    # `branches` also matches a fork PR's branch named master; require a push here.
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&

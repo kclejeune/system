@@ -21,10 +21,8 @@ in
       programs.git = {
         enable = true;
         settings = {
-          # user.name / user.email come from the identity module — see
-          # modules/shared/identity.nix + profiles/personal.nix.
-          # GitHub creds come from gh's token store instead of a years-long
-          # in-memory cache; the empty entry resets the generic helper there.
+          # user.name/email come from the identity module. GitHub creds come from gh;
+          # the empty entry resets inherited helpers.
           credential = {
             helper = if pkgs.stdenv.hostPlatform.isDarwin then "osxkeychain" else "cache --timeout=3600";
             "https://github.com".helper = [
@@ -43,13 +41,7 @@ in
           pull.rebase = true;
           push.followTags = true;
           push.autoSetupRemote = true;
-          # Structural diffs on demand: `git difftool` (or `git dt`). Wired by
-          # hand rather than via `programs.difftastic.git.enable` because that
-          # option trips home-manager's assertion against delta's git
-          # integration even in difftool-only mode. Deliberately NOT
-          # `diff.external` — that would replace `git diff` output everywhere
-          # and make it unparseable by grep/patch tooling, silently and with
-          # exit 0. delta stays the pager (see modules/home/default.nix).
+          # Wired by hand; see modules/home/default.nix for why.
           diff.tool = "difftastic";
           difftool.prompt = false;
           difftool.difftastic.cmd = "${lib.getExe pkgs.difftastic} $LOCAL $REMOTE";

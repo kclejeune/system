@@ -22,15 +22,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # GitHub-hosted runners are small and have no persistent store, so
-          # every knob below is sized to the runner, not to the workload:
-          # linux-x64/arm64 are 4 vCPU / 16 GB, macOS arm64 is 3 vCPU / 7 GB.
+          # Sized to GitHub's runners: linux 4 vCPU / 16 GB, macOS 3 vCPU / 7 GB.
           - system: x86_64-linux
             runner: ubuntu-24.04
-            # Single worker: the cacheable attrs share one dominant single-
-            # threaded base eval, so extra workers duplicate it (measured no
-            # speedup) and contend on the eval-cache sqlite. Splitting it needs
-            # eval-cores, which nix-eval-jobs 2.34.3 rejects.
+            # One worker: every attr shares one single-threaded base eval, so more workers
+            # just duplicate it (measured) and contend on the eval cache. eval-cores would
+            # split it, but nix-eval-jobs 2.34.3 rejects it.
             eval-workers: 1
             eval-max-memory: 6144
             build-jobs: 2
@@ -50,9 +47,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # The store is ephemeral here and shares the root volume with ~30 GB of
-      # preinstalled toolchains we never use. Reclaim it up front so heavy
-      # from-source builds have room before min-free GC has to kick in.
+      # Reclaim ~30 GB of unused preinstalled toolchains before heavy builds.
       - name: Free disk space
         if: runner.os == 'Linux'
         run: |
@@ -69,14 +64,8 @@ jobs:
           extra-conf: |
             accept-flake-config = true
             max-substitution-jobs = 4
-            # Auto-GC the store under space pressure. GitHub runners give ~14 GB
-            # (macOS) to ~45 GB (Linux, post-cleanup) of free space, so a
-            # from-source build of a heavy leaf can still overflow it. When free
-            # space drops below min-free the daemon deletes dead paths until
-            # max-free is available, reclaiming room mid-build instead of
-            # failing with "No space left on device". Values in bytes:
-            # 2 GiB / 6 GiB — kept well under the smallest runner's free space
-            # so a GC pass can actually reach max-free.
+            # GC mid-build when space runs low instead of failing with ENOSPC; bounds sit
+            # well under the smallest runner's free space.
             min-free = 2147483648
             max-free = 6442450944
             extra-substituters = https://cache.kclj.io

@@ -106,7 +106,6 @@
         ...
       }:
       let
-        # Every NixOS host: same nixpkgs, specialArgs, and baseline modules.
         mkNixos =
           modules:
           inputs.nixos-unstable.lib.nixosSystem {
@@ -122,8 +121,8 @@
             ++ modules;
           };
 
-        # Personal laptops. `extra` lands between the desktop stack and the
-        # overlay networks so module order (and thus drvPaths) stays stable.
+        # `extra` sits between the desktop stack and the overlay networks so module
+        # order, and thus every drvPath, stays stable.
         mkDesktop =
           {
             hardware,
@@ -145,7 +144,6 @@
             ]
           );
 
-        # LAN homelab boxes; homelab-node pulls in the p3-tiny hardware + server stack.
         mkHomelab = modules: mkNixos ([ config.flake.nixosModules.homelab-node ] ++ modules);
 
         inherit (import ./modules/_lib.nix) mkNixpkgsArgs;
@@ -229,7 +227,6 @@
             };
           };
 
-          # gateway doesn't use homelab-node.
           gateway = mkNixos [
             config.flake.nixosModules.hetzner
 
@@ -247,10 +244,8 @@
             config.flake.nixosModules.comin
           ];
 
-          # haven: home automation (homebridge, uptime-kuma, HAOS in Incus).
           haven = mkHomelab [ config.flake.nixosModules.haven ];
 
-          # forge: general / dev utilities.
           forge = mkHomelab [
             config.flake.nixosModules.forge
             config.flake.nixosModules.avahi
@@ -258,7 +253,6 @@
             config.flake.nixosModules.backup
           ];
 
-          # vault: data / storage.
           vault = mkHomelab [
             config.flake.nixosModules.vault
             config.flake.nixosModules.rustfs
@@ -266,7 +260,6 @@
             # config.flake.nixosModules.backup
           ];
 
-          # atlas: infra / backup.
           atlas = mkHomelab [
             config.flake.nixosModules.atlas
             # backup needs real restic/* in secrets/atlas.yaml; enable once set.

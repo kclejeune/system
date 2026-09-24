@@ -1,10 +1,8 @@
 { config, lib, ... }:
 let
   inherit (config.flake.lib.site) tailnetDomain;
-  # Servers authenticate sudo with pam_rssh against the forwarded agent,
-  # which `deploy` / `nh --target-host` rely on. Root on a host can use a
-  # forwarded agent while you're connected, so forward only to our own
-  # servers, never to arbitrary hosts.
+  # pam_rssh sudo (deploy, nh --target-host) needs the forwarded agent. Root on
+  # the far end can use it while connected, so only forward to our own servers.
   agentForwardHosts = [
     "gateway"
     "haven"

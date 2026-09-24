@@ -2,11 +2,7 @@ _: {
   flake.homeModules.desktop-flag =
     { lib, ... }:
     {
-      # Boolean signal for "this host has a graphical desktop". Set by
-      # `nixosModules.desktop-base` (Linux GUI hosts) and `darwinModules.default`
-      # (all darwin hosts), defaults to false elsewhere — so the headless
-      # `gateway` evaluates with desktop.enable = false and skips kitty /
-      # ghostty / vicinae / zed dotfiles.
+      # Set by desktop-base and on darwin; headless hosts skip GUI config.
       options.desktop.enable = lib.mkEnableOption "desktop-mode home-manager";
     };
 }

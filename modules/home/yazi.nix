@@ -151,7 +151,6 @@ _: {
             run = "plugin lazygit";
             desc = "run lazygit";
           }
-          # sudo cp/mv
           {
             on = [
               "R"
@@ -161,7 +160,6 @@ _: {
             run = "plugin sudo -- paste";
             desc = "sudo paste";
           }
-          # sudo cp/mv --force
           {
             on = [
               "R"
@@ -170,7 +168,6 @@ _: {
             run = "plugin sudo -- paste --force";
             desc = "sudo paste";
           }
-          # sudo mv
           {
             on = [
               "R"
@@ -179,7 +176,6 @@ _: {
             run = "plugin sudo -- rename";
             desc = "sudo rename";
           }
-          # sudo ln -s (absolute-path)
           {
             on = [
               "R"
@@ -189,7 +185,6 @@ _: {
             run = "plugin sudo -- link";
             desc = "sudo link";
           }
-          # sudo ln -s (relative-path)
           {
             on = [
               "R"
@@ -199,7 +194,6 @@ _: {
             run = "plugin sudo -- link --relative";
             desc = "sudo link relative path";
           }
-          # sudo ln
           {
             on = [
               "R"
@@ -209,7 +203,6 @@ _: {
             run = "plugin sudo -- hardlink";
             desc = "sudo hardlink";
           }
-          # sudo touch/mkdir
           {
             on = [
               "R"
@@ -218,7 +211,6 @@ _: {
             run = "plugin sudo -- create";
             desc = "sudo create";
           }
-          # sudo trash
           {
             on = [
               "R"
@@ -227,7 +219,6 @@ _: {
             run = "plugin sudo -- remove";
             desc = "sudo trash";
           }
-          # sudo delete
           {
             on = [
               "R"
@@ -236,7 +227,6 @@ _: {
             run = "plugin sudo -- remove --permanently";
             desc = "sudo delete";
           }
-          # sudo chmod
           {
             on = [
               "R"

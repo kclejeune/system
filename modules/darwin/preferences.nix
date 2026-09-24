@@ -1,15 +1,11 @@
 _: {
   flake.darwinModules.preferences = _: {
     system.defaults = {
-      # login window settings
       loginwindow = {
-        # disable guest account
         GuestEnabled = false;
-        # show name instead of username
         SHOWFULLNAME = false;
       };
 
-      # file viewer settings
       finder = {
         AppleShowAllExtensions = true;
         AppleShowAllFiles = true;
@@ -18,23 +14,18 @@ _: {
         _FXSortFoldersFirstOnDesktop = true;
       };
 
-      # trackpad settings
       trackpad = {
-        # silent clicking = 0, default = 1
+        # 0 = silent clicking, 1 = default
         ActuationStrength = 0;
-        # enable tap to click
         Clicking = true;
-        # firmness level, 0 = lightest, 2 = heaviest
+        # 0 = lightest, 2 = heaviest
         FirstClickThreshold = 1;
-        # firmness level for force touch
         SecondClickThreshold = 1;
-        # don't allow positional right click
         TrackpadRightClick = false;
       };
 
       spaces.spans-displays = true;
 
-      # dock settings
       dock = {
         autohide = true;
         autohide-delay = 0.0;

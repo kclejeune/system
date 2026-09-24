@@ -24,9 +24,8 @@ _: {
       home = {
         preferXdgDirectories = true;
         sessionVariables = {
-          # GPG_TTY is per-terminal, so it's set in initContent below. TERM
-          # is left to the terminal (kitty/ghostty/tmux terminfo), and
-          # LS_COLORS comes from dircolors (LSCOLORS is the BSD/macOS one).
+          # GPG_TTY is per-terminal (set in initContent); TERM and LS_COLORS are left to
+          # the terminal and dircolors.
           CLICOLOR = 1;
           LSCOLORS = "ExFxBxDxCxegedabagacad";
           LANG = "en_US.UTF-8";
@@ -38,10 +37,7 @@ _: {
           FNOX_AGE_KEY_FILE = ageKey;
         }
         // lib.optionalAttrs (!onNixos) {
-          # On NixOS, nh os defaults to the system hostname (e.g. "wally"),
-          # which matches nixosConfigurations.<host> — so leave NH_HOST unset
-          # there. For standalone HM and nix-darwin we still want the
-          # hardware-independent "<user>@<system>" scheme.
+          # On NixOS nh's hostname default already matches; elsewhere use <user>@<system>.
           NH_HOST = "${config.home.username}@${pkgs.stdenvNoCC.hostPlatform.system}";
         };
         sessionPath = [
@@ -57,8 +53,7 @@ _: {
           lwt = "lazyworktree";
         }
         // lib.optionalAttrs onNixos {
-          # nixpkgs renames Zed's binary to avoid colliding with the
-          # nodePackages.zed CLI; alias back so muscle memory works.
+          # nixpkgs renames Zed's binary to avoid clashing with nodePackages.zed.
           zed = "zeditor";
         };
       };
@@ -105,16 +100,9 @@ _: {
           ${wtInstall "zsh"}
           # ${slinkyInstall "zsh"}
         '';
-        # .zshrc is only sourced by *interactive* shells, so none of the
-        # options above reach `zsh -c` (CI, scripts, agent tool calls). Two
-        # zsh defaults are actively hostile to non-interactive one-liners:
-        #   NOMATCH — an unmatched glob aborts the ENTIRE command, so
-        #     `rg pat a/*.yml b/*.yml` runs nothing if only one dir is empty.
-        #     bash/sh instead pass the pattern through literally.
-        #   EQUALS  — a word starting with `=` expands as a command lookup, so
-        #     the ubiquitous `echo ===` separator dies with "== not found".
-        # Scoped to non-interactive only: interactive sessions keep NOMATCH's
-        # typo protection, which is worth having at a prompt.
+        # Non-interactive shells (scripts, CI, agents) skip .zshrc. Turn off NOMATCH (an
+        # unmatched glob aborts the whole command) and EQUALS (`echo ===` fails) there;
+        # interactive shells keep NOMATCH's typo protection.
         envExtra = ''
           if [[ ! -o interactive ]]; then
             setopt NO_NOMATCH NO_EQUALS

@@ -1,6 +1,5 @@
 _: {
-  # Phil-specific Hyprland overlay: T460s 1920x1080 FHD panel, no
-  # external-monitor profile yet. Enrolled by the `phil` host in flake.nix.
+  # No external-monitor profile yet.
   flake.homeModules.hyprland-host-phil =
     { lib, ... }:
     {

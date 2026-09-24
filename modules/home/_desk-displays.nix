@@ -1,10 +1,8 @@
-# Home-desk monitors (two Dell U2718Q 4K, or one U3425WE ultrawide), shared
-# by the per-laptop `displays-*-home` modules. Underscore-prefixed so
-# import-tree skips it; those modules import it directly.
-#
-# Profile order matters: kanshi applies the first profile whose outputs all
-# match, so the serial-pinned dual-4k profiles come before the model-glob
-# single-4k fallback. See displays-5570-home.nix for the kanshi details.
+# Home-desk monitors shared by the displays-*-home modules.
+# kanshi applies the first profile whose outputs all match, so the serial-pinned
+# dual-4k profiles precede the single-4k model glob. Dual profiles need exact
+# serials: kanshi rejects duplicate criteria within one profile.
+# The U3425WE uses 1.25x because 1.5 gives non-integer logical sizes at 3440 wide.
 let
   u2718qLeft = {
     criteria = "Dell Inc. DELL U2718Q 4K8X779B03VL";
@@ -32,16 +30,14 @@ let
   };
 in
 {
-  # Hyprland workspace pins on the two U2718Q serials.
   workspaces = [
     "name:B, monitor:desc:Dell Inc. DELL U2718Q 4K8X779B03VL, default:true"
     "name:V, monitor:desc:Dell Inc. DELL U2718Q 4K8X77950L3L"
     "name:I, monitor:desc:Dell Inc. DELL U2718Q 4K8X77950L3L"
   ];
 
-  # `edp` maps a position string to the laptop panel's output entry;
-  # `below` holds where the panel sits (centered below) for each layout;
-  # `undocked` is the panel's standalone entry.
+  # `edp` maps a position to the panel's output entry; `below` is where the panel
+  # sits under each layout.
   mkKanshiProfiles =
     {
       edp,

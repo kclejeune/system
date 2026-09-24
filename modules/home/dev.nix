@@ -1,9 +1,6 @@
 _: {
-  # Always-available developer toolkit. Lives in every home-manager
-  # generation, including headless hosts (gateway) — so SSH sessions
-  # have the everyday CLI surface (editors / search / VCS / k8s ops /
-  # network probing / nix tooling) plus compilers, language servers,
-  # build/profiling tooling, media, and big Python deps.
+  # Deliberately on every host, headless ones included, so SSH sessions have the
+  # full toolkit.
   flake.homeModules.dev =
     {
       config,

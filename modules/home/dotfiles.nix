@@ -28,7 +28,6 @@ _: {
         xdg = {
           enable = true;
           configFile = {
-            # Always-useful CLI dotfiles — fine on headless hosts too.
             k9s = {
               source = "${pkgs.k9s}/share/k9s";
               recursive = true;
@@ -38,13 +37,11 @@ _: {
               recursive = true;
             };
 
-            # Darwin-only window manager configs.
             aerospace = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
               recursive = true;
               source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/aerospace";
             };
 
-            # Desktop-only: terminals, GUI editor keymap, Linux launcher.
             ghostty = lib.mkIf config.desktop.enable {
               source = ./assets/dotfiles/ghostty;
               recursive = true;

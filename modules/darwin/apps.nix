@@ -9,7 +9,6 @@ _: {
         "firefox"
         "google-chrome"
         "google-drive"
-        # "keybase"
         "notion"
         "signal"
         "slack"

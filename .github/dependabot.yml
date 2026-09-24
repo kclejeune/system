@@ -6,9 +6,8 @@ updates:
       interval: daily
       time: "10:00"
     open-pull-requests-limit: 10
-    # Workflows run with a token that can push to cache.kclj.io, which every
-    # host trusts. Let new action releases age a week before adopting them so
-    # a hijacked tag has time to be noticed and yanked.
+    # Workflows hold a token that can push to cache.kclj.io, which every host
+    # trusts; a week's delay gives a hijacked tag time to be noticed.
     cooldown:
       default-days: 7
   - package-ecosystem: nix
@@ -18,9 +17,7 @@ updates:
       time: "11:30"
     open-pull-requests-limit: 10
     groups:
-      # Batch the nixpkgs channels (unstable/nixos-unstable/nixpkgs), the
-      # multiverse index that tracks them, plus home-manager and nix-darwin
-      # into a single PR — they track each other and should bump in lockstep.
+      # These track each other, so bump them in one PR.
       nixpkgs:
         patterns:
           - "darwin"
@@ -31,7 +28,6 @@ updates:
           - "nixpkgs"
           - "multiverse"
           - "unstable"
-      # Build/format/CI plumbing — low blast radius, frequent tiny bumps.
       dev:
         patterns:
           - "base16"

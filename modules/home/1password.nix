@@ -25,8 +25,7 @@ _: {
 
       programs.git.signing = {
         signByDefault = true;
-        # Identity (signingkey, user.email) lives in the per-profile
-        # home-manager config — see profiles/<identity>/home-manager.
+        # The signing key and email come from the identity module.
         format = "ssh";
         signer =
           if pkgs.stdenv.hostPlatform.isDarwin then

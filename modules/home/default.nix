@@ -3,8 +3,6 @@ let
   flakeCfg = config;
 in
 {
-  # Home-manager base: imports every reusable home module + the big
-  # shared package set / program-enablement block.
   flake.homeModules.default =
     {
       inputs,
@@ -38,26 +36,16 @@ in
         flakeCfg.flake.homeModules.launchd
       ];
 
-      # Package lists live in `homeModules.dev` (always-on, imported
-      # above).
       home.stateVersion = "26.05";
 
       fonts.fontconfig.enable = true;
 
       programs = {
         home-manager.enable = true;
-        # Two diff renderers with deliberately different git roles, because
-        # `diff.external` replaces git's diff *output* — which silently breaks
-        # every line-oriented consumer (`grep '^+'`, patch parsers, CI scripts)
-        # with exit 0 and no error. So:
-        #   - delta is the *pager*: git skips pagers when stdout isn't a TTY,
-        #     so piped/scripted `git diff` stays plain unified automatically.
-        #   - difftastic is the *difftool*: structural diffs on demand via
-        #     `git difftool`, never in `git diff`/`log -p`/`show`.
-        # `difftastic.git.enable` stays off because home-manager asserts it's
-        # mutually exclusive with delta's git integration — an over-broad check
-        # that ignores `git.mode = "difftool"`, which cannot conflict with a
-        # pager. The difftool is wired manually in `git.nix` instead.
+        # delta is the pager, so piped `git diff` stays plain; difftastic is only a
+        # difftool, never diff.external, which breaks every line-oriented consumer.
+        # difftastic.git.enable stays off: HM wrongly asserts it conflicts with delta
+        # even in difftool mode, so git.nix wires it by hand.
         difftastic.enable = true;
         delta = {
           enable = true;

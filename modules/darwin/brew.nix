@@ -3,10 +3,9 @@ _: {
     homebrew = {
       enable = true;
       global.brewfile = true;
-      # Homebrew 6.0 requires explicit trust for non-official taps. Activation
-      # runs `brew bundle` under sudo with a sanitized env, so an interactive
-      # `brew trust` (and tap redirects that re-invalidate it) can't be relied
-      # on. Allow our declared taps by opting out of the trust requirement here.
+      # Homebrew 6 requires trusting third-party taps, but activation runs
+      # `brew bundle` under sudo with a clean env, so an interactive `brew trust`
+      # can't be relied on.
       onActivation.extraEnv.HOMEBREW_NO_REQUIRE_TAP_TRUST = "1";
       brews = [
         "ca-certificates"

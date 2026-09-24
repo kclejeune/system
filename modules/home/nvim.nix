@@ -7,11 +7,8 @@ _: {
       ...
     }:
     let
-      # Always-on: LSPs and tools that make nvim usable on a headless host
-      # (editing nix / yaml / shell / unit files), plus plugin infra used
-      # by lazy-nix-helper / direnv-nvim / treesitter / blink. Missing
-      # binaries are logged-and-skipped by `vim.lsp.enable`, so the gated
-      # set below is safe to omit on gateway.
+      # Kept small for headless hosts; vim.lsp.enable skips missing servers, so the
+      # desktop set below can be absent.
       coreExtraPackages = builtins.attrValues {
         inherit (pkgs)
           bash-language-server
@@ -26,10 +23,7 @@ _: {
           ;
       };
 
-      # Desktop-only: heavy compilers / language toolchains pulled in only
-      # to feed LSPs (clang, rustup, gopls, jdtls, ts-ls, basedpyright, ...).
-      # Gated on `config.desktop.enable` — gateway sheds ~5 GiB of LSP
-      # closure by skipping these.
+      # Heavy toolchains that only feed LSPs; skipping them saves ~5 GiB on servers.
       desktopExtraPackages = builtins.attrValues {
         inherit (pkgs)
           angular-language-server
@@ -91,9 +85,8 @@ _: {
       };
       direnv-nvim = pkgs.vimUtils.buildVimPlugin {
         pname = "direnv.nvim";
-        # date-only version: a leading "unstable-" makes parseDrvName treat
-        # it as part of the name, so lazy-nix-helper's sanitized key becomes
-        # "direnv.nvim-unstable" and lazy falls back to a GitHub clone
+        # No "unstable-" prefix: parseDrvName folds it into the name, so
+        # lazy-nix-helper misses the plugin and lazy clones it from GitHub.
         version = "2025-04-28";
         src = pkgs.fetchFromGitHub {
           owner = "NotAShelf";
@@ -114,11 +107,8 @@ _: {
         in
         result;
 
-      # Deliberately not withAllGrammars: each grammar ships an
-      # allowSubstitutes=false queries drv that CI rebuilds on every fresh
-      # store (~310 of them). Batteries-included set covering the LSP
-      # toolchains above, common config/doc formats, and nvim's required
-      # runtime grammars (c, lua, vim, vimdoc, query, markdown).
+      # Not withAllGrammars: each grammar has an allowSubstitutes=false queries drv
+      # that CI rebuilds on every fresh store (~310 of them).
       nvim-treesitter = pkgs.vimPlugins.nvim-treesitter.withPlugins (
         p:
         builtins.attrValues {
@@ -237,9 +227,7 @@ _: {
       extraPackages = coreExtraPackages ++ lib.optionals config.desktop.enable desktopExtraPackages;
     in
     {
-      # Same list used for both home.packages (so the binaries land on
-      # the user PATH) and programs.neovim.extraPackages (so the wrapped
-      # nvim launcher sees them too even without a shell context).
+      # On PATH too, so the tools work outside the nvim wrapper.
       home.packages = extraPackages;
       xdg.configFile = {
         "nvim/lua" = {
@@ -254,11 +242,8 @@ _: {
           source = "${nvim-treesitter-grammars}/parser";
           recursive = true;
         };
-        # highlight/indent/fold queries. The grammar drvs above ship only
-        # parser/*.so; upstream's :TSInstall copies these from the plugin's
-        # runtime/queries into install_dir, which we bypass entirely — without
-        # this the highlighter attaches with zero queries and buffers render
-        # unhighlighted (regex syntax is disabled once treesitter starts).
+        # The grammar drvs ship only parsers and we bypass :TSInstall, so link the
+        # queries ourselves; without them buffers render unhighlighted.
         "nvim/queries" = {
           source = "${nvim-treesitter}/runtime/queries";
           recursive = true;
@@ -273,7 +258,6 @@ _: {
         vimdiffAlias = true;
         defaultEditor = true;
 
-        # nvim plugin providers
         withNodeJs = true;
         withRuby = true;
         withPython3 = true;
@@ -287,12 +271,10 @@ _: {
             nvim-treesitter
             ;
           inherit (pkgs.vimPlugins)
-            # basics
             conform-nvim
             mini-nvim
             nvim-autopairs
             vim-nix
-            # configurable plugins
             lazy-nvim
             guess-indent-nvim
             fzf-lua

@@ -3,9 +3,6 @@ let
   flakeCfg = config;
 in
 {
-  # Darwin base: imports the cross-class common-base (shell/user/fonts/env)
-  # plus darwin-specific settings (determinateNix, homebrew, 1password hm,
-  # touch-id sudo, etc).
   flake.darwinModules.default =
     {
       inputs,
@@ -21,8 +18,7 @@ in
         flakeCfg.flake.darwinModules.nixpkgs-wiring
         flakeCfg.flake.darwinModules.brew
         flakeCfg.flake.darwinModules.preferences
-        # Every darwin host is GUI, so fonts go here. NixOS hosts get
-        # them via desktop-base so headless `gateway` stays clean.
+        # Every darwin host is a GUI host; NixOS gets fonts via desktop-base.
         flakeCfg.flake.darwinModules.fonts
         flakeCfg.flake.darwinModules.nix-caches
       ];
@@ -57,8 +53,7 @@ in
 
       security.pam.services.sudo_local.touchIdAuth = true;
 
-      # Used for backwards compatibility, please read the changelog before changing.
-      # $ darwin-rebuild changelog
+      # Read `darwin-rebuild changelog` before changing.
       system.stateVersion = 5;
     };
 }
