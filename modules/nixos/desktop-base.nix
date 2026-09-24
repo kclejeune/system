@@ -11,6 +11,12 @@ in
       ...
     }:
     {
+      # Keep direnv/devshell build inputs alive across GC on dev machines.
+      nix.settings = {
+        keep-outputs = true;
+        keep-derivations = true;
+      };
+
       imports = [
         flakeCfg.flake.nixosModules.fonts
         flakeCfg.flake.nixosModules.keyd

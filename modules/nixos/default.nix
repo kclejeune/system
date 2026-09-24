@@ -26,8 +26,14 @@ in
           "${config.user.name}"
           "@wheel"
         ];
-        keep-outputs = true;
-        keep-derivations = true;
+        # Build-time closures only pay off for dev shells; on servers that build
+        # their own generations (comin) they pin every toolchain and fill /nix.
+        keep-outputs = lib.mkDefault false;
+        keep-derivations = lib.mkDefault false;
+        # Let Nix collect garbage mid-build instead of failing with a full disk,
+        # which also wedges the store DB and nh-clean with it.
+        min-free = 5 * 1024 * 1024 * 1024;
+        max-free = 20 * 1024 * 1024 * 1024;
       };
 
       users.defaultUserShell = pkgs.zsh;
