@@ -16,10 +16,17 @@ nix run .#unifi           # init + apply
 nix develop .#unifi       # shell with plan/apply/destroy/tofu on PATH
 ```
 
-Credentials are decrypted from `secrets/vault.yaml` per-invocation by the
-wrapper's `prefixText` and exist only in that process's environment — never on
-disk, never in the store. OpenTofu rather than `pkgs.terraform`, which is BUSL
-and marked unfree in nixpkgs.
+Credentials are decrypted per-invocation by the wrapper's `prefixText` — the
+UniFi API key and Wi-Fi passphrase from `secrets/terraform.yaml`, the state
+bucket keys from `secrets/vault.yaml` — and exist only in that process's
+environment: never on disk, never in the store. OpenTofu rather than
+`pkgs.terraform`, which is BUSL and marked unfree in nixpkgs.
+
+Providers are baked into the wrapper with `opentofu.withPlugins` from nixpkgs
+(pinned by `flake.lock`), so `init` never downloads one from the registry. To
+add a provider, add it to the `withPlugins` list in `modules/terranix.nix`
+(`terraform-providers.<namespace>_<name>` in nixpkgs) and keep the
+`required_providers` version constraint compatible with the nixpkgs version.
 
 ## unifi.nix
 

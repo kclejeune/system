@@ -6,6 +6,8 @@
     # 1.11+ for write-only arguments (passphrase_wo).
     required_version = ">= 1.11";
 
+    # Supplied by nixpkgs via modules/terranix.nix, not the registry: bump it
+    # with flake.lock and keep this constraint in step with that version.
     required_providers.unifi = {
       source = "ubiquiti-community/unifi";
       version = "~> 0.55";
@@ -45,7 +47,7 @@
     unifi_api_key = {
       type = "string";
       sensitive = true;
-      description = "UniFi API key (secrets/vault.yaml -> unifi/api-key). Lands in state.";
+      description = "UniFi API key (secrets/terraform.yaml -> unifi/api-key). Lands in state.";
     };
     wifi_passphrase = {
       type = "string";

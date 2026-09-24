@@ -19,7 +19,14 @@ in
         terraformWrapper = {
           # Not pkgs.terraform: BUSL, marked unfree in nixpkgs, so it would
           # need allowUnfree just to plan.
-          package = pkgs.opentofu;
+          #
+          # Providers come from nixpkgs, pinned by flake.lock, instead of being
+          # downloaded from the registry at `init` into a process that holds
+          # the UniFi API key. withPlugins exposes them as an implied local
+          # mirror under registry.opentofu.org/<ns>/<name>, which matches the
+          # default source address in terraform/*.nix, and tofu installs a
+          # provider it finds there only from there.
+          package = pkgs.opentofu.withPlugins (p: [ p.ubiquiti-community_unifi ]);
           extraRuntimeInputs = [ pkgs.sops ];
 
           # Decrypted per-invocation into the wrapper's environment only —
