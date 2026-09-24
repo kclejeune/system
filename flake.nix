@@ -207,8 +207,7 @@
             config.flake.nixosModules.personal-apps
             config.flake.nixosModules.profile-personal
 
-            # disable pending disko partition update
-            # config.flake.nixosModules.secure-boot
+            config.flake.nixosModules.secure-boot
 
             config.flake.nixosModules.tailscale
             config.flake.nixosModules.netbird
@@ -238,6 +237,8 @@
             config.flake.nixosModules.desktop
             config.flake.nixosModules.personal-apps
             config.flake.nixosModules.profile-personal
+
+            config.flake.nixosModules.secure-boot
 
             config.flake.nixosModules.tailscale
             config.flake.nixosModules.netbird
