@@ -13,7 +13,7 @@ _: {
     {
       home.sessionVariables.OP_PLUGIN_ALIASES_SOURCED = 1;
 
-      home.file.sock = lib.mkIf pkgs.stdenvNoCC.isDarwin {
+      home.file.sock = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
         source = config.lib.file.mkOutOfStoreSymlink darwinSockPath;
         target = sockLink;
       };
@@ -29,7 +29,7 @@ _: {
         # home-manager config — see profiles/<identity>/home-manager.
         format = "ssh";
         signer =
-          if pkgs.stdenvNoCC.isDarwin then
+          if pkgs.stdenv.hostPlatform.isDarwin then
             "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
           else
             "${pkgs._1password-gui}/share/1password/op-ssh-sign";

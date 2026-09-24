@@ -16,7 +16,6 @@ _: {
         with pkgs;
         [
           age
-          alejandra
           asciidoctor
           ast-grep
           aube
@@ -57,7 +56,6 @@ _: {
           gawk
           gdu
           git-absorb
-          gitbutler
           gnugrep
           gnupg
           gnused
@@ -70,7 +68,6 @@ _: {
           httpie
           hyperfine
           iperf
-          jetbrains-mono
           jnv
           kotlin
           krew
@@ -82,7 +79,6 @@ _: {
           lazyworktree
           lfk
           luajit
-          mawk
           mise
           mmv
           mosh
@@ -131,7 +127,6 @@ _: {
           usage
           uv
           worktrunk
-          yadm
           yq-go
           zoxide
           (python3.withPackages (
@@ -146,10 +141,12 @@ _: {
           ))
         ]
         ++ lib.optionals (config.nix.package != null) [ config.nix.package ]
-        ++ lib.optionals pkgs.stdenvNoCC.isDarwin [ iproute2mac ]
-        ++ lib.optionals pkgs.stdenvNoCC.isLinux [
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ iproute2mac ]
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
           systemctl-tui
           lazyjournal
-        ];
+        ]
+        # GUI apps: nothing to run them on a headless host.
+        ++ lib.optionals config.desktop.enable [ gitbutler ];
     };
 }

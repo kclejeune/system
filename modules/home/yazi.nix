@@ -32,7 +32,7 @@ _: {
             ripgrep
             rsync
           ]
-          ++ lib.optionals (pkgs.stdenvNoCC.isLinux) [ util-linux ];
+          ++ lib.optionals (pkgs.stdenv.hostPlatform.isLinux) [ util-linux ];
         initLua = ./assets/yazi/init.lua;
         theme.mgr.preview_hovered.underline = false;
         settings = {

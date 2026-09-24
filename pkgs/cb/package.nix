@@ -5,7 +5,7 @@
 }:
 pkgs.writeShellApplication {
   name = "cb";
-  runtimeInputs = lib.optionals pkgs.stdenvNoCC.isLinux [
+  runtimeInputs = lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     pkgs.wl-clipboard-rs
     pkgs.xclip
   ];

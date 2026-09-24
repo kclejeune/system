@@ -19,11 +19,11 @@ _: {
       config = {
         home.sessionVariables.K9S_SKIN = "one-dark";
         home.file = {
-          hammerspoon = lib.mkIf pkgs.stdenvNoCC.isDarwin {
+          hammerspoon = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
             source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/hammerspoon";
             target = ".hammerspoon";
           };
-          raycast = lib.mkIf pkgs.stdenvNoCC.isDarwin {
+          raycast = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
             source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/raycast";
             target = ".local/bin/raycast";
           };
@@ -48,7 +48,7 @@ _: {
             };
 
             # Darwin-only window manager configs.
-            aerospace = lib.mkIf pkgs.stdenvNoCC.isDarwin {
+            aerospace = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
               recursive = true;
               source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/aerospace";
             };
@@ -58,7 +58,7 @@ _: {
               source = ./assets/dotfiles/ghostty;
               recursive = true;
             };
-            "ghostty/macos.conf" = lib.mkIf (config.desktop.enable && pkgs.stdenvNoCC.isDarwin) {
+            "ghostty/macos.conf" = lib.mkIf (config.desktop.enable && pkgs.stdenv.hostPlatform.isDarwin) {
               text = ''
                 font-size = 14
               '';
@@ -69,7 +69,7 @@ _: {
             "zed/keymap.json" = lib.mkIf config.desktop.enable {
               source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/zed/keymap.json";
             };
-            vicinae = lib.mkIf (config.desktop.enable && pkgs.stdenvNoCC.isLinux) {
+            vicinae = lib.mkIf (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) {
               source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/vicinae";
             };
           };

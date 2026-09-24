@@ -126,6 +126,10 @@ in
 
       services.fwupd.enable = true;
 
+      # FHS shebangs (#!/bin/bash) for ad-hoc dev scripts. Servers get it only
+      # via nix-ld.
+      services.envfs.enable = true;
+
       services.hardware.bolt.enable = true;
 
       services.thermald.enable = true;

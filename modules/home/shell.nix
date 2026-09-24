@@ -24,13 +24,13 @@ _: {
       home = {
         preferXdgDirectories = true;
         sessionVariables = {
-          GPG_TTY = "/dev/ttys000";
+          # GPG_TTY is per-terminal, so it's set in initContent below. TERM
+          # is left to the terminal (kitty/ghostty/tmux terminfo), and
+          # LS_COLORS comes from dircolors (LSCOLORS is the BSD/macOS one).
           CLICOLOR = 1;
           LSCOLORS = "ExFxBxDxCxegedabagacad";
           LANG = "en_US.UTF-8";
           DEFAULT_USER = "${config.home.username}";
-          LS_COLORS = "ExFxBxDxCxegedabagacad";
-          TERM = "xterm-256color";
           MISE_ENV_FILE = ".env";
           AGE_KEY_FILE = ageKey;
           MISE_AGE_KEY_FILE = ageKey;
@@ -99,6 +99,7 @@ _: {
         };
         initContent = ''
           unset RPS1
+          export GPG_TTY=$TTY
           setopt CHASE_LINKS
           setopt CHASE_DOTS
           ${wtInstall "zsh"}

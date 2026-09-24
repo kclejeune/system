@@ -2,7 +2,7 @@ _: {
   flake.homeModules.tmux =
     { pkgs, lib, ... }:
     {
-      home.packages = lib.optionals (pkgs.stdenvNoCC.isDarwin) [
+      home.packages = lib.optionals (pkgs.stdenv.hostPlatform.isDarwin) [
         pkgs.reattach-to-user-namespace
       ];
       programs.tmux = {
@@ -31,7 +31,7 @@ _: {
           bind -r l select-pane -R
           bind g display-popup -E -xC -yC -w 80% -h 80% -d "#{pane_current_path}" ${pkgs.lazygit}/bin/lazygit
         ''
-        + lib.optionalString pkgs.stdenvNoCC.isDarwin ''
+        + lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
           set -g default-command "${pkgs.reattach-to-user-namespace}/bin/reattach-to-user-namespace -l zsh"
         '';
       };

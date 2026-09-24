@@ -52,7 +52,6 @@ in
       };
 
       services.openssh.enable = true;
-      services.envfs.enable = true;
 
       # Secure defaults. Every NixOS host gets the firewall on with a
       # conservative ICMP echo rate-limit: enough headroom for interactive
