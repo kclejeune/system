@@ -1,0 +1,72 @@
+name: promote
+
+# Fast-forward `deploy` to a master commit once every `build (*)` job passed
+# for it. comin on the homelab hosts and gateway tracks `deploy`, not master,
+# so a red master never reaches them and the closure is already in
+# cache.kclj.io by the time they poll.
+#
+# Only GitHub REST calls on refs that already exist upstream: nothing is
+# checked out or executed, so the write token never touches repo content.
+
+on: # zizmor: ignore[dangerous-triggers] -- no checkout; only REST calls on upstream refs, gated to push events
+  workflow_run:
+    workflows: [build]
+    types: [completed]
+    branches: [master]
+
+permissions: {}
+
+concurrency:
+  group: promote
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    # `branches` matches head_branch only, which a fork PR named `master` also
+    # satisfies — require a push to this repository.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Fast-forward deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          # Must still be reachable from master (guards against force-pushed
+          # history whose old run finishes late).
+          on_master=$(gh api "repos/$REPO/compare/$SHA...master" --jq .status)
+          case "$on_master" in
+            identical | ahead) ;;
+            *)
+              echo "::error::$SHA is not an ancestor of master ($on_master)"
+              exit 1
+              ;;
+          esac
+
+          # Relative to the current deploy tip: only move forward. An older
+          # run finishing after a newer one is `behind` and skipped.
+          rel=$(gh api "repos/$REPO/compare/deploy...$SHA" --jq .status)
+          case "$rel" in
+            ahead) ;;
+            identical | behind)
+              echo "deploy already at or past $SHA ($rel)"
+              exit 0
+              ;;
+            *)
+              echo "::error::deploy and $SHA have diverged; fix deploy by hand"
+              exit 1
+              ;;
+          esac
+
+          # force=false: GitHub rejects anything that isn't a fast-forward.
+          gh api -X PATCH "repos/$REPO/git/refs/heads/deploy" \
+            -f sha="$SHA" -F force=false --jq .object.sha

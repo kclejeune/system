@@ -1,21 +1,22 @@
 { inputs, ... }:
 {
   # GitOps pull-deploy. Each host polls github.com/kclejeune/system and runs
-  # `switch` on its own `nixosConfigurations.<hostname>` whenever master moves,
-  # which inverts the deploy model: deploy-rs stops being the normal path and
-  # becomes break-glass for when a host can't reach GitHub or master is broken.
+  # `switch` on its own `nixosConfigurations.<hostname>` whenever `deploy`
+  # moves, which inverts the deploy model: deploy-rs stops being the normal
+  # path and becomes break-glass for when a host can't reach GitHub or the
+  # pipeline is broken.
   #
-  # Two consequences worth internalising before enrolling a host:
+  # `deploy`, not master: .github/workflows/promote.yml fast-forwards it to a
+  # master commit only after every `build (*)` job passed for that commit. So
+  # a red master never ships, and by the time a host sees a commit its closure
+  # is already in cache.kclj.io. comin refuses non-fast-forward moves of the
+  # branch, and a missing `deploy` branch just means no deployment.
   #
-  #   - Uncommitted local state has no standing. Activating something with
-  #     `nh os switch` or deploy-rs holds only until the next poll, then master
-  #     wins. Test on the per-host `testing-<hostname>` branch instead — comin
-  #     watches it by default and applies it with `test`, so it never becomes
-  #     the boot default.
-  #   - CI is racing the poller. build.yml pushes master's closure to
-  #     cache.kclj.io, but comin polls every 60s and CI takes minutes, so the
-  #     first host to notice a commit generally builds it locally. Fine on the
-  #     P3 Tinys; gateway is the small one.
+  # Uncommitted local state has no standing. Activating something with
+  # `nh os switch` or deploy-rs holds only until the next poll, then `deploy`
+  # wins. Test on the per-host `testing-<hostname>` branch instead — comin
+  # watches it by default and applies it with `test`, so it never becomes the
+  # boot default. It must be based on the current `deploy` tip.
   #
   # Enrolled by homelab-node (haven/forge/vault/atlas) and directly by
   # gateway's module list in flake.nix. Never both for one host — see the
@@ -42,7 +43,7 @@
             Without it the only thing standing between a stolen GitHub
             credential and root on five machines is the push ACL.
 
-            Master carries two signature formats and both have to be trusted
+            `deploy` carries two signature formats and both have to be trusted
             or deploys stall, because comin checks whichever commit is at the
             tip and nothing else:
 
@@ -116,7 +117,7 @@
             {
               name = "origin";
               url = "https://github.com/kclejeune/system.git";
-              branches.main.name = "master";
+              branches.main.name = "deploy";
             }
           ];
 
