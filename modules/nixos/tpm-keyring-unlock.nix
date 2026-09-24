@@ -45,12 +45,14 @@ _: {
         environment.systemPackages = [ cfg.package ];
 
         # The store cannot preserve upstream's root-only helper mode. Route PAM
-        # through a root-owned 0700 wrapper while keeping the module non-setuid.
+        # through a root-only wrapper while keeping the module non-setuid.
+        # `permissions` must be symbolic: the wrapper service prepends
+        # `u-s,g-s,` and chmod rejects an octal mode mixed into that list.
         security.wrappers.tpm-keyring-unseal = {
           source = "${cfg.package}/libexec/tpm-keyring-unlock/tpm-keyring-unseal";
           owner = "root";
           group = "root";
-          permissions = "0700";
+          permissions = "u=rx,g=,o=";
         };
 
         # The password arm is a substack so its pam_unix rule can't consume the

@@ -6,7 +6,7 @@
   pam,
   bash,
   coreutils,
-  glibc,
+  getent,
   gnugrep,
   gnused,
   mokutil,
@@ -31,7 +31,7 @@ let
   unsealPath = lib.makeBinPath [
     bash
     coreutils
-    glibc.bin
+    getent
     gnugrep
     gnused
     tpm2-tools
@@ -56,11 +56,13 @@ stdenv.mkDerivation (finalAttrs: {
     patchShebangs bin/seal.sh pam/tpm-keyring-unseal.sh
 
     # PAM invokes this one through /run/wrappers, so it can't be makeWrapper'd
-    # like seal.sh is — splice the PATH into the script itself.
+    # like seal.sh is — splice the PATH into the script itself. PAM's scrubbed
+    # environment also drops security.tpm2's TCTI vars, so pin the kernel
+    # resource manager or tpm2-tools probes (and logs failing on) tabrmd first.
     substituteInPlace pam/tpm-keyring-unseal.sh \
       --replace-fail \
         'set -euo pipefail' \
-        'set -euo pipefail; export PATH=${unsealPath}'
+        'set -euo pipefail; export PATH=${unsealPath} TPM2TOOLS_TCTI=device:/dev/tpmrm0'
   '';
 
   buildPhase = ''

@@ -248,10 +248,23 @@
               # 2880x1920 panel: cage starts outputs at 1x, so scale the
               # greeter to match the Hyprland session's eDP-1 scale.
               services.greeter.outputScales.eDP-1 = 2;
-              # Password-only greeter so login always unlocks the GNOME
-              # keyring. Swap for services.tpm-keyring-unlock once this host
-              # boots with Secure Boot.
-              services.greeter.fingerprint = false;
+              # Fingerprint greeter logins unseal the GNOME keyring password
+              # from the TPM (PCR7-bound). Needs Secure Boot enforced and a
+              # one-time `tpm-keyring-seal` as the user; re-seal after any
+              # Secure Boot key or dbx change.
+              services.tpm-keyring-unlock.enable = true;
+              # TPM2 unlock ahead of the FIDO2 token from the hardware
+              # module; systemd-cryptsetup tries TPM2, then FIDO2, then the
+              # passphrase. `tpm2-measure-pcr` extends PCR15 with the volume
+              # key once unlocked, so a token enrolled against PCR15=0 can't
+              # be unsealed again after the first unlock (blocks swapping in
+              # a look-alike LUKS volume). Each token failure spends a try, so
+              # lift the limit or the passphrase gets a single attempt.
+              boot.initrd.luks.devices.cryptroot.crypttabExtraOpts = [
+                "tpm2-device=auto"
+                "tpm2-measure-pcr=yes"
+                "tries=0"
+              ];
               # Host-level: pin the Framework 13 Pro + home desk panel /
               # kanshi / workspace overlay. Hardware module stays generic.
               hm.imports = [ config.flake.homeModules.displays-framework-13-home ];
