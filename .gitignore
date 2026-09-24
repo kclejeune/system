@@ -5,7 +5,8 @@
 .devenv/
 .pre-commit-config.yaml
 .playwright-mcp/
-.claude/
+.claude/*
+!.claude/settings.json
 /result-*
 /docs/superpowers
 /.superpowers

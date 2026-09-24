@@ -468,6 +468,28 @@
               shellHook = config.pre-commit.installationScript;
             };
 
+            # Every host's drvPath as JSON; diff before/after to prove a refactor is a no-op.
+            apps.drvs = {
+              type = "app";
+              program = lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "drvs";
+                  # getFlake + --impure so darwin configs evaluate from Linux.
+                  text = ''
+                    exec nix eval --json --no-warn-dirty --impure --expr "
+                      let
+                        f = builtins.getFlake \"git+file://$PWD\";
+                        top = builtins.mapAttrs (_: c: c.config.system.build.toplevel.drvPath);
+                      in {
+                        nixos = top f.nixosConfigurations;
+                        darwin = top f.darwinConfigurations;
+                        home = builtins.mapAttrs (_: c: c.activationPackage.drvPath) f.homeConfigurations;
+                      }"
+                  '';
+                }
+              );
+            };
+
             # No args deploys every node; scope with `nix run .#deploy -- '.#forge'`.
             apps.deploy = {
               type = "app";

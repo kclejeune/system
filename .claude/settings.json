@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nix eval *)",
+      "Bash(nix build --no-link *)",
+      "Bash(nix flake metadata *)",
+      "Bash(nix flake show *)",
+      "Bash(nix log *)",
+      "Bash(nix fmt *)",
+      "Bash(nix run .#drvs *)"
+    ],
+    "ask": [
+      "Bash(nh os switch *)",
+      "Bash(nh darwin switch *)",
+      "Bash(nh home switch *)",
+      "Bash(nix run .#deploy *)",
+      "Bash(deploy *)",
+      "Bash(git push *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; case \"$f\" in \"$CLAUDE_PROJECT_DIR\"/*) cd \"$CLAUDE_PROJECT_DIR\" && nix fmt -- \"$f\" >/dev/null 2>&1;; esac; } || true",
+            "statusMessage": "treefmt"
+          }
+        ]
+      }
+    ]
+  }
+}

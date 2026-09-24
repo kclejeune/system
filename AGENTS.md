@@ -1,324 +1,133 @@
-# Repository guide for Codex
+# Repository guide
 
-Personal multi-host Nix/NixOS/nix-darwin/home-manager config built on the
-**dendritic pattern** (flake-parts + `vic/import-tree`). Read this file
-before making changes — the layout is intentional and has a few non-obvious
-conventions.
+Personal Nix config for NixOS, nix-darwin and home-manager, built on the
+**dendritic pattern** (flake-parts + `vic/import-tree`). Read this before
+changing anything: several conventions exist to avoid non-obvious failures.
 
-## Top-level structure
+## Layout
 
-- `flake.nix` — inputs, `nixConfig`, the flake-parts `mkFlake` call, all
-  concrete config outputs (`nixosConfigurations`, `darwinConfigurations`,
-  `homeConfigurations`), `perSystem` wiring (overlays, devShell, treefmt,
-  pre-commit, checks), the `systems` list, and the inline declaration of
-  the `flake.darwinModules` option. Reusable **module bodies** live under
-  `./modules/`; host definitions and per-system plumbing live here.
-- `modules/` — the dendritic root. Every `.nix` file here is a flake-parts
-  module pulled in by `(inputs.import-tree ./modules)`. `import-tree`
-  discovers them recursively, so new files are auto-registered.
-- `modules/{nixos,darwin,home}/` — reusable class-specific modules. Each
-  file registers `flake.<class>Modules.<name>` with the full body inlined.
-- `modules/shared/` — option modules and wiring shared across classes
-  (`primary-user`, `nixpkgs-wiring`, `common-base`, `identity`, `fonts`).
-- `modules/_lib.nix` — `mkAspect` helper for declaring multi-class
-  modules. Underscore-prefixed so `import-tree` skips it; imported
-  explicitly via `import ../_lib.nix`.
-- `modules/profiles/` — per-identity modules (currently just
-  `personal.nix`) that declare `flake.{nixos,darwin,home}Modules.profile-<name>`
-  in one file via `mkAspect`.
-- `modules/home/assets/{dotfiles,nvim,yazi}/` — **asset dirs only** (lua
-  files, dotfiles, themes). Referenced from the corresponding
-  `modules/home/*.nix` via relative paths (`./assets/<name>/...`).
-- `pkgs/` — custom package definitions (cb, fnox, weave). Wired into
-  `overlays.default` via the `overlayAttrs` block inside `perSystem` in
-  `flake.nix`.
-- `secrets/` — sops-encrypted per-host secrets.
+- `flake.nix` — inputs, `nixConfig`, every host, `perSystem` (overlay,
+  devShell, treefmt, pre-commit, checks, apps). `nixConfig` must stay here:
+  it's read before `mkFlake` runs.
+- `modules/` — every `.nix` file is a flake-parts module auto-imported by
+  `import-tree`. Files starting with `_` are skipped (`_lib.nix`,
+  `home/_desk-displays.nix`) and imported explicitly.
+  - `nixos/`, `darwin/`, `home/` — one file per reusable module, registered
+    as `flake.<class>Modules.<name>` (`home/` → `flake.homeModules`).
+  - `shared/` — cross-class options and wiring (`primary-user`, `common-base`,
+    `nixpkgs-wiring`, `identity`, `site`, …).
+  - `profiles/` — identity profiles declared for all classes via `mkAspect`.
+  - `home/assets/` — non-Nix files (dotfiles, nvim, yazi) referenced by path.
+- `pkgs/` — custom packages (`cb`, `sem-cli`, `tpm-keyring-unlock`,
+  `traceway`), added to `overlays.default` in `flake.nix`.
+- `secrets/` — sops-encrypted; recipients in `.sops.yaml`.
+- `terraform/` + `modules/terranix.nix` — UniFi config via terranix
+  (`nix run .#unifi`).
 
-## The inlined-module pattern
+## Hosts
 
-Every reusable module lives in one file that both registers itself as a
-flake-parts output AND contains the full body. Example —
-`modules/nixos/hyprland.nix`:
+| Host                       | Role                                                | Builder                    |
+| -------------------------- | --------------------------------------------------- | -------------------------- |
+| phil, wally, stanley       | laptops (Hyprland)                                  | `mkDesktop`                |
+| gateway                    | public Hetzner edge (Authelia, NetBird, monitoring) | `mkNixos`                  |
+| haven, forge, vault, atlas | LAN homelab                                         | `mkHomelab`                |
+| `kclejeune@aarch64-darwin` | macOS                                               | `darwinSystem`             |
+| `kclejeune@<system>`       | standalone home-manager                             | `homeManagerConfiguration` |
+
+`mkNixos` adds `host-baseline` (determinate, home-manager, disko, sops-nix)
+and `nixosModules.default`; the others build on it. Module **order** inside
+the builders is kept stable on purpose: reordering changes list-typed option
+merges and therefore every drvPath.
+
+## Module conventions
+
+Every module registers itself and inlines its body:
 
 ```nix
 { config, ... }:
 let
-  flakeCfg = config;
+  flakeCfg = config; # flake-parts config; the inner `config` is the NixOS one
 in
 {
-  flake.nixosModules.hyprland =
-    { pkgs, ... }:
-    {
-      programs.hyprland.enable = true;
-      # … full body …
-      hm.imports = [ flakeCfg.flake.homeModules.hyprland ];
-    };
-}
-```
-
-The outer `{ config, ... }` binding captures flake-parts' config (aliased as
-`flakeCfg`) so the nixos module body — which would otherwise shadow `config`
-with the NixOS config — can still reach sibling modules via
-`flakeCfg.flake.<class>Modules.<name>`. This is the convention throughout.
-
-Modules with no cross-class or sibling references skip the alias:
-
-```nix
-_: {
-  flake.homeModules.bat = _: {
-    programs.bat = { enable = true; config.theme = "TwoDark"; };
+  flake.nixosModules.hyprland = { pkgs, ... }: {
+    programs.hyprland.enable = true;
+    hm.imports = [ flakeCfg.flake.homeModules.hyprland ];
   };
 }
 ```
 
-## Multi-class modules: `mkAspect`
+Use `_: { … }` when the module doesn't reference siblings. For a body shared
+by several classes use `mkAspect` from `modules/_lib.nix` (`os` = same body
+for nixos + darwin; `nixos`/`darwin`/`home` for class-specific bodies).
 
-For a feature whose body applies to more than one class (e.g. registers
-under both `nixosModules.X` and `darwinModules.X`, or adds a `homeModules`
-companion), use the `mkAspect` helper in `modules/_lib.nix`. It collapses
-the "define body once, register under N classes" pattern:
+Enroll a module by adding it to the host's builder call in `flake.nix`, or,
+for home-manager modules, to the relevant aggregator's `hm.imports`.
 
-```nix
-{ config, ... }:
-let
-  flakeCfg = config;
-in
-(import ../_lib.nix).mkAspect {
-  name = "profile-personal";
-  os = _: {
-    # shared body for nixos + darwin
-    user.name = "kclejeune";
-    hm.imports = [ flakeCfg.flake.homeModules.profile-personal ];
-  };
-  home = _: {
-    programs.git.settings.user.email = "kennan@case.edu";
-  };
-}
-```
+## Traps
 
-`os` is shorthand for "same body in `nixos` and `darwin`". Use
-`nixos = …` / `darwin = …` explicitly when the class bodies diverge.
-`home = …` registers under `flake.homeModules.<name>`. Any key you omit
-doesn't register. See `modules/shared/common-base.nix`,
-`modules/shared/primary-user.nix`, and `modules/profiles/personal.nix`
-for live examples.
+- **Import each module exactly once per host.** flake-parts wraps every
+  module reference with its own `_file`, so Nix can't dedupe them; a second
+  import makes scalar options conflict. E.g. `desktop` imports
+  `desktop-base`, so `hyprland` must not.
+- **`hm` / `user` aliases** (`shared/primary-user.nix`) forward to
+  `home-manager.users.<primary>` / `users.users.<primary>`.
+- **Blast radius.** `gateway` and the homelab hosts enroll `profile-personal`
+  and the full home-manager default, so anything added there ships to
+  servers. Put GUI or personal-only apps in `personal-apps`, or gate them on
+  `config.desktop.enable` in home modules.
+- **Specialisations must tag themselves** or `nh` activates the default
+  config instead of the running one. The value must equal the attr name:
+  `environment.etc."specialisation".text = "<name>";` (NixOS) or
+  `xdg.dataFile."home-manager/specialisation".text = "<name>";` (HM). This
+  includes specialisations merged in from nixos-hardware.
+- **Flakes only see tracked files.** `git add` new files before evaluating.
+- **`determinate`** manages the Nix package and its trust settings; don't
+  set `nix.settings.*` elsewhere without a reason.
+- **`dotfiles.path`** (`home/dotfiles.nix`) hardcodes
+  `~/.nixpkgs/modules/home/assets/dotfiles` for out-of-store symlinks; move
+  it and the relative `./assets/...` paths together.
+- **systemd-user env is stale after a switch** in a running session;
+  `systemctl --user set-environment …` + restart the unit, or re-login.
 
-## Adding a new reusable module
+## Deployment
 
-1. Pick a class (`nixos`, `darwin`, `home`) and a short name.
-2. Create `modules/<class>/<name>.nix`:
-   ```nix
-   _: {
-     flake.<class>Modules.<name> = { config, pkgs, lib, ... }: {
-       programs.foo.enable = true;
-     };
-   }
-   ```
-   (The `home` directory registers under `flake.homeModules`, matching
-   flake-parts convention.)
-3. If the body needs to reference sibling modules, switch to the closure
-   form:
-   ```nix
-   { config, ... }:
-   let flakeCfg = config; in {
-     flake.<class>Modules.<name> = _: {
-       imports = [ flakeCfg.flake.<class>Modules.<sibling> ];
-     };
-   }
-   ```
-4. Enroll in whichever host wants it by editing the corresponding
-   `flake.nixosConfigurations.<host>` (or darwin/home) block in
-   `flake.nix`:
-   ```nix
-   modules = [ … config.flake.nixosModules.<name> … ];
-   ```
-   For home-manager features on a nixos/darwin host, add to the `hm.imports`
-   list inside the relevant aggregator (e.g.
-   `flake.nixosModules.default`'s `hm.imports`).
-
-## Adding a new host
-
-Hosts are defined inline in `flake.nix`, not as separate files. Add a new
-attribute under `flake.nixosConfigurations` / `flake.darwinConfigurations` /
-`flake.homeConfigurations` that calls `nixosSystem` / `darwinSystem` /
-`homeManagerConfiguration` and lists the modules to enable. See the
-existing `phil` / `wally` / `gateway` (NixOS), the `kclejeune@${system}`
-`lib.map` block (darwin), and the standalone-home `lib.map` block for the
-shapes to copy.
-
-**Provisioning a new NixOS host** (full steps in `README.md` → System
-bootstrapping → NixOS): pre-generate the SSH host key locally, add its
-`ssh-to-age` key to `.sops.yaml` and `sops updatekeys` every secret file the
-host reads, then install with nixos-anywhere passing the key via
-`--extra-files`. sops-nix decrypts with `/etc/ssh/ssh_host_ed25519_key` during
-`nixos-install`; if that key is missing or not a recipient, the
-`users.yaml` password hash silently fails to install and, with
-`mutableUsers = false`, the primary user has no password.
-
-**Output naming**: NixOS hosts use the bare hostname
-(`nixosConfigurations.phil`, `.wally`, `.gateway`). Darwin and
-standalone-home use `kclejeune@<system>` because those attrs fan out
-across multiple systems via `lib.map` + `lib.mergeAttrsList`.
-
-## Key non-obvious conventions
-
-- **`config.hm` shorthand**: `modules/shared/primary-user.nix` declares a
-  `hm` option that `mkAliasDefinitions`-forwards to
-  `home-manager.users.${config.user.name}`. So a nixos/darwin module can
-  write `hm.programs.foo.enable = true;` and it will land on the primary
-  user's home-manager config. There's a matching `user` option for
-  `users.users.${config.user.name}`.
-- **`specialArgs`**: every host passes `{ self, inputs, nixpkgs }` as
-  `specialArgs` (or `extraSpecialArgs` for standalone home). The `nixpkgs`
-  arg is the per-host nixpkgs (nixos uses `inputs.nixos-unstable`,
-  darwin/standalone-home use `inputs.nixpkgs`, pinned to
-  `nixpkgs-unstable`). Modules that need another nixpkgs revision use
-  `pkgs.multiverse` via the overlay.
-- **`nixConfig` stays in `flake.nix`**: it's evaluated pre-`mkFlake`, so it
-  cannot move to a flake-parts module.
-- **Underscore-prefixed files are excluded** from `import-tree`. Use this
-  escape hatch for any `.nix` file under `./modules` that should not
-  register as a flake-parts module.
-- **`flake.darwinModules` option** is declared inline in `flake.nix`
-  (inside `imports`, alongside the upstream flake-parts modules) because
-  upstream flake-parts does not declare it. Don't delete that block —
-  without the declaration, files under `modules/darwin/` that each
-  contribute a named module collide on evaluation.
-- **Double-importing the same module is a trap.** Flake-parts wraps module
-  values with unique `_file` annotations each time they're referenced, so
-  Nix's identity-based import dedup DOES NOT work — two transitive
-  references to `flakeCfg.flake.<class>Modules.foo` from different paths
-  cause option conflicts for any scalar option `foo` sets. Structure
-  imports so each reusable module is pulled in exactly once per host — e.g.
-  `desktop` imports `desktop-base`, but `gnome` and `hyprland` do NOT (they
-  assume `desktop` already enrolled it).
-- **Specialisations must tag themselves for `nh`.** `nh` picks the right
-  activation script by reading `/etc/specialisation` (nixos) or
-  `~/.local/share/home-manager/specialisation` (home-manager). Every
-  specialisation — including ones merged in from upstream modules like
-  `nixos-hardware`'s `battery-saver` — must write its own name to that
-  path, or `nh switch` will silently activate the default config instead
-  of the running spec. The value must match the attr name exactly.
-  ```nix
-  specialisation.dgpu.configuration = {
-    environment.etc."specialisation".text = "dgpu";        # nixos
-    # …
-  };
-  # home-manager equivalent inside an HM config:
-  specialisation.foo.configuration = {
-    xdg.dataFile."home-manager/specialisation".text = "foo";
-    # …
-  };
-  ```
+- **Servers pull-deploy with comin** from the `deploy` branch, which
+  `.github/workflows/promote.yml` fast-forwards to master only after every
+  `build` job passes. comin verifies the tip commit's signature, so commits
+  must be signed (your SSH key, or GitHub web-flow for UI merges), and it
+  refuses heads that don't descend from what's running.
+- Anything activated by hand on a server is reverted on the next poll. To
+  trial a config, push to `testing-<hostname>` (branched from `deploy`).
+- Pushing to master is effectively a deploy once CI is green.
+- Laptops and darwin activate locally, always via `nh`:
+  `nh os switch .#<host>`, `nh darwin switch '.#kclejeune@aarch64-darwin'`,
+  `nh home switch '.#kclejeune@x86_64-linux'`. `NH_FLAKE` points here.
+- `nix run .#deploy -- '.#<host>'` (deploy-rs) exists for bootstrapping and
+  emergencies; sudo uses pam_rssh with the forwarded agent.
+- New NixOS host: see README → System bootstrapping. The host key must be a
+  sops recipient _before_ install, or the `users.yaml` password hash never
+  lands and (with `mutableUsers = false`) the user has no password.
 
 ## Commands
 
-- Dev shell (gets `treefmt`, `pre-commit`, `nh`, `fd`, `rg`, `uv`, etc.):
-  ```bash
-  nix develop
-  ```
-- Format every tracked file: `nix fmt` (runs `treefmt`).
-- Build without activating:
-  ```bash
-  nix build .#nixosConfigurations.phil.config.system.build.toplevel
-  nix build .#darwinConfigurations."kclejeune@aarch64-darwin".config.system.build.toplevel
-  nix build .#homeConfigurations."kclejeune@x86_64-linux".activationPackage
-  ```
-- Activate (run on the target host) — always via `nh`, never the raw
-  `nixos-rebuild` / `darwin-rebuild` / `home-manager` commands:
-  ```bash
-  nh os switch .#phil
-  nh darwin switch '.#kclejeune@aarch64-darwin'
-  nh home switch '.#kclejeune@x86_64-linux'
-  ```
-  There is no `--hostname` flag — the target is the installable's attrpath.
-  `NH_FLAKE` is already exported to `~/.nixpkgs`, so a bare `nh os switch`
-  resolves against this repo from anywhere.
-  `nh` is also what reads `/etc/specialisation` to pick the right activation
-  script — see the specialisation-tagging note above.
-- Eval-only drvPath diff (useful for refactors — run before and after to
-  prove a change is semantically transparent):
-  ```bash
-  nix eval --json --accept-flake-config \
-    '.#nixosConfigurations.phil.config.system.build.toplevel.drvPath'
-  ```
-- Build the home-manager generation for a host without activating
-  (useful for reading rendered `xdg.configFile` / `home.activation`
-  output from /nix/store):
-  ```bash
-  nix build --no-link --print-out-paths \
-    '.#nixosConfigurations.phil.config.home-manager.users.kclejeune.home.activationPackage'
-  ```
-- Cross-eval a darwin config from a Linux box: add `--impure` and use
-  `builtins.getFlake` so `pkgs` imports work without system-matching.
+```bash
+nix develop                     # treefmt, prek, nh, gh, nurl, sops, ssh-to-age, nvd, …
+nix fmt                         # nixfmt, statix, deadnix, shellcheck, actionlint, zizmor, …
+nix run .#drvs > before.json    # drvPath of every host; diff before/after a refactor
+nix build --no-link .#nixosConfigurations.<host>.config.system.build.toplevel
+nix build --no-link .#checks.x86_64-linux.treefmt
+```
 
-## Updating custom packages (`pkgs/`)
+Refactors should be drvPath-transparent: capture `nix run .#drvs` before and
+after and diff. Evaluate hosts serially when memory is tight; parallel
+full-flake evals can OOM.
 
-The custom packages under `pkgs/` (`cb`, `fnox`, `sem-cli`, `weave`) are
-wired into the overlay and exposed via `legacyPackages`, so build them by
-bare attr name: `nix build .#fnox`. To bump one to a new release:
+## Updating `pkgs/`
 
-1. Find the latest release tag with `gh`:
-   ```bash
-   gh release view --repo jdx/fnox --json tagName -q .tagName
-   ```
-2. Get the new `src` hash with `nurl` (handles `fetchFromGitHub`'s
-   top-level-dir stripping correctly — `nix-prefetch-url --unpack` does
-   NOT and yields a wrong hash):
-   ```bash
-   nurl https://github.com/jdx/fnox v1.26.0
-   ```
-   Update `version` and the `src` `hash` from its output.
-3. For Rust packages, the `cargoHash` can't be prefetched — set it to a
-   fake (`sha256-AAAA…AAA=`), run `nix build .#<name>`, and copy the
-   `got:` hash from the mismatch error into `cargoHash`. Then rebuild to
-   confirm it's clean.
+1. Latest tag: `gh release view --repo <owner>/<repo> --json tagName -q .tagName`.
+2. Source hash: `nurl https://github.com/<owner>/<repo> <tag>`
+   (`nix-prefetch-url --unpack` gives the wrong hash for `fetchFromGitHub`).
+3. Rust `cargoHash`: set a fake hash, `nix build .#<pkg>`, copy the `got:`.
 
-## Gotchas
-
-- **haven / forge / vault / atlas / gateway pull-deploy themselves.** comin
-  polls master every 60s and switches, so anything activated out of a dirty
-  worktree with `nh os switch` or `deploy` is reverted on the next poll. Push
-  to `testing-<hostname>` to try a config without it becoming the boot
-  default. See `modules/nixos/comin.nix`.
-- **`flake.nix` uncommitted changes** are not picked up until `git add`ed —
-  nix flakes only see the git index. If you see `flake ... does not provide
-attribute ...` after creating new files, run `git add` and retry.
-- **Dotfiles hardcoded path**: `modules/home/dotfiles.nix` defines
-  `config.dotfiles.path` defaulting to
-  `${homeDirectory}/.nixpkgs/modules/home/assets/dotfiles`. If you ever
-  move that directory, both the default and the `./assets/...` relative
-  paths inside must be updated in lockstep.
-- **Home-manager enrollment**: on nixos/darwin hosts, home-manager is
-  pulled in via `hm.imports = [ flakeCfg.flake.homeModules.default ]`
-  inside `modules/shared/common-base.nix`. Headless hosts like `gateway`
-  still import common-base (via `nixos/default.nix`) but don't receive
-  desktop-only HM modules because those are enrolled inside
-  `nixos/desktop-base.nix`.
-- **`host-baseline`** (`modules/nixos/host-baseline.nix`) bundles the
-  third-party modules every NixOS host uses: `determinate`,
-  `home-manager`, `disko`, `sops-nix`. Each host file imports
-  `config.flake.nixosModules.host-baseline` instead of listing them
-  individually. If you need to add another cross-host third-party
-  module, add it there — not in the per-host file.
-- **`determinate` input**: provides `nixosModules.default` /
-  `darwinModules.default`. It replaces the stock Nix package and manages
-  its own substitute/trust config; don't also set `nix.settings.*` from
-  elsewhere unless you know what you're doing.
-- **Check every host that enrolls a module you touch.** Especially:
-  `gateway` enrolls `profile-personal` for the user identity but NOT
-  `desktop`, so anything piled into `profile-personal` ships to the
-  Hetzner server. Personal-only GUI apps go in
-  `flake.nixosModules.personal-apps`, enrolled per-host in `wally.nix` /
-  `phil.nix`, **not** via `profile-personal` — that keeps headless
-  personal hosts (gateway) and a future work-desktop host clean. Quick
-  blast-radius check: `nix eval --json --no-warn-dirty
-'.#nixosConfigurations.<host>.config.environment.systemPackages'`
-  piped through jq/python to spot pollution.
-- **`nixos-rebuild switch` does not refresh the systemd-user manager
-  environment** for an already-running session. Profile-relative env
-  vars (e.g. `NIX_XDG_DESKTOP_PORTAL_DIR`, `XDG_DATA_DIRS`) keep their
-  login-time values, which means a service started by systemd-user can
-  silently read the wrong path post-rebuild. Workaround:
-  `systemctl --user set-environment KEY=VALUE && systemctl --user
-restart <unit>`, or log out / reboot for a clean slate.
+Before adding a package here, check nixpkgs; drop local copies once upstream
+catches up.

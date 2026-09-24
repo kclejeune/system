@@ -35,7 +35,7 @@ so `hm.imports = [ config.flake.homeModules.hyprland ]` in the NixOS module is
 how the home-manager side of Hyprland is pulled in when Hyprland is enabled.
 
 Non-Nix assets that aren't flake-parts modules live in `secrets/`,
-`pkgs/{cb,fnox,weave}/` (custom package sources), and
+`pkgs/` (custom packages), and
 `modules/home/assets/{dotfiles,nvim,yazi}/` (source-path references for
 the corresponding home modules).
 
