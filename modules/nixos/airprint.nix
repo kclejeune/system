@@ -1,8 +1,5 @@
 _: {
-  # AirPrint-compatible CUPS printer sharing. DNS-SD discovery is required
-  # but intentionally NOT pulled in here — enroll the `avahi` module
-  # alongside this one. The assertion below catches misconfiguration at
-  # eval time.
+  # AirPrint CUPS sharing. Needs the `avahi` module; asserted below.
   flake.nixosModules.airprint =
     {
       config,
@@ -71,14 +68,9 @@ _: {
           }
         ];
 
-        # AirPrint-friendly CUPS preset:
-        #   - listen on every interface so mDNS-discovered clients can
-        #     reach the IPP endpoint
-        #   - browsing + defaultShared so printers are advertised
-        #   - allowFrom the LAN + overlays (CUPS otherwise gates access to
-        #     localhost); not "all", so nothing off-site can queue jobs
-        #   - no cups-browsed: this host shares printers, it doesn't need to
-        #     discover remote queues (and browsed is the CVE-2024-47176 surface)
+        # Listen everywhere so mDNS clients reach IPP; allowFrom limits it to the
+        # LAN + overlays. No cups-browsed: we only share, and it's the
+        # CVE-2024-47176 surface.
         services.printing = {
           enable = true;
           listenAddresses = [ "*:631" ];
@@ -104,9 +96,7 @@ _: {
                 brlaser
                 brgenml1lpr
                 brgenml1cupswrapper
-                # HP (open-source variant — covers most HP devices;
-                # add hplipWithPlugin via extraDrivers if your model
-                # needs the proprietary plugin).
+                # HP; add hplipWithPlugin via extraDrivers if a model needs the plugin.
                 hplip
                 # Epson inkjets: escpr (older models) + escpr2 (newer
                 # AirPrint-era models).

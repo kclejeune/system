@@ -1,15 +1,7 @@
 _: {
   flake.nixosModules.avahi = _: {
-    # mDNS / DNS-SD daemon. Required for AirPlay discovery (uxplay),
-    # Chromecast/Cast discovery, network printers, generic *.local
-    # hostname resolution, etc.
-    #
-    # `openFirewall = true` is load-bearing on NixOS specifically:
-    # uxplay's README troubleshooting section calls out NixOS users
-    # hitting `kDNSServiceErr_Unknown` from DNSServiceRegister until
-    # this is set, because without it Avahi only services queries on
-    # the loopback interface and clients on the LAN can't see anything
-    # published. (Opens UDP 5353.)
+    # openFirewall is load-bearing: without it Avahi answers only on loopback
+    # (uxplay's kDNSServiceErr_Unknown on NixOS).
     services.avahi = {
       enable = true;
       nssmdns4 = true;

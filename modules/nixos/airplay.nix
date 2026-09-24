@@ -1,8 +1,5 @@
 _: {
-  # AirPlay-Mirror / AirPlay-Audio receiver, backed by uxplay(1). DNS-SD
-  # discovery is required but intentionally NOT pulled in here — enroll
-  # the `avahi` module alongside this one. The assertion below catches
-  # misconfiguration at eval time.
+  # AirPlay receiver (uxplay). Needs the `avahi` module; asserted below.
   flake.nixosModules.airplay =
     {
       config,
@@ -78,10 +75,7 @@ _: {
           ];
         };
 
-        # User-level service: uxplay needs the user's graphical session
-        # (DISPLAY/WAYLAND_DISPLAY for the videosink, PipeWire/PulseAudio
-        # for the audiosink). Upstream's bundled uxplay.service ships as
-        # `WantedBy=default.target` for the same reason.
+        # User service: uxplay needs the graphical session and audio server.
         systemd.user.services.airplay = {
           description = "uxplay AirPlay receiver";
           wantedBy = [ "default.target" ];

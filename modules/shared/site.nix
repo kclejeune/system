@@ -1,10 +1,6 @@
 { lib, ... }:
-# Site-wide constants shared across hosts, promoted out of per-host literals so
-# there's a single source of truth (and a single edit if any ever changes).
-#
-# Exposed twice because not every consumer is a NixOS module: the terranix
-# configs and the deploy-rs node list read `flake.lib.site`, while hosts use
-# `config.site.*` and can still override per host.
+# Site-wide constants. flake.lib.site serves non-module consumers (terranix,
+# deploy-rs); hosts read config.site.* and can override.
 let
   site = {
     # Public zone (auth, netbird, traceway, …) and the zone the NetBird

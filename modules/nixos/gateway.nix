@@ -14,10 +14,7 @@ in
       autheliaUser = "authelia-${autheliaInstance}";
       autheliaStateDir = "/var/lib/authelia-${autheliaInstance}";
       lldapSecretsGroup = "lldap-secrets";
-      # Log lives in a dedicated dir, NOT the state dir: the state dir holds
-      # db.sqlite3 (TOTP/WebAuthn/session data, world-readable 0644), so granting
-      # crowdsec traverse there to read the log would also expose the auth DB.
-      # A log-only dir lets crowdsec read the log without reaching any secrets.
+      # Separate from the state dir so crowdsec can read the log without reaching db.sqlite3.
       autheliaLogDir = "/var/log/authelia-${autheliaInstance}";
       autheliaLogFile = "${autheliaLogDir}/authelia.log";
       inherit (config.site) domain;
@@ -30,23 +27,18 @@ in
       netbirdDomain = "netbird.${domain}";
       netbirdProxyDomain = config.site.proxyDomain;
       netbirdProxyPort = 8443;
-      # Fixed inbound WireGuard port for the proxy's embedded peer (private /
-      # NetBird-Only Access mode). 51820 is already taken by the host's own
-      # NetBird client (wt0) and 49152-49263 by coturn's relay range, so the
-      # proxy peer gets 51821. A fixed port (vs the default random) only works
-      # for single-account deployments — which this is — and lets the firewall
-      # admit direct peer→proxy connections instead of forcing TURN relay.
+      # 51820 is the host's wt0 and 49152+ coturn's relay range. Fixed so the
+      # firewall can admit direct peer→proxy connections instead of TURN relay.
       netbirdProxyWgPort = 51821;
       netbirdMgmtPort = 8011;
       netbirdMgmtMetricsPort = 9190;
       netbirdSignalMetricsPort = 9191;
       nginxInternalSSLPort = 4443;
-      # 8080/6060 (crowdsec defaults) collide with netbird-proxy and
-      # netbird-signal respectively on this host, so move both.
+      # crowdsec's 8080/6060 defaults collide with netbird-proxy and netbird-signal.
       crowdsecLapiPort = 8090;
       crowdsecMetricsPort = 9060;
-      beszelPort = 8091; # beszel hub web UI / agent endpoint (its 8090 default collides with crowdsecLapiPort)
-      tracewayPort = 8095; # traceway backend listen port; nginx proxies to it on loopback
+      beszelPort = 8091; # 8090 default collides with crowdsecLapiPort
+      tracewayPort = 8095;
       ntfyPort = lib.toInt (lib.removePrefix ":" config.services.ntfy-sh.settings.listen-http);
       tracewayDomain = "traceway.${domain}";
 
@@ -63,19 +55,14 @@ in
         flakeCfg.flake.nixosModules.ntfy
         flakeCfg.flake.nixosModules.smtp
         flakeCfg.flake.nixosModules.traceway
-        # Ships gateway's own journal + host metrics into the instance it
-        # hosts; the token comes from secrets/gateway.yaml like the rest.
         flakeCfg.flake.nixosModules.traceway-agent
       ];
 
-      # Fastmail submission account shared by Authelia, ntfy and Traceway.
       smtp.host = "smtp.fastmail.com";
 
       networking.hostName = "gateway";
 
-      # Hetzner volume mounted early in initrd so that /nix is available before
-      # systemd starts — avoids a chicken-and-egg problem where systemd itself
-      # lives in /nix/store.
+      # /nix lives on this volume, so it must mount in initrd.
       boot.initrd.availableKernelModules = [ "virtio_scsi" ];
       fileSystems."/nix" = {
         device = "/dev/disk/by-id/scsi-0HC_Volume_105289845";
@@ -87,33 +74,20 @@ in
         neededForBoot = true;
       };
 
-      # Open additional ports beyond the SSH default from hetzner.nix.
-      # ICMPv4 echo-request rate-limiting comes from the base firewall's
-      # pingLimit; the base nftables input chain also drops ct-invalid and
-      # accepts the standard ICMPv6 types.
       networking.firewall = {
         allowedTCPPorts = [
-          80 # HTTP
-          443 # HTTPS
+          80
+          443
         ];
-        # The netbird-proxy embedded peer's WireGuard listen port. Opening it
-        # lets mesh peers reach the private-service proxy directly (UDP hole
-        # punch to gateway's public IP) rather than relaying through coturn.
+        # Direct peer→proxy WireGuard instead of relaying through coturn.
         allowedUDPPorts = [ netbirdProxyWgPort ];
 
-        # The overlays are NOT trusted here (tailscale.nix trusts them on every
-        # other host): this box is internet-facing, so a compromised tailnet or
-        # NetBird peer shouldn't reach every local listener. Everything the
-        # overlays legitimately use is either intercepted inside tailscaled
-        # (`tailscale serve` VIPs, Tailscale SSH — never hit this chain) or
-        # opened explicitly below. "lo" must be restated: the firewall module
-        # contributes it through this same option, so mkForce would drop it.
+        # Internet-facing, so overlay peers only get the ports opened below;
+        # tailscale serve/SSH are handled inside tailscaled. "lo" is restated
+        # because mkForce drops the firewall module's own entry.
         trustedInterfaces = lib.mkForce [ "lo" ];
 
-        # The internal web UIs bind 0.0.0.0 because the NetBird dashboard only
-        # accepts overlay-IP backends: the netbird-proxy's embedded peer dials
-        # them on gateway's wt0 address, so they arrive on wt0. Open exactly
-        # those backends there; NetBird ACLs + proxy SSO gate who reaches them.
+        # The NetBird proxy can only dial overlay-IP backends, so these arrive on wt0.
         interfaces.${config.services.netbird.clients.default.interface}.allowedTCPPorts = [
           config.services.grafana.settings.server.http_port
           config.services.prometheus.port
@@ -125,10 +99,8 @@ in
         ];
       };
 
-      # SYN-flood guard + ICMPv6 echo rate-limit. These live in their own table
-      # at a priority ahead of nixos-fw's input chain: appended via
-      # extraInputRules they ran after the port accepts, so they never fired.
-      # Echo-request only — rate-limiting all of ICMPv6 would also throttle NDP.
+      # Own table ahead of nixos-fw so these fire before its port accepts.
+      # Echo-request only: limiting all of ICMPv6 would throttle NDP.
       networking.nftables.tables.gateway-ratelimit = {
         family = "inet";
         content = ''
@@ -141,13 +113,10 @@ in
         '';
       };
 
-      # User account. SSH keys come from the identity module (set by
-      # profile-personal); gateway opts into installing them on root too as
-      # a rescue fallback since it's the only public-facing host.
+      # Root keys as a rescue path on the only public-facing host.
       identity.enableRootSshKeys = true;
 
-      # Base sets PermitRootLogin="no" (mkDefault), which would make the rescue
-      # keys above inert. Allow key-only root login (never password).
+      # Key-only, so the rescue keys above work.
       services.openssh.settings.PermitRootLogin = lib.mkForce "prohibit-password";
 
       users.users.${config.user.name} = {
@@ -155,7 +124,6 @@ in
         extraGroups = [ "wheel" ];
       };
 
-      # sops-nix - decrypts using the SSH host key via ssh-to-age
       sops = {
         defaultSopsFile = ../../secrets/gateway.yaml;
 
@@ -178,8 +146,7 @@ in
           "authelia/oidc_jwks_key" = {
             owner = autheliaUser;
           };
-          # Authelia reads the shared SMTP password by path (_FILE), so it
-          # needs to own it; the other consumers go through sops templates.
+          # Authelia reads this by path (_FILE), so it must own it.
           "smtp/password".owner = autheliaUser;
           "lldap/jwt_secret" = { };
           "lldap/ldap_user_pass" = {
@@ -191,31 +158,17 @@ in
           "netbird/turn_password" = {
             owner = "turnserver";
           };
-          # Plaintext OIDC client secret used by the embedded Dex IdP to
-          # authenticate against Authelia as a confidential upstream
-          # connector. The matching pbkdf2 hash lives in the Authelia
-          # netbird OIDC client config below; rotate them in lockstep
-          # (`authelia crypto hash generate pbkdf2 --variant sha512`).
-          # Substituted into management.json's
-          # EmbeddedIdP.StaticConnectors[].config.clientSecret via the
-          # netbird module's _secret/jq mechanism.
+          # Plaintext for Dex's Authelia connector; the pbkdf2 hash is in the
+          # netbird client below — rotate together.
           "netbird/authelia_client_secret" = { };
           "netbird/proxy_token" = { };
-          # Bouncer API key shared between the CrowdSec LAPI and the netbird
-          # reverse proxy (see declarativeBouncers.netbird-proxy below).
-          # Generate with `openssl rand -hex 32`.
+          # Shared by the CrowdSec LAPI and netbird-proxy's bouncer.
           "crowdsec/bouncer_key" = { };
-          # nimbus/oidc_client_secret (the nimbus worker's plaintext OIDC
-          # secret) also lives in secrets/gateway.yaml as its system of record,
-          # but nothing on this host consumes it, so it isn't decrypted here.
-          # Feed it to the worker with
-          # `sops -d --extract '["nimbus"]["oidc_client_secret"]'
-          # secrets/gateway.yaml | wrangler secret put OIDC_CLIENT_SECRET`.
-          # Authelia keeps only the pbkdf2 hash in the client config below.
+          # nimbus/oidc_client_secret also lives in gateway.yaml but is consumed by
+          # the Cloudflare worker (`wrangler secret put`), not this host.
         };
       };
 
-      # Authelia - authentication server
       services.authelia.instances.${autheliaInstance} = {
         enable = true;
         settings = {
@@ -228,36 +181,15 @@ in
           default_2fa_method = "webauthn";
           webauthn = {
             enable_passkey_login = true;
-            # A passkey login on its own counts as only ONE factor, so every
-            # resource here (all two_factor) would still prompt for the password
-            # afterward. This flag lets a passkey that performs user verification
-            # (Touch ID / Windows Hello / phone PIN — "have" + "are/know" in a
-            # single gesture) satisfy the two_factor access-control policy by
-            # itself, so a UV passkey login grants access with no password step.
-            # The access_control rules and every client's two_factor
-            # authorization_policy below stay unchanged — Authelia has no
-            # per-method authz rule, so this is the only knob.
-            #
-            # CAVEAT: still flagged experimental/unsupported upstream and "may
-            # cause startup failure in future versions". This host tracks
-            # nixos-unstable, so re-check the webauthn docs after Authelia bumps.
+            # A user-verifying passkey alone satisfies two_factor (no password step).
+            # Experimental upstream; re-check after Authelia bumps.
             experimental_enable_passkey_uv_two_factors = true;
-            # Force user verification during the WebAuthn ceremony so the
-            # authenticator actually reports UV — required for the flag above to
-            # elevate the login to two_factor. The default "preferred" would let
-            # a non-UV passkey silently fall back to the password prompt.
+            # Required for the flag above; "preferred" lets non-UV passkeys fall back
+            # to the password prompt.
             selection_criteria.user_verification = "required";
           };
 
-          # Brute-force regulation. ip mode (Authelia's recommendation) over the
-          # default user mode: bans the offending source IP rather than the
-          # account, so a known username can't be locked out by a third party.
-          # Authelia sees the real client IP via nginx X-Forwarded-For (real_ip
-          # from PROXY protocol). This is the in-app first line; CrowdSec
-          # (LePresidente/authelia) adds escalating nftables bans from the log.
-          # Application-level endpoint rate limits (server.endpoints.rate_limits)
-          # are pinned explicitly just below for the sensitive flows; every
-          # other endpoint keeps its upstream default (all enabled).
+          # Ban by IP, not account, so a third party can't lock out a known username.
           regulation = {
             modes = [ "ip" ];
             max_retries = 3;
@@ -265,15 +197,8 @@ in
             ban_time = "10m";
           };
 
-          # Pin the app-level rate limits for the sensitive endpoints so an
-          # upstream default change on nixos-unstable can't silently loosen
-          # them. This is a PIN, not a tightening — these values ARE the current
-          # upstream defaults (docs example block). Listing a subset is a
-          # partial override: unlisted endpoints keep their built-in defaults,
-          # they are NOT disabled. reset_password_* is now actually exercised
-          # since self-service reset is enabled; openid_connect_token guards the
-          # OIDC token endpoint. This sits under nginx limit_req (authelia_api
-          # zone) and CrowdSec as the most targeted, per-endpoint layer.
+          # Pinned to the current upstream defaults so a nixos-unstable bump can't
+          # silently loosen them.
           server.endpoints.rate_limits = {
             reset_password_start.buckets = [
               {
@@ -320,8 +245,7 @@ in
           };
 
           authentication_backend = {
-            # allow self-service password reset for non-admin users
-            # requires lldap_pasword_manager group permissions for authelia service account
+            # Needs the lldap_password_manager group on the authelia service account.
             password_reset.disable = false;
             password_change.disable = false;
             ldap = {
@@ -371,8 +295,6 @@ in
             tls.minimum_version = "TLS1.2";
           };
 
-          # Necessary for nginx integration
-          # See https://www.authelia.com/integration/proxies/nginx/
           server.endpoints.authz.auth-request.implementation = "AuthRequest";
           telemetry.metrics.enabled = true;
           telemetry.metrics.address = "tcp://127.0.0.1:${toString autheliaMetricsPort}/";
@@ -394,11 +316,8 @@ in
               "name"
               "preferred_username"
             ];
-            # email_verified is required: netbird's embedded Dex rejects the
-            # upstream Authelia ID token when the email scope is requested but
-            # the token lacks email_verified (Dex errors "email not verified"
-            # unless insecureSkipEmailVerified is set). Authelia emits
-            # email_verified=true for LDAP users.
+            # Dex rejects the upstream token without email_verified when the email
+            # scope is requested.
             claims_policies.netbird.id_token = [
               "email"
               "email_verified"
@@ -419,8 +338,7 @@ in
               "preferred_username"
               "groups"
             ];
-            # groups in the ID token so OIDC_ROLE_CLAIM=groups can map
-            # lldap_admin -> traceway admin (goth reads the ID token, not userinfo).
+            # Traceway maps roles from the ID token's groups (goth ignores userinfo).
             claims_policies.traceway.id_token = [
               "email"
               "email_verified"
@@ -428,30 +346,16 @@ in
               "preferred_username"
               "groups"
             ];
-            # Without this the ID token carries only `sub`, and RustFS renders
-            # the opaque subject identifier as the account name.
-            #
-            # Deliberately NO groups: RustFS resolves every value of a groups
-            # claim as a RustFS policy name and fails the whole login if any
-            # one is unknown ("OIDC policy mapping did not resolve to current
-            # policies"). Sending groups would mean creating and maintaining a
-            # RustFS policy named after every lldap group. The rustfs client
-            # uses a flat role_policy instead.
+            # Without these the ID token has only `sub`. No groups: RustFS treats each
+            # group as a policy name and fails the login on any unknown one.
             claims_policies.rustfs.id_token = [
               "email"
               "email_verified"
               "name"
               "preferred_username"
             ];
-            # Incus LTS has no per-user authorization — any authenticated OIDC
-            # identity is a full admin — so the ONLY access gate is here:
-            # restrict the `incus` client to members of lldap_admin. kclejeune
-            # and admin are members; everyone else is denied at login.
-            # Traceway auto-provisions every OIDC login into the org with
-            # write access (auto-create is fixed on and org resolution fails
-            # open), so membership is enforced here. Tiers match the
-            # OIDC_ROLE_MAP in services.traceway below; flat subject entries
-            # are OR'd.
+            # Traceway auto-provisions every OIDC login with write access, so
+            # membership is enforced here. Tiers match services.traceway.oidc.roleMap.
             authorization_policies.traceway_users = {
               default_policy = "deny";
               rules = [
@@ -465,6 +369,7 @@ in
                 }
               ];
             };
+            # Incus LTS has no per-user authz, so any OIDC login is admin.
             authorization_policies.incus_admins = {
               default_policy = "deny";
               rules = [
@@ -476,13 +381,8 @@ in
             };
             clients = [
               {
-                # Beszel hub (PocketBase) OIDC login. Beszel sits behind the
-                # netbird-proxy at beszel.kclj.dev for transport SSO, AND uses
-                # this client so its dashboard users are Authelia-backed. The
-                # plaintext secret lives in sops at beszel/authelia_client_secret
-                # — paste it into Beszel's UI when adding the OIDC provider
-                # (PocketBase stores it in its own DB; Authelia keeps only the
-                # pbkdf2 hash below). PocketBase's callback is /api/oauth2-redirect.
+                # Plaintext secret (sops beszel/authelia_client_secret) is pasted into
+                # Beszel's UI; PocketBase stores it itself.
                 client_id = "beszel";
                 client_name = "Beszel";
                 client_secret = "$pbkdf2-sha512$310000$fMrobSxiOm/Y4AJfZZGiVA$hC9cyxI1.qN7/O09Jy0lcT1dc87lw12138OAUaC0G6ihI5iHBMkzU/zXfUIGD7Ezsrk6FfJa3GziuKqBgtOB2A";
@@ -514,9 +414,7 @@ in
                 claims_policy = "nimbus";
                 redirect_uris = [
                   "https://app.cache.kclj.io/api/auth/oauth2/callback/oidc"
-                  # Local nimbus dev (`vite dev` with OIDC_* in .dev.vars).
-                  # Authelia only requires redirect URIs to be absolute, so
-                  # loopback http is fine on a confidential client.
+                  # Local nimbus dev (`vite dev`).
                   "http://localhost:5173/api/auth/oauth2/callback/oidc"
                 ];
                 scopes = [
@@ -530,14 +428,7 @@ in
                 pkce_challenge_method = "S256";
               }
               {
-                # Traceway dashboard login (services.traceway below).
-                # Confidential client — the traceway service reads the plaintext from
-                # sops traceway/oidc_client_secret; Authelia keeps only the
-                # pbkdf2 hash. Rotate in lockstep (`authelia crypto hash
-                # generate pbkdf2 --variant sha512`). No PKCE: Traceway's OIDC
-                # provider (goth openidConnect) doesn't send a code_challenge,
-                # so require_pkce would reject every login. Callback path is
-                # fixed upstream as APP_BASE_URL + /api/auth/callback/oidc.
+                # No PKCE: Traceway's goth OIDC provider sends no code_challenge.
                 client_id = "traceway";
                 client_name = "Traceway";
                 client_secret = "$pbkdf2-sha512$310000$gNo7ijU5nWrmnX3jGSLU2Q$sq7sQiPcOV7kt7VC/v/9xPKCNXcgU.sqv0..u7fk.WBbpITeN7dg4FmPJiICe0we.CP7IQWqLFuhmsB/cgoUdg";
@@ -556,17 +447,8 @@ in
                 token_endpoint_auth_method = "client_secret_basic";
               }
               {
-                # Upstream OIDC connector consumed by netbird's embedded
-                # Dex IdP. Confidential client — Dex uses
-                # netbird/authelia_client_secret (plaintext, sops) to
-                # exchange auth codes; Authelia stores only the pbkdf2
-                # hash below. Rotate them in lockstep
-                # (`authelia crypto hash generate pbkdf2 --variant sha512`).
-                # Dex uses a single shared callback for all connectors —
-                # issuer + "/callback" (verified in netbird idp/dex
-                # connector.go GetRedirectURI) — NOT a per-connector path.
-                # This must exactly match the connector's config.redirectURI
-                # in management.json's EmbeddedIdP.StaticConnectors below.
+                # Dex's upstream connector. Dex uses one shared callback (issuer +
+                # /callback), which must match StaticConnectors' redirectURI below.
                 client_id = "netbird";
                 client_name = "Netbird";
                 client_secret = "$pbkdf2-sha512$310000$eR/0.KCdrZkDNlG4UxJHZA$RnhRovxssPf8MHatxmR2mAd8hLhMX0MZ0ZtwDsvoEr/auAdTMBHNuXo3avAnwB6sP4YsE0FWTJL.zot0YyLhTA";
@@ -609,22 +491,9 @@ in
                 pkce_challenge_method = "S256";
               }
               {
-                # Incus API/UI on haven (incus.lan.kclj.io). Mirrors Authelia's
-                # official Incus integration guide, with one deviation: access
-                # is gated to lldap_admin via the incus_admins policy (Incus LTS
-                # has no per-user authorization, so any authenticated OIDC user
-                # is full admin — the gate must live here). PUBLIC client: this
-                # Incus LTS supports only `oidc.client.id` (no secret), so PKCE +
-                # no secret — nothing in sops.
-                #
-                # access_token_signed_response_alg = RS256 is REQUIRED: incusd
-                # verifies the *access token* offline as a JWT against the issuer
-                # JWKS. Authelia's default opaque access tokens fail that check,
-                # so every post-login API call is rejected "untrusted" and the
-                # UI spins forever. The audience must be an absolute URI matching
-                # haven's oidc.audience, and offline_access yields the refresh
-                # token incusd stores. Callback path /oidc/callback is incusd's
-                # OIDC handler. See modules/nixos/haven.nix for the server side.
+                # Public client (Incus LTS has no client secret). RS256 access tokens are
+                # required: incusd verifies them offline as JWTs, and opaque tokens make
+                # every API call fail as untrusted.
                 client_id = "incus";
                 client_name = "Incus";
                 public = true;
@@ -652,18 +521,8 @@ in
                 pkce_challenge_method = "S256";
               }
               {
-                # RustFS console on vault. Confidential client — RustFS reads
-                # the plaintext from sops at rustfs/oidc-client-secret on vault;
-                # Authelia keeps only the pbkdf2 hash below, so the two rotate
-                # in lockstep.
-                #
-                # Both redirect_uris are registered because RustFS runs with
-                # REDIRECT_URI_DYNAMIC=on, deriving the callback from the request
-                # host so one client covers the LAN and tailnet origins. That
-                # makes this list the actual allowlist — a host RustFS invents
-                # is rejected here, which is the point. The callback path is a
-                # RustFS backend route and its last segment is the provider
-                # name; it must stay in step with modules/nixos/rustfs.nix.
+                # RustFS derives the callback from the request host, so this list is the
+                # real allowlist. The path must match modules/nixos/rustfs.nix.
                 client_id = "rustfs";
                 client_name = "RustFS";
                 claims_policy = "rustfs";
@@ -701,7 +560,7 @@ in
         };
       };
 
-      # Username injected via sops template env file — authelia has no _FILE support for smtp username
+      # Authelia has no _FILE option for the SMTP username.
       sops.templates."authelia-smtp.env" = {
         owner = autheliaUser;
         content = ''
@@ -721,13 +580,10 @@ in
         serviceConfig.EnvironmentFile = [
           config.sops.templates."authelia-smtp.env".path
         ];
-        # ProtectSystem=strict makes /var/log read-only in the sandbox; re-open
-        # the dedicated authelia log dir for writing (the log moved out of the
-        # state dir so crowdsec can read it without reaching db.sqlite3).
+        # ProtectSystem=strict makes /var/log read-only.
         serviceConfig.ReadWritePaths = [ autheliaLogDir ];
       };
 
-      # ACME / Let's Encrypt via Cloudflare DNS-01 challenge
       security.acme = {
         acceptTerms = true;
         defaults = {
@@ -740,16 +596,9 @@ in
       services.nginx = {
         enable = true;
         defaultSSLListenPort = nginxInternalSSLPort;
-        # The SNI stream block (below) terminates the client TCP connection and
-        # re-proxies to the internal SSL port from 127.0.0.1, so it sends a
-        # PROXY-protocol header to carry the real client IP. The internal SSL
-        # listener therefore expects proxy_protocol and is bound to loopback —
-        # only the stream (upstream nginx_https = 127.0.0.1:${port}) ever reaches
-        # it, so there's no reason to expose it on all interfaces (the firewall
-        # drops it externally too; loopback removes the reliance on that rule).
-        # Port 80 is the public HTTP entrypoint (ACME + redirects) and stays
-        # externally bound; it must NOT expect proxy_protocol. real_ip (below)
-        # rewrites $remote_addr to the real client for logs, rate-limits, crowdsec.
+        # The 443 SNI stream re-proxies here over loopback with PROXY protocol to
+        # carry the client IP. Port 80 (ACME + redirects) is direct and must not
+        # expect it.
         defaultListen =
           map
             (addr: {
@@ -796,7 +645,6 @@ in
           error_log /var/log/nginx/error.log;
         '';
 
-        # Drop requests with unknown Host headers
         virtualHosts."_" = {
           default = true;
           rejectSSL = true;
@@ -834,13 +682,10 @@ in
           };
       };
 
-      # LLDAP - lightweight LDAP server for user management
       services.lldap = {
         enable = true;
         settings = {
-          # Raw LDAP on loopback (authelia-only). Web UI on 0.0.0.0 so the
-          # NetBird proxy can dial it on the overlay IP (dashboard backends
-          # can't be loopback); only opened on wt0 — see the firewall block.
+          # Web UI on 0.0.0.0: NetBird proxy backends can't be loopback (wt0 only).
           ldap_host = "127.0.0.1";
           ldap_port = lldapPort;
           http_host = "0.0.0.0";
@@ -854,9 +699,8 @@ in
         environmentFile = config.sops.templates."lldap.env".path;
       };
 
-      # lldap uses DynamicUser, so give it access to the bootstrap password via
-      # a separately named static group rather than making the secret readable
-      # by every local service account.
+      # lldap is DynamicUser; a static group keeps the secret away from every
+      # other service account.
       users.groups.${lldapSecretsGroup} = { };
       systemd.services.lldap.serviceConfig.SupplementaryGroups = [ lldapSecretsGroup ];
 
@@ -864,30 +708,15 @@ in
         LLDAP_JWT_SECRET=${config.sops.placeholder."lldap/jwt_secret"}
       '';
 
-      # Redis for Authelia session storage
       services.redis.servers.authelia = {
         enable = true;
         port = 0; # Unix socket only
       };
       users.users.${autheliaUser}.extraGroups = [ "redis-authelia" ];
 
-      # Observability (Loki/Alloy/Prometheus/Alertmanager/Karma/Grafana)
-      # lives in flake.nixosModules.monitoring-stack (imported above).
-
-      # ntfy-sh (push notifications) lives in flake.nixosModules.ntfy
-      # (imported above), fronted at ntfy.kclj.dev via the netbird proxy.
-
-      # --- Beszel hub (server monitoring) ---
-      # Web UI + agent endpoint on 0.0.0.0: not opened publicly (default-drop),
-      # only on wt0 for the NetBird proxy. Agents connect through the Tailscale
-      # Serve service VIP (WebSocket + per-host token), and humans reach it via
-      # beszel.kclj.dev through the NetBird proxy
-      # (register beszel.kclj.dev -> <gateway wt0 IP>:${toString beszelPort} in the
-      # NetBird dashboard, same as grafana.kclj.dev). State (PocketBase db) lives in
-      # /var/lib/beszel-hub. Agents enroll via flake.nixosModules.beszel-agent.
-      # Agent for the hub's own host (enrolled via flake.nixosModules.beszel-agent
-      # in flake.nix). Talk to the local hub directly instead of hairpinning
-      # through the tailnet; needs gateway's own beszel/token in secrets/gateway.yaml.
+      # Agents reach the hub via its Tailscale Serve VIP, humans via
+      # beszel.kclj.dev on the NetBird proxy. The hub's own agent talks to it
+      # directly instead of hairpinning through the tailnet.
       services.beszel.agent.environment.HUB_URL = "http://127.0.0.1:${toString beszelPort}";
 
       services.beszel.hub = {
@@ -895,31 +724,17 @@ in
         host = "0.0.0.0";
         port = beszelPort;
         environment = {
-          # Public URL behind the netbird-proxy — used for OIDC redirect/callback,
-          # links/notifications, and the agent-config snippet the UI generates.
+          # Used for OIDC callbacks and the agent snippet the UI generates.
           APP_URL = "https://beszel.kclj.dev";
-          # Auto-create the Beszel user on first successful Authelia OIDC login.
-          # The Authelia client (id `beszel`) is declared above; finish wiring by
-          # adding the OIDC provider in Beszel's users-collection Options (secret
-          # from sops beszel/authelia_client_secret). Password auth is left on so
-          # the superuser console at /_/ keeps working; flip on DISABLE_PASSWORD_AUTH
-          # once OIDC login is confirmed if you want OIDC-only dashboard users.
+          # Create users on first OIDC login. Password auth stays on for the /_/
+          # superuser console.
           USER_CREATION = "true";
         };
       };
-      # --- Traceway (APM / error tracking) ---
-      # Public dashboard + ingest at traceway.kclj.io, DuckDB flavour, blobs on
-      # R2, login via the Authelia `traceway` client above. Sits here rather
-      # than at home because the ingest surface is an unauthenticated-from-
-      # the-network parser of SDK payloads (nimbus at Cloudflare's edge, end-
-      # user browsers) — it belongs on the DMZ box behind nginx real-ip +
-      # CrowdSec, not as a new ingress into the LAN. Bump `version` to track
-      # backend/v* releases (several a day; no dependabot lever for ghcr tags).
-      # First-run: register the owner at /register (self-hosted mode locks
-      # signup to invites once an org exists), then flip
-      # oidc.disablePasswordLogin once SSO login is verified. R2 bucket
-      # `traceway` needs a lifecycle rule on recordings/ — the recording
-      # retention worker is a no-op on S3.
+      # On the DMZ box: ingest is an unauthenticated parser of SDK payloads from
+      # the internet, so it sits behind nginx + CrowdSec rather than opening a path
+      # into the LAN. The R2 bucket needs a lifecycle rule on recordings/ (the
+      # retention worker is a no-op on S3).
       services.traceway = {
         domain = tracewayDomain;
         port = tracewayPort;
@@ -930,9 +745,7 @@ in
         oidc = {
           discoveryUrl = "https://${authDomain}/.well-known/openid-configuration";
           displayName = "Authelia";
-          # In lockstep with the traceway_users Authelia policy above. Higher
-          # role wins for users in both groups; re-applied on every login, so
-          # dropping lldap_admin demotes at next sign-in.
+          # Mirrors the traceway_users policy; re-applied on every login.
           roleMap = {
             lldap_admin = "admin";
             traceway_admin = "admin";
@@ -956,25 +769,12 @@ in
         '';
       };
 
-      # Shared tailscale server-role config (cert for serve, --ssh/--operator,
-      # exit-node + app-connector advertisement, --accept-dns) comes from
-      # flake.nixosModules.tailscale-server. The gateway is a full client that
-      # accepts tailnet subnet routes and advertises no LAN of its own, so just
-      # pin acceptRoutes (the module default, kept explicit beside haven's).
+      # Full client: accepts tailnet routes, advertises no LAN.
       services.tailscale.server.acceptRoutes = true;
 
-      # Expose internal admin/monitoring UIs over the tailnet via `tailscale
-      # serve` — each becomes an svc: VIP with a MagicDNS name + auto-HTTPS
-      # (e.g. https://beszel.tailf0779.ts.net). beszel + lldap self-authenticate;
-      # prometheus/alertmanager/karma have no auth of their own and rely on
-      # tailnet device identity as the gate. Grafana is deliberately NOT here:
-      # its auth.proxy trusts an X-NetBird-User header that `tailscale serve`
-      # wouldn't supply, so it stays on the netbird proxy (grafana.kclj.dev).
-      #
-      # Backends are 127.0.0.1, NOT localhost: localhost resolves to ::1 first,
-      # but these services bind IPv4 (0.0.0.0 / 127.0.0.1), so a localhost
-      # upstream makes tailscale's proxy hop fail to connect and serve's HTTPS
-      # never comes up. Pin IPv4 explicitly.
+      # UIs that self-authenticate or rely on tailnet identity. Grafana isn't
+      # here: its auth.proxy header only comes from the NetBird proxy. 127.0.0.1,
+      # not localhost: localhost resolves ::1 first and these bind IPv4.
       services.tailscale.serve.services = {
         beszel.endpoints."tcp:443" = "http://127.0.0.1:${toString beszelPort}";
         lldap.endpoints."tcp:443" = "http://127.0.0.1:${toString lldapHttpPort}";
@@ -985,12 +785,6 @@ in
           "http://127.0.0.1:${toString config.services.karma.settings.listen.port}";
       };
 
-      # Gateway acts as a Tailscale exit node, not just a client. IP forwarding
-      # (and the rest of the router/exit-node tuning) comes from the subnet-router
-      # role module enrolled in flake.nix, so useRoutingFeatures stays at the
-      # "client" default set by tailscale.nix — no override needed here.
-
-      # Netbird - self-hosted control server (management + signal + dashboard + TURN)
       services.netbird.server = {
         enable = true;
         domain = netbirdDomain;
@@ -1003,32 +797,18 @@ in
         };
 
         management = {
-          # Required by the upstream module — used to populate
-          # HttpConfig.OIDCConfigEndpoint. With EmbeddedIdP enabled the
-          # binary doesn't actually consult HttpConfig for auth, but the
-          # NixOS option is mandatory, so we point it at the embedded
-          # Dex's discovery URL for consistency.
+          # Mandatory upstream option; unused with EmbeddedIdP.
           oidcConfigEndpoint = "https://${netbirdDomain}/oauth2/.well-known/openid-configuration";
           metricsPort = netbirdMgmtMetricsPort;
           settings = {
             DataStoreEncryptionKey._secret = config.sops.secrets."netbird/datastore_encryption_key".path;
             TURNConfig.Secret._secret = config.sops.secrets."netbird/turn_password".path;
-            # Wipe the keys netbird-idp-migrate strips. The upstream
-            # module's defaultSettings includes IdpManagerConfig,
-            # PKCEAuthorizationFlow, and DeviceAuthorizationFlow; setting
-            # them to null here, with mkForce to override the defaults,
-            # produces "key": null in management.json which the binary
-            # treats as absent (Go decodes JSON null → nil pointer).
+            # Keys netbird-idp-migrate strips; null in management.json reads as absent.
             IdpManagerConfig = lib.mkForce null;
             PKCEAuthorizationFlow = lib.mkForce null;
             DeviceAuthorizationFlow = lib.mkForce null;
-            # Embedded Dex IdP. Authelia is wired in as an upstream OIDC
-            # connector; users signing in are redirected to Authelia, then
-            # back to Dex, which mints netbird-flavored tokens (aud =
-            # netbird-dashboard / netbird-cli). The connector id MUST
-            # match the value used when running netbird-idp-migrate
-            # (--idp-seed-info) — re-encoded user IDs in store.db are
-            # bound to that id.
+            # The connector id must match the one used with netbird-idp-migrate:
+            # user IDs in store.db are bound to it.
             EmbeddedIdP = {
               Enabled = true;
               Issuer = "https://${netbirdDomain}/oauth2";
@@ -1075,7 +855,7 @@ in
         };
       };
 
-      # Ensure netbird-management starts after authelia (OIDC discovery dependency)
+      # OIDC discovery needs Authelia up.
       systemd.services.netbird-management = {
         after = [
           "authelia-${autheliaInstance}.service"
@@ -1091,7 +871,7 @@ in
         serviceConfig.RestartSec = "5s";
       };
 
-      # Restrict coturn relay port range and block SSRF to internal networks
+      # Block TURN relaying into internal networks (SSRF).
       services.coturn = {
         min-port = 49152;
         max-port = 49263;
@@ -1118,17 +898,8 @@ in
         '';
       };
 
-      # Embedded Dex IdP routes + dashboard SPA fallbacks. The netbird
-      # module's auto-generated vhost only knows about /api and the gRPC
-      # paths; we add /oauth2 (Dex's OIDC endpoints — discovery, JWKS,
-      # token, /oauth2/callback/<connector-id>) and the SPA tryFiles for
-      # /nb-auth + /nb-silent-auth (the dashboard's auth callback paths
-      # post-IdP-migration).
-      #
-      # Rate limiting on the HTTP layer is unreliable here because the
-      # stream block proxies all traffic from 127.0.0.1 — the real client
-      # IP is lost. DDoS protection is handled at the stream layer
-      # (limit_conn stream_per_ip) and nftables (SYN rate limiting).
+      # The netbird module's vhost lacks Dex's /oauth2 and the dashboard's
+      # post-migration auth callbacks.
       services.nginx.virtualHosts.${netbirdDomain} = mkHttpsVhost "" // {
         locations."/oauth2/" = {
           proxyPass = "http://127.0.0.1:${toString netbirdMgmtPort}";
@@ -1141,21 +912,14 @@ in
         };
       };
 
-      # CrowdSec — local detection (sshd, nginx, authelia) plus the community/CAPI
-      # blocklist, enforced at nftables by the firewall bouncer and surfaced to
-      # the netbird proxy's embedded bouncer. LAPI/metrics are moved off their
-      # 8080/6060 defaults (see the port bindings above).
       services.crowdsec.enable = true;
       services.crowdsec.settings.general = {
         api.server.listen_uri = "127.0.0.1:${toString crowdsecLapiPort}";
         prometheus.listen_port = crowdsecMetricsPort;
       };
 
-      # crowdsecurity/linux brings the sshd parser + ssh-bf scenarios; nginx adds
-      # HTTP probing/scanner/bad-bot detection. nginx detection depends on the
-      # real client IP from PROXY protocol (set_real_ip_from above) — without it
-      # nginx logs 127.0.0.1 and crowdsec would ban loopback. The whitelists
-      # (crowdsec module + overlay below) are the belt-and-suspenders backstop.
+      # nginx detection relies on the PROXY-protocol real IP; without it crowdsec
+      # would ban loopback.
       services.crowdsec.hub.collections = [
         "crowdsecurity/linux"
         "crowdsecurity/nginx"
@@ -1163,10 +927,8 @@ in
         "LePresidente/authelia"
       ];
 
-      # Data sources: sshd via journald; nginx + authelia via their log files.
-      # authelia is read from its file, not journald, on purpose: journald
-      # prefixes each line with a syslog header that breaks the LePresidente
-      # parser's JSON unmarshal. The 0600 log is made readable via the ACL below.
+      # authelia from its file, not journald: the syslog prefix breaks the
+      # LePresidente parser's JSON.
       services.crowdsec.localConfig.acquisitions = [
         {
           source = "journalctl";
@@ -1188,22 +950,14 @@ in
         }
       ];
 
-      # Create the dedicated authelia log dir (tmpfiles, so it exists before the
-      # ACL is applied and before authelia starts) and grant crowdsec read on it
-      # — this dir holds only the log, no secrets. The default ACL covers the log
-      # file when authelia (re)creates it. ProtectSystem=strict on authelia makes
-      # /var/log read-only in its sandbox, so ReadWritePaths re-opens this dir for
-      # writing. The old ACL on the state dir is removed; revoke any lingering
-      # grant there with `setfacl -b ${autheliaStateDir}` (tmpfiles `a+` is
-      # additive and won't retract it on its own).
+      # crowdsec can read only this log-only dir, never the state dir's auth DB.
       systemd.tmpfiles.rules = [
         "d ${autheliaLogDir} 0750 ${autheliaUser} ${autheliaUser} - -"
         "a+ ${autheliaLogDir} - - - - u:crowdsec:rx,d:u:crowdsec:r"
         "a+ ${autheliaLogFile} - - - - u:crowdsec:r"
       ];
 
-      # Whitelist the overlay ranges (on top of the loopback/RFC1918 baseline in
-      # the crowdsec module) so a tailscale/netbird peer can never be banned.
+      # Never ban an overlay peer.
       services.crowdsec.localConfig.parsers.s02Enrich = [
         {
           name = "gateway/trusted-overlay";
@@ -1219,14 +973,10 @@ in
         }
       ];
 
-      # Escalating bantime (4h base → 48h cap) on the remediation profiles — CrowdSec has no native increment, so the ban
-      # duration is computed per-decision by duration_expr from the offender's
-      # prior decision count. Replaces the upstream flat-4h default profiles; the
-      # whitelists above still pre-empt bans for trusted sources.
+      # Escalating bans (4h, 8h, … capped at 48h); CrowdSec has no native increment.
       services.crowdsec.localConfig.profiles =
         let
-          # 1st offense → 4h, 2nd → 8h, … capped at 48h. Ternary (not min) keeps
-          # the result an integer so Sprintf '%dh' is valid across expr versions.
+          # Ternary, not min, keeps the result an integer for Sprintf '%dh'.
           escalatingBan =
             "GetDecisionsCount(Alert.GetValue()) >= 11 ? '48h' "
             + ": Sprintf('%dh', (GetDecisionsCount(Alert.GetValue()) + 1) * 4)";
@@ -1248,55 +998,36 @@ in
           (mkProfile "default_range_remediation" "Range")
         ];
 
-      # crowdsec reads the journal (sshd) via systemd-journal and the nginx logs
-      # (nginx:nginx 0640 in a 0750 dir) via the nginx group.
       systemd.services.crowdsec.serviceConfig.SupplementaryGroups = [
         "nginx"
         "systemd-journal"
       ];
 
-      # Firewall bouncer: enforces CrowdSec decisions (local + community
-      # blocklist) at nftables. Auto-registers with the LAPI and self-configures.
       services.crowdsec-firewall-bouncer.enable = true;
 
       services.crowdsec.declarativeBouncers.netbird-proxy.keyFile =
         config.sops.secrets."crowdsec/bouncer_key".path;
-      # CrowdSec Console enrollment is a one-time manual bootstrap (also needs
-      # approving the machine in the web UI), so it isn't declared here. Enroll
-      # once with a token from app.crowdsec.net (Security Engines → Enroll):
+      # Console enrollment is a one-time manual step:
       #   sudo cscli console enroll <token> --name gateway
-      # The sharing config below takes effect once enrolled; trim to keep local.
       services.crowdsec.settings.console.configuration = {
         share_manual_decisions = true;
         share_tainted = true;
         share_context = true;
         share_custom = true;
-        # Receive console-managed decisions and blocklists over PAPI. CrowdSec
-        # delivers the community blocklist (and any you subscribe to in the
-        # console) via this channel, so without it the engine enrols but applies
-        # no console blocklists. Requires the machine to be enrolled.
+        # Community and subscribed blocklists arrive over PAPI; without this none apply.
         console_management = true;
       };
 
-      # Podman ships with no unqualified-search registries, so a short image
-      # name like netbirdio/reverse-proxy fails to resolve at pull time.
-      # Search Docker Hub for short names (the only registry in play here).
+      # Podman ships no unqualified-search registries.
       virtualisation.containers.registries.search = [ "docker.io" ];
 
-      # Netbird reverse proxy — runs as OCI container, handles its own TLS
       virtualisation.oci-containers.containers.netbird-proxy = {
-        # Tag tracks the netbird management package version from nixpkgs so
-        # the proxy stays in lockstep with the server components.
+        # Lockstep with the netbird server version.
         image = "netbirdio/reverse-proxy:${config.services.netbird.server.management.package.version}";
         environmentFiles = [ config.sops.templates."netbird-proxy.env".path ];
         volumes = [
           "netbird-proxy-certs:/certs"
-          # Embedded NetBird peer state (WireGuard identity, active profile,
-          # geolocation DB). The container rootfs is --read-only, so without a
-          # writable mount the embedded peer logs "read-only file system" on
-          # /var/lib/netbird and can't persist its identity across restarts.
-          # Required for private-service (NetBird-Only Access) mode, where the
-          # proxy joins the mesh as a peer and serves over the WireGuard tunnel.
+          # Private mode needs a persistent WireGuard identity; the rootfs is read-only.
           "netbird-proxy-state:/var/lib/netbird"
         ];
         extraOptions = [
@@ -1309,9 +1040,6 @@ in
         ];
       };
 
-      # CrowdSec env vars are appended only when crowdsec is enabled, so the
-      # proxy cleanly loses its bouncer wiring (and the secret reference) if the
-      # module is dropped.
       sops.templates."netbird-proxy.env".content = ''
         NB_PROXY_TOKEN=${config.sops.placeholder."netbird/proxy_token"}
         NB_PROXY_DOMAIN=${netbirdProxyDomain}
@@ -1332,23 +1060,18 @@ in
 
       systemd.services.podman-netbird-proxy = lib.mkMerge [
         {
-          # Restart the container when its env (sops template) changes. NixOS
-          # oci-containers only restart on unit/image changes, not env-file
-          # *content* changes — so without this, an env edit (e.g. enabling
-          # PROXY protocol) silently doesn't take effect until a manual restart.
+          # oci-containers don't restart on env-file content changes.
           restartTriggers = [ config.sops.templates."netbird-proxy.env".content ];
         }
-        # Start the proxy only after its bouncer is registered with LAPI, so the
-        # CrowdSec API key is valid the moment the proxy comes up.
+        # The bouncer key must be registered before the proxy starts.
         (lib.mkIf config.services.crowdsec.enable {
           after = [ "crowdsec-register-netbird-proxy.service" ];
           wants = [ "crowdsec-register-netbird-proxy.service" ];
         })
       ];
 
-      # Nginx stream block: SNI-based routing on port 443
-      # *.kclj.dev → TLS passthrough to netbird-proxy (handles its own TLS)
-      # everything else → normal nginx HTTP block (TLS termination)
+      # SNI routing: *.kclj.dev passes through to netbird-proxy (own TLS),
+      # everything else to nginx.
       services.nginx.streamConfig = ''
         limit_conn_zone $remote_addr zone=stream_per_ip:10m;
 

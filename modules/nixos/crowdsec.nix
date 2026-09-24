@@ -1,9 +1,6 @@
 _: {
-  # Reusable CrowdSec base: enables the engine with a local API server and a
-  # declarative way to register bouncers from a pre-shared key file. Importing
-  # this module provides the capability; a host opts in with
-  # `services.crowdsec.enable = true`. No log acquisitions are configured here,
-  # so by default CrowdSec only serves the community/CAPI blocklist.
+  # CrowdSec base: LAPI plus declarative bouncer registration. Hosts opt in
+  # with services.crowdsec.enable and add their own acquisitions.
   flake.nixosModules.crowdsec =
     {
       config,
@@ -14,17 +11,9 @@ _: {
     let
       cfg = config.services.crowdsec;
 
-      # The upstream module links each generated localConfig file into a scanned
-      # dir as `<store-hash>-<name>.yaml` via a tmpfiles `L+` rule, but never
-      # removes the old-hash link when the content changes across a rebuild — so
-      # parsers/scenarios with duplicate names pile up (CrowdSec then warns and
-      # ignores one of them). Wipe every nix-store-pointing symlink from the
-      # scanned dirs (hub links point at /var/lib and are left alone), then let
-      # tmpfiles recreate only the current generation's. Wired as an activation
-      # script (below) rather than tied to crowdsec start: a whitelist/parser-only
-      # change doesn't alter crowdsec's unit, so it wouldn't restart on that
-      # switch — yet that's exactly when a stale link appears. Activation runs on
-      # every switch and boot, so the prune always fires when it's needed.
+      # Upstream links localConfig files as <hash>-<name>.yaml but never removes
+      # old-hash links, so duplicates pile up. Prune them on every activation, not
+      # crowdsec start: a parser-only change doesn't restart the unit.
       pruneLocalConfig = pkgs.writeShellScript "crowdsec-prune-localconfig" ''
         for dir in \
           /etc/crowdsec/parsers/s00-raw \
@@ -62,36 +51,21 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
-        # Refresh the hub (parser/scenario/collection definitions) daily so
-        # detection logic stays current between rebuilds, not just on restart.
+        # Keep detection current between rebuilds.
         services.crowdsec.autoUpdateService = lib.mkDefault true;
 
-        # openFirewall is intentionally left at its default (false): the LAPI
-        # and prometheus endpoints bind 127.0.0.1 and are reached locally (the
-        # bouncer over host networking, prometheus over loopback). Enabling it
-        # would expose those ports on all interfaces — a regression on a
-        # public-facing host. Only set it if the LAPI must serve remote bouncers.
+        # Off: LAPI and metrics are loopback-only.
 
-        # Baseline collection; hosts may override the whole list.
         services.crowdsec.hub.collections = lib.mkDefault [ "crowdsecurity/linux" ];
 
         services.crowdsec.settings = {
-          # Run the local API server so bouncers can pull decisions (overrides
-          # the upstream module's `mkDefault false`).
           general.api.server.enable = true;
-          # Credentials must live in a crowdsec-owned dir: the setup script
-          # writes them as the crowdsec user on first boot, but /var/lib/crowdsec
-          # is root-owned (writes fail "permission denied"). /etc/crowdsec is
-          # crowdsec's stock location and the module owns it correctly.
+          # /var/lib/crowdsec is root-owned and the setup script writes as crowdsec.
           lapi.credentialsFile = lib.mkDefault "/etc/crowdsec/local_api_credentials.yaml";
           capi.credentialsFile = lib.mkDefault "/etc/crowdsec/online_api_credentials.yaml";
         };
 
-        # Never ban our own infrastructure: whitelist loopback + RFC1918 at the
-        # parse stage so no scenario can produce a decision for them. A banned
-        # 127.0.0.1 is catastrophic — the firewall bouncer drops all loopback
-        # traffic, taking down everything proxied over it. Hosts can append more
-        # ranges (e.g. overlay networks) via the same list option.
+        # A banned 127.0.0.1 would make the bouncer drop all loopback traffic.
         services.crowdsec.localConfig.parsers.s02Enrich = [
           {
             name = "crowdsec/trusted-loopback-private";
@@ -109,44 +83,28 @@ _: {
           }
         ];
 
-        # The nixpkgs module never writes /etc/crowdsec/config.yaml (it passes the
-        # daemon `-c <store path>`), so a bare `cscli` — used by the
-        # firewall-bouncer's register oneshot and interactive admin — fails with
-        # "no such file". Symlink the default path at the daemon's own config.
+        # The module passes -c <store path>, so bare `cscli` (bouncer registration,
+        # admin) needs this.
         systemd.tmpfiles.settings."99-crowdsec-cscli-config"."/etc/crowdsec/config.yaml"."L+".argument =
           toString
             ((pkgs.formats.yaml { }).generate "crowdsec.yaml" config.services.crowdsec.settings.general);
 
-        # Drop stale localConfig links on every activation (after /etc is the new
-        # generation, so the current tmpfiles config is in place). See
-        # pruneLocalConfig above for the why.
+        # After /etc switches, so the current tmpfiles config is in place.
         system.activationScripts.crowdsec-prune-localconfig = {
           deps = [ "etc" ];
           text = "${pruneLocalConfig}";
         };
 
         systemd.services = {
-          # The upstream module pairs DynamicUser=true with a static
-          # User=crowdsec. The (tmpfiles-managed) state dir then lives under
-          # /var/lib/private/crowdsec owned by a uid that only lines up right
-          # after a full activation — a plain `systemctl restart` or reboot
-          # leaves it owned by a stale/unmapped uid, so the service fails with
-          # "permission denied" (and, once the dir is gone, NAMESPACE errors) on
-          # the state dir. Pin to the static crowdsec user so ownership is stable
-          # across restarts and reboots; the user's group memberships
-          # (systemd-journal, plus any host SupplementaryGroups) then apply too.
+          # DynamicUser + static User leaves the state dir owned by a stale uid after
+          # a plain restart or reboot; pin the static user so ownership is stable.
           crowdsec.serviceConfig = {
             DynamicUser = lib.mkForce false;
-            # Upstream sets RestartSec but no Restart=, so a crashed engine stays
-            # down and stops producing decisions — silently disabling detection.
-            # Auto-recover so detection isn't lost on a transient failure.
+            # Upstream sets no Restart=, so a crash silently disables detection.
             Restart = lib.mkDefault "on-failure";
           };
 
-          # The bouncer enforces decisions at nftables; if it dies the drop-set
-          # goes stale and no new bans apply while the engine keeps detecting
-          # into the void. Upstream sets no Restart= either, so add one — this is
-          # the enforcement floor to the engine's detection floor above.
+          # Likewise for enforcement: a dead bouncer leaves bans stale.
           crowdsec-firewall-bouncer = lib.mkIf config.services.crowdsec-firewall-bouncer.enable {
             serviceConfig = {
               Restart = lib.mkDefault "on-failure";
@@ -154,11 +112,8 @@ _: {
             };
           };
 
-          # The firewall-bouncer's register oneshot runs as User=crowdsec but
-          # with DynamicUser=true and StateDirectory="...crowdsec", so it seizes
-          # /var/lib/crowdsec (via /var/lib/private) under a transient uid and
-          # fights the now-static crowdsec service for ownership of that shared
-          # dir. Pin it static too so there is a single, stable owner.
+          # DynamicUser here would fight the static crowdsec service over
+          # /var/lib/crowdsec.
           crowdsec-firewall-bouncer-register = lib.mkIf config.services.crowdsec-firewall-bouncer.enable {
             serviceConfig.DynamicUser = lib.mkForce false;
           };

@@ -1,21 +1,8 @@
 _: {
-  # Per-host OpenTelemetry Collector shipping to Traceway (traceway.kclj.io,
-  # the `Homelab` OpenTelemetry project). Three jobs:
-  #
-  #   - journald -> Traceway logs (every unit, info and above)
-  #   - hostmetrics -> Traceway host metrics, under the semconv names its
-  #     "OTelemetry Server Agent" dashboard template reads
-  #   - a loopback OTLP/HTTP receiver, so apps with native OTel output (Caddy,
-  #     RustFS) export to 127.0.0.1 and never see the ingest token
-  #
-  # The contrib collector rather than Traceway's install.sh agent: that agent
-  # IS a pinned collector build, but its installer drops a binary and unit
-  # outside Nix where comin can't manage it. Same components, declared here.
-  #
-  # The only secret is the project ingest token. Each host resolves
-  # `traceway/ingest_token` from its own sops file (homelab-node points the
-  # four P3 nodes at the shared homelab.yaml); the token is read straight from
-  # the dashboard's Connection page into sops and never transits anything else.
+  # OpenTelemetry Collector shipping journald logs, host metrics and local
+  # apps' OTLP to Traceway. The contrib collector rather than Traceway's
+  # install.sh agent so it stays under Nix. Only secret: `traceway/ingest_token`
+  # from the host's sops file.
   flake.nixosModules.traceway-agent =
     {
       config,

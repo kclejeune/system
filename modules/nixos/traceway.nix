@@ -1,16 +1,6 @@
 _: {
-  # Traceway (APM / error tracking / session replay) as a native systemd
-  # service running the nix-built `pkgs.traceway` (see pkgs/traceway) — the
-  # `-duckdb` flavour: SQLite main DB + DuckDB telemetry DB, both under
-  # /var/lib/traceway. Formerly the ghcr container; packaging turned out to be
-  # tractable (the DuckDB static libs arrive through the Go module graph, so
-  # buildGoModule + buildNpmPackage cover it) and a real unit buys systemd
-  # hardening, sd_notify + watchdog supervision, and no image pulls.
-  #
-  # Switching to the pure-Go sqlite flavour later keeps the main DB
-  # (users/orgs/projects) but drops telemetry, so it's a decision made up
-  # front. Blobs (source maps, session recordings, AI traces) go to an S3
-  # bucket (R2), so nothing but the two DB files lives on the host.
+  # Traceway (APM) as a native unit, duckdb flavour: SQLite + DuckDB under
+  # /var/lib/traceway, blobs on R2. The sqlite flavour would drop telemetry.
   flake.nixosModules.traceway =
     {
       config,
@@ -22,11 +12,8 @@ _: {
       cfg = config.services.traceway;
       stateDir = "/var/lib/traceway";
       envTemplate = "traceway.env";
-      # Fixed uid: the nftables skuid match below must be numeric — a name is
-      # resolved by `nft --check` at *build* time, inside a sandbox with no
-      # /etc/passwd entry for it (fails "User does not exist"). 400 sits above
-      # nixpkgs' static ids.nix range (<400) and far from NixOS's dynamic
-      # system-uid allocation (999 counting down).
+      # Fixed uid: the nftables skuid match must be numeric, and nft --check runs
+      # in a build sandbox without this user.
       tracewayUid = 400;
     in
     {
@@ -133,9 +120,7 @@ _: {
           "traceway/oidc_client_secret" = { };
         };
 
-        # Rendered out of the world-readable store; consumed only by the
-        # unit's EnvironmentFile. Non-secret knobs live here too so one
-        # restartTrigger covers every config change.
+        # Non-secret knobs too, so one restartTrigger covers every change.
         sops.templates.${envTemplate}.content = ''
           PORTS=${toString cfg.port}
           DB_TYPE=sqlite
@@ -188,9 +173,7 @@ _: {
         };
         users.groups.traceway = { };
 
-        # `Z` (recursive chown) rather than `d`: the DB files were written by
-        # the old container as root, and StateDirectory= only fixes the
-        # directory itself, not existing contents.
+        # Recursive: StateDirectory only fixes the directory, not existing files.
         systemd.tmpfiles.rules = [
           "d ${stateDir} 0700 traceway traceway - -"
           "Z ${stateDir} 0700 traceway traceway - -"
@@ -251,15 +234,9 @@ _: {
           };
         };
 
-        # Upstream's webhook sender is an unguarded http.Client with an
-        # attacker-chosen URL, so drop this uid's egress to private/CGNAT/
-        # link-local ranges (Hetzner metadata was reachable without this) and
-        # to loopback services other than DNS (systemd-resolved's stub on
-        # 127.0.0.53:53) and nginx's own 80/443 — that matches what the old
-        # container could reach: its traffic to the host hit the default-drop
-        # input chain, with only the public nginx ports open. The
-        # established-state accept must come first or reply packets to nginx's
-        # proxy connections (skuid traceway, lo, ephemeral dport) get dropped.
+        # The webhook sender follows attacker-chosen URLs, so block this uid's
+        # egress to private ranges and to local services other than DNS and nginx.
+        # The established-state accept must come first or nginx's proxy replies drop.
         networking.nftables.tables.traceway-egress = {
           family = "inet";
           content = ''
@@ -275,19 +252,14 @@ _: {
           '';
         };
 
-        # Ingress. Ingest endpoints (project-token authed) are hit by SDKs
-        # running at Cloudflare's edge and in end-user browsers, so they must
-        # stay genuinely public and unthrottled per-IP — nimbus egresses from
-        # shared Cloudflare IPs, and a per-IP limit_req would 429 bursty
-        # ingest. The host is expected to add its own limit_req/limit_conn to
-        # the dashboard location ("/") if it wants one.
+        # Ingest is hit from Cloudflare's edge and browsers, so it stays public and
+        # unthrottled per-IP; hosts may throttle the dashboard ("/").
         services.nginx.virtualHosts.${cfg.domain} =
           let
             upstream = "http://127.0.0.1:${toString cfg.port}";
-            # The app trusts every X-Forwarded-For hop (no SetTrustedProxies),
-            # so send only the real client address instead of nginx's
-            # appending default. A location-level proxy_set_header cancels the
-            # inherited recommendedProxySettings set, so restate it wholesale.
+            # The app trusts every X-Forwarded-For hop, so send only the client address.
+            # A location-level proxy_set_header drops the inherited
+            # recommendedProxySettings, so restate them.
             proxyHeaders = ''
               proxy_set_header Host $host;
               proxy_set_header X-Real-IP $remote_addr;

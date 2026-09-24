@@ -1,9 +1,6 @@
 _: {
-  # Observability stack lifted out of gateway.nix: Loki + Alloy (logs),
-  # node-exporter + Prometheus + Alertmanager (metrics), Karma + Grafana (UIs).
-  # Scrape-target ports for OTHER gateway services (authelia/netbird/crowdsec
-  # metrics) are read from those services' config, so this module assumes a
-  # host that runs them (the gateway).
+  # Loki/Alloy (logs), Prometheus/Alertmanager (metrics), Karma/Grafana (UIs).
+  # Scrapes other gateway services, so it assumes the gateway.
   flake.nixosModules.monitoring-stack =
     { config, lib, ... }:
     let
@@ -16,7 +13,6 @@ _: {
       # Overlay IP of the netbird-proxy container's embedded NetBird peer — the
       # only source Grafana accepts the X-NetBird-User header from.
       netbirdProxyPeerIp = "10.64.244.130";
-      # Scrape targets owned by other gateway services.
       autheliaMetricsAddr = lib.removeSuffix "/" (
         lib.removePrefix "tcp://" config.services.authelia.instances.main.settings.telemetry.metrics.address
       );
@@ -29,18 +25,13 @@ _: {
       };
     in
     {
-      # Grafana admin secret (moved with grafana out of gateway's sops block).
       sops.secrets."grafana/secret_key".owner = "grafana";
 
-      # Loki - log aggregation
       services.loki = {
         enable = true;
         configuration = {
           auth_enabled = false;
-          # Loki has no auth and ingests sensitive data (auth events, client
-          # IPs). Only Grafana + Alloy consume it, both over loopback, so bind it
-          # to 127.0.0.1 — never all interfaces — so the firewall isn't the sole
-          # thing keeping it off the public NIC and the trusted overlay.
+          # No auth and ingests sensitive data; only loopback consumers.
           server.http_listen_address = "127.0.0.1";
           server.http_listen_port = lokiPort;
 
@@ -79,13 +70,10 @@ _: {
         };
       };
 
-      # Grafana Alloy - collects logs and metrics, ships to Loki
       services.alloy = {
         enable = true;
-        # UI stays on loopback (default 127.0.0.1:12345): the pipeline carries
-        # raw logs (auth events, client IPs, request paths) and Alloy's
-        # live-debugging UI can surface them, so it's not exposed to the overlay.
-        # Reach it for debugging via `ssh -L 12345:127.0.0.1:12345`.
+        # Loopback: live debugging can surface raw logs. Use
+        # `ssh -L 12345:127.0.0.1:12345`.
         extraFlags = [ "--stability.level=generally-available" ];
       };
 
@@ -163,7 +151,6 @@ _: {
         }
       '';
 
-      # Node exporter - system metrics
       services.prometheus.exporters.node = {
         enable = true;
         listenAddress = "127.0.0.1";
@@ -181,11 +168,9 @@ _: {
         ];
       };
 
-      # Prometheus - metrics scraping
       services.prometheus = {
         enable = true;
-        # No built-in auth; opened only on wt0 for the NetBird proxy (see the
-        # firewall block in gateway.nix).
+        # No auth; opened only on wt0 for the NetBird proxy.
         listenAddress = "0.0.0.0";
         port = prometheusPort;
         retentionTime = "30d";
@@ -203,9 +188,7 @@ _: {
         alertmanagers = [
           { static_configs = [ { targets = [ "127.0.0.1:${toString alertmanagerPort}" ]; } ]; }
         ];
-        # Starter alert rules so the stack has live alerts to view/silence across
-        # Prometheus (/alerts), Alertmanager, Karma, and Grafana. Expand as needed
-        # — Grafana-authored rules route to the same Alertmanager (see datasource).
+        # Starter rules; Grafana-authored rules route to the same Alertmanager.
         rules = [
           (builtins.toJSON {
             groups = [
@@ -238,27 +221,23 @@ _: {
             ];
           })
         ];
-        # No built-in auth; opened only on wt0 for the NetBird proxy (see the
-        # firewall block in gateway.nix).
+        # No auth; opened only on wt0 for the NetBird proxy.
         alertmanager = {
           enable = true;
           listenAddress = "0.0.0.0";
           port = alertmanagerPort;
-          # Single instance: turn off HA gossip, which otherwise listens on
-          # 0.0.0.0:9094 (tcp+udp).
+          # Single instance: HA gossip would otherwise listen on 0.0.0.0:9094.
           extraFlags = [ "--cluster.listen-address=" ];
           webExternalUrl = "https://alerts.${netbirdProxyDomain}";
           configuration = {
-            # Minimal no-op: alerts still show as active (so karma can display
-            # them), but nothing is notified yet. Add receivers/routes for notifs.
+            # No receivers yet: alerts show in Karma but notify nobody.
             route.receiver = "null";
             receivers = [ { name = "null"; } ];
           };
         };
       };
 
-      # Karma — dashboard over Alertmanager, no built-in auth. Opened only on
-      # wt0 for the NetBird proxy (see the firewall block in gateway.nix).
+      # No auth; opened only on wt0 for the NetBird proxy.
       services.karma = {
         enable = true;
         settings = {
@@ -275,14 +254,11 @@ _: {
         };
       };
 
-      # Grafana - dashboards and visualization
       services.grafana = {
         enable = true;
         settings = {
           server = {
-            # Opened only on wt0 (see the firewall block in gateway.nix): the
-            # NetBird dashboard can't register a loopback backend, so the proxy
-            # dials this on gateway's wt0 IP.
+            # The NetBird proxy dials this on gateway's wt0 IP (backends can't be loopback).
             http_addr = "0.0.0.0";
             http_port = grafanaPort;
             domain = netbirdProxyDomain;
@@ -292,12 +268,9 @@ _: {
             admin_user = "admin";
             secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
           };
-          # SSO via the NetBird proxy: it authenticates the user and stamps the
-          # email into X-NetBird-User. Anyone who can send that header from a
-          # whitelisted source IS that user, so trust only the proxy's embedded
-          # peer (plus loopback) — not the NetBird or Tailscale ranges. If the
-          # proxy re-registers with a new overlay IP, logins fail closed; update
-          # netbirdProxyPeerIp from `netbird status -d | grep -A1 proxy-`.
+          # Anyone who can send X-NetBird-User from a whitelisted source IS that user,
+          # so trust only the proxy's peer. If it re-registers with a new IP, logins
+          # fail closed; update netbirdProxyPeerIp from `netbird status -d`.
           "auth.proxy" = {
             enabled = true;
             header_name = "X-NetBird-User";
@@ -307,9 +280,8 @@ _: {
             enable_login_token = false;
             whitelist = "${netbirdProxyPeerIp}/32, 127.0.0.1/32";
           };
-          # auth.proxy is the only way in: no local login form, no basic auth
-          # (the built-in admin account would otherwise be reachable with the
-          # upstream default password baked into the store config).
+          # auth.proxy is the only way in; the built-in admin would otherwise have
+          # the default password from the store config.
           auth.disable_login_form = true;
           "auth.basic".enabled = false;
         };
@@ -324,10 +296,7 @@ _: {
                 access = "proxy";
                 url = "http://127.0.0.1:${toString lokiPort}";
                 isDefault = true;
-                # Loki has no ruler configured (it's for logs/dashboards, not
-                # alerting), so stop Grafana's Alerting tab from probing its ruler
-                # API — that probe is what errors. Querying Loki in Explore /
-                # dashboards is unaffected.
+                # Loki has no ruler; stop Grafana's Alerting tab from probing it.
                 jsonData.manageAlerts = false;
               }
               {
@@ -339,11 +308,8 @@ _: {
                 jsonData = { };
               }
               {
-                # Lets Grafana's Alerting UI view + silence the same Alertmanager
-                # that Prometheus fires to (and that Karma reads). With
-                # handleGrafanaManagedAlerts, alert rules authored in Grafana also
-                # route here, so every alert is visible/silenceable from Grafana,
-                # Karma, and Alertmanager's own UI alike.
+                # Grafana-authored alerts route here too, so every alert shows in Grafana,
+                # Karma and Alertmanager.
                 name = "Alertmanager";
                 type = "alertmanager";
                 uid = "alertmanager";
@@ -380,9 +346,7 @@ _: {
         };
       };
 
-      # Grafana is served only through the NetBird proxy (grafana.kclj.dev, SSO),
-      # not a public nginx vhost. In the dashboard use target TYPE = Peer (the
-      # gateway), not Host/IP — a same-peer Host/Subnet target 502s (no
-      # self-targeted ACL).
+      # Served only via the NetBird proxy. Use target type Peer (the gateway): a
+      # same-peer Host/Subnet target 502s.
     };
 }

@@ -1,21 +1,8 @@
 _: {
-  # Reusable LAN-facing Caddy: real Let's Encrypt certs for *.lan.kclj.io via
-  # Cloudflare ACME DNS-01, reverse-proxying LAN services by name.
-  #
-  # Name resolution is NOT done here. lan.kclj.io is the UniFi network's local
-  # domain (Default LAN `domain_name = lan.kclj.io`), so UniFi is authoritative
-  # for it (split-horizon) and auto-resolves every DHCP client's <hostname>.
-  # That covers the host names (haven.lan.kclj.io etc.) for free. UniFi's DNS
-  # policy API refuses to create ANY record under its own local domain
-  # (`api.dns.policy.validation.overlap-with-local-dns`), so caddy cannot
-  # self-register — proxied subdomains that have no matching client hostname
-  # (e.g. cups, status) must be added as UniFi *Local DNS Records* pointing at
-  # the caddy host. Hosts here just set services.caddyLan.proxies.
-  #
-  # The ACME propagation check is pinned to public resolvers (1.1.1.1/1.0.0.1)
-  # because this LAN intercepts :53 and answers lan.kclj.io authoritatively
-  # without the ACME TXT — querying public DNS directly lets the check run
-  # normally instead of disabling it.
+  # LAN Caddy with real Let's Encrypt certs for *.lan.kclj.io (Cloudflare
+  # DNS-01). UniFi is authoritative for lan.kclj.io and refuses API records
+  # under it, so proxied names without a matching DHCP client (cups, status)
+  # need manual UniFi Local DNS Records.
   flake.nixosModules.caddy-lan =
     {
       config,
@@ -27,13 +14,9 @@ _: {
       cfg = config.services.caddyLan;
       agent = config.services.traceway.agent or { enable = false; };
 
-      # Caddy + plugins. cloudflare is the ACME DNS-01 provider; ratelimit/l4
-      # are kept for planned use. unifi + caddy-dynamicdns are retained but
-      # currently UNUSED: lan.kclj.io is UniFi's local domain, so its DNS API
-      # rejects any record caddy tries to write under it (see module header) —
-      # they're kept so re-enabling self-registration later (e.g. if the local
-      # domain moves off lan.kclj.io) needs no caddy rebuild. To bump a plugin:
-      # set hash = lib.fakeHash, rebuild, copy `got:`.
+      # unifi + caddy-dynamicdns are unused (UniFi rejects records under its local
+      # domain) but kept so re-enabling self-registration needs no rebuild.
+      # Bump a plugin: hash = lib.fakeHash, rebuild, copy `got:`.
       caddyLan = pkgs.caddy.withPlugins {
         plugins = [
           "github.com/caddy-dns/cloudflare@v0.2.4"
@@ -45,13 +28,9 @@ _: {
         hash = "sha256-3YNjsWjbwtcj4qIHnZPHbmLtszPvX6ggvH28m+TieBo=";
       };
 
-      # Shared per-vhost TLS block: DNS-01 via Cloudflare. This LAN intercepts
-      # outbound :53 and REFUSES queries to public resolvers (1.1.1.1/1.0.0.1
-      # -> "connection refused"), and answers lan.kclj.io locally without the
-      # ACME TXT — so Caddy's propagation self-check can never see the record.
-      # Disable the self-check (propagation_timeout -1) and just wait a fixed
-      # delay; Let's Encrypt then validates against real public DNS, which the
-      # Cloudflare TXT does reach. (Do NOT use `resolvers` here — see git log.)
+      # This LAN intercepts :53 (public resolvers are refused) and answers
+      # lan.kclj.io without the ACME TXT, so the propagation check can never pass;
+      # wait a fixed delay instead. Don't use `resolvers`.
       tlsBlock = ''
         tls {
           dns cloudflare {env.CF_DNS_API_TOKEN}
@@ -60,16 +39,9 @@ _: {
         }
       '';
 
-      # Upstreams are plain "host:port" (proxied over http). An upstream written
-      # as "https://host:port" instead gets a TLS transport with verification
-      # skipped — for backends that serve their own self-signed cert on a
-      # loopback listener (e.g. Incus's API/UI on 127.0.0.1:8443) that we still
-      # want to front with a real lan.kclj.io cert. Caddy terminates the browser
-      # TLS here; the Caddy->backend hop is the self-signed leg.
-      # One server span per proxied request, named after the vhost so each
-      # LAN service is its own group in Traceway. A reverse proxy has no route
-      # pattern to offer as http.route, so endpoint rows fall back to the raw
-      # path — fine for latency/error triage, not a per-route catalogue.
+      # An https:// upstream gets a skip-verify TLS transport, for backends with
+      # self-signed loopback certs (e.g. Incus). Spans are named per vhost so each
+      # LAN service groups separately in Traceway.
       mkTracing =
         sub:
         lib.optionalString agent.enable ''
@@ -140,25 +112,17 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
-        # Make caddy reachable on the LAN. haven happens to expose these via
-        # `firewall.trustedInterfaces = [ "br0" ]`, but forge/vault/atlas don't
-        # trust their NIC, so without this their :443 is blocked and proxied
-        # vhosts time out. Open the ports centrally so every caddy-lan host is
-        # reachable regardless of per-host firewall posture.
+        # forge/vault/atlas don't trust their NIC, so open caddy's ports here.
         networking.firewall.allowedTCPPorts = [
           80
           443
         ];
 
-        # One DNS-01 token shared by every homelab node, so it lives in the
-        # homelab-wide sops file (encrypted to all four host keys) rather than
-        # being copied into each host's own file.
+        # One DNS-01 token for all homelab nodes.
         sops.secrets."cloudflare/api-token".sopsFile = ../../secrets/homelab.yaml;
 
-        # EnvironmentFile assembled from sops so the token never hits the store.
-        # systemd only reads EnvironmentFile at process start, so caddy must be
-        # restarted (not just reloaded) when the secret changes — otherwise a
-        # deploy re-renders the env but caddy keeps running the old values.
+        # systemd reads EnvironmentFile only at start: restart, not reload, on
+        # secret changes.
         sops.templates."caddy-lan.env" = {
           content = ''
             CF_DNS_API_TOKEN=${config.sops.placeholder."cloudflare/api-token"}
@@ -186,10 +150,7 @@ _: {
 
         systemd.services.caddy.serviceConfig.EnvironmentFile = config.sops.templates."caddy-lan.env".path;
 
-        # Caddy's tracing handler is configured purely through the standard
-        # OTEL_* variables. Its docs say gRPC, but the exporter is built on
-        # contrib's autoexport, which honours the protocol override — and
-        # Traceway (hence the local collector) is OTLP/HTTP only.
+        # Caddy's tracing reads OTEL_*; Traceway only speaks OTLP/HTTP.
         systemd.services.caddy.environment = lib.mkIf agent.enable {
           OTEL_SERVICE_NAME = "${config.networking.hostName}-caddy";
           OTEL_RESOURCE_ATTRIBUTES = "service.version=${caddyLan.version}";

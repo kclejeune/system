@@ -1,18 +1,8 @@
 _: {
-  # S3-compatible object storage, backing the Terraform remote state in
-  # ../../terraform — state holds provider credentials in plaintext, so it
-  # stays on hardware we own.
-  #
-  # One vhost, <subdomain>, serving both the S3 API and the admin console.
-  # RUSTFS_CONSOLE_ADDRESS does NOT create a console-only listener: that port
-  # answers the full S3 + STS surface too and merely adds the UI under
-  # /rustfs/console/. Verified — GET / and POST / return byte-identical S3 and
-  # STS responses on both ports. Splitting them across two names bought nothing
-  # and cost a redirect that swallowed the console's STS login POST.
-  #
-  # <subdomain> has no matching DHCP client hostname, so it needs a UniFi *Local
-  # DNS Record* -> this host before it resolves. Same caveat as forge's cups
-  # vhost; see the caddy-lan module header.
+  # S3 storage for Terraform state, which holds provider creds in plaintext.
+  # One vhost serves S3 and the console: the console port also answers S3 +
+  # STS, and splitting names broke the STS login POST. Needs a UniFi Local
+  # DNS Record.
   flake.nixosModules.rustfs =
     {
       config,
@@ -24,14 +14,11 @@ _: {
       cfg = config.services.rustfsLan;
       s3Port = 9000;
       consolePort = 9001;
-      # Requires flake.nixosModules.traceway-agent on the host (homelab-node
-      # enrols it); RustFS exports its own telemetry to that collector.
+      # Requires traceway-agent on the host.
       agent = config.services.traceway.agent;
 
-      # Backend route, not a console route — every path under /rustfs/console/
-      # returns the SPA shell, so this cannot be discovered by probing. Must
-      # match the redirect_uris registered for the Authelia client in
-      # gateway.nix; the trailing segment is the OIDC provider name.
+      # Backend route, so it can't be found by probing; must match the Authelia
+      # client's redirect_uris.
       callbackPath = "/rustfs/admin/v3/oidc/callback/default";
     in
     {
@@ -168,12 +155,8 @@ _: {
             RUSTFS_IDENTITY_OPENID_SCOPES = lib.concatStringsSep "," cfg.oidc.scopes;
             RUSTFS_IDENTITY_OPENID_ROLE_POLICY = cfg.oidc.rolePolicy;
 
-            # `default` is the provider name; suffixed vars
-            # (…_CLIENT_ID_<name>) would give a second provider at
-            # /callback/<name>. DYNAMIC=on derives the redirect from the
-            # request host, which is what lets one client serve both the
-            # lan.kclj.io and tailnet origins — Authelia's registered
-            # redirect_uris stay the actual allowlist.
+            # `default` is the provider name. DYNAMIC=on lets one client serve the LAN
+            # and tailnet origins; Authelia's redirect_uris are the allowlist.
             RUSTFS_IDENTITY_OPENID_REDIRECT_URI = "https://${cfg.subdomain}.${config.services.caddyLan.baseDomain}${callbackPath}";
             RUSTFS_IDENTITY_OPENID_REDIRECT_URI_DYNAMIC = "on";
 
@@ -182,8 +165,7 @@ _: {
             # GROUPS_CLAIM stays unset on purpose — see the scopes option.
           }
           // lib.optionalAttrs agent.enable {
-            # Native OTLP/HTTP (traces, metrics, logs) to the host's collector
-            # on loopback; RustFS appends /v1/<signal> itself. No token here.
+            # RustFS appends /v1/<signal>.
             RUSTFS_OBS_ENDPOINT = agent.otlpEndpoint;
             RUSTFS_OBS_SERVICE_NAME = "${config.networking.hostName}-rustfs";
             RUSTFS_OBS_SERVICE_VERSION = config.services.rustfs.package.version;

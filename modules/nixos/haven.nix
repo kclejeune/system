@@ -1,8 +1,6 @@
 _: {
-  # haven — home-automation node. Runs homebridge (native) and uptime-kuma
-  # (native) on the host, and Home Assistant OS as a VM under Incus so HA keeps
-  # its supervised add-ons / HACS / UI workflow. The HAOS VM is bridged onto
-  # the LAN (br0) as its own device for HomeKit/mDNS discovery.
+  # haven — home automation: homebridge and uptime-kuma natively, Home
+  # Assistant OS in an Incus VM bridged onto the LAN for HomeKit/mDNS.
   flake.nixosModules.haven =
     {
       config,
@@ -11,24 +9,15 @@ _: {
     let
       homebridgeUiPort = 8581;
       uptimeKumaPort = 3001;
-      # HAOS VM's own DHCP lease on br0 — reserve it in UniFi so this upstream
-      # stays valid. Caddy runs on the haven HOST, so HA sees proxied requests
-      # coming from haven's br0 IP, not the VM's. HA's configuration.yaml
-      # therefore needs use_x_forwarded_for: true + trusted_proxies listing
-      # haven's host br0 IP (192.168.1.80) plus the tailscale/netbird subnets.
-      # That `http:` block is edited directly in the VM (HAOS isn't Nix-managed).
+      # The HAOS VM's lease; reserve it in UniFi. HA must trust haven's br0 IP
+      # as a proxy (use_x_forwarded_for in the VM's configuration.yaml).
       haVmAddr = "192.168.1.60:8123";
     in
     {
       networking.hostName = "haven";
 
-      # --- LAN bridge for the Home Assistant OS VM ---
-      # The HAOS VM attaches to br0 so it appears as its own device on the LAN
-      # — required for HomeKit/mDNS discovery and matter/thread bridges. The
-      # physical NIC is enslaved to br0 (matched by name so we don't hardcode
-      # eno1 vs enp*); br0 itself holds the host's DHCP lease. These
-      # lower-numbered networkd files win over server-base's 90-dhcp-default
-      # for the physical NIC, while br0 picks up the generic match too.
+      # br0 carries the host's lease and the HAOS VM. Lower-numbered than
+      # server-base's 90-dhcp-default so it wins for the NIC.
       systemd.network.netdevs."10-br0".netdevConfig = {
         Name = "br0";
         Kind = "bridge";
@@ -41,73 +30,43 @@ _: {
       systemd.network.networks."20-br0" = {
         matchConfig.Name = "br0";
         networkConfig.DHCP = "yes";
-        # Static hostname wins; don't let DHCP try to set it (see server-base).
+        # Static hostname wins; don't let DHCP try to set it.
         dhcpV4Config.UseHostname = false;
         linkConfig.RequiredForOnline = "routable";
       };
-      # Tailscale server/subnet-router config (serve cert, exit node, advertise
-      # the LAN, don't accept routes) is shared across the P3 LAN nodes — it
-      # comes from flake.nixosModules.homelab-node. haven only adds its
-      # host-specific serve services below.
 
-      # Expose haven's self-authenticating web UIs over the tailnet (svc: VIPs,
-      # auto-HTTPS), alongside their caddy-lan LAN vhosts. homebridge + status
-      # have their own logins. hass/incus stay off serve: incus's OIDC redirect
-      # is pinned to incus.lan.kclj.io, and the HAOS VM owns its own hostname.
+      # homebridge and status have their own logins. hass/incus stay off serve:
+      # incus's OIDC redirect is pinned to its LAN name, and HAOS owns its hostname.
       services.tailscale.serve.services = {
         homebridge.endpoints."tcp:443" = "http://127.0.0.1:${toString homebridgeUiPort}";
         status.endpoints."tcp:443" = "http://127.0.0.1:${toString uptimeKumaPort}";
       };
 
-      # Trust the LAN bridge + overlays. This is a dedicated home-automation
-      # node: HomeKit/mDNS (homebridge, HA) needs broad LAN reachability incl.
-      # the child-bridge HAP ports homebridge picks at runtime (configured in
-      # its UI, not here), which per-port rules can't express. tailscale0 / wt0
-      # are added as trusted by their own modules. Because the whole LAN
-      # (IoT devices included) reaches every port, the web UIs below bind
-      # loopback only; caddy-lan and `tailscale serve` are their sole ingress.
+      # Homebridge child bridges pick HAP ports at runtime, so br0 is trusted
+      # wholesale; the web UIs therefore bind loopback behind caddy-lan / serve.
       networking.firewall.trustedInterfaces = [ "br0" ];
 
-      # homelab-node sets isNormalUser + wheel; append incus-admin
-      # so this user can drive `incus` without sudo.
+      # Drive incus without sudo.
       users.users.${config.user.name}.extraGroups = [
         "wheel"
         "incus-admin"
       ];
 
-      # --- Incus (Home Assistant OS VM) ---
-      # The HAOS image is imported imperatively after install (see notes
-      # below). Declared here: Incus itself, its web UI, a dir-backed storage
-      # pool (root is ext4, not ZFS), and a default profile that bridges VMs
-      # onto br0.
       virtualisation.incus = {
         enable = true;
         ui.enable = true;
         preseed = {
-          # Server config. The HTTPS API/UI listener is bound to loopback only —
-          # Caddy (incus.lan.kclj.io) is the sole ingress, so the raw API never
-          # touches the LAN. OIDC points at gateway's Authelia: with this Incus
-          # LTS there is NO fine-grained authorization (`incus auth` doesn't
-          # exist; only an authorization scriptlet would), so ANY identity that
-          # successfully authenticates via OIDC is a full admin. The access gate
-          # therefore lives in Authelia — the `incus` client there is restricted
-          # to the `lldap_admin` group (see modules/nixos/gateway.nix). Incus is
-          # a PUBLIC OIDC client (no client secret key exists), so nothing secret
-          # lands in the store here. See [[incus-haven-oidc]].
+          # Loopback only; Caddy is the sole ingress. Incus LTS has no per-user
+          # authorization, so any OIDC login is admin — the gate is Authelia's
+          # lldap_admin-only `incus` client. Public client: nothing secret here.
           config = {
             "core.https_address" = "127.0.0.1:8443";
             "oidc.issuer" = "https://auth.${config.site.domain}";
             "oidc.client.id" = "incus";
-            # Absolute-URI audience, matching the Authelia `incus` client's
-            # `audience` whitelist; incusd validates the JWT access token's `aud`
-            # against this.
+            # Must match the Authelia client's audience.
             "oidc.audience" = "https://incus.${config.site.lanDomain}";
-            # Pin the requested scopes to EXACTLY the set the Authelia client
-            # allows. Don't leave this at Incus's default — that default
-            # requests `groups`, which the client no longer offers, and Authelia
-            # then rejects the whole auth with `invalid_scope`. `groups` isn't
-            # needed: the lldap_admin gate is evaluated by Authelia from LDAP,
-            # not from a token scope.
+            # Exactly the scopes the Authelia client allows: Incus's default adds
+            # `groups`, which Authelia rejects as invalid_scope.
             "oidc.scopes" = "openid offline_access email profile";
           };
           storage_pools = [
@@ -137,59 +96,30 @@ _: {
         };
       };
 
-      # --- HAOS VM bring-up runbook (imperative, run once over SSH) ---
-      # Incus instances can't be declared via preseed (it only does pools/
-      # profiles/networks), so the HAOS VM is created by hand. Host SSH is
-      # already set up (kclejeune@haven / haven.lan.kclj.io), and the LAN
-      # bridge + dir pool + br0-bridged `default` profile above are all this
-      # needs. We import HAOS as a proper Incus image (split image: a tiny
-      # metadata tarball + the qcow2 as rootfs) and launch from it — the
-      # canonical route, no raw conversion or poking at root.img.
-      #
-      # 1. Fetch + decompress the latest HAOS OVA qcow2 (bump the version):
-      #      cd /var/tmp
-      #      curl -fL -o haos.qcow2.xz \
-      #        https://github.com/home-assistant/operating-system/releases/download/18.0/haos_ova-18.0.qcow2.xz
-      #      unxz haos.qcow2.xz          # -> haos_ova-18.0.qcow2
-      #
-      # 2. Build metadata + import as an Incus image:
-      #      cat > metadata.yaml <<'EOF'
-      #      architecture: x86_64
-      #      creation_date: 1700000000
-      #      properties:
-      #        description: Home Assistant OS
-      #        os: HAOS
-      #        release: "18.0"
-      #      EOF
-      #      tar -czf metadata.tar.gz metadata.yaml
-      #      incus image import metadata.tar.gz haos_ova-18.0.qcow2 --alias haos
-      #
-      # 3. Launch the VM. security.secureboot=false because HAOS isn't signed
-      #    for Incus secureboot; the `default` profile already bridges eth0
-      #    onto br0 so the VM gets its own LAN DHCP lease:
-      #      incus launch haos homeassistant --vm \
-      #        -c security.secureboot=false -d root,size=32GiB
-      #      incus stop homeassistant -f
-      #      incus config set homeassistant limits.cpu=2 limits.memory=4GiB
-      #      incus config set homeassistant boot.autostart=true
-      #      incus start homeassistant
-      #      incus console --show-log homeassistant   # watch boot; Ctrl-a q
-      #      incus list homeassistant                 # grab eth0 LAN IPv4
-      #
-      # 4. Restore the previous install: browse to http://<vm-ip>:8123 ->
-      #    "Restore from backup" -> upload the HA native .tar (config +
-      #    add-ons + HACS). You can't SSH/incus-exec into HAOS directly —
-      #    after restore, enable HA's "SSH & Web Terminal" add-on for a shell.
-      #
-      # 5. Cleanup once it boots clean: rm /var/tmp/haos.* /var/tmp/metadata.*
-      #    (the imported image stays cached; see `incus image list`).
-      #
-      # Resources are deliberately small (2 vCPU / 4 GiB / 32 GiB) — bump via
-      # `incus config set` if heavier add-ons (Frigate, etc.) need it.
+      # HAOS VM bring-up (imperative: Incus preseed can't declare instances):
+      #   cd /var/tmp
+      #   curl -fL -o haos.qcow2.xz \
+      #     https://github.com/home-assistant/operating-system/releases/download/18.0/haos_ova-18.0.qcow2.xz
+      #   unxz haos.qcow2.xz
+      #   cat > metadata.yaml <<'EOF'
+      #   architecture: x86_64
+      #   creation_date: 1700000000
+      #   properties:
+      #     description: Home Assistant OS
+      #     os: HAOS
+      #     release: "18.0"
+      #   EOF
+      #   tar -czf metadata.tar.gz metadata.yaml
+      #   incus image import metadata.tar.gz haos.qcow2 --alias haos
+      #   incus launch haos homeassistant --vm \
+      #     -c security.secureboot=false -d root,size=32GiB   # HAOS isn't signed for Incus
+      #   incus stop homeassistant -f
+      #   incus config set homeassistant limits.cpu=2 limits.memory=4GiB
+      #   incus config set homeassistant boot.autostart=true
+      #   incus start homeassistant
+      # Then restore the HA backup at http://<vm-ip>:8123; enable the "SSH & Web
+      # Terminal" add-on for a shell.
 
-      # --- Homebridge (native module) ---
-      # State at /var/lib/homebridge. HAP ports are reachable over the trusted
-      # LAN/overlays; the UI listens on loopback behind caddy-lan / serve.
       services.homebridge = {
         enable = true;
         uiSettings = {
@@ -198,40 +128,24 @@ _: {
         };
       };
 
-      # --- Reverse proxy (caddy-lan: ACME DNS-01) ---
-      # haven.lan.kclj.io resolves via UniFi's local domain automatically.
-      # homebridge/homeassistant already resolve to their devices via UniFi
-      # client DNS; status needs a UniFi Local DNS Record -> haven to route
-      # through caddy/TLS.
-      # caddy-lan is enabled by homelab-node; just declare the proxies.
+      # status and incus need UniFi Local DNS Records -> haven; the rest resolve
+      # via DHCP hostnames.
       services.caddyLan.proxies = {
         homebridge = "127.0.0.1:${toString homebridgeUiPort}";
         status = "127.0.0.1:${toString uptimeKumaPort}";
-        # Subdomain is `hass`, not `homeassistant`: the HAOS VM's DHCP
-        # hostname is `homeassistant`, so UniFi auto-registers
-        # homeassistant.lan.kclj.io -> the VM's own br0 lease, which would
-        # clobber this proxy record. `hass` sidesteps that collision.
+        # Not `homeassistant`: UniFi auto-registers that name for the VM's own lease.
         hass = haVmAddr;
-        # Incus API/UI. https:// upstream because incusd serves its own
-        # self-signed cert on the loopback listener (core.https_address
-        # above); caddy-lan fronts it with a real lan.kclj.io cert and
-        # proxies the last hop with tls_insecure_skip_verify. Auth is OIDC
-        # via Authelia (see the incus preseed config above). Needs a UniFi
-        # Local DNS Record: incus.lan.kclj.io -> haven.
+        # https:// upstream: incusd serves a self-signed cert on loopback.
         incus = "https://127.0.0.1:8443";
       };
 
-      # --- Uptime Kuma (native module) ---
-      # Listens on the module's default 127.0.0.1; caddy-lan / serve front it.
       services.uptime-kuma = {
         enable = true;
         settings.PORT = toString uptimeKumaPort;
       };
 
-      # NOTE: haven does not enroll flake.nixosModules.backup yet (it needs
-      # real restic/* values in secrets/haven.yaml). Once it does, HAOS's qcow2
-      # under /var/lib/incus should stay excluded — use Home Assistant's own
-      # backup feature for a consistent HA snapshot.
+      # Once backup is enrolled, exclude the HAOS qcow2 under /var/lib/incus and
+      # rely on HA's own backups for a consistent snapshot.
       sops.defaultSopsFile = ../../secrets/haven.yaml;
     };
 }

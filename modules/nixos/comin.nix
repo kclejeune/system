@@ -1,26 +1,11 @@
 { inputs, ... }:
 {
-  # GitOps pull-deploy. Each host polls github.com/kclejeune/system and runs
-  # `switch` on its own `nixosConfigurations.<hostname>` whenever `deploy`
-  # moves, which inverts the deploy model: deploy-rs stops being the normal
-  # path and becomes break-glass for when a host can't reach GitHub or the
-  # pipeline is broken.
-  #
-  # `deploy`, not master: .github/workflows/promote.yml fast-forwards it to a
-  # master commit only after every `build (*)` job passed for that commit. So
-  # a red master never ships, and by the time a host sees a commit its closure
-  # is already in cache.kclj.io. comin refuses non-fast-forward moves of the
-  # branch, and a missing `deploy` branch just means no deployment.
-  #
-  # Uncommitted local state has no standing. Activating something with
-  # `nh os switch` or deploy-rs holds only until the next poll, then `deploy`
-  # wins. Test on the per-host `testing-<hostname>` branch instead — comin
-  # watches it by default and applies it with `test`, so it never becomes the
-  # boot default. It must be based on the current `deploy` tip.
-  #
-  # Enrolled by homelab-node (haven/forge/vault/atlas) and directly by
-  # gateway's module list in flake.nix. Never both for one host — see the
-  # double-import trap in AGENTS.md.
+  # GitOps pull-deploy: each host switches to its own config whenever `deploy`
+  # moves. Not master: promote.yml fast-forwards `deploy` only after CI passes,
+  # so a red master never ships. Local `nh os switch` / deploy-rs holds only
+  # until the next poll; test on `testing-<hostname>` (based on `deploy`),
+  # which comin applies with `test`. Enrolled by homelab-node and directly by
+  # gateway — never both for one host.
   flake.nixosModules.comin =
     {
       config,
@@ -90,11 +75,8 @@
       };
 
       config = {
-        # Upstream's module defaults its package to `pkgs.comin`, falling back
-        # to comin's own `packages.<system>`. Taking the overlay makes the
-        # first branch hit, so the binary comes from this host's nixpkgs
-        # instead of instantiating comin's — merges with the overlay list from
-        # _lib.nix's mkNixpkgsArgs rather than replacing it.
+        # Via the overlay, so comin builds from this host's nixpkgs instead of
+        # instantiating comin's own.
         nixpkgs.overlays = [ inputs.comin.overlays.default ];
 
         assertions = [
@@ -125,14 +107,9 @@
             toString (pkgs.writeText "comin-allowed-signers" (lib.concatLines cfg.allowedSigners))
           );
 
-          # Vendored rather than fetched: comin wants a path, and a key that
-          # gates activation on five machines shouldn't be resolved at build
-          # time from a URL. Contains both web-flow keys — the live
-          # B5690EEEBB952194 and the expired 4AEE18F83AFDEB23 that signed
-          # older commits still in this history.
-          # Interpolated, not `toString`: the option takes strings, and this
-          # has to name a store path that exists on the target, not a path in
-          # someone's checkout.
+          # Vendored, not fetched: a key gating activation shouldn't be resolved from
+          # a URL at build time. Holds the live and the expired web-flow keys (older
+          # commits). Interpolated so it names a store path on the target.
           gpgPublicKeyPaths =
             lib.optional (cfg.verifySignature && cfg.trustGithubWebFlow)
               "${./assets/github-web-flow.asc}";

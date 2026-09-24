@@ -1,24 +1,14 @@
 _: {
-  # Reusable restic → Cloudflare R2 backups. A host enrolls this module plus a
-  # sops file carrying the three restic/* secrets below; the default `system`
-  # job then snapshots the stateful dirs daily. Per-service jobs (tighter
-  # retention, pre/post hooks for DB dumps, etc.) can be added by the host via
-  # additional services.restic.backups.<name> entries.
-  #
-  # On NixOS the OS itself is reproducible from this flake, so "whole machine"
-  # backup means the stateful directories — not a block-level image.
+  # restic -> Cloudflare R2. Hosts supply restic/* in sops; the `system` job
+  # snapshots the stateful dirs daily (the OS itself is reproducible).
   flake.nixosModules.backup =
     { config, ... }:
     {
       sops.secrets = {
-        # restic repository password (the encryption passphrase).
         "restic/password" = { };
-        # Full repo URL incl. per-host path, kept out of the store, e.g.
-        #   s3:https://<accountid>.r2.cloudflarestorage.com/<bucket>/haven
+        # Full repo URL, e.g. s3:https://<accountid>.r2.cloudflarestorage.com/<bucket>/haven
         "restic/repository" = { };
-        # EnvironmentFile with the R2 S3 token:
-        #   AWS_ACCESS_KEY_ID=...
-        #   AWS_SECRET_ACCESS_KEY=...
+        # EnvironmentFile: AWS_ACCESS_KEY_ID=… and AWS_SECRET_ACCESS_KEY=…
         "restic/r2-credentials" = { };
       };
 
@@ -34,9 +24,7 @@ _: {
           "/root"
         ];
 
-        # Skip things that are reproducible, huge, or inconsistent if copied
-        # while live — back those up via their own mechanisms (HAOS native
-        # backups, DB dumps into a backed-up path), not raw file copies.
+        # Reproducible, huge, or live-inconsistent data; those use their own backups.
         exclude = [
           "/var/lib/incus"
           "/var/lib/containers"

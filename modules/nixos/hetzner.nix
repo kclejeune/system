@@ -11,7 +11,6 @@ _: {
     {
       imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
 
-      # Hardware / boot
       boot.loader.grub.device = "/dev/sda";
       boot.initrd.availableKernelModules = [
         "ata_piix"
@@ -35,10 +34,8 @@ _: {
         cores = 1;
       };
 
-      # Networking: DHCPv4 + static IPv6 from metadata API
-      # Hetzner Cloud doesn't send Router Advertisements — the VM must configure
-      # IPv6 statically. The address/gateway are fetched from the metadata API at
-      # boot and written as a networkd drop-in before networkd starts.
+      # Hetzner Cloud sends no Router Advertisements, so IPv6 comes from the
+      # metadata API, written before networkd starts.
       networking.usePredictableInterfaceNames = lib.mkForce false;
       networking.useNetworkd = true;
       systemd.network.networks."10-eth0" = {
@@ -92,20 +89,15 @@ _: {
         '';
       };
 
-      # Extra SSH hardening on top of the defaults from nixos/default.nix: a
-      # public-facing server shouldn't act as a jump host. Agent forwarding
-      # stays on because pam_rssh sudo (deploy / nh --target-host) needs it;
-      # accepted trade-off: root here can use the agent while you're connected.
+      # Public host: not a jump host. Agent forwarding stays on for pam_rssh sudo
+      # (deploy / nh --target-host).
       services.openssh.settings = {
         AllowAgentForwarding = true;
         AllowTcpForwarding = false;
       };
 
-      # Firewall (SSH only by default; consumers should open additional ports).
-      # enable / nftables backend / pingLimit come from nixos/default.nix.
       networking.firewall = {
         allowedTCPPorts = [ 22 ];
-        # Log dropped packets for audit visibility
         logRefusedConnections = true;
         logRefusedPackets = true;
         logReversePathDrops = true;

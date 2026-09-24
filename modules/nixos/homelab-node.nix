@@ -3,15 +3,8 @@ let
   flakeCfg = config;
 in
 {
-  # Role aggregator for the bare-metal P3 Tiny homelab nodes (haven / forge /
-  # vault / atlas). Bundles the full common stack + the cross-node defaults that
-  # used to be copy-pasted into every host block in flake.nix and every host
-  # module. A host enrolls this plus its own host module; flake.nix host blocks
-  # collapse to `host-baseline + default + homelab-node + <host>`.
-  #
-  # The Hetzner gateway deliberately does NOT use this — it's the inverse role
-  # (accepts routes, advertises none, no server-base) and enrolls the VPN
-  # modules directly.
+  # Common stack for the P3 Tiny homelab nodes. The gateway doesn't use it:
+  # it accepts routes, advertises none, and has no server-base.
   flake.nixosModules.homelab-node =
     { config, lib, ... }:
     {
@@ -30,43 +23,28 @@ in
         flakeCfg.flake.nixosModules.traceway-agent
       ];
 
-      # One Traceway ingest token for all four nodes, alongside the shared
-      # DNS-01 token in homelab.yaml rather than copied into each host file.
+      # One ingest token shared by all four nodes.
       sops.secrets.${config.services.traceway.agent.tokenSecret}.sopsFile = ../../secrets/homelab.yaml;
 
-      # Primary user + pinned state version — identical on every P3 node. Set
-      # via the users.users submodule (not the `user` types.attrs alias) so
-      # mkDefault/list-merge behave: haven overrides extraGroups to append
-      # incus-admin and its normal-priority def wins.
+      # users.users, not the `user` alias, so haven's extraGroups append merges.
       users.users.${config.user.name} = {
         isNormalUser = true;
         extraGroups = lib.mkDefault [ "wheel" ];
       };
-      # Declaratively manage accounts: kclejeune's password is rewritten from
-      # profile-personal's sops hashedPasswordFile on every activation, and
-      # undeclared users are pruned. Recovery if the secret ever fails to
-      # decrypt (password slot → locked) is SSH-key login as the primary user
-      # plus pam_rssh agent-auth sudo (nixos/default.nix), or the local
-      # console. Root SSH stays off (PermitRootLogin = "no"), so installing
-      # root authorized_keys here would be inert.
+      # The password is rewritten from sops on every activation. If decryption
+      # fails, recover via SSH key + pam_rssh sudo or the console; root SSH is off.
       users.mutableUsers = lib.mkDefault false;
       system.stateVersion = lib.mkDefault "25.11";
 
-      # Web UIs are fronted by caddy-lan (LE certs via Cloudflare DNS-01);
-      # enabled here so hosts only declare `services.caddyLan.proxies`.
       services.caddyLan.enable = lib.mkDefault true;
 
-      # Homelab LAN subnet-router posture (lifted off the now-generic
-      # server-base): advertise the LAN, refuse tailnet routes for it (the node
-      # is already attached, so accepting it back would pull the LAN over the
-      # tunnel). The kernel forwarding that makes this work comes from
-      # subnet-router; the option declarations from tailscale-server.
+      # Advertise the LAN but don't accept it back: the node is already on it.
       services.tailscale.server = {
         acceptRoutes = lib.mkDefault false;
         advertiseRoutes = lib.mkDefault [ config.site.lanCidr ];
       };
 
-      # expose local unifi console to tailnet
+      # UniFi console over the tailnet.
       services.tailscale.serve.services.ui.endpoints."tcp:443" =
         "https+insecure://${config.site.unifiAddr}";
     };

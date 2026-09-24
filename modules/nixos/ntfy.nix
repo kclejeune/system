@@ -1,31 +1,21 @@
 _: {
-  # ntfy-sh push-notification server, lifted out of gateway.nix. Self-contained
-  # apart from sharing authelia's Fastmail SMTP creds (referenced as sops
-  # placeholders that the host also declares).
+  # ntfy push notifications; shares the host's SMTP account.
   flake.nixosModules.ntfy =
     { config, ... }:
     let
       ntfyPort = 2586; # ntfy's conventional port (default :80 collides with nginx)
     in
     {
-      # ntfy's own secrets, injected via the EnvironmentFile below (out of the
-      # world-readable store): web_push_private_key (VAPID) + auth_users (bcrypt).
+      # Injected via EnvironmentFile to stay out of the store.
       sops.secrets."ntfy/web_push_private_key" = { };
       sops.secrets."ntfy/auth_users" = { };
 
-      # ntfy-sh — self-hosted push notifications at https://ntfy.kclj.dev, fronted
-      # by the NetBird proxy (wt0-only; see gateway.nix's firewall block). Non-secret
-      # config is here (rendered to the
-      # world-readable /etc/ntfy/server.yml); the VAPID private key, the bcrypt
-      # auth-users, and the Fastmail SMTP creds are injected via the sops
-      # EnvironmentFile, out of the store.
+      # Served at ntfy.kclj.dev via the NetBird proxy (wt0 only).
       services.ntfy-sh = {
         enable = true;
         settings = {
           base-url = "https://ntfy.${config.site.proxyDomain}";
-          # Bind all interfaces so the NetBird proxy can dial the overlay IP
-          # (dashboard backends can't be loopback); opened only on wt0 — see
-          # the firewall block in gateway.nix.
+          # The NetBird proxy dials the overlay IP; opened only on wt0.
           listen-http = ":${toString ntfyPort}";
           behind-proxy = true;
           upstream-base-url = "https://ntfy.sh";
@@ -41,7 +31,6 @@ _: {
           require-login = true;
           auth-access = [ "*:up*:write-only" ];
 
-          # Attachment blobs in the CacheDirectory; message cache in StateDirectory.
           attachment-cache-dir = "/var/cache/ntfy-sh";
           attachment-file-size-limit = "20M";
           attachment-total-size-limit = "10G";
@@ -49,13 +38,11 @@ _: {
           cache-file = "/var/lib/ntfy-sh/cache.db";
           cache-duration = "24h";
 
-          # Web push (public key is safe in the store; private key via env below).
+          # Public key only; the private key comes from the env file.
           web-push-public-key = "BPdEZgJlsAC_xA7_ctmlQVcCJbC9y6eCIr2W48XKJTqEEQ1uMYnZOa84MwEzL-_lXDlyV1jYDSTd70eOQ1p5Igs";
           web-push-file = "/var/lib/ntfy-sh/webpush.db";
           web-push-email-address = "admin@${config.site.domain}";
 
-          # Outgoing email via the host's shared SMTP account (nixosModules.smtp);
-          # user/pass injected via the EnvironmentFile.
           smtp-sender-addr = "${config.smtp.host}:${toString config.smtp.port}";
           smtp-sender-from = "noreply+ntfy@${config.site.domain}";
         };
@@ -64,8 +51,7 @@ _: {
       # Attachment blobs live in a CacheDirectory the module doesn't declare.
       systemd.services.ntfy-sh.serviceConfig.CacheDirectory = "ntfy-sh";
 
-      # Secrets for ntfy's EnvironmentFile, out of the world-readable store. The
-      # ntfy/* values must be added to the host's sops file.
+      # The ntfy/* values must be in the host's sops file.
       sops.templates."ntfy.env".content = ''
         NTFY_WEB_PUSH_PRIVATE_KEY=${config.sops.placeholder."ntfy/web_push_private_key"}
         NTFY_AUTH_USERS=${config.sops.placeholder."ntfy/auth_users"}
