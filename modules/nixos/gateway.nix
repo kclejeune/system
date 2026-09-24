@@ -50,6 +50,7 @@ in
       karmaPort = 8082; # karma's default 8080 collides with netbird-proxy
       beszelPort = 8091; # beszel hub web UI / agent endpoint (its 8090 default collides with crowdsecLapiPort)
       tracewayPort = 8095; # traceway backend listen port; nginx proxies to it on loopback
+      ntfyPort = 2586; # must match listen-http in ntfy.nix
       tracewayDomain = "traceway.${domain}";
 
       mkHttpsVhost = extra: {
@@ -92,9 +93,7 @@ in
       # Open additional ports beyond the SSH default from hetzner.nix.
       # ICMPv4 echo-request rate-limiting comes from the base firewall's
       # pingLimit; the base nftables input chain also drops ct-invalid and
-      # accepts the standard ICMPv6 types, so the only custom rules left
-      # here are the TCP blackholes, SYN-flood guard, and ICMPv6 rate-limit
-      # (pingLimit doesn't cover ICMPv6).
+      # accepts the standard ICMPv6 types.
       networking.firewall = {
         allowedTCPPorts = [
           80 # HTTP
@@ -104,17 +103,44 @@ in
         # lets mesh peers reach the private-service proxy directly (UDP hole
         # punch to gateway's public IP) rather than relaying through coturn.
         allowedUDPPorts = [ netbirdProxyWgPort ];
-        # The internal web UIs (grafana, prometheus, alertmanager, karma, lldap,
-        # ntfy, beszel) bind 0.0.0.0 — the NetBird dashboard only accepts
-        # overlay-IP backends, so the proxy dials them on gateway's wt0 address,
-        # not loopback. They aren't opened here: default-drop keeps them off the
-        # public NIC while trustedInterfaces (wt0/tailscale0) admits the overlay.
-        # NetBird ACLs + proxy SSO gate who on the overlay reaches them.
-        extraInputRules = ''
-          tcp dport { ${toString netbirdMgmtPort}, 33073, ${toString netbirdMgmtMetricsPort}, ${toString netbirdSignalMetricsPort}, ${toString nginxInternalSSLPort} } drop
-          tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
-          ip6 nexthdr icmpv6 limit rate 10/second burst 20 packets accept
-          ip6 nexthdr icmpv6 drop
+
+        # The overlays are NOT trusted here (tailscale.nix trusts them on every
+        # other host): this box is internet-facing, so a compromised tailnet or
+        # NetBird peer shouldn't reach every local listener. Everything the
+        # overlays legitimately use is either intercepted inside tailscaled
+        # (`tailscale serve` VIPs, Tailscale SSH — never hit this chain) or
+        # opened explicitly below. "lo" must be restated: the firewall module
+        # contributes it through this same option, so mkForce would drop it.
+        trustedInterfaces = lib.mkForce [ "lo" ];
+
+        # The internal web UIs bind 0.0.0.0 because the NetBird dashboard only
+        # accepts overlay-IP backends: the netbird-proxy's embedded peer dials
+        # them on gateway's wt0 address, so they arrive on wt0. Open exactly
+        # those backends there; NetBird ACLs + proxy SSO gate who reaches them.
+        interfaces.${config.services.netbird.clients.default.interface}.allowedTCPPorts = [
+          config.services.grafana.settings.server.http_port
+          config.services.prometheus.port
+          config.services.prometheus.alertmanager.port
+          karmaPort
+          lldapHttpPort
+          ntfyPort
+          beszelPort
+        ];
+      };
+
+      # SYN-flood guard + ICMPv6 echo rate-limit. These live in their own table
+      # at a priority ahead of nixos-fw's input chain: appended via
+      # extraInputRules they ran after the port accepts, so they never fired.
+      # Echo-request only — rate-limiting all of ICMPv6 would also throttle NDP.
+      networking.nftables.tables.gateway-ratelimit = {
+        family = "inet";
+        content = ''
+          chain input {
+            type filter hook input priority filter - 5; policy accept;
+            iifname "lo" accept
+            tcp flags syn / fin,syn,rst,ack limit rate over 200/second burst 500 packets drop
+            icmpv6 type echo-request limit rate over 10/second burst 20 packets drop
+          }
         '';
       };
 
@@ -864,8 +890,7 @@ in
         settings = {
           # Raw LDAP on loopback (authelia-only). Web UI on 0.0.0.0 so the
           # NetBird proxy can dial it on the overlay IP (dashboard backends
-          # can't be loopback); overlay-only, not opened publicly — see the
-          # firewall comment.
+          # can't be loopback); only opened on wt0 — see the firewall block.
           ldap_host = "127.0.0.1";
           ldap_port = lldapPort;
           http_host = "0.0.0.0";
@@ -904,7 +929,7 @@ in
 
       # --- Beszel hub (server monitoring) ---
       # Web UI + agent endpoint on 0.0.0.0: not opened publicly (default-drop),
-      # reachable over the trusted overlay. Agents connect through the Tailscale
+      # only on wt0 for the NetBird proxy. Agents connect through the Tailscale
       # Serve service VIP (WebSocket + per-host token), and humans reach it via
       # beszel.kclj.dev through the NetBird proxy
       # (register beszel.kclj.dev -> <gateway wt0 IP>:${toString beszelPort} in the

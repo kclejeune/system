@@ -179,8 +179,8 @@ _: {
       # Prometheus - metrics scraping
       services.prometheus = {
         enable = true;
-        # No built-in auth; overlay-only (not opened publicly; see the firewall
-        # comment in gateway.nix).
+        # No built-in auth; opened only on wt0 for the NetBird proxy (see the
+        # firewall block in gateway.nix).
         listenAddress = "0.0.0.0";
         port = prometheusPort;
         retentionTime = "30d";
@@ -234,12 +234,15 @@ _: {
             ];
           })
         ];
-        # No built-in auth; overlay-only (not opened publicly; see the firewall
-        # comment in gateway.nix).
+        # No built-in auth; opened only on wt0 for the NetBird proxy (see the
+        # firewall block in gateway.nix).
         alertmanager = {
           enable = true;
           listenAddress = "0.0.0.0";
           port = alertmanagerPort;
+          # Single instance: turn off HA gossip, which otherwise listens on
+          # 0.0.0.0:9094 (tcp+udp).
+          extraFlags = [ "--cluster.listen-address=" ];
           webExternalUrl = "https://alerts.kclj.dev";
           configuration = {
             # Minimal no-op: alerts still show as active (so karma can display
@@ -250,8 +253,8 @@ _: {
         };
       };
 
-      # Karma — dashboard over Alertmanager, no built-in auth. Overlay-only
-      # (not opened publicly; see the firewall comment in gateway.nix).
+      # Karma — dashboard over Alertmanager, no built-in auth. Opened only on
+      # wt0 for the NetBird proxy (see the firewall block in gateway.nix).
       services.karma = {
         enable = true;
         settings = {
@@ -273,10 +276,9 @@ _: {
         enable = true;
         settings = {
           server = {
-            # Overlay-only (not opened publicly; see the firewall comment in
-            # gateway.nix): the NetBird dashboard can't register a loopback
-            # backend, so the proxy dials this on gateway's wt0 IP. The
-            # auth.proxy whitelist below pins header trust to the overlay.
+            # Opened only on wt0 (see the firewall block in gateway.nix): the
+            # NetBird dashboard can't register a loopback backend, so the proxy
+            # dials this on gateway's wt0 IP.
             http_addr = "0.0.0.0";
             http_port = grafanaPort;
             domain = netbirdProxyDomain;

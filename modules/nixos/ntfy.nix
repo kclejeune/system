@@ -14,7 +14,7 @@ _: {
       sops.secrets."ntfy/auth_users" = { };
 
       # ntfy-sh — self-hosted push notifications at https://ntfy.kclj.dev, fronted
-      # by the NetBird proxy (overlay-only; see firewall comment). Non-secret
+      # by the NetBird proxy (wt0-only; see gateway.nix's firewall block). Non-secret
       # config is here (rendered to the
       # world-readable /etc/ntfy/server.yml); the VAPID private key, the bcrypt
       # auth-users, and the Fastmail SMTP creds are injected via the sops
@@ -24,8 +24,8 @@ _: {
         settings = {
           base-url = "https://ntfy.kclj.dev";
           # Bind all interfaces so the NetBird proxy can dial the overlay IP
-          # (dashboard backends can't be loopback); overlay-only, not opened
-          # publicly — see the firewall comment in gateway.nix.
+          # (dashboard backends can't be loopback); opened only on wt0 — see
+          # the firewall block in gateway.nix.
           listen-http = ":${toString ntfyPort}";
           behind-proxy = true;
           upstream-base-url = "https://ntfy.sh";
