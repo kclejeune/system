@@ -177,6 +177,7 @@
             config.flake.nixosModules.profile-personal
 
             config.flake.nixosModules.secure-boot
+            config.flake.nixosModules.tpm-unlock
 
             config.flake.nixosModules.tailscale
             config.flake.nixosModules.netbird
@@ -206,6 +207,7 @@
             config.flake.nixosModules.profile-personal
 
             config.flake.nixosModules.secure-boot
+            config.flake.nixosModules.tpm-unlock
 
             config.flake.nixosModules.tailscale
             config.flake.nixosModules.netbird
@@ -214,16 +216,6 @@
               networking.hostName = "stanley";
               # cage starts at 1x; match the session's eDP-1 scale.
               services.greeter.outputScales.eDP-1 = 2;
-              # Needs Secure Boot and a one-time `tpm-keyring-seal`; re-seal after key/dbx changes.
-              services.tpm-keyring-unlock.enable = true;
-              # TPM2 before FIDO2/passphrase. PCR15 measurement stops a token enrolled
-              # at PCR15=0 unsealing after the first unlock. Each failed token spends a
-              # try, so lift the limit.
-              boot.initrd.luks.devices.cryptroot.crypttabExtraOpts = [
-                "tpm2-device=auto"
-                "tpm2-measure-pcr=yes"
-                "tries=0"
-              ];
               hm.imports = [ config.flake.homeModules.displays-framework-13-home ];
             }
           ];
