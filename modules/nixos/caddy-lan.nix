@@ -106,7 +106,8 @@ _: {
 
         baseDomain = lib.mkOption {
           type = lib.types.str;
-          default = "lan.kclj.io";
+          default = config.site.lanDomain;
+          defaultText = lib.literalExpression "config.site.lanDomain";
           description = "Zone every proxied subdomain hangs under.";
         };
 

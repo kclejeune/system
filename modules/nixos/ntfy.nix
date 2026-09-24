@@ -22,7 +22,7 @@ _: {
       services.ntfy-sh = {
         enable = true;
         settings = {
-          base-url = "https://ntfy.kclj.dev";
+          base-url = "https://ntfy.${config.site.proxyDomain}";
           # Bind all interfaces so the NetBird proxy can dial the overlay IP
           # (dashboard backends can't be loopback); opened only on wt0 — see
           # the firewall block in gateway.nix.
@@ -52,12 +52,12 @@ _: {
           # Web push (public key is safe in the store; private key via env below).
           web-push-public-key = "BPdEZgJlsAC_xA7_ctmlQVcCJbC9y6eCIr2W48XKJTqEEQ1uMYnZOa84MwEzL-_lXDlyV1jYDSTd70eOQ1p5Igs";
           web-push-file = "/var/lib/ntfy-sh/webpush.db";
-          web-push-email-address = "admin@kclj.io";
+          web-push-email-address = "admin@${config.site.domain}";
 
           # Outgoing email via the host's shared SMTP account (nixosModules.smtp);
           # user/pass injected via the EnvironmentFile.
           smtp-sender-addr = "${config.smtp.host}:${toString config.smtp.port}";
-          smtp-sender-from = "noreply+ntfy@kclj.io";
+          smtp-sender-from = "noreply+ntfy@${config.site.domain}";
         };
         environmentFile = config.sops.templates."ntfy.env".path;
       };

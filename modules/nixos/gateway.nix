@@ -20,16 +20,15 @@ in
       # A log-only dir lets crowdsec read the log without reaching any secrets.
       autheliaLogDir = "/var/log/authelia-${autheliaInstance}";
       autheliaLogFile = "${autheliaLogDir}/authelia.log";
-      domain = "kclj.io";
+      inherit (config.site) domain;
       autheliaPort = 9091;
       lldapPort = 3890;
       lldapHttpPort = 17170;
       baseDN = "dc=kclj,dc=io";
-      prometheusPort = 9090;
       autheliaMetricsPort = 9959;
       authDomain = "auth.${domain}";
       netbirdDomain = "netbird.${domain}";
-      netbirdProxyDomain = "kclj.dev";
+      netbirdProxyDomain = config.site.proxyDomain;
       netbirdProxyPort = 8443;
       # Fixed inbound WireGuard port for the proxy's embedded peer (private /
       # NetBird-Only Access mode). 51820 is already taken by the host's own
@@ -46,11 +45,9 @@ in
       # netbird-signal respectively on this host, so move both.
       crowdsecLapiPort = 8090;
       crowdsecMetricsPort = 9060;
-      alertmanagerPort = 9093;
-      karmaPort = 8082; # karma's default 8080 collides with netbird-proxy
       beszelPort = 8091; # beszel hub web UI / agent endpoint (its 8090 default collides with crowdsecLapiPort)
       tracewayPort = 8095; # traceway backend listen port; nginx proxies to it on loopback
-      ntfyPort = 2586; # must match listen-http in ntfy.nix
+      ntfyPort = lib.toInt (lib.removePrefix ":" config.services.ntfy-sh.settings.listen-http);
       tracewayDomain = "traceway.${domain}";
 
       mkHttpsVhost = extra: {
@@ -121,7 +118,7 @@ in
           config.services.grafana.settings.server.http_port
           config.services.prometheus.port
           config.services.prometheus.alertmanager.port
-          karmaPort
+          config.services.karma.settings.listen.port
           lldapHttpPort
           ntfyPort
           beszelPort
@@ -634,9 +631,9 @@ in
                 authorization_policy = "incus_admins";
                 consent_mode = "implicit";
                 redirect_uris = [
-                  "https://incus.lan.kclj.io/oidc/callback"
+                  "https://incus.${config.site.lanDomain}/oidc/callback"
                 ];
-                audience = [ "https://incus.lan.kclj.io" ];
+                audience = [ "https://incus.${config.site.lanDomain}" ];
                 scopes = [
                   "openid"
                   "offline_access"
@@ -674,7 +671,7 @@ in
                 authorization_policy = "two_factor";
                 consent_mode = "implicit";
                 redirect_uris = [
-                  "https://s3.lan.kclj.io/rustfs/admin/v3/oidc/callback/default"
+                  "https://s3.${config.site.lanDomain}/rustfs/admin/v3/oidc/callback/default"
                   "https://s3.${config.site.tailnetDomain}/rustfs/admin/v3/oidc/callback/default"
                 ];
                 scopes = [
@@ -928,7 +925,7 @@ in
         port = tracewayPort;
         s3 = {
           bucket = "traceway";
-          endpoint = "https://14613cda02f216f5620eca979a286eaf.r2.cloudflarestorage.com";
+          endpoint = "https://${config.site.cloudflareAccountId}.r2.cloudflarestorage.com";
         };
         oidc = {
           discoveryUrl = "https://${authDomain}/.well-known/openid-configuration";
@@ -981,9 +978,11 @@ in
       services.tailscale.serve.services = {
         beszel.endpoints."tcp:443" = "http://127.0.0.1:${toString beszelPort}";
         lldap.endpoints."tcp:443" = "http://127.0.0.1:${toString lldapHttpPort}";
-        prometheus.endpoints."tcp:443" = "http://127.0.0.1:${toString prometheusPort}";
-        alertmanager.endpoints."tcp:443" = "http://127.0.0.1:${toString alertmanagerPort}";
-        karma.endpoints."tcp:443" = "http://127.0.0.1:${toString karmaPort}";
+        prometheus.endpoints."tcp:443" = "http://127.0.0.1:${toString config.services.prometheus.port}";
+        alertmanager.endpoints."tcp:443" =
+          "http://127.0.0.1:${toString config.services.prometheus.alertmanager.port}";
+        karma.endpoints."tcp:443" =
+          "http://127.0.0.1:${toString config.services.karma.settings.listen.port}";
       };
 
       # Gateway acts as a Tailscale exit node, not just a client. IP forwarding

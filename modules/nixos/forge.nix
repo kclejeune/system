@@ -38,6 +38,6 @@ _: {
       # localhost or a configured alias — so both the caddy-proxied
       # cups.lan.kclj.io and the tailscale-serve cups.<tailnet> would be
       # rejected without this. Whitelist both.
-      services.printing.extraConf = "ServerAlias cups.lan.kclj.io cups.${config.site.tailnetDomain}";
+      services.printing.extraConf = "ServerAlias cups.${config.site.lanDomain} cups.${config.site.tailnetDomain}";
     };
 }

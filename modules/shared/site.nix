@@ -7,6 +7,14 @@
 # `config.site.*` and can still override per host.
 let
   site = {
+    # Public zone (auth, netbird, traceway, …) and the zone the NetBird
+    # reverse proxy serves private services under (grafana.kclj.dev, …).
+    domain = "kclj.io";
+    proxyDomain = "kclj.dev";
+    # UniFi's local domain; caddy-lan issues real certs under it.
+    lanDomain = "lan.kclj.io";
+    # UniFi console / LAN gateway.
+    unifiAddr = "192.168.1.1";
     tailnetDomain = "tailf0779.ts.net";
     cloudflareAccountId = "14613cda02f216f5620eca979a286eaf";
     lanCidr = "192.168.1.0/24";
@@ -23,6 +31,30 @@ let
       { lib, ... }:
       {
         options.site = {
+          domain = lib.mkOption {
+            type = lib.types.str;
+            default = site.domain;
+            description = "Public DNS zone for internet-facing services.";
+          };
+
+          proxyDomain = lib.mkOption {
+            type = lib.types.str;
+            default = site.proxyDomain;
+            description = "Zone the NetBird reverse proxy serves private services under.";
+          };
+
+          lanDomain = lib.mkOption {
+            type = lib.types.str;
+            default = site.lanDomain;
+            description = "UniFi's local domain; LAN services get certs under it.";
+          };
+
+          unifiAddr = lib.mkOption {
+            type = lib.types.str;
+            default = site.unifiAddr;
+            description = "LAN address of the UniFi console / gateway.";
+          };
+
           tailnetDomain = lib.mkOption {
             type = lib.types.str;
             default = site.tailnetDomain;

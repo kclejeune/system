@@ -96,12 +96,12 @@ _: {
           # lands in the store here. See [[incus-haven-oidc]].
           config = {
             "core.https_address" = "127.0.0.1:8443";
-            "oidc.issuer" = "https://auth.kclj.io";
+            "oidc.issuer" = "https://auth.${config.site.domain}";
             "oidc.client.id" = "incus";
             # Absolute-URI audience, matching the Authelia `incus` client's
             # `audience` whitelist; incusd validates the JWT access token's `aud`
             # against this.
-            "oidc.audience" = "https://incus.lan.kclj.io";
+            "oidc.audience" = "https://incus.${config.site.lanDomain}";
             # Pin the requested scopes to EXACTLY the set the Authelia client
             # allows. Don't leave this at Incus's default — that default
             # requests `groups`, which the client no longer offers, and Authelia

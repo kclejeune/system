@@ -1,26 +1,28 @@
 _: {
   # Observability stack lifted out of gateway.nix: Loki + Alloy (logs),
   # node-exporter + Prometheus + Alertmanager (metrics), Karma + Grafana (UIs).
-  # A leaf — nothing else on the host references these — so it extracts cleanly.
   # Scrape-target ports for OTHER gateway services (authelia/netbird/crowdsec
-  # metrics) are mirrored in the let below and must track those services' ports.
+  # metrics) are read from those services' config, so this module assumes a
+  # host that runs them (the gateway).
   flake.nixosModules.monitoring-stack =
-    { config, ... }:
+    { config, lib, ... }:
     let
       lokiPort = 3100;
       grafanaPort = 3000;
       prometheusPort = 9090;
       alertmanagerPort = 9093;
-      karmaPort = 8082;
-      netbirdProxyDomain = "kclj.dev";
+      karmaPort = 8082; # karma's default 8080 collides with netbird-proxy
+      netbirdProxyDomain = config.site.proxyDomain;
       # Overlay IP of the netbird-proxy container's embedded NetBird peer — the
       # only source Grafana accepts the X-NetBird-User header from.
       netbirdProxyPeerIp = "10.64.244.130";
-      # Scrape targets owned by other gateway services — keep in sync with them:
-      autheliaMetricsPort = 9959;
-      netbirdMgmtMetricsPort = 9190;
-      netbirdSignalMetricsPort = 9191;
-      crowdsecMetricsPort = 9060;
+      # Scrape targets owned by other gateway services.
+      autheliaMetricsAddr = lib.removeSuffix "/" (
+        lib.removePrefix "tcp://" config.services.authelia.instances.main.settings.telemetry.metrics.address
+      );
+      netbirdMgmtMetricsPort = config.services.netbird.server.management.metricsPort;
+      netbirdSignalMetricsPort = config.services.netbird.server.signal.metricsPort;
+      crowdsecMetricsPort = config.services.crowdsec.settings.general.prometheus.listen_port;
       mkScrapeConfig = job_name: target: {
         inherit job_name;
         static_configs = [ { targets = [ target ]; } ];
@@ -191,7 +193,7 @@ _: {
           {
             job_name = "authelia";
             metrics_path = "/";
-            static_configs = [ { targets = [ "127.0.0.1:${toString autheliaMetricsPort}" ]; } ];
+            static_configs = [ { targets = [ autheliaMetricsAddr ]; } ];
           }
           (mkScrapeConfig "node" "127.0.0.1:${toString config.services.prometheus.exporters.node.port}")
           (mkScrapeConfig "netbird-management" "127.0.0.1:${toString netbirdMgmtMetricsPort}")
@@ -245,7 +247,7 @@ _: {
           # Single instance: turn off HA gossip, which otherwise listens on
           # 0.0.0.0:9094 (tcp+udp).
           extraFlags = [ "--cluster.listen-address=" ];
-          webExternalUrl = "https://alerts.kclj.dev";
+          webExternalUrl = "https://alerts.${netbirdProxyDomain}";
           configuration = {
             # Minimal no-op: alerts still show as active (so karma can display
             # them), but nothing is notified yet. Add receivers/routes for notifs.
