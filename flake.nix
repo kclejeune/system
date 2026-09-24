@@ -96,6 +96,51 @@
         lib,
         ...
       }:
+      let
+        # Every NixOS host: same nixpkgs, specialArgs, and baseline modules.
+        mkNixos =
+          modules:
+          inputs.nixos-unstable.lib.nixosSystem {
+            system = "x86_64-linux";
+            specialArgs = {
+              inherit self inputs;
+              nixpkgs = inputs.nixos-unstable;
+            };
+            modules = [
+              config.flake.nixosModules.host-baseline
+              config.flake.nixosModules.default
+            ]
+            ++ modules;
+          };
+
+        # Personal laptops. `extra` lands between the desktop stack and the
+        # overlay networks so module order (and thus drvPaths) stays stable.
+        mkDesktop =
+          {
+            hardware,
+            host,
+            extra ? [ ],
+          }:
+          mkNixos (
+            hardware
+            ++ [
+              config.flake.nixosModules.desktop
+              config.flake.nixosModules.personal-apps
+              config.flake.nixosModules.profile-personal
+            ]
+            ++ extra
+            ++ [
+              config.flake.nixosModules.tailscale
+              config.flake.nixosModules.netbird
+              host
+            ]
+          );
+
+        # LAN homelab boxes; homelab-node pulls in the p3-tiny hardware + server stack.
+        mkHomelab = modules: mkNixos ([ config.flake.nixosModules.homelab-node ] ++ modules);
+
+        inherit (import ./modules/_lib.nix) mkNixpkgsArgs;
+      in
       {
         imports = [
           inputs.home-manager.flakeModules.home-manager
@@ -128,109 +173,55 @@
         systems = [
           "x86_64-linux"
           "aarch64-linux"
-          "x86_64-darwin"
           "aarch64-darwin"
         ];
 
-        flake.nixosConfigurations.phil = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
-
-            inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
-            config.flake.nixosModules.hardware-thinkpad-t460s
-
-            config.flake.nixosModules.desktop
-            config.flake.nixosModules.personal-apps
-            config.flake.nixosModules.profile-personal
-
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
-
-            {
+        flake.nixosConfigurations = {
+          phil = mkDesktop {
+            hardware = [
+              inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t460s
+              config.flake.nixosModules.hardware-thinkpad-t460s
+            ];
+            host = {
               networking.hostName = "phil";
               hm.imports = [ config.flake.homeModules.hyprland-host-phil ];
-            }
-          ];
-        };
-
-        flake.nixosConfigurations.wally = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
+            };
           };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
 
-            inputs.nixos-hardware.nixosModules.dell-precision-5570
-            config.flake.nixosModules.hardware-precision-5570
-
-            config.flake.nixosModules.desktop
-            config.flake.nixosModules.personal-apps
-            config.flake.nixosModules.profile-personal
-
-            config.flake.nixosModules.secure-boot
-            config.flake.nixosModules.tpm-unlock
-
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
-
-            {
+          wally = mkDesktop {
+            hardware = [
+              inputs.nixos-hardware.nixosModules.dell-precision-5570
+              config.flake.nixosModules.hardware-precision-5570
+            ];
+            extra = [
+              config.flake.nixosModules.secure-boot
+              config.flake.nixosModules.tpm-unlock
+            ];
+            host = {
               networking.hostName = "wally";
               hm.imports = [ config.flake.homeModules.displays-5570-home ];
-            }
-          ];
-        };
-
-        flake.nixosConfigurations.stanley = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
+            };
           };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
 
-            inputs.nixos-hardware.nixosModules.framework-intel-core-ultra-series3
-            config.flake.nixosModules.hardware-framework-13-pro
-
-            config.flake.nixosModules.desktop
-            config.flake.nixosModules.personal-apps
-            config.flake.nixosModules.profile-personal
-
-            config.flake.nixosModules.secure-boot
-            config.flake.nixosModules.tpm-unlock
-
-            config.flake.nixosModules.tailscale
-            config.flake.nixosModules.netbird
-
-            {
+          stanley = mkDesktop {
+            hardware = [
+              inputs.nixos-hardware.nixosModules.framework-intel-core-ultra-series3
+              config.flake.nixosModules.hardware-framework-13-pro
+            ];
+            extra = [
+              config.flake.nixosModules.secure-boot
+              config.flake.nixosModules.tpm-unlock
+            ];
+            host = {
               networking.hostName = "stanley";
               # cage starts at 1x; match the session's eDP-1 scale.
               services.greeter.outputScales.eDP-1 = 2;
               hm.imports = [ config.flake.homeModules.displays-framework-13-home ];
-            }
-          ];
-        };
-
-        flake.nixosConfigurations.gateway = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
+            };
           };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
 
+          # gateway doesn't use homelab-node.
+          gateway = mkNixos [
             config.flake.nixosModules.hetzner
 
             config.flake.nixosModules.gateway
@@ -244,81 +235,30 @@
             config.flake.nixosModules.tailscale-server
             config.flake.nixosModules.beszel-agent
 
-            # gateway doesn't use homelab-node.
             config.flake.nixosModules.comin
           ];
-        };
 
-        # haven: home automation (homebridge, uptime-kuma, HAOS in Incus).
-        flake.nixosConfigurations.haven = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
+          # haven: home automation (homebridge, uptime-kuma, HAOS in Incus).
+          haven = mkHomelab [ config.flake.nixosModules.haven ];
 
-            config.flake.nixosModules.homelab-node
-
-            config.flake.nixosModules.haven
-          ];
-        };
-
-        # forge: general / dev utilities.
-        flake.nixosConfigurations.forge = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
-
-            config.flake.nixosModules.homelab-node
-
+          # forge: general / dev utilities.
+          forge = mkHomelab [
             config.flake.nixosModules.forge
             config.flake.nixosModules.avahi
             config.flake.nixosModules.airprint
             config.flake.nixosModules.backup
           ];
-        };
 
-        # vault: data / storage.
-        flake.nixosConfigurations.vault = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
-
-            config.flake.nixosModules.homelab-node
-
+          # vault: data / storage.
+          vault = mkHomelab [
             config.flake.nixosModules.vault
             config.flake.nixosModules.rustfs
             # backup needs real restic/* in secrets/vault.yaml; enable once set.
             # config.flake.nixosModules.backup
           ];
-        };
 
-        # atlas: infra / backup.
-        flake.nixosConfigurations.atlas = inputs.nixos-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            inherit self inputs;
-            nixpkgs = inputs.nixos-unstable;
-          };
-          modules = [
-            config.flake.nixosModules.host-baseline
-            config.flake.nixosModules.default
-
-            config.flake.nixosModules.homelab-node
-
+          # atlas: infra / backup.
+          atlas = mkHomelab [
             config.flake.nixosModules.atlas
             # backup needs real restic/* in secrets/atlas.yaml; enable once set.
             # config.flake.nixosModules.backup
@@ -381,15 +321,7 @@
               in
               {
                 "kclejeune@${system}" = inputs.home-manager.lib.homeManagerConfiguration {
-                  pkgs = import inputs.nixpkgs {
-                    inherit system;
-                    config = {
-                      allowUnsupportedSystem = true;
-                      allowUnfree = true;
-                      allowBroken = false;
-                    };
-                    overlays = [ self.overlays.default ];
-                  };
+                  pkgs = import inputs.nixpkgs ({ inherit system; } // mkNixpkgsArgs { inherit self; });
                   extraSpecialArgs = {
                     inherit self inputs;
                     nixpkgs = inputs.nixpkgs;
@@ -490,18 +422,19 @@
             filterSystem = lib.filterAttrs (_: drv: drv.pkgs.stdenv.hostPlatform.system == system);
           in
           {
-            _module.args.pkgs = import inputs.nixpkgs {
-              inherit system;
-              overlays = [
-                inputs.deploy-rs.overlays.default
-                self.overlays.default
-              ];
-            };
+            _module.args.pkgs =
+              let
+                args = mkNixpkgsArgs { inherit self; };
+              in
+              import inputs.nixpkgs {
+                inherit system;
+                inherit (args) config;
+                overlays = [ inputs.deploy-rs.overlays.default ] ++ args.overlays;
+              };
 
             packages = {
               inherit (pkgs)
                 cb
-                fnox
                 sem-cli
                 weave
                 nimbus
