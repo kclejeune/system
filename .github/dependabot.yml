@@ -6,6 +6,11 @@ updates:
       interval: daily
       time: "10:00"
     open-pull-requests-limit: 10
+    # Workflows run with a token that can push to cache.kclj.io, which every
+    # host trusts. Let new action releases age a week before adopting them so
+    # a hijacked tag has time to be noticed and yanked.
+    cooldown:
+      default-days: 7
   - package-ecosystem: nix
     directory: "/"
     schedule:

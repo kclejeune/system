@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -43,7 +46,9 @@ jobs:
             eval-max-memory: 3072
             build-jobs: 2
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # The store is ephemeral here and shares the root volume with ~30 GB of
       # preinstalled toolchains we never use. Reclaim it up front so heavy
@@ -57,7 +62,7 @@ jobs:
           df -h /
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v23
+        uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
         with:
           determinate: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -80,7 +85,7 @@ jobs:
       - name: Install nimbus and nix-fast-build
         run: nix profile add --accept-flake-config --inputs-from . .#nimbus .#nix-fast-build
 
-      - name: Run flake checks
+      - name: Build and push cacheable outputs
         env:
           NIMBUS_ENDPOINT: ${{ vars.NIMBUS_ENDPOINT }}
           NIMBUS_AUTH_TOKEN: ${{ secrets.NIMBUS_AUTH_TOKEN }}
