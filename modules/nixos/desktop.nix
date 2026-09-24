@@ -33,6 +33,9 @@ in
           extraGroups = [
             "wheel"
             "networkmanager"
+            # Root-equivalent (the daemon runs containers as root with host
+            # mounts), so this sidesteps the sudo/fingerprint/rssh gates.
+            # Accepted for dev convenience; rootless docker is the alternative.
             "docker"
           ];
           # Password comes from profile-personal's sops-backed

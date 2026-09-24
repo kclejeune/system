@@ -23,8 +23,19 @@ in
         settings = {
           # user.name / user.email come from the identity module — see
           # modules/shared/identity.nix + profiles/personal.nix.
-          credential.helper =
-            if pkgs.stdenvNoCC.isDarwin then "osxkeychain" else "cache --timeout=1000000000";
+          # GitHub creds come from gh's token store instead of a years-long
+          # in-memory cache; the empty entry resets the generic helper there.
+          credential = {
+            helper = if pkgs.stdenv.hostPlatform.isDarwin then "osxkeychain" else "cache --timeout=3600";
+            "https://github.com".helper = [
+              ""
+              "!${lib.getExe pkgs.github-cli} auth git-credential"
+            ];
+            "https://gist.github.com".helper = [
+              ""
+              "!${lib.getExe pkgs.github-cli} auth git-credential"
+            ];
+          };
           commit.verbose = true;
           fetch.prune = true;
           http.sslVerify = true;

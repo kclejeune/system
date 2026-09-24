@@ -38,9 +38,26 @@ _: {
           tctiEnvironment.enable = true;
         };
 
-        # Sealing and unsealing need /dev/tpmrm0.
-        users.users.${config.user.name}.extraGroups = [ "tss" ];
-        environment.systemPackages = [ cfg.package ];
+        # The sealed blob has no auth value, only a PCR7 policy that holds for the
+        # whole boot, so standing `tss` membership would let any process running
+        # as the user unseal the login password. Instead `tpm-keyring-seal` gets
+        # /dev/tpmrm0 only for the duration of one sudo-authenticated run
+        # (upstream's `sg tss` path, minus the group membership). Unsealing at
+        # login goes through the root-only wrapper below.
+        #
+        # (Re-)seal after changing the password or re-enrolling Secure Boot keys:
+        #   tpm-keyring-seal
+        environment.systemPackages = [
+          (pkgs.writeShellApplication {
+            name = "tpm-keyring-seal";
+            runtimeInputs = [ pkgs.coreutils ];
+            text = ''
+              exec /run/wrappers/bin/sudo -u "$(id -un)" -g tss -- \
+                env TPM2TOOLS_TCTI=device:/dev/tpmrm0 \
+                ${lib.getExe cfg.package} "$@"
+            '';
+          })
+        ];
 
         # Root-only, non-setuid. `permissions` must be symbolic: the wrapper
         # service prepends `u-s,g-s,` and chmod rejects a mixed octal mode.

@@ -40,10 +40,6 @@ in
           extra-trusted-users = [
             "${config.user.name}"
             "@admin"
-            "@root"
-            "@sudo"
-            "@wheel"
-            "@staff"
           ];
           lazy-trees = true;
           keep-outputs = true;

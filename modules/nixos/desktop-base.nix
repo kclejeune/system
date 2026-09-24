@@ -130,10 +130,14 @@ in
 
       services.thermald.enable = true;
 
-      # polkit may not treat a relocked session as active; always allow fprint for the owner.
+      # polkit may not treat a relocked session as active, so allow verify for the
+      # owner's local sessions without requiring `active`. Only verify: enroll
+      # stays on fprintd's default policy, so nobody can add a finger (which would
+      # then pass sudo, greetd and the TPM keyring) without authenticating.
       security.polkit.extraConfig = ''
         polkit.addRule(function(action, subject) {
-          if (action.id.indexOf("net.reactivated.fprint.") == 0 &&
+          if (action.id == "net.reactivated.fprint.device.verify" &&
+              subject.local &&
               subject.user == "${config.user.name}") {
             return polkit.Result.YES;
           }

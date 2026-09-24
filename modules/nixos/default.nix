@@ -37,10 +37,9 @@ in
 
       i18n.defaultLocale = "en_US.UTF-8";
 
-      programs.gnupg.agent = {
-        enable = true;
-        enableSSHSupport = true;
-      };
+      # SSH keys live in 1Password (IdentityAgent) or arrive via a forwarded
+      # agent; gpg-agent's SSH socket would only compete for SSH_AUTH_SOCK.
+      programs.gnupg.agent.enable = true;
 
       # Root-level `nh clean all` on a timer: trims system generations (which
       # determinate-nixd's managed GC can't — they're gcroots) and GCs the
