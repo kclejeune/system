@@ -90,7 +90,7 @@ _: {
           browsing = true;
           browsed.enable = false;
           defaultShared = true;
-          openFirewall = cfg.openFirewall;
+          inherit (cfg) openFirewall;
           drivers =
             (lib.optionals cfg.commonDrivers (
               with pkgs;

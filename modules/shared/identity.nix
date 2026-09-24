@@ -101,9 +101,7 @@ _:
         # identity + signing key populated.
         hm.identity = {
           enable = true;
-          displayName = cfg.displayName;
-          email = cfg.email;
-          sshSigningKey = cfg.sshSigningKey;
+          inherit (cfg) displayName email sshSigningKey;
         };
       };
     };

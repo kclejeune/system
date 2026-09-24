@@ -91,9 +91,9 @@ _: {
               "--accept-routes=${lib.boolToString cfg.acceptRoutes}"
             ]
             ++ lib.optional cfg.advertiseExitNode "--advertise-exit-node"
-            ++ lib.optional (cfg.advertiseRoutes != [ ]) (
-              "--advertise-routes=${lib.concatStringsSep "," cfg.advertiseRoutes}"
-            );
+            ++ lib.optional (
+              cfg.advertiseRoutes != [ ]
+            ) "--advertise-routes=${lib.concatStringsSep "," cfg.advertiseRoutes}";
           };
         }
 

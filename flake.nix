@@ -304,7 +304,7 @@
               inherit system;
               specialArgs = {
                 inherit self inputs;
-                nixpkgs = inputs.nixpkgs;
+                inherit (inputs) nixpkgs;
               };
               modules = [
                 inputs.determinate.darwinModules.default
@@ -333,7 +333,7 @@
                   pkgs = import inputs.nixpkgs ({ inherit system; } // mkNixpkgsArgs { inherit self; });
                   extraSpecialArgs = {
                     inherit self inputs;
-                    nixpkgs = inputs.nixpkgs;
+                    inherit (inputs) nixpkgs;
                   };
                   modules = [
                     config.flake.homeModules.default
@@ -461,6 +461,11 @@
                     nh
                     nix-fast-build
                     nimbus
+                    gh
+                    nurl
+                    nvd
+                    sops
+                    ssh-to-age
                     ;
                   inherit (pkgs.deploy-rs) deploy-rs;
                 })
@@ -495,6 +500,9 @@
 
             treefmt = {
               programs = {
+                actionlint.enable = true;
+                zizmor.enable = true;
+                statix.enable = true;
                 deadnix = {
                   enable = true;
                   no-lambda-arg = true;
@@ -517,6 +525,9 @@
                 "**/zed/**/*.json"
               ];
               settings.on-unmatched = "info";
+              # Lint fixers rewrite code; let nixfmt run after them so output is stable.
+              settings.formatter.statix.priority = -2;
+              settings.formatter.deadnix.priority = -1;
               settings.formatter.ruff-check.options = [
                 # sort imports
                 "--extend-select"
@@ -540,7 +551,8 @@
               // (lib.mapAttrs (_: cfg: cfg.config.system.build.toplevel) (
                 filterSystem (self.darwinConfigurations // self.nixosConfigurations)
               ))
-              // self'.devShells;
+              // self'.devShells
+              // self'.checks;
             # Every deploy node is x86_64-linux.
             checks = lib.optionalAttrs (system == "x86_64-linux") (pkgs.deploy-rs.lib.deployChecks self.deploy);
           };

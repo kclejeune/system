@@ -2,7 +2,7 @@ _: {
   flake.homeModules.tmux =
     { pkgs, lib, ... }:
     {
-      home.packages = lib.optionals (pkgs.stdenv.hostPlatform.isDarwin) [
+      home.packages = lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
         pkgs.reattach-to-user-namespace
       ];
       programs.tmux = {
