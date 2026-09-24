@@ -11,46 +11,10 @@ in
       ...
     }:
     let
-      # Theme constants — see modules/shared/theme.nix. mkTheme is a
-      # function (not a static attrset) because base16.nix's YAML
-      # loader needs `pkgs`.
       theme = flakeCfg.flake.lib.mkTheme pkgs;
 
-      # Greeter session command. Wrapped as a writeShellScript so we
-      # can do real shell logic without nested-quoting nightmares in
-      # the greetd settings.command string.
-      #
-      # Three jobs:
-      #   1. `exec 2> >(systemd-cat …)` redirects this script's stderr
-      #      (and cage/wlroots/mesa's, which inherit) to journald.
-      #      greetd assigns the session command's stdio to the
-      #      controlling VT (tty1), so without this redirect every
-      #      mesa "renderer.c: …" / xe driver init / "/var/empty/.cache"
-      #      warning / libseat probe error paints onto tty1 in the
-      #      window between plymouth quit and the greeter's first
-      #      frame. Going through systemd-cat keeps the messages in
-      #      journal with a recognizable identifier for debug.
-      #   2. `[ -w /dev/tty1 ]` guards each setterm. /dev/tty1 is
-      #      mode 0600 (not 0660 — the `tty` group gets nothing), so
-      #      greeter membership in `tty` doesn't actually help; we
-      #      depend on logind transferring ownership at PAM session
-      #      open, which races the very first setterm in the wrapper.
-      #      The guard skips the redirect when greeter doesn't own
-      #      tty1 yet, avoiding bash's "Permission denied" diagnostic
-      #      (which would itself land on tty1 via the inherited
-      #      stderr — defeating the point).
-      #   3. The setterm-on-EXIT trap is preserved so the fbcon
-      #      scrollback flash on cage→hyprland handoff is still
-      #      hidden when cage SIGSEGVs on output destroy. See block
-      #      comment further down for the cage-crash rationale.
-      # Build-time blurred fallback wallpaper for the regreet
-      # background — used as the *seed* for /var/lib/regreet/
-      # background.png on first boot (via tmpfiles `C`). After that,
-      # noctalia's `wallpaperChange` hook and HM's
-      # `seedGreeterBackground` activation keep the runtime file in
-      # sync with the user's actual current wallpaper (see
-      # modules/home/hyprland.nix). The asset committed in the repo
-      # is just the first-ever fallback.
+      # First-boot seed only; noctalia's wallpaperChange hook keeps the
+      # runtime copy in sync afterwards.
       greeterBackground =
         pkgs.runCommandLocal "regreet-background.png"
           {
@@ -60,19 +24,9 @@ in
             magick ${./assets/regreet-background.png} -blur 0x16 $out
           '';
 
-      # regreet 0.4.0 renders the [background] through GTK4's
-      # GStreamer media backend (GstPlay → playbin3), even for a
-      # static PNG. The nixpkgs package only lists gtk4/librsvg/etc.
-      # as buildInputs, so gstreamer comes in transitively (via gtk4)
-      # but wrapGAppsHook4 never sees a gstreamer *direct* dep and so
-      # never registers GST_PLUGIN_SYSTEM_PATH_1_0 on the wrapper.
-      # playbin3 (gst-plugins-base) is then "No such element", regreet
-      # aborts on first frame, cage's Wayland pipe breaks, and greetd
-      # loops "greeter exited without creating a session" until the
-      # systemd start-limit kills the service. Adding the gstreamer
-      # plugin packages as buildInputs makes wrapGAppsHook4 set the
-      # plugin path: base = playbin3 + typefind, good = pngdec/jpeg
-      # for the actual background decode, core = base elements.
+      # regreet draws [background] via GStreamer, but nixpkgs' wrapper never
+      # sets GST_PLUGIN_SYSTEM_PATH, so it aborts on the first frame and
+      # greetd crash-loops. Direct buildInputs make wrapGAppsHook4 set it.
       regreet = pkgs.regreet.overrideAttrs (old: {
         buildInputs =
           (old.buildInputs or [ ])
@@ -83,6 +37,11 @@ in
           ]);
       });
 
+      # greetd gives the session tty1 as stdio: route stderr to the journal
+      # so mesa/wlroots/libseat noise doesn't paint over the splash, and
+      # clear tty1 around cage (it SIGSEGVs on teardown, leaving fbcon
+      # scrollback visible). The -w guard avoids a "Permission denied" on
+      # tty1 before logind hands the greeter ownership.
       greeterCommand = pkgs.writeShellScript "greeter-session" ''
         exec 2> >(${pkgs.systemd}/bin/systemd-cat -t greeter-session)
 
@@ -103,11 +62,8 @@ in
           ${lib.getExe pkgs.cage} -s -m last -- ${greeterApp}
       '';
 
-      # cage has no scale flag and brings every output up at 1x, which
-      # renders regreet tiny on HiDPI panels. cage does implement
-      # wlr-output-management, so apply per-host scales with wlr-randr
-      # from inside the kiosk before regreet starts. `|| true` because
-      # the named output may be absent (e.g. lid closed on a dock).
+      # cage has no scale flag (regreet is tiny on HiDPI); the output may be
+      # absent when docked, hence `|| true`.
       greeterScales = config.services.greeter.outputScales;
       greeterApp =
         if greeterScales == { } then
@@ -126,120 +82,37 @@ in
       programs.hyprland = {
         enable = true;
         xwayland.enable = true;
-        # Adds pkgs.uwsm to PATH (so `uwsm`, `uwsm-app`, `uuctl`, etc.
-        # are reachable as bare commands). The HM hyprland module uses
-        # `uwsm-app -- <cmd>` in exec-once and keybinds to put apps in
-        # app.slice as transient scopes instead of compositor children.
-        # This is NOT enough to run a UWSM session — the
-        # template units (wayland-session-bindpid@.service,
-        # wayland-wm@.service, wayland-wm-env@.service) ship in
-        # `share/systemd/user/` of pkgs.uwsm, and NixOS only aggregates
-        # `lib/systemd/user/`, so the user systemd manager never sees
-        # them. Without `programs.uwsm.enable` below, `uwsm start` fails
-        # at `systemctl --user start wayland-session-bindpid@<pid>` with
-        # exit code 5 (unit not found) and the user is bounced back to
-        # the greeter.
         withUWSM = true;
       };
 
-      # Wires up UWSM properly: adds pkgs.uwsm to `systemd.packages` so
-      # the template units land in the user manager's search path, and
-      # adds `share/wayland-sessions` + `share/uwsm` to
-      # `environment.pathsToLink`. We deliberately leave
-      # `waylandCompositors` empty — that option auto-generates a
-      # `<name>-uwsm.desktop` session file, which would collide with the
-      # `hyprland-uwsm.desktop` already bundled by pkgs.hyprland.
-      # (Side effect: forces `services.dbus.implementation = "broker"`,
-      # which is already what this host runs.)
+      # withUWSM alone doesn't expose uwsm's template units to the user
+      # manager, so `uwsm start` bounces back to the greeter.
+      # waylandCompositors stays empty: its generated session file would
+      # collide with the one pkgs.hyprland ships.
       programs.uwsm.enable = true;
 
-      # greetd + ReGreet. ReGreet is a GTK4 layer-shell greeter and
-      # needs a Wayland host, so we wrap it in `cage` (a single-app
-      # Wayland kiosk). dbus-run-session gives ReGreet its own session
-      # bus so AT-SPI / GTK portal lookups don't hit the system bus.
-      #
-      # gnome-keyring unlock: the upstream greetd nixos module
-      # auto-sets `security.pam.services.greetd.enableGnomeKeyring`
-      # from `services.gnome.gnome-keyring.enable` (set below), so the
-      # greeter's PAM stack already includes pam_gnome_keyring.
       services.greetd = {
         enable = true;
-        # Don't wait for plymouth to exit before starting the greeter.
-        # Combined with the `plymouth-quit.unitConfig.After = greetd`
-        # override below, this flips the order: cage takes the
-        # framebuffer first, *then* plymouth quits with
-        # `--retain-splash`. Without this, plymouth releases the fb
-        # at multi-user.target → kernel fbcon flashes whatever was in
-        # its scrollback → cage starts → greeter appears.
+        # With plymouth-quit ordered after greetd below, cage takes the
+        # framebuffer before plymouth releases it: no fbcon flash.
         greeterManagesPlymouth = true;
         settings.default_session = {
-          # Wraps cage to (a) blank tty1 before AND after each greeter
-          # cycle and (b) route cage/wlroots/mesa stderr to journald.
-          # cage 0.2.1 reliably SIGSEGVs in `wl_display_destroy → ...
-          # → handle_output_destroy` when wlroots 0.19 tears down its
-          # DRM backend (upstream race; the cage process is dying
-          # anyway, so the crash is post-handoff cosmetic). The bigger
-          # UX symptom is that the segfault leaves the framebuffer in
-          # an undefined state, so on the cage→hyprland and
-          # hyprland→cage handoffs fbcon briefly redraws whatever
-          # scrollback / kernel-trap text was last there. Pre-clearing
-          # tty1 before cage runs and post-clearing on exit (trap
-          # survives a SIGSEGV in the child) hides the leak. See
-          # `greeterCommand` in the let-block above for the wrapper.
           command = "${greeterCommand}";
           user = "greeter";
         };
       };
 
-      # Move the greeter's HOME off /var/empty (where pam_systemd
-      # plants it from the system-user default) onto the regreet
-      # state directory we already own. Without this, mesa /
-      # gtk / wlroots / cage all try `$HOME/.cache` →
-      # `/var/empty/.cache`, which is unwritable (root-owned, mode
-      # 0555), and they emit one warning each during cage init —
-      # the "Unable to create /var/empty/.cache" flash. Pointing
-      # HOME at /var/lib/regreet (created with greeter:greeter
-      # ownership by the tmpfile rules below) lets every cache
-      # land in /var/lib/regreet/.cache without further fuss.
-      # The greetd module already runs ReGreet with this as HOME
-      # via systemd.services.greetd.environment.HOME, but
-      # pam_systemd overrides that from the passwd entry on
-      # session open — fixing it at the passwd entry is the only
-      # path that survives the PAM step.
+      # pam_systemd sets HOME from passwd, overriding the unit's env; the
+      # default /var/empty is unwritable and every toolkit warns onto tty1.
       users.users.greeter.home = "/var/lib/regreet";
 
-      # tty group membership is still useful as a fallback (mode 0660
-      # configurations elsewhere benefit), but on this system
-      # /dev/tty1 is mode 0600 so group access doesn't actually
-      # grant anything — the greeterCommand wrapper does the
-      # writability check itself before each setterm.
       users.users.greeter.extraGroups = [ "tty" ];
 
-      # cage SIGSEGVs every greeter cycle (see command wrapper above).
-      # Setting RLIMIT_CORE=0 on greetd propagates to its children, so the
-      # kernel never asks systemd-coredump to record the dump. Net effect:
-      # the journal stops getting flooded with "Module libseat.so.1
-      # without build-id" backtrace listings (cage links libseat for
-      # logind seat management; the libseat frame shows up because cage's
-      # crash happens during wlroots' DRM teardown). Cage still dies with
-      # SIGSEGV — we just don't ceremonially preserve the body.
-      #
-      # The directive must be `LimitCORE` (uppercase rlimit name);
-      # `LimitCore` is silently ignored with `Unknown key 'LimitCore' in
-      # section [Service]` in the journal, leaving RLIMIT_CORE at its
-      # inherited value and the coredump flood intact.
+      # cage SIGSEGVs on every greeter exit; skip the coredump journal flood.
       systemd.services.greetd.serviceConfig.LimitCORE = "0";
 
-      # The kernel `loglevel`, `quiet`, and PID-1's `systemd.show_status`
-      # only silence the *system* manager. greetd.service and
-      # user@.service default to `StandardError=inherit`, which chains up
-      # to PID 1's stderr → /dev/console → tty1, so the user-systemd
-      # manager's "Started …" / "Reached target …" lines paint over the
-      # framebuffer in the cage→Hyprland handoff window. Redirect both
-      # services' stdout+stderr to the journal so nothing from that chain
-      # hits the console, and clamp the user manager's log level + target
-      # at `err` / `journal` so info-level status chatter is filtered at
-      # the source even if some child re-attaches stderr to a terminal.
+      # Both services inherit PID 1's stderr (tty1), so user-manager status
+      # lines would paint over the cage→Hyprland handoff.
       systemd.services.greetd.serviceConfig.StandardError = "journal";
       systemd.services.greetd.serviceConfig.StandardOutput = "journal";
       systemd.services."user@".serviceConfig = {
@@ -251,69 +124,26 @@ in
         ];
       };
 
-      # libseat probes its `seatd` backend first and prints
-      #   [libseat] backend/seatd.c:64: Could not connect to socket
-      #   /run/seatd.sock: No such file or directory
-      # before transparently falling back to logind. The fallback works
-      # — the error is cosmetic — but cage's stderr ends up on tty1
-      # (greetd assigns the session a controlling VT, so child stderr
-      # routes there rather than to greetd.service's journal stream),
-      # which paints the line on screen between plymouth quit and the
-      # greeter's first frame. We don't run seatd (logind already does
-      # seat management system-wide), so pinning the backend to logind
-      # skips the failing probe entirely. Same env covers Hyprland's
-      # wlroots later, so the user session never re-emits it either.
+      # We don't run seatd; skip libseat's failing probe, whose error lands on tty1.
       environment.variables.LIBSEAT_BACKEND = "logind";
 
-      # Pair to `greeterManagesPlymouth = true`: defer
-      # `plymouth-quit.service` until greetd is up. Once greetd is
-      # active, cage has the framebuffer; plymouth's quit is then
-      # purely cosmetic (no fb release → no fbcon flash window).
       systemd.services.plymouth-quit.unitConfig.After = [ "greetd.service" ];
 
-      # Silence the user systemd manager. Status messages ("Started
-      # wayland-wm@hyprland.service", "Reached target Wayland Session")
-      # are governed by ShowStatus on the user manager, not by
-      # `systemd.show_status=` on the kernel cmdline (that one only
-      # affects PID 1). LogLevel/LogTarget similarly only filter what
-      # the user manager itself emits, not its unit-status lines.
-      # Together: no status, no info chatter, journal-only routing.
+      # The kernel cmdline only quiets PID 1; the user manager's status
+      # lines would otherwise hit tty1 during the handoff.
       systemd.user.settings.Manager = {
         LogLevel = "err";
         LogTarget = "journal";
         ShowStatus = "no";
       };
 
-      # uwsm logs its own startup chatter at INFO level
-      # ("Selected compositor ID: hyprland.desktop", "Created dir
-      # /run/user/1000/systemd/user/", "Forked systemctl, PID …",
-      # "Starting hyprland.desktop and waiting …"). These don't go
-      # through PID 1, so the kernel cmdline silencing doesn't touch
-      # them, and cage's controlling VT is still tty1 at greetd→
-      # user-session handoff, so uwsm's stderr paints onto the screen.
-      # uwsm has no `-q` flag — the documented switch is the
-      # `UWSM_SILENT_START=1` env var, which sets uwsm's internal
-      # `NoStdOutFlag.nostdout` and suppresses every print_normal()
-      # call. Lands in `/etc/set-environment`, which PAM sources for
-      # both the greeter session and the user session, so it's in
-      # uwsm's env at exec time without needing a parallel
-      # `.desktop` entry.
+      # uwsm has no -q flag; its startup chatter would paint tty1.
       environment.variables.UWSM_SILENT_START = "1";
 
-      # Greeter auth is fingerprint-then-password, inherited from the `login`
-      # service that upstream's greetd module substacks for every phase.
-      # `security.pam.services.greetd.fprintAuth` is inert on greetd for the
-      # same reason (`useDefaultRules = false`, so no rule of its own to
-      # toggle) — opting out at the greeter alone means pointing its auth
-      # substack at a service other than `login`, which is what
-      # `services.tpm-keyring-unlock` does.
-      #
-      # `services.greeter.fingerprint = false` does the same thing without the
-      # TPM: greetd's auth phase substacks a fingerprint-free copy of the
-      # default stack, so the typed password always reaches pam_gnome_keyring
-      # and unlocks the login keyring. Account/session/password still go
-      # through `login`, so pam_gnome_keyring's session hook finds the stashed
-      # password on the same handle.
+      # greetd substacks `login` (fingerprint then password), and fprintAuth
+      # is inert there. A fingerprint login can't unlock the keyring, so
+      # `greeter.fingerprint = false` points greetd's auth at a
+      # fingerprint-free copy; tpm-keyring-unlock solves it with the TPM instead.
       assertions = [
         {
           assertion = config.services.greeter.fingerprint || !config.services.tpm-keyring-unlock.enable;
@@ -334,19 +164,9 @@ in
         }
       );
 
-      # ReGreet bakes these paths in at compile time and crashes if
-      # they don't exist. Owned by the `greeter` system user that the
-      # greetd module creates.
-      #
-      # The seeded `state.toml` pre-selects `kclejeune` + the
-      # UWSM-managed Hyprland session so the greeter just shows a
-      # password field on first boot — no need to click through
-      # user/session pickers. The session name matches the `Name=` field
-      # of `share/wayland-sessions/hyprland-uwsm.desktop` shipped by the
-      # hyprland package (the bare `Hyprland` entry remains as a UWSM
-      # fallback). `C` means "copy if missing": ReGreet's runtime writes
-      # (last user / last session bookkeeping) take over after first
-      # login.
+      # ReGreet crashes if its compiled-in paths are missing. The seeded
+      # state preselects the user + UWSM session (must match the .desktop
+      # Name=); `C` lets ReGreet's own bookkeeping take over afterwards.
       systemd.tmpfiles.rules =
         let
           initialState = pkgs.writeText "regreet-initial-state.toml" ''
@@ -354,17 +174,9 @@ in
             [user_to_last_sess]
             ${config.user.name} = "Hyprland (uwsm-managed)"
           '';
-          # GTK4 settings read at gtk_init() — before any window is
-          # mapped — so the dark Catppuccin theme is active for
-          # regreet's very first frame. regreet.toml's [GTK] block
-          # sets the same values, but programmatically *after* init,
-          # which leaves one frame painted with GTK4's built-in
-          # Adwaita (light → "white flash"). GTK_THEME on
-          # greetd.service.environment doesn't reach regreet because
-          # greetd builds a fresh PAM-derived env for the session and
-          # /etc/pam.d/greetd's pam_env has readenv=0. A settings.ini
-          # in the greeter's $HOME/.config is the path GTK4 actually
-          # reads at init.
+          # regreet.toml applies the theme after GTK init (one white
+          # Adwaita frame), and greetd's PAM env drops GTK_THEME; only
+          # settings.ini is read before the first frame.
           gtk4Settings = pkgs.writeText "regreet-gtk4-settings.ini" ''
             [Settings]
             gtk-theme-name=${theme.gtk.themeName}
@@ -378,48 +190,21 @@ in
           "d /var/lib/regreet 0755 greeter greeter - -"
           "d /var/log/regreet 0755 greeter greeter - -"
           "C /var/lib/regreet/state.toml 0644 greeter greeter - ${initialState}"
-          # /var/lib/regreet/background.png — see comment near
-          # `greeterBackground` for the why. `C` creates the file
-          # once from the build-time fallback if absent; on
-          # subsequent activations the file exists and the rule
-          # is a no-op. Owned by ${config.user.name} so noctalia's
-          # wallpaperChange hook (running as the user) and HM's
-          # `seedGreeterBackground` activation can overwrite it
-          # without permission gymnastics. Mode 0644 keeps it
-          # world-readable so the greeter user can pick it up.
+          # User-owned so the wallpaper hook can overwrite it; world-readable
+          # for the greeter.
           "C /var/lib/regreet/background.png 0644 ${config.user.name} users - ${greeterBackground}"
-          # GTK4 settings.ini in the greeter's config dir (HOME is
-          # /var/lib/regreet). `L+` recreates the symlink on every
-          # boot so it always points at the current build's settings.
           "d /var/lib/regreet/.config 0755 greeter greeter - -"
           "d /var/lib/regreet/.config/gtk-4.0 0755 greeter greeter - -"
           "L+ /var/lib/regreet/.config/gtk-4.0/settings.ini - - - - ${gtk4Settings}"
         ];
 
-      # The greeter runs as the `greeter` system user with no $HOME
-      # and a near-empty environment. We need:
-      #   - HOME so GTK4 has somewhere to cache (/var/lib/regreet is
-      #     already greeter-owned, no extra tmpfile needed),
-      #   - XDG_DATA_DIRS so GTK can find the Catppuccin theme and
-      #     cursor / icon themes installed via systemPackages below,
-      #   - GTK_THEME pinned to the Catppuccin theme so the GTK app
-      #     (regreet) renders dark from its very first frame. ReGreet
-      #     also sets `theme_name` via GtkSettings in regreet.toml,
-      #     but that's applied after the toolkit has already drawn at
-      #     least once with the default (light Adwaita) — which is the
-      #     "GTK white flash" seen before regreet's UI paints. The env
-      #     var is read at GTK init, before any window is mapped, so
-      #     there's no light frame to flash.
       systemd.services.greetd.environment = {
         HOME = "/var/lib/regreet";
         XDG_DATA_DIRS = "/run/current-system/sw/share";
         GTK_THEME = theme.gtk.themeName;
       };
 
-      # Themes / cursors / icons that the greeter looks up by name in
-      # /etc/greetd/regreet.toml. Catppuccin Mocha + Papirus + Open
-      # Sans match the user's HM session, so the greeter blends with
-      # noctalia's lock surface instead of falling back to Adwaita.
+      # The greeter looks these up by name; it can't see the user's HM profile.
       environment.systemPackages = [
         (pkgs.catppuccin-gtk.override {
           accents = [ theme.gtk.accent ];
@@ -431,11 +216,6 @@ in
 
       fonts.packages = [ pkgs.open-sans ];
 
-      # ReGreet config. Mirrors the user's HM gtk theme so the greeter
-      # carries the same Catppuccin Mocha / Open Sans / Papirus look as
-      # the noctalia lock screen the user sees mid-session. Theme name
-      # constants come from `flake.theme.gtk` (modules/shared/theme.nix)
-      # so the greeter and home session can never drift.
       environment.etc."greetd/regreet.toml".text = ''
         [GTK]
         application_prefer_dark_theme = true
@@ -475,14 +255,8 @@ in
         label_width = 360
       '';
 
-      # Custom CSS overlays the Catppuccin GTK theme to push the
-      # greeter closer to noctalia's lock surface (see IMG_6239.JPG):
-      # heavily translucent surface0 cards floating over the blurred
-      # wallpaper, pill-shaped password entry, pill session buttons
-      # with a red-tinted destructive variant. Window background is
-      # transparent so the [background] image from regreet.toml shows
-      # through. Widget IDs come from ReGreet's relm4 templates
-      # (src/gui/templates.rs).
+      # Styled to match noctalia's lock screen. Widget IDs come from
+      # ReGreet's relm4 templates (src/gui/templates.rs).
       environment.etc."greetd/regreet.css".text =
         let
           p = theme.palettes.dark;
@@ -718,14 +492,8 @@ in
 
       services.gnome.gnome-keyring.enable = true;
 
-      # Enrolled here (not in desktop-base) because its assertions want
-      # greetd + fprintd + gnome-keyring, all of which this module owns.
-      # Left disabled until this host boots lanzaboote: the seal policy is
-      # PCR7-only, which isn't a lock without Secure Boot (and `seal.sh`
-      # refuses to run without it).
-      #
-      # The inline module declares the per-host greeter scale consumed by
-      # `greeterApp` in the let-block above.
+      # Imported here because it needs greetd, fprintd and gnome-keyring, which
+      # this module owns; tpm-unlock enables it once Secure Boot is on.
       imports = [
         flakeCfg.flake.nixosModules.tpm-keyring-unlock
         {
@@ -750,12 +518,8 @@ in
         }
       ];
 
-      # Force-stop fprintd before s2idle so its in-flight Verify session
-      # (bound to the pre-suspend Goodix USB handle) is torn down cleanly.
-      # Without this, the kernel re-enumerates the device on resume but
-      # fprintd keeps the stale handle, and noctalia's next Claim returns
-      # "Device was already claimed". fprintd is dbus-activated, so the
-      # first call after resume auto-launches a fresh instance.
+      # fprintd keeps a stale USB handle across suspend ("Device was already
+      # claimed" on resume); it's dbus-activated, so it restarts on demand.
       systemd.services.fprintd.unitConfig = {
         Conflicts = [ "sleep.target" ];
         Before = [ "sleep.target" ];
@@ -763,11 +527,6 @@ in
 
       services.upower.enable = true;
       services.power-profiles-daemon.enable = lib.mkDefault true;
-
-      # Lid/power-key handling comes from `desktop-base`. Noctalia's
-      # built-in idle/lockOnSuspend is disabled in settings.json so
-      # hypridle (configured in the home module) is the sole coordinator
-      # for idle timeouts and logind PrepareForSleep hooks.
 
       hm.imports = [ flakeCfg.flake.homeModules.hyprland ];
     };

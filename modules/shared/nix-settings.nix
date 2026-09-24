@@ -1,8 +1,5 @@
-# Wires flake.lib.caches (nix-caches.nix) onto each platform's option
-# surface. nixos uses plain nix.settings; darwin's base disables nix.enable
-# and manages Nix via Determinate's determinateNix.customSettings instead —
-# see modules/darwin/default.nix's comment on why nix.settings doesn't apply
-# there.
+# darwin sets nix.enable = false (Determinate owns Nix there), so nix.settings
+# doesn't apply; it goes through determinateNix.customSettings instead.
 { config, ... }:
 let
   flakeCfg = config;

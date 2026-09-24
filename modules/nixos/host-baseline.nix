@@ -1,8 +1,6 @@
 { inputs, ... }:
 {
-  # Aggregator for the third-party flake modules every NixOS host in this
-  # repo pulls in: Determinate Nix, home-manager, disko, sops-nix. Hosts
-  # then layer on their own hardware + profile + feature modules.
+  # Cross-host third-party modules go here rather than in each host.
   flake.nixosModules.host-baseline = _: {
     imports = [
       inputs.determinate.nixosModules.default

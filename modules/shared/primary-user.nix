@@ -1,6 +1,5 @@
-# Declares `user` and `hm` options that alias to users.users.<name> and
-# home-manager.users.<name>. Used by both nixos and darwin.
-# (Pattern courtesy of @i077 — https://github.com/i077/system/)
+# `user` / `hm` alias users.users.<primary> / home-manager.users.<primary>.
+# Pattern from https://github.com/i077/system/
 _:
 (import ../_lib.nix).mkAspect {
   name = "primary-user";

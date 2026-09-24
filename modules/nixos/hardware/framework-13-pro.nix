@@ -1,6 +1,4 @@
 _: {
-  # Framework Laptop 13 Pro (Intel Core Ultra Series 3). nixos-hardware's
-  # module covers fwupd, fprintd, sensors and kernel tweaks.
   flake.nixosModules.hardware-framework-13-pro =
     {
       lib,
@@ -23,7 +21,7 @@ _: {
       boot.initrd.systemd.enable = true;
       boot.initrd.systemd.fido2.enable = true;
 
-      # No separate /boot: every kernel + initrd lives on the ESP.
+      # 2G ESP: there's no separate /boot, so every generation's UKI lives here.
       disko.devices = {
         disk.main = {
           device = "/dev/nvme0n1";

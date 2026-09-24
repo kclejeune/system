@@ -1,9 +1,7 @@
 _: {
-  # TPM2 disk unlock + TPM-backed keyring unlock for fingerprint greeter logins.
-  # Needs secure-boot enforced, then per host: `tpm-keyring-seal` as the user
-  # (it sudo's into the tss group for that one run) and
+  # Per host, after Secure Boot is enforcing: run `tpm-keyring-seal` and
   # `systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+15:sha256=<zeros>`.
-  # Re-seal and re-enroll after Secure Boot key or dbx changes.
+  # Redo both after Secure Boot key or dbx changes.
   flake.nixosModules.tpm-unlock =
     { config, ... }:
     {

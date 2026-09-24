@@ -17,7 +17,7 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
-        # Secure Boot is also required (PCR7 policy) but can't be checked at eval time.
+        # Secure Boot is required too (PCR7 policy); tpm-unlock asserts it.
         assertions = [
           {
             assertion = config.services.greetd.enable;
@@ -38,15 +38,10 @@ _: {
           tctiEnvironment.enable = true;
         };
 
-        # The sealed blob has no auth value, only a PCR7 policy that holds for the
-        # whole boot, so standing `tss` membership would let any process running
-        # as the user unseal the login password. Instead `tpm-keyring-seal` gets
-        # /dev/tpmrm0 only for the duration of one sudo-authenticated run
-        # (upstream's `sg tss` path, minus the group membership). Unsealing at
-        # login goes through the root-only wrapper below.
-        #
-        # (Re-)seal after changing the password or re-enrolling Secure Boot keys:
-        #   tpm-keyring-seal
+        # The sealed blob has no auth value and PCR7 holds all boot, so standing
+        # `tss` membership would let any user process unseal the login password.
+        # Sealing borrows the group for one sudo run instead. Re-seal after a
+        # password or Secure Boot key change.
         environment.systemPackages = [
           (pkgs.writeShellApplication {
             name = "tpm-keyring-seal";
@@ -59,8 +54,8 @@ _: {
           })
         ];
 
-        # Root-only, non-setuid. `permissions` must be symbolic: the wrapper
-        # service prepends `u-s,g-s,` and chmod rejects a mixed octal mode.
+        # Symbolic mode: the wrapper service prepends `u-s,g-s,` and chmod
+        # rejects mixing that with octal.
         security.wrappers.tpm-keyring-unseal = {
           source = "${cfg.package}/libexec/tpm-keyring-unlock/tpm-keyring-unseal";
           owner = "root";
@@ -68,10 +63,10 @@ _: {
           permissions = "u=rx,g=,o=";
         };
 
-        # Password first; an empty or wrong password falls through to fingerprint,
-        # which injects the TPM-unsealed password for pam_gnome_keyring. Inline, not
-        # a substack, so the password arm can use `done`/`ignore` (a numeric skip
-        # would record the failure). mkForce drops greetd's `substack login`.
+        # A wrong/empty password falls through to fingerprint, which feeds the
+        # TPM-unsealed password to pam_gnome_keyring. Inline rather than a
+        # substack so the password arm can `done`/`ignore` without recording
+        # a failure.
         security.pam.services.greetd.rules.auth =
           let
             pamLib = "${pkgs.pam}/lib/security";

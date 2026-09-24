@@ -1,5 +1,4 @@
 _: {
-  # Lenovo ThinkPad T460s hardware configuration with disko.
   flake.nixosModules.hardware-thinkpad-t460s =
     { lib, modulesPath, ... }:
     {
@@ -14,20 +13,12 @@ _: {
       ];
       boot.kernelModules = [ "kvm-intel" ];
 
-      # Without this, simpledrm grabs card0 from EFI-GOP and drives the FHD
-      # panel at the (often non-native) firmware framebuffer resolution;
-      # i915 only takes over from userspace, so the installer console /
-      # TTY / plymouth all render letterboxed (and i915 ends up as card1
-      # instead of replacing card0). Loading i915 in the initrd makes it
-      # own the panel from the first frame. The `video=` param pins the
-      # native mode in case EDID negotiation picks something smaller.
+      # Otherwise simpledrm owns the panel at the firmware resolution until
+      # userspace, so console and plymouth render letterboxed.
       boot.initrd.kernelModules = [ "i915" ];
       boot.kernelParams = [ "video=eDP-1:1920x1080@60" ];
 
-      # initrd-side systemd is required for the FIDO2-unlocked LUKS
-      # prompt the disko config below relies on. Plymouth + quiet boot
-      # / kernel params are owned by desktop-base.nix so the theme
-      # stays in lockstep with the rest of the desktop visual.
+      # systemd initrd for the FIDO2 LUKS unlock.
       boot.initrd.systemd.enable = true;
       boot.initrd.systemd.fido2.enable = true;
 

@@ -3,7 +3,6 @@ let
   flakeCfg = config;
 in
 {
-  # Compositor-agnostic desktop configuration shared by GNOME and Hyprland.
   flake.nixosModules.desktop-base =
     {
       config,
@@ -134,10 +133,9 @@ in
 
       services.thermald.enable = true;
 
-      # polkit may not treat a relocked session as active, so allow verify for the
-      # owner's local sessions without requiring `active`. Only verify: enroll
-      # stays on fprintd's default policy, so nobody can add a finger (which would
-      # then pass sudo, greetd and the TPM keyring) without authenticating.
+      # No `subject.active`: polkit may not count a relocked session as active.
+      # Verify only, so adding a finger (which would pass sudo, greetd and the
+      # TPM keyring) still needs authentication.
       security.polkit.extraConfig = ''
         polkit.addRule(function(action, subject) {
           if (action.id == "net.reactivated.fprint.device.verify" &&
@@ -266,7 +264,6 @@ in
         pkgs.zed-editor
         pkgs.zoom-us
 
-        # Standalone GNOME apps alongside noctalia.
         pkgs.gnome-disk-utility
         pkgs.nautilus
         pkgs.baobab

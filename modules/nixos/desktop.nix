@@ -3,11 +3,8 @@ let
   flakeCfg = config;
 in
 {
-  # Shared desktop. Composes the Hyprland session on top of desktop-base
-  # and sets up the primary user account. Personal-only apps and services
-  # (syncthing, discord, ...) live in `personal-apps`, enrolled per host,
-  # so a future work machine can enroll `desktop` without them.
-  # Per-machine hardware (disko, boot, hostname) lives in hardware.nix.
+  # Personal-only apps live in `personal-apps` so a work machine can enroll
+  # `desktop` without them.
   flake.nixosModules.desktop =
     { config, ... }:
     {
@@ -34,15 +31,11 @@ in
           extraGroups = [
             "wheel"
             "networkmanager"
-            # Root-equivalent (the daemon runs containers as root with host
-            # mounts), so this sidesteps the sudo/fingerprint/rssh gates.
-            # Accepted for dev convenience; rootless docker is the alternative.
+            # Root-equivalent, bypassing the sudo/fingerprint/rssh gates;
+            # accepted for dev convenience.
             "docker"
           ];
-          # Password comes from profile-personal's sops-backed
-          # hashedPasswordFile (secrets/users.yaml), shared across every
-          # personal-identity host. With mutableUsers = false the shadow entry
-          # is rewritten from that file on each activation.
+          # Password: profile-personal's sops hashedPasswordFile.
         };
       };
 

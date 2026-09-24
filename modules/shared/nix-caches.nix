@@ -1,8 +1,4 @@
-# Personal binary caches, exposed under flake.lib.caches so nixos/darwin can
-# each wire them onto their own option surface (nix.settings vs
-# determinateNix.customSettings — see nix-settings.nix). Mirrors flake.nix's
-# nixConfig so the same caches apply outside of trusted-flake evaluation too
-# (e.g. `nix-build`, non-flake commands).
+# Mirrors flake.nix's nixConfig so the caches also apply outside flake evaluation.
 _: {
   flake.lib.caches = {
     substituters = [

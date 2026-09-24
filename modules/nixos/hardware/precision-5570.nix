@@ -1,5 +1,4 @@
 _: {
-  # Dell Precision 5570 hardware configuration with disko.
   flake.nixosModules.hardware-precision-5570 =
     {
       config,
@@ -9,9 +8,8 @@ _: {
       ...
     }:
     let
-      # Specialisations only change nvidia modprobe options (not loaded in the
-      # initrd); share the base initrd so each generation stores one copy.
-      # `config` is the base system's.
+      # Specialisations only change nvidia modprobe options (not in the
+      # initrd), so reuse the base initrd instead of storing three copies.
       sharedInitrd = {
         boot.initrd.systemd.contents."/etc/modprobe.d/nixos.conf".source =
           lib.mkForce
@@ -42,9 +40,8 @@ _: {
           content = {
             type = "gpt";
             partitions = {
-              # 2G matches framework-13-pro, but wally's disk has a 1536M ESP (old ESP
-              # + /boot merged in place; LUKS follows, so growing needs a reinstall).
-              # disko's size only applies at install.
+              # Install-time only: wally's actual ESP is 1536M (merged in place;
+              # growing it needs a reinstall).
               esp = {
                 size = "2G";
                 type = "EF00";
@@ -106,7 +103,6 @@ _: {
       hardware.nvidia.powerManagement.enable = true;
       hardware.nvidia.powerManagement.finegrained = true;
 
-      # Boot entry with the dGPU disabled.
       hardware.nvidia.primeBatterySaverSpecialisation = true;
 
       # nh reads /etc/specialisation to pick the activation script.

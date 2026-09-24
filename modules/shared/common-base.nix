@@ -1,7 +1,4 @@
-# Shared shell / user / packages / home-manager wiring that applies equally
-# to NixOS and nix-darwin. Registered under both flake.nixosModules.common-base
-# and flake.darwinModules.common-base so each class's default module can
-# import one name. Fonts live in `fonts.nix` so headless hosts skip them.
+# Fonts live in `fonts.nix` so headless hosts skip them.
 { config, ... }:
 let
   flakeCfg = config;

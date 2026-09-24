@@ -96,9 +96,7 @@ _:
           pkgs.stdenv.hostPlatform.isLinux && cfg.enableRootSshKeys
         ) cfg.sshKeys;
 
-        # Forward identity to the HM-side module so standalone HM hosts
-        # that don't go through the nixos/darwin entrypoint still get git
-        # identity + signing key populated.
+        # The HM side owns git config so standalone HM gets it too.
         hm.identity = {
           enable = true;
           inherit (cfg) displayName email sshSigningKey;
@@ -142,9 +140,8 @@ _:
             name = lib.mkDefault cfg.displayName;
             email = lib.mkDefault cfg.email;
           };
-          # mkDefault so the 1password HM module's op-ssh-sign wiring wins on
-          # hosts that enroll it; headless hosts fall back to git's stock
-          # ssh-keygen signer, which signs through the forwarded agent.
+          # mkDefault: 1password's op-ssh-sign wins where enrolled; elsewhere
+          # ssh-keygen signs through the forwarded agent.
           signing = lib.mkIf (cfg.sshSigningKey != null) {
             key = cfg.sshSigningKey;
             format = lib.mkDefault "ssh";

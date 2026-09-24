@@ -1,6 +1,4 @@
-# System-side nixpkgs wiring: applies overlays and nixpkgs.config, and
-# makes home-manager share the system's nix package so `nix.package` is
-# consistent across the two evaluations.
+# home-manager shares the system's nix package so the two evaluations agree.
 { self, ... }:
 let
   inherit (import ../_lib.nix) mkAspect mkNixpkgsArgs;

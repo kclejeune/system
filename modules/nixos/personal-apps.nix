@@ -1,7 +1,5 @@
 _: {
-  # Personal-only apps and services that should NOT live in the shared
-  # `desktop` module, so a future work machine can opt out by enrolling
-  # `desktop` without `profile-personal`.
+  # Kept out of `desktop` so a work machine can enroll that without these.
   flake.nixosModules.personal-apps =
     {
       config,
