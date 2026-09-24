@@ -22,6 +22,8 @@ in
       services.airprint = {
         enable = true;
         ippUsb = true;
+        # Laptops print locally; don't share printers on untrusted networks.
+        openFirewall = false;
       };
       services.airplay.enable = true;
 
