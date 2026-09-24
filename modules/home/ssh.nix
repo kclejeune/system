@@ -1,11 +1,12 @@
 { config, lib, ... }:
 let
   inherit (config.flake.lib.site) tailnetDomain;
-  # Homelab nodes authenticate sudo with pam_rssh against the forwarded agent,
+  # Servers authenticate sudo with pam_rssh against the forwarded agent,
   # which `deploy` / `nh --target-host` rely on. Root on a host can use a
-  # forwarded agent while you're connected, so forward only to these, never
-  # to the internet-facing gateway or arbitrary hosts.
+  # forwarded agent while you're connected, so forward only to our own
+  # servers, never to arbitrary hosts.
   agentForwardHosts = [
+    "gateway"
     "haven"
     "forge"
     "vault"

@@ -93,11 +93,11 @@ _: {
       };
 
       # Extra SSH hardening on top of the defaults from nixos/default.nix: a
-      # public-facing server shouldn't act as a jump host, and it must never
-      # hold a forwarded agent — root here could otherwise use it to reach
-      # every other host (the same key drives pam_rssh sudo and commit signing).
+      # public-facing server shouldn't act as a jump host. Agent forwarding
+      # stays on because pam_rssh sudo (deploy / nh --target-host) needs it;
+      # accepted trade-off: root here can use the agent while you're connected.
       services.openssh.settings = {
-        AllowAgentForwarding = false;
+        AllowAgentForwarding = true;
         AllowTcpForwarding = false;
       };
 
