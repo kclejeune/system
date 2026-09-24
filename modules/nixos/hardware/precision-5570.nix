@@ -9,12 +9,9 @@ _: {
       ...
     }:
     let
-      # The specialisations only change nvidia/nouveau modprobe options, and
-      # neither driver is in the initrd, yet the initrd copies modprobe.d
-      # verbatim, so each one got its own ~58 MB initrd on the ESP.
-      # Pinning theirs to the base file makes all three entries share one.
-      # `config` here is the base system's: specialisation modules close over
-      # the evaluation that defined them.
+      # Specialisations only change nvidia modprobe options (not loaded in the
+      # initrd); share the base initrd so each generation stores one copy.
+      # `config` is the base system's.
       sharedInitrd = {
         boot.initrd.systemd.contents."/etc/modprobe.d/nixos.conf".source =
           lib.mkForce
@@ -34,10 +31,7 @@ _: {
       ];
       boot.kernelModules = [ "kvm-intel" ];
 
-      # initrd-side systemd is required for the FIDO2-unlocked LUKS
-      # prompt the disko config below relies on. Plymouth + quiet boot
-      # / kernel params are owned by desktop-base.nix so the theme
-      # stays in lockstep with the rest of the desktop visual.
+      # systemd initrd for the FIDO2 LUKS unlock.
       boot.initrd.systemd.enable = true;
       boot.initrd.systemd.fido2.enable = true;
 
@@ -48,12 +42,11 @@ _: {
           content = {
             type = "gpt";
             partitions = {
-              # 1536M = the original 512M ESP plus the 1G ext4 /boot that
-              # GRUB used to need; systemd-boot and lanzaboote keep every
-              # kernel + initrd on the ESP, so /boot was dead space. Existing
-              # installs were merged in place (same partlabel + GUID).
+              # 2G matches framework-13-pro, but wally's disk has a 1536M ESP (old ESP
+              # + /boot merged in place; LUKS follows, so growing needs a reinstall).
+              # disko's size only applies at install.
               esp = {
-                size = "1536M";
+                size = "2G";
                 type = "EF00";
                 content = {
                   type = "filesystem";
@@ -99,56 +92,30 @@ _: {
         };
       };
 
-      # Power management: prefer power-profiles-daemon (GNOME-integrated, adjusts
-      # CPU EPP + Dell's firmware platform profile). nixos-hardware's common/pc/laptop
-      # enables TLP only when PPD is off, so enabling PPD here flips TLP off.
+      # PPD instead of TLP (nixos-hardware enables TLP only when PPD is off).
       services.power-profiles-daemon.enable = true;
 
-      # The Goodix fingerprint reader (27c6:63ac) autosuspends after 2 s of
-      # inactivity and doesn't reliably wake when fprintd tries to claim it,
-      # causing auth failures after idle periods. Disabling USB runtime PM
-      # keeps the device always powered; the power cost is negligible.
+      # Goodix reader (27c6:63ac) doesn't wake from USB autosuspend; keep it powered.
       services.udev.extraRules = ''
         ACTION=="add", SUBSYSTEM=="usb", \
           ATTR{idVendor}=="27c6", ATTR{idProduct}=="63ac", \
           ATTR{power/control}="on"
       '';
 
-      # Touchpad palm rejection lives in modules/home/hyprland.nix —
-      # Hyprland reads its own libinput config and ignores
-      # services.libinput.*, so setting it here only affects X11 / a
-      # fallback display manager session. Left unset to avoid giving the
-      # impression that changes here influence the running Wayland
-      # session.
-
-      # Suspend the NVIDIA dGPU when idle. PRIME render offload is already on via
-      # nixos-hardware's dell-precision-5570 module; finegrained adds per-engine D3
-      # suspend (Turing+, fine on the 5570's Ampere).
+      # Per-engine dGPU suspend; PRIME offload comes from nixos-hardware.
       hardware.nvidia.powerManagement.enable = true;
       hardware.nvidia.powerManagement.finegrained = true;
 
-      # Offer a "battery-saver" grub entry that boots with the dGPU fully disabled.
+      # Boot entry with the dGPU disabled.
       hardware.nvidia.primeBatterySaverSpecialisation = true;
 
-      # nh reads /etc/specialisation to know which spec's activation script
-      # to run on rebuild. Every specialisation must write its own name here
-      # — the value must match the attr name exactly, or nh will fall back
-      # to the default config.
+      # nh reads /etc/specialisation to pick the activation script.
       specialisation.battery-saver.configuration = {
         imports = [ sharedInitrd ];
         environment.etc."specialisation".text = "battery-saver";
       };
 
-      # `dgpu` specialisation: boot entry that forces PRIME sync mode so the
-      # NVIDIA GPU is always on and drives all rendering. Intended for docked
-      # / AC-powered use: the 5570's HDMI + Thunderbolt outputs are wired to
-      # the NVIDIA GPU, and sync mode is the only path that drives them
-      # without render offload quirks. Trade-off: several watts of idle draw
-      # — do not use on battery.
-      #
-      # `forceFullCompositionPipeline` eliminates tearing on external
-      # displays at the cost of a small GPU overhead; worth it for the
-      # presentation-quality path.
+      # PRIME sync for docking: the external ports are wired to the dGPU. High idle draw.
       specialisation.dgpu.configuration = {
         imports = [ sharedInitrd ];
         system.nixos.tags = [ "dgpu" ];
@@ -159,9 +126,7 @@ _: {
           prime.offload.enable = lib.mkForce false;
           prime.offload.enableOffloadCmd = lib.mkForce false;
 
-          # Finegrained suspend is mutually exclusive with sync mode; keep
-          # the general suspend/resume hooks so resume-from-s2idle still
-          # restores the framebuffer cleanly.
+          # Incompatible with sync mode.
           powerManagement.finegrained = lib.mkForce false;
 
           forceFullCompositionPipeline = true;

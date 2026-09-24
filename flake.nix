@@ -20,17 +20,13 @@
     nixos-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
-    # Every nixpkgs revision from one input, fetched lazily per revision
-    # touched. Replaces a pinned stable channel: surfaced as `pkgs.multiverse`
-    # by the overlay, so a package pin is `pkgs.multiverse.tip.<pkg>`,
-    # `.at "26.05"`, or `.version "<pkg>" "<ver>"` at the point of use.
+    # Every nixpkgs revision, lazily: `pkgs.multiverse.tip.<pkg>`, `.at "26.05"`, `.version "<pkg>" "<ver>"`.
     multiverse.url = "github:fzakaria/nixpkgs-multiverse";
 
-    # Nix binary cache CLI; the server side is the nimbus Cloudflare worker.
     nimbus.url = "github:kclejeune/nimbus";
     nimbus.inputs.nixpkgs.follows = "nixpkgs";
 
-    # pin to resolve --target-host deploy ssh-ng MaxSessions flooding
+    # Fork: fixes --target-host ssh-ng MaxSessions flooding.
     nh.url = "github:kclejeune/nh/fix/remote-diff-ssh-ng-protocol-mismatch";
     nh.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -41,8 +37,7 @@
 
     terranix.url = "github:terranix/terranix";
     terranix.inputs.nixpkgs.follows = "nixpkgs";
-    # terranix is itself flake-parts + import-tree. Its `systems` input can't
-    # dedupe — nothing at top level provides one.
+    # terranix's `systems` input can't follow; nothing at top level provides one.
     terranix.inputs.flake-parts.follows = "flake-parts";
     terranix.inputs.import-tree.follows = "import-tree";
 
@@ -68,42 +63,23 @@
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Remote activation for the headless NixOS hosts (gateway + the homelab
-    # nodes). Wired into flake.deploy.nodes below; `deploy` is in the devShell.
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
-    # GitOps pull-deploy for those same hosts — they poll master and activate
-    # themselves. Not in nixpkgs, so the flake is the only source. `follows`
-    # here is lockfile hygiene only: modules/nixos/comin.nix takes the overlay
-    # rather than `comin.packages`, so the binary is built from each host's own
-    # nixpkgs and lands in the same cacheable closure CI already pushes.
+    # `follows` is lockfile hygiene only; modules/nixos/comin.nix builds comin from the host's nixpkgs.
     comin.url = "github:nlewo/comin";
     comin.inputs.nixpkgs.follows = "nixpkgs";
     comin.inputs.treefmt-nix.follows = "treefmt-nix";
     comin.inputs.flake-compat.follows = "flake-compat";
 
-    # UEFI Secure Boot via signed unified kernel images. Replaces
-    # systemd-boot on hosts that enroll modules/nixos/secure-boot.nix.
     lanzaboote.url = "github:nix-community/lanzaboote/v1.1.0";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Noctalia Wayland desktop shell (bar, notifications, launcher, lock,
-    # idle, OSD, wallpaper, night-light). Tracks nixos-unstable since it
-    # depends on the latest Quickshell.
-    #
-    # Pinned to our fork's `kcl/restart-auth-support` branch for the
-    # `lockScreen.restartAuth` IPC handler used by `lock-before-sleep`'s
-    # ExecStop in modules/nixos/hyprland.nix — required so pam_fprintd's
-    # stale Verify session (post-USB-resume) gets restarted and fingerprint
-    # scanning works on the first try after suspend. Revert to upstream
-    # once the change is merged.
+    # Fork for the `lockScreen.restartAuth` IPC used by hyprland.nix's
+    # lock-before-sleep (fingerprint after resume). Revert once merged upstream.
     noctalia.url = "github:kclejeune/noctalia-shell/kcl/restart-auth-support";
     noctalia.inputs.nixpkgs.follows = "nixos-unstable";
 
-    # Tinted-theming color scheme catalog (230+ schemes) and the
-    # base16.nix YAML loader. Consumed by modules/shared/theme.nix
-    # via `flake.lib.mkTheme`.
     base16.url = "github:SenchoPens/base16.nix";
     tinted-schemes = {
       url = "github:tinted-theming/schemes";
@@ -127,9 +103,7 @@
           inputs.git-hooks.flakeModule
           inputs.terranix.flakeModule
           (inputs.import-tree ./modules)
-          # `cacheable` is the CI build set (host toplevels, HM activation
-          # packages, devShells) transposed to `flake.cacheable.<system>` so
-          # nix-fast-build can target it without dragging it into `checks`.
+          # CI build set, kept out of `checks` so nix-fast-build can target it alone.
           (inputs.flake-parts.lib.mkTransposedPerSystemModule {
             name = "cacheable";
             option = lib.mkOption {
@@ -138,10 +112,7 @@
             };
             file = ./flake.nix;
           })
-          # flake-parts doesn't declare flake.darwinModules upstream; declare
-          # it here so files under modules/darwin/ can each contribute a
-          # named entry that merges into the attrset. Same for flake.lib, which
-          # multiple shared modules contribute helpers to (mkTheme, mkAspect).
+          # flake-parts doesn't declare these; without it modules/darwin/ entries collide.
           {
             options.flake.darwinModules = lib.mkOption {
               type = lib.types.lazyAttrsOf lib.types.unspecified;
@@ -183,8 +154,6 @@
 
             {
               networking.hostName = "phil";
-              # Host-level: pin phil's Hyprland panel/kanshi overlay. The
-              # hardware module stays generic so any T460s could reuse it.
               hm.imports = [ config.flake.homeModules.hyprland-host-phil ];
             }
           ];
@@ -214,8 +183,6 @@
 
             {
               networking.hostName = "wally";
-              # Host-level: pin the precision-5570 + home Dell U2718Q panel
-              # / kanshi / workspace overlay. Hardware module stays generic.
               hm.imports = [ config.flake.homeModules.displays-5570-home ];
             }
           ];
@@ -245,28 +212,18 @@
 
             {
               networking.hostName = "stanley";
-              # 2880x1920 panel: cage starts outputs at 1x, so scale the
-              # greeter to match the Hyprland session's eDP-1 scale.
+              # cage starts at 1x; match the session's eDP-1 scale.
               services.greeter.outputScales.eDP-1 = 2;
-              # Fingerprint greeter logins unseal the GNOME keyring password
-              # from the TPM (PCR7-bound). Needs Secure Boot enforced and a
-              # one-time `tpm-keyring-seal` as the user; re-seal after any
-              # Secure Boot key or dbx change.
+              # Needs Secure Boot and a one-time `tpm-keyring-seal`; re-seal after key/dbx changes.
               services.tpm-keyring-unlock.enable = true;
-              # TPM2 unlock ahead of the FIDO2 token from the hardware
-              # module; systemd-cryptsetup tries TPM2, then FIDO2, then the
-              # passphrase. `tpm2-measure-pcr` extends PCR15 with the volume
-              # key once unlocked, so a token enrolled against PCR15=0 can't
-              # be unsealed again after the first unlock (blocks swapping in
-              # a look-alike LUKS volume). Each token failure spends a try, so
-              # lift the limit or the passphrase gets a single attempt.
+              # TPM2 before FIDO2/passphrase. PCR15 measurement stops a token enrolled
+              # at PCR15=0 unsealing after the first unlock. Each failed token spends a
+              # try, so lift the limit.
               boot.initrd.luks.devices.cryptroot.crypttabExtraOpts = [
                 "tpm2-device=auto"
                 "tpm2-measure-pcr=yes"
                 "tries=0"
               ];
-              # Host-level: pin the Framework 13 Pro + home desk panel /
-              # kanshi / workspace overlay. Hardware module stays generic.
               hm.imports = [ config.flake.homeModules.displays-framework-13-home ];
             }
           ];
@@ -295,16 +252,12 @@
             config.flake.nixosModules.tailscale-server
             config.flake.nixosModules.beszel-agent
 
-            # Enrolled here rather than via homelab-node, which gateway
-            # deliberately doesn't use.
+            # gateway doesn't use homelab-node.
             config.flake.nixosModules.comin
           ];
         };
 
-        # Homelab home-automation node — bare-metal Lenovo P3 Tiny replacing
-        # the Proxmox cluster. Runs homebridge + uptime-kuma natively and
-        # Home Assistant OS as an Incus VM. First of four planned nodes
-        # (haven / forge / vault / atlas).
+        # haven: home automation (homebridge, uptime-kuma, HAOS in Incus).
         flake.nixosConfigurations.haven = inputs.nixos-unstable.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = {
@@ -321,7 +274,7 @@
           ];
         };
 
-        # forge — general / dev-utilities node (P3 Tiny).
+        # forge: general / dev utilities.
         flake.nixosConfigurations.forge = inputs.nixos-unstable.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = {
@@ -341,7 +294,7 @@
           ];
         };
 
-        # vault — data / storage node (P3 Tiny). Scaffolding only this round.
+        # vault: data / storage.
         flake.nixosConfigurations.vault = inputs.nixos-unstable.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = {
@@ -361,7 +314,7 @@
           ];
         };
 
-        # atlas — infra / backup node (P3 Tiny). Scaffolding only this round.
+        # atlas: infra / backup.
         flake.nixosConfigurations.atlas = inputs.nixos-unstable.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = {
@@ -380,15 +333,9 @@
           ];
         };
 
-        # deploy-rs targets — the headless hosts only (phil/wally are laptops,
-        # rebuilt locally). Root SSH is disabled on these, so log in as the
-        # kclejeune user and let deploy-rs activate as root via passwordless
-        # sudo. All five are x86_64-linux. Deploy with `deploy '.#<host>'`, or
-        # `deploy '.#haven' --hostname <ip>` to override the address.
+        # Headless hosts only; root SSH is off, so deploy as the user with sudo.
         flake.deploy.nodes =
           let
-            # hostname == attr name; bare names resolve via tailscale MagicDNS /
-            # the LAN search domain. Override per deploy with `--hostname`.
             mkNode = subdomain: host: {
               hostname = "${host}.${subdomain}";
               sshUser = "kclejeune";
@@ -473,15 +420,11 @@
             ]
         );
 
-        # Self-contained: custom packages resolve through the overlay's own
-        # `final` fixpoint. Referencing self.packages here instead would loop
-        # through perSystem's pkgs (which applies this overlay) and recurse.
+        # Resolve through `final`: self.packages would recurse via perSystem's pkgs.
         flake.overlays = {
           default = final: prev: {
             determinate-nixd = inputs.determinate.packages.${prev.stdenv.hostPlatform.system}.default;
             nix = inputs.determinate.inputs.nix.packages.${prev.stdenv.hostPlatform.system}.default;
-            # Inherit the host set's unfree/broken policy so a multiverse pin
-            # of an unfree package resolves the same way `pkgs.<pkg>` does.
             multiverse = inputs.multiverse.lib.mkMultiverse {
               system = prev.stdenv.hostPlatform.system;
               config = {
@@ -496,13 +439,9 @@
             traceway = final.callPackage ./pkgs/traceway/package.nix { };
             traceway-cli = final.traceway.cli;
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
-            # Fork build of nh (see the input pin above); replaces nixpkgs' nh
-            # for both programs.nh in home-manager and the devShell.
             nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
 
-            # tmux 3.7c requires an explicit jemalloc choice on Darwin, but the
-            # nixpkgs revision pinned by this branch predates its packaging fix.
-            # Match upstream's fix; drop once the unstable input includes it.
+            # tmux 3.7c needs jemalloc chosen explicitly on Darwin; drop once nixpkgs has the fix.
             tmux = prev.tmux.overrideAttrs (old: {
               buildInputs =
                 (old.buildInputs or [ ])
@@ -512,10 +451,7 @@
                 ++ final.lib.optionals final.stdenv.hostPlatform.isDarwin [ "--enable-jemalloc" ];
             });
 
-            # worktrunk 0.68.0's shell-probe tests walk the host process table
-            # (sysctl KERN_PROC on darwin, /proc on linux) to resolve their own
-            # pid and a spawned child's name. The build sandbox hides both, so
-            # they panic. Drop once upstream gates them behind a sandbox check.
+            # Tests read the host process table, hidden by the sandbox. Drop once upstream gates them.
             worktrunk = prev.worktrunk.overrideAttrs (old: {
               checkFlags = (old.checkFlags or [ ]) ++ [
                 "--skip=shell::utils::tests::test_process_name_and_ppid_self"
@@ -524,12 +460,7 @@
             });
 
             pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
-              # nanoemoji 0.16.0 landed in nixpkgs with the src hash that
-              # googlefonts' v0.16.0 tarball had *before* upstream re-tagged it,
-              # so the fetch fails on a hash mismatch. nixpkgs 1e544d5 recorded
-              # the correct hash, but nixos-unstable hasn't cut that commit yet.
-              # Reaches us via fontconfig -> jetbrains-mono -> gftools. Drop once
-              # the channel advances past 1e544d5.
+              # Upstream re-tagged v0.16.0; drop once nixos-unstable passes nixpkgs 1e544d5.
               (_: pyprev: {
                 nanoemoji = pyprev.nanoemoji.overrideAttrs (old: {
                   src = old.src.overrideAttrs (_: {
@@ -538,29 +469,19 @@
                 });
               })
 
-              # catppuccin 2.5.0's __init__ eagerly imports its matplotlib extra
-              # whenever matplotlib is importable, and that extra touches
-              # matplotlib.style.core — removed in matplotlib 3.11 — so `import
-              # catppuccin` (and thus the catppuccin-gtk build that imports it)
-              # dies with AttributeError. Nothing here uses the matplotlib styles,
-              # only the palette, so disable the extra registration. Drop once
-              # catppuccin is matplotlib-3.11 compatible upstream.
+              # catppuccin's matplotlib extra breaks on matplotlib 3.11; only the palette is used.
               (_: pyprev: {
                 catppuccin = pyprev.catppuccin.overridePythonAttrs (old: {
                   postPatch = (old.postPatch or "") + ''
                     substituteInPlace catppuccin/__init__.py \
                       --replace-fail 'if importlib.util.find_spec("matplotlib") is not None:' 'if False:'
                   '';
-                  # The matplotlib extra (and its tests) are the broken part; we
-                  # disabled the extra above, so skip its now-inapplicable tests.
                   disabledTestPaths = (old.disabledTestPaths or [ ]) ++ [ "tests/test_matplotlib.py" ];
                 });
               })
             ];
 
-            # catppuccin-gtk 1.0.3's build.py passes a `type=` kwarg to
-            # argparse.BooleanOptionalAction, which Python 3.14 removed. Build it
-            # (and the catppuccin lib it imports) on 3.13 until it is 3.14-ready.
+            # catppuccin-gtk's build.py breaks on Python 3.14's argparse.
             catppuccin-gtk = prev.catppuccin-gtk.override { python3 = final.python313; };
           };
         };
@@ -617,8 +538,7 @@
               shellHook = config.pre-commit.installationScript;
             };
 
-            # `nix run .#deploy` with no args deploys every node; pass targets
-            # to scope it, e.g. `nix run .#deploy -- '.#forge'`.
+            # No args deploys every node; scope with `nix run .#deploy -- '.#forge'`.
             apps.deploy = {
               type = "app";
               program = lib.getExe (
@@ -689,9 +609,7 @@
                 filterSystem (self.darwinConfigurations // self.nixosConfigurations)
               ))
               // self'.devShells;
-            # deploy-rs schema + activation checks; only wired on x86_64-linux
-            # since every deploy node is x86_64-linux and the activation check
-            # depends on building their toplevels.
+            # Every deploy node is x86_64-linux.
             checks = lib.optionalAttrs (system == "x86_64-linux") (pkgs.deploy-rs.lib.deployChecks self.deploy);
           };
       }

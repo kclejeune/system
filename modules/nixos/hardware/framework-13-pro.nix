@@ -1,9 +1,6 @@
 _: {
-  # Framework Laptop 13 Pro (Intel Core Ultra Series 3) hardware
-  # configuration with disko. Pairs with nixos-hardware's
-  # `framework-intel-core-ultra-series3`, which already owns fwupd,
-  # fprintd, the iio sensor, the nvme.noacpi power tweak and the
-  # minimum-kernel bump.
+  # Framework Laptop 13 Pro (Intel Core Ultra Series 3). nixos-hardware's
+  # module covers fwupd, fprintd, sensors and kernel tweaks.
   flake.nixosModules.hardware-framework-13-pro =
     {
       lib,
@@ -22,19 +19,11 @@ _: {
       ];
       boot.kernelModules = [ "kvm-intel" ];
 
-      # initrd-side systemd is required for the FIDO2-unlocked LUKS
-      # prompt the disko config below relies on. Plymouth + quiet boot
-      # / kernel params are owned by desktop-base.nix so the theme
-      # stays in lockstep with the rest of the desktop visual.
+      # systemd initrd for the FIDO2 LUKS unlock.
       boot.initrd.systemd.enable = true;
       boot.initrd.systemd.fido2.enable = true;
 
-      # ESP + LUKS(LVM{swap,root}). No separate ext4 /boot: systemd-boot
-      # (and lanzaboote) put every kernel + initrd on the ESP, so a
-      # GRUB-style /boot partition is dead space. Each generation costs
-      # ~70 MB there (more if a specialisation changes the initrd), and a
-      # 512M ESP fills well below configurationLimit — 2G leaves room for
-      # 10 generations plus lanzaboote UKIs.
+      # No separate /boot: every kernel + initrd lives on the ESP.
       disko.devices = {
         disk.main = {
           device = "/dev/nvme0n1";
@@ -89,10 +78,7 @@ _: {
         };
       };
 
-      # Power management: prefer power-profiles-daemon (GNOME-integrated,
-      # adjusts CPU EPP + the EC platform profile). nixos-hardware's
-      # common/pc/laptop enables TLP only when PPD is off, so enabling PPD
-      # here flips TLP off.
+      # PPD instead of TLP (nixos-hardware enables TLP only when PPD is off).
       services.power-profiles-daemon.enable = true;
 
       nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";

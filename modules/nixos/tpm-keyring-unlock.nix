@@ -17,9 +17,7 @@ _: {
       };
 
       config = lib.mkIf cfg.enable {
-        # Secure Boot is a hard prerequisite too, but can't be asserted: the
-        # policy is PCR7-only, and PCR7 state lives in firmware, not in
-        # anything evaluation can read.
+        # Secure Boot is also required (PCR7 policy) but can't be checked at eval time.
         assertions = [
           {
             assertion = config.services.greetd.enable;
@@ -40,14 +38,12 @@ _: {
           tctiEnvironment.enable = true;
         };
 
-        # Sealing and unsealing both need /dev/tpmrm0.
+        # Sealing and unsealing need /dev/tpmrm0.
         users.users.${config.user.name}.extraGroups = [ "tss" ];
         environment.systemPackages = [ cfg.package ];
 
-        # The store cannot preserve upstream's root-only helper mode. Route PAM
-        # through a root-only wrapper while keeping the module non-setuid.
-        # `permissions` must be symbolic: the wrapper service prepends
-        # `u-s,g-s,` and chmod rejects an octal mode mixed into that list.
+        # Root-only, non-setuid. `permissions` must be symbolic: the wrapper
+        # service prepends `u-s,g-s,` and chmod rejects a mixed octal mode.
         security.wrappers.tpm-keyring-unseal = {
           source = "${cfg.package}/libexec/tpm-keyring-unlock/tpm-keyring-unseal";
           owner = "root";
@@ -55,28 +51,10 @@ _: {
           permissions = "u=rx,g=,o=";
         };
 
-        # Password first, fingerprint second. PAM (and greetd's strictly
-        # request/response IPC) can only wait on one input at a time, so the
-        # greeter opens on a password field: a correct password ends the
-        # stack, and submitting it empty (or wrong) falls through to
-        # pam_fprintd. A fingerprint match then has the TPM-unsealed password
-        # injected as PAM_AUTHTOK so pam_gnome_keyring can unlock the login
-        # keyring. The package patches the authtok module to overwrite the
-        # failed password the first arm left behind; nothing after it checks a
-        # password, so the injected token can't authenticate a login.
-        #
-        # Inline rather than a substack: `substack` occupies libpam's control
-        # field, leaving nowhere for the "success → done, else → fall through"
-        # jump. Failures use `ignore`, never a numeric skip — a skip acts like
-        # `ok` and would record the failed password in the stack's result,
-        # which a later fingerprint success can't override.
-        #
-        # unix-early prompts and sets PAM_AUTHTOK so pam_gnome_keyring can
-        # stash it before the deciding pam_unix runs; that mirrors NixOS's
-        # default stack, whose `done` would otherwise skip the stash.
-        #
-        # greetd's own service is `useDefaultRules = false` with a single
-        # `substack login`, so mkForce is the only way to drop that entry.
+        # Password first; an empty or wrong password falls through to fingerprint,
+        # which injects the TPM-unsealed password for pam_gnome_keyring. Inline, not
+        # a substack, so the password arm can use `done`/`ignore` (a numeric skip
+        # would record the failure). mkForce drops greetd's `substack login`.
         security.pam.services.greetd.rules.auth =
           let
             pamLib = "${pkgs.pam}/lib/security";
