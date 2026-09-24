@@ -4,10 +4,9 @@ let
 in
 {
   # Shared desktop. Composes the Hyprland session on top of desktop-base
-  # and sets up the primary user account. Identity-specific things
-  # (keybase, syncthing, personal-only apps) live in profile-personal so
-  # a future work machine can opt out by enrolling `desktop` without
-  # `profile-personal`.
+  # and sets up the primary user account. Personal-only apps and services
+  # (syncthing, discord, ...) live in `personal-apps`, enrolled per host,
+  # so a future work machine can enroll `desktop` without them.
   # Per-machine hardware (disko, boot, hostname) lives in hardware.nix.
   flake.nixosModules.desktop =
     { config, ... }:

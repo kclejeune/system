@@ -23,15 +23,6 @@ _: {
             source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/hammerspoon";
             target = ".hammerspoon";
           };
-          raycast = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
-            source = config.lib.file.mkOutOfStoreSymlink "${dotfilesPath}/raycast";
-            target = ".local/bin/raycast";
-          };
-          zfunc = {
-            source = ./assets/dotfiles/zfunc;
-            target = ".zfunc";
-            recursive = true;
-          };
         };
 
         xdg = {

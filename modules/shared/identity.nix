@@ -1,4 +1,4 @@
-{ config, ... }:
+_:
 (import ../_lib.nix).mkAspect {
   name = "identity";
   os =

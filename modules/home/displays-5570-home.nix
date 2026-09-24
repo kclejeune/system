@@ -19,9 +19,7 @@ _: {
   # dual layout wins; the single-4k wildcard only matches when the dual
   # serial-pinned profile cannot.
   #
-  # Shared by the personal `wally` host and the work
-  # `klejeune@x86_64-linux` NixOS config, both of which pull this in
-  # directly.
+  # Enrolled by the `wally` host in flake.nix.
   flake.homeModules.displays-5570-home =
     { lib, ... }:
     {

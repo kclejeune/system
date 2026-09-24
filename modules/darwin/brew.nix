@@ -16,7 +16,6 @@ _: {
       taps = [
         "1password/tap"
         "beeftornado/rmtree"
-        "koekeishiya/formulae"
         "nikitabobko/tap"
       ];
       casks = [
