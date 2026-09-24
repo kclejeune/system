@@ -1,4 +1,8 @@
-_: {
+_:
+let
+  desk = import ./_desk-displays.nix;
+in
+{
   # Display layout for the precision-5570. Kanshi profiles are named by
   # topology rather than location:
   #
@@ -11,17 +15,32 @@ _: {
   # serial), matched via fnmatch(3) in kanshi (main.c:39). Dual profiles
   # use exact serials because kanshi rejects two `output` directives with
   # identical criteria strings in the same profile (config.c:354-362) —
-  # even with globs, each entry in a profile must be unique.
+  # even with globs, each entry in a profile must be unique. The exact
+  # serials also anchor each panel to a stable left/right position,
+  # matching the hyprland workspace pins.
   #
   # Profile ordering matters: kanshi applies the first profile whose
   # outputs all match (main.c:102-140). The dual-4k variants appear
   # before single-4k so that when both U2718Q serials are present the
   # dual layout wins; the single-4k wildcard only matches when the dual
-  # serial-pinned profile cannot.
+  # serial-pinned profile cannot (e.g. dock MST partial failure).
+  #
+  # The U3425WE runs at 1.25x, not 1.5x: it isn't 4K, and 1.5 leaves
+  # non-integer logical dimensions on 3440-wide panels.
   #
   # Enrolled by the `wally` host in flake.nix.
   flake.homeModules.displays-5570-home =
     { lib, ... }:
+    let
+      # Keep the eDP-1 mode identical to the static hyprland fallback below
+      # (59.95 Hz, scale 1.25) so wake doesn't trigger a redundant modeset
+      # after kanshi fires.
+      panel = {
+        criteria = "eDP-1";
+        mode = "1920x1200@59.95Hz";
+        scale = 1.25;
+      };
+    in
     {
       wayland.windowManager.hyprland.settings = {
         # Per-host monitor rules sort BEFORE the base catch-all so eDP-1
@@ -31,144 +50,19 @@ _: {
           "eDP-1, 1920x1200@59.95Hz, 0x0, 1.25"
         ];
 
-        workspace = [
-          "name:B, monitor:desc:Dell Inc. DELL U2718Q 4K8X779B03VL, default:true"
-          "name:V, monitor:desc:Dell Inc. DELL U2718Q 4K8X77950L3L"
-          "name:I, monitor:desc:Dell Inc. DELL U2718Q 4K8X77950L3L"
-        ];
+        workspace = desk.workspaces;
       };
 
-      # Kanshi profiles. Keep the eDP-1 entry's mode identical to the
-      # static hyprland fallback above (59.95 Hz, scale 1.25) so wake
-      # doesn't trigger a redundant modeset after kanshi fires.
-      services.kanshi.settings = [
-        {
-          # Two Dell U2718Q 4K panels side-by-side with the laptop
-          # centered below. Criteria use exact serials rather than a
-          # shared `Dell Inc. DELL U2718Q *` glob because kanshi's
-          # parser rejects two `output` directives with identical
-          # criteria strings in the same profile (config.c:354-362 —
-          # strcmp-based dedup, not fnmatch), so the two duals must be
-          # distinguished. This also anchors each serial to a stable
-          # left/right position, matching the hyprland workspace pins
-          # on these serials in `workspace` above.
-          profile.name = "dual-4k";
-          profile.outputs = [
-            {
-              criteria = "Dell Inc. DELL U2718Q 4K8X779B03VL";
-              mode = "3840x2160@60Hz";
-              scale = 1.5;
-              position = "0,0";
-            }
-            {
-              criteria = "Dell Inc. DELL U2718Q 4K8X77950L3L";
-              mode = "3840x2160@60Hz";
-              scale = 1.5;
-              position = "2560,0";
-            }
-            {
-              criteria = "eDP-1";
-              mode = "1920x1200@59.95Hz";
-              scale = 1.25;
-              position = "1600,1440";
-            }
-          ];
-        }
-        {
-          profile.name = "dual-4k-clamshell";
-          profile.outputs = [
-            {
-              criteria = "Dell Inc. DELL U2718Q 4K8X779B03VL";
-              mode = "3840x2160@60Hz";
-              scale = 1.5;
-              position = "0,0";
-            }
-            {
-              criteria = "Dell Inc. DELL U2718Q 4K8X77950L3L";
-              mode = "3840x2160@60Hz";
-              scale = 1.5;
-              position = "2560,0";
-            }
-          ];
-        }
-        {
-          # Single Dell U2718Q 4K with the laptop centered below. Uses a
-          # model-scoped glob so either serial satisfies the profile —
-          # this is the fallback when only one of the two 4K panels
-          # links up (e.g. dock MST partial failure). Must come after
-          # the dual-4k profiles so the exact-serial dual match wins
-          # when both panels are present. Logical size at 1.5 is
-          # 2560x1440; laptop centered below at x = (2560 - 1920/1.25) / 2 = 512.
-          profile.name = "single-4k";
-          profile.outputs = [
-            {
-              criteria = "Dell Inc. DELL U2718Q *";
-              mode = "3840x2160@60Hz";
-              scale = 1.5;
-              position = "0,0";
-            }
-            {
-              criteria = "eDP-1";
-              mode = "1920x1200@59.95Hz";
-              scale = 1.25;
-              position = "512,1440";
-            }
-          ];
-        }
-        {
-          profile.name = "single-4k-clamshell";
-          profile.outputs = [
-            {
-              criteria = "Dell Inc. DELL U2718Q *";
-              mode = "3840x2160@60Hz";
-              scale = 1.5;
-              position = "0,0";
-            }
-          ];
-        }
-        {
-          # Single Dell U3425WE 3440x1440 ultrawide with the laptop
-          # centered below. Scaled 1.25x, not 1.5x, since these displays
-          # aren't 4K and 1.5 leaves non-integer logical dimensions on
-          # 3440-wide panels. Logical size at 1.25 is 2752x1152; laptop
-          # centered below at x = (2752 - 1920/1.25) / 2 = 608.
-          profile.name = "single-uwqhd";
-          profile.outputs = [
-            {
-              criteria = "Dell Inc. DELL U3425WE *";
-              mode = "3440x1440@120Hz";
-              scale = 1.25;
-              position = "0,0";
-            }
-            {
-              criteria = "eDP-1";
-              mode = "1920x1200@59.95Hz";
-              scale = 1.25;
-              position = "608,1152";
-            }
-          ];
-        }
-        {
-          profile.name = "single-uwqhd-clamshell";
-          profile.outputs = [
-            {
-              criteria = "Dell Inc. DELL U3425WE *";
-              mode = "3440x1440@120Hz";
-              scale = 1.25;
-              position = "0,0";
-            }
-          ];
-        }
-        {
-          profile.name = "undocked";
-          profile.outputs = [
-            {
-              criteria = "eDP-1";
-              mode = "1920x1200@59.95Hz";
-              scale = 1.25;
-            }
-          ];
-        }
-      ];
+      services.kanshi.settings = desk.mkKanshiProfiles {
+        edp = position: panel // { inherit position; };
+        # Logical widths: dual 5120, single-4k 2560 (so x = (2560 - 1536) / 2),
+        # uwqhd 2752 at 1.25 (so x = (2752 - 1536) / 2).
+        below = {
+          dual4k = "1600,1440";
+          single4k = "512,1440";
+          uwqhd = "608,1152";
+        };
+        undocked = panel;
+      };
     };
 }
