@@ -29,13 +29,12 @@ _: {
       boot.initrd.systemd.enable = true;
       boot.initrd.systemd.fido2.enable = true;
 
-      # ESP + LUKS(LVM{swap,root}). Unlike the precision-5570 there's no
-      # separate ext4 /boot: systemd-boot (and lanzaboote) put every
-      # kernel + initrd on the ESP, so a GRUB-style /boot partition is
-      # dead space. Each generation costs ~70 MB there (larger per
-      # specialisation), and the 5570's 512M ESP fills well below
-      # configurationLimit — 2G leaves room for 10 generations plus
-      # lanzaboote UKIs if secure-boot is enrolled later.
+      # ESP + LUKS(LVM{swap,root}). No separate ext4 /boot: systemd-boot
+      # (and lanzaboote) put every kernel + initrd on the ESP, so a
+      # GRUB-style /boot partition is dead space. Each generation costs
+      # ~70 MB there (more if a specialisation changes the initrd), and a
+      # 512M ESP fills well below configurationLimit — 2G leaves room for
+      # 10 generations plus lanzaboote UKIs.
       disko.devices = {
         disk.main = {
           device = "/dev/nvme0n1";

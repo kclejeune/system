@@ -2,11 +2,25 @@ _: {
   # Dell Precision 5570 hardware configuration with disko.
   flake.nixosModules.hardware-precision-5570 =
     {
+      config,
       lib,
       pkgs,
       modulesPath,
       ...
     }:
+    let
+      # The specialisations only change nvidia/nouveau modprobe options, and
+      # neither driver is in the initrd, yet the initrd copies modprobe.d
+      # verbatim, so each one got its own ~58 MB initrd on the ESP.
+      # Pinning theirs to the base file makes all three entries share one.
+      # `config` here is the base system's: specialisation modules close over
+      # the evaluation that defined them.
+      sharedInitrd = {
+        boot.initrd.systemd.contents."/etc/modprobe.d/nixos.conf".source =
+          lib.mkForce
+            config.environment.etc."modprobe.d/nixos.conf".source;
+      };
+    in
     {
       imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
 
@@ -34,22 +48,18 @@ _: {
           content = {
             type = "gpt";
             partitions = {
+              # 1536M = the original 512M ESP plus the 1G ext4 /boot that
+              # GRUB used to need; systemd-boot and lanzaboote keep every
+              # kernel + initrd on the ESP, so /boot was dead space. Existing
+              # installs were merged in place (same partlabel + GUID).
               esp = {
-                size = "512M";
+                size = "1536M";
                 type = "EF00";
                 content = {
                   type = "filesystem";
                   format = "vfat";
                   mountpoint = "/boot/efi";
                   mountOptions = [ "umask=0077" ];
-                };
-              };
-              boot = {
-                size = "1G";
-                content = {
-                  type = "filesystem";
-                  format = "ext4";
-                  mountpoint = "/boot";
                 };
               };
               luks = {
@@ -124,7 +134,10 @@ _: {
       # to run on rebuild. Every specialisation must write its own name here
       # — the value must match the attr name exactly, or nh will fall back
       # to the default config.
-      specialisation.battery-saver.configuration.environment.etc."specialisation".text = "battery-saver";
+      specialisation.battery-saver.configuration = {
+        imports = [ sharedInitrd ];
+        environment.etc."specialisation".text = "battery-saver";
+      };
 
       # `dgpu` specialisation: boot entry that forces PRIME sync mode so the
       # NVIDIA GPU is always on and drives all rendering. Intended for docked
@@ -137,6 +150,7 @@ _: {
       # displays at the cost of a small GPU overhead; worth it for the
       # presentation-quality path.
       specialisation.dgpu.configuration = {
+        imports = [ sharedInitrd ];
         system.nixos.tags = [ "dgpu" ];
         environment.etc."specialisation".text = "dgpu";
 

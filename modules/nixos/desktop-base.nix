@@ -179,9 +179,8 @@ in
       systemd.services.plymouth-quit.serviceConfig.ExecStart =
         lib.mkForce "-${lib.getExe' pkgs.plymouth "plymouth"} quit --retain-splash";
 
-      # systemd-boot. Kernel + initrd land on the ESP (vfat, 512M);
-      # the separate /boot ext4 partition that GRUB used is left
-      # untouched and effectively unused — not worth reformatting.
+      # systemd-boot. Kernel + initrd land on the ESP (vfat), so hosts
+      # need no separate /boot partition.
       # `configurationLimit` caps generations so the ESP doesn't fill
       # (each generation is ~80–130 MB of kernel + initrd).
       # `editor = false` blocks kernel-cmdline editing at the boot
