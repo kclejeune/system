@@ -34,10 +34,10 @@ in
       # DNS-01 token in homelab.yaml rather than copied into each host file.
       sops.secrets.${config.services.traceway.agent.tokenSecret}.sopsFile = ../../secrets/homelab.yaml;
 
-      # Primary user + rescue root keys + pinned state version — identical on
-      # every P3 node. Set via the users.users submodule (not the `user`
-      # types.attrs alias) so mkDefault/list-merge behave: haven overrides
-      # extraGroups to append incus-admin and its normal-priority def wins.
+      # Primary user + pinned state version — identical on every P3 node. Set
+      # via the users.users submodule (not the `user` types.attrs alias) so
+      # mkDefault/list-merge behave: haven overrides extraGroups to append
+      # incus-admin and its normal-priority def wins.
       users.users.${config.user.name} = {
         isNormalUser = true;
         extraGroups = lib.mkDefault [ "wheel" ];
@@ -45,10 +45,11 @@ in
       # Declaratively manage accounts: kclejeune's password is rewritten from
       # profile-personal's sops hashedPasswordFile on every activation, and
       # undeclared users are pruned. Recovery if the secret ever fails to
-      # decrypt (password slot → locked) is SSH-key login as root
-      # (identity.enableRootSshKeys below).
+      # decrypt (password slot → locked) is SSH-key login as the primary user
+      # plus pam_rssh agent-auth sudo (nixos/default.nix), or the local
+      # console. Root SSH stays off (PermitRootLogin = "no"), so installing
+      # root authorized_keys here would be inert.
       users.mutableUsers = lib.mkDefault false;
-      identity.enableRootSshKeys = lib.mkDefault true;
       system.stateVersion = lib.mkDefault "25.11";
 
       # Web UIs are fronted by caddy-lan (LE certs via Cloudflare DNS-01);

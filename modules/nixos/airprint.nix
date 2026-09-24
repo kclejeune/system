@@ -75,13 +75,20 @@ _: {
         #   - listen on every interface so mDNS-discovered clients can
         #     reach the IPP endpoint
         #   - browsing + defaultShared so printers are advertised
-        #   - allowFrom "all" matches the LAN-trust assumption AirPrint
-        #     requires (CUPS otherwise gates access to localhost)
+        #   - allowFrom the LAN + overlays (CUPS otherwise gates access to
+        #     localhost); not "all", so nothing off-site can queue jobs
+        #   - no cups-browsed: this host shares printers, it doesn't need to
+        #     discover remote queues (and browsed is the CVE-2024-47176 surface)
         services.printing = {
           enable = true;
           listenAddresses = [ "*:631" ];
-          allowFrom = [ "all" ];
+          allowFrom = [
+            "localhost"
+            config.site.lanCidr
+          ]
+          ++ config.site.overlayCidrs;
           browsing = true;
+          browsed.enable = false;
           defaultShared = true;
           openFirewall = cfg.openFirewall;
           drivers =

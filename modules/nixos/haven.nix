@@ -61,12 +61,14 @@ _: {
 
       # Trust the LAN bridge + overlays. This is a dedicated home-automation
       # node: HomeKit/mDNS (homebridge, HA) needs broad LAN reachability incl.
-      # ephemeral HAP accessory ports, which per-port firewall rules can't
-      # cleanly express. tailscale0 / wt0 are added as trusted by their own
-      # modules. Tighten to specific ports later if the threat model changes.
+      # the child-bridge HAP ports homebridge picks at runtime (configured in
+      # its UI, not here), which per-port rules can't express. tailscale0 / wt0
+      # are added as trusted by their own modules. Because the whole LAN
+      # (IoT devices included) reaches every port, the web UIs below bind
+      # loopback only; caddy-lan and `tailscale serve` are their sole ingress.
       networking.firewall.trustedInterfaces = [ "br0" ];
 
-      # homelab-node sets isNormalUser + rescue root keys; append incus-admin
+      # homelab-node sets isNormalUser + wheel; append incus-admin
       # so this user can drive `incus` without sudo.
       users.users.${config.user.name}.extraGroups = [
         "wheel"
@@ -186,11 +188,14 @@ _: {
       # `incus config set` if heavier add-ons (Frigate, etc.) need it.
 
       # --- Homebridge (native module) ---
-      # State at /var/lib/homebridge (covered by the backup module's /var/lib
-      # sweep). UI + HAP ports are reachable over the trusted LAN/overlays.
+      # State at /var/lib/homebridge. HAP ports are reachable over the trusted
+      # LAN/overlays; the UI listens on loopback behind caddy-lan / serve.
       services.homebridge = {
         enable = true;
-        uiSettings.port = homebridgeUiPort;
+        uiSettings = {
+          host = "127.0.0.1";
+          port = homebridgeUiPort;
+        };
       };
 
       # --- Reverse proxy (caddy-lan: ACME DNS-01) ---
@@ -217,20 +222,16 @@ _: {
       };
 
       # --- Uptime Kuma (native module) ---
+      # Listens on the module's default 127.0.0.1; caddy-lan / serve front it.
       services.uptime-kuma = {
         enable = true;
-        settings = {
-          HOST = "0.0.0.0";
-          PORT = toString uptimeKumaPort;
-        };
+        settings.PORT = toString uptimeKumaPort;
       };
 
-      # --- Backups (restic → R2 via the backup module) ---
-      # The restic/* secrets and the `system` job are declared by
-      # flake.nixosModules.backup; this just points sops at haven's file.
-      # NOTE: HAOS's qcow2 under /var/lib/incus is excluded from restic — use
-      # Home Assistant's own backup feature (push to R2 or an NFS share on a
-      # storage node) for a consistent HA snapshot.
+      # NOTE: haven does not enroll flake.nixosModules.backup yet (it needs
+      # real restic/* values in secrets/haven.yaml). Once it does, HAOS's qcow2
+      # under /var/lib/incus should stay excluded — use Home Assistant's own
+      # backup feature for a consistent HA snapshot.
       sops.defaultSopsFile = ../../secrets/haven.yaml;
     };
 }

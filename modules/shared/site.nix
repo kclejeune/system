@@ -10,6 +10,11 @@ let
     tailnetDomain = "tailf0779.ts.net";
     cloudflareAccountId = "14613cda02f216f5620eca979a286eaf";
     lanCidr = "192.168.1.0/24";
+    # Tailscale CGNAT range + this NetBird network's range.
+    overlayCidrs = [
+      "100.64.0.0/10"
+      "10.64.0.0/16"
+    ];
   };
 
   aspect = (import ../_lib.nix).mkAspect {
@@ -34,6 +39,12 @@ let
             type = lib.types.str;
             default = site.lanCidr;
             description = "Home LAN subnet the P3 nodes sit on and advertise as subnet routers.";
+          };
+
+          overlayCidrs = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = site.overlayCidrs;
+            description = "IPv4 ranges of the Tailscale and NetBird overlays.";
           };
         };
       };
