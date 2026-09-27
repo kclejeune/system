@@ -52,6 +52,8 @@ in
       };
 
       services.openssh.enable = true;
+      # So SSH sessions from kitty/ghostty keep their native TERM.
+      environment.enableAllTerminfo = true;
 
       networking = {
         nftables.enable = lib.mkDefault true;
