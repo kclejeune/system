@@ -84,6 +84,7 @@ _: {
           nix-inspect
           nix-output-monitor
           nix-tree
+          nix-update
           nixd
           nixfmt
           nixfmt-tree

@@ -55,6 +55,14 @@ _: {
           default = 30;
           description = "Telemetry row retention (SQLite + DuckDB). 0 disables pruning.";
         };
+        v2MoveOver = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = ''
+            V2_MOVE_OVER: copy pre-2.0 trace history into the V2 tables in the
+            background. Resumable and bounded by retentionDays, so it can stay on.
+          '';
+        };
         s3 = {
           bucket = lib.mkOption { type = lib.types.str; };
           endpoint = lib.mkOption {
@@ -137,6 +145,7 @@ _: {
           DUCKDB_THREADS=${toString cfg.duckdbThreads}
           SQLITE_RETENTION_DAYS=${toString cfg.retentionDays}
           DUCKDB_RETENTION_DAYS=${toString cfg.retentionDays}
+          V2_MOVE_OVER=${lib.boolToString cfg.v2MoveOver}
 
           STORAGE_TYPE=s3
           S3_BUCKET=${cfg.s3.bucket}
@@ -188,8 +197,7 @@ _: {
           restartTriggers = [ config.sops.templates.${envTemplate}.content ];
           serviceConfig = {
             ExecStart = lib.getExe cfg.package;
-            # The backend sends sd_notify READY and pings the watchdog every
-            # 15s unconditionally.
+            # The backend sends sd_notify READY and pings at min(WatchdogSec/2, 5s).
             Type = "notify";
             WatchdogSec = "60s";
             Restart = "always";
@@ -304,7 +312,8 @@ _: {
                 proxyWebsockets = true;
               };
               "/api/report" = ingest;
-              "/api/otel/" = ingest;
+              # Not "/api/otel/": /api/otel/spans/... is a dashboard route.
+              "/api/otel/v1" = ingest;
               "/api/profiles/ingest" = ingest;
             };
           };
