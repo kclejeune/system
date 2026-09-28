@@ -145,6 +145,18 @@ _: {
           lazyjournal
         ]
         # GUI apps: nothing to run them on a headless host.
-        ++ lib.optionals config.desktop.enable [ gitbutler ];
+        ++ lib.optionals config.desktop.enable [ gitbutler ]
+        ++ lib.optionals (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) [
+          chromium
+          playwright-test
+        ];
+
+      # Playwright's downloaded browsers don't run on NixOS. This pins them to
+      # the nixpkgs revision, so only a matching Playwright version finds them;
+      # the `chrome` channel is covered by desktop-base's /opt/google symlink.
+      home.sessionVariables = lib.mkIf (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) {
+        PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+        PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
+      };
     };
 }

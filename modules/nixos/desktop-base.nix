@@ -39,7 +39,9 @@ in
         {
           source = pkgs.writeText "tzupdate-on-connectivity" ''
             #!/bin/sh
-            [ "$2" = "connectivity-change" ] && systemctl start tzupdate.service || true
+            # connectivity-change also fires on the way down (suspend, NM restart).
+            [ "$2" = "connectivity-change" ] && [ "$CONNECTIVITY_STATE" = "FULL" ] \
+              && systemctl start --no-block tzupdate.service || true
           '';
         }
       ];
@@ -252,6 +254,11 @@ in
             pkgs.parted
           ];
         };
+
+      # Playwright's `chrome` channel (the MCP server's default) hardcodes this path.
+      systemd.tmpfiles.rules = [
+        "L+ /opt/google/chrome/chrome - - - - ${lib.getExe pkgs.google-chrome}"
+      ];
 
       environment.systemPackages = [
         pkgs.brave
