@@ -82,6 +82,10 @@
     lanzaboote.url = "github:nix-community/lanzaboote/v1.1.0";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
     lanzaboote.inputs.pre-commit.follows = "git-hooks";
+    # lanzaboote's pin still uses the deprecated stdenv.isLinux/isDarwin.
+    lanzaboote.inputs.rust-overlay.follows = "rust-overlay";
+    rust-overlay.url = "github:oxalica/rust-overlay";
+    rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
 
     # Fork for the `lockScreen.restartAuth` IPC used by hyprland.nix's
     # lock-before-sleep (fingerprint after resume). Revert once merged upstream.
