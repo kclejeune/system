@@ -358,6 +358,12 @@
               };
             };
 
+            # nixpkgs only packages the macOS app.
+            chatgpt =
+              if final.stdenv.hostPlatform.isLinux then
+                final.callPackage ./pkgs/chatgpt/package.nix { }
+              else
+                prev.chatgpt;
             cb = final.callPackage ./pkgs/cb/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             tpm-keyring-unlock = final.callPackage ./pkgs/tpm-keyring-unlock/package.nix { };

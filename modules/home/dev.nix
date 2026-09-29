@@ -147,6 +147,7 @@ _: {
         # GUI apps: nothing to run them on a headless host.
         ++ lib.optionals config.desktop.enable [ gitbutler ]
         ++ lib.optionals (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) [
+          chatgpt
           chromium
           playwright-test
         ];
