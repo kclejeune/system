@@ -31,6 +31,7 @@ in
           extraGroups = [
             "wheel"
             "networkmanager"
+            "systemd-journal"
             # Root-equivalent, bypassing the sudo/fingerprint/rssh gates;
             # accepted for dev convenience.
             "docker"

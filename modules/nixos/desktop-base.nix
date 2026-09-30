@@ -10,6 +10,24 @@ in
       pkgs,
       ...
     }:
+    let
+      lidSuspend = pkgs.writeShellApplication {
+        name = "lid-suspend";
+        runtimeInputs = [
+          pkgs.gnugrep
+          pkgs.systemd
+        ];
+        text = ''
+          closed() { grep -q closed /proc/acpi/button/lid/*/state; }
+          closed || exit 0
+          sleep "$1"
+          closed || exit 0
+          [[ $(busctl get-property org.freedesktop.login1 /org/freedesktop/login1 \
+            org.freedesktop.login1.Manager Docked) == "b true" ]] && exit 0
+          systemctl suspend
+        '';
+      };
+    in
     {
       # Keep direnv/devshell build inputs alive across GC on dev machines.
       nix.settings = {
@@ -84,8 +102,8 @@ in
         "loglevel=3"
         "systemd.show_status=false"
         "rd.systemd.show_status=false"
-        "systemd.log_level=err"
-        "rd.systemd.log_level=err"
+        "systemd.log_level=notice"
+        "rd.systemd.log_level=notice"
         "systemd.log_target=journal-or-kmsg"
         "rd.systemd.log_target=journal-or-kmsg"
         "rd.udev.log_level=3"
@@ -157,10 +175,20 @@ in
       services.logind.settings.Login = {
         HandlePowerKey = "suspend";
         HandlePowerKeyLongPress = "poweroff";
-        HandleLidSwitch = "suspend";
-        HandleLidSwitchExternalPower = "suspend";
+        # Handled by acpid below: stanley's lid sensor fires spurious closes.
+        HandleLidSwitch = "ignore";
+        HandleLidSwitchExternalPower = "ignore";
         HandleLidSwitchDocked = "ignore";
       };
+
+      services.acpid = {
+        enable = true;
+        lidEventCommands = "${lib.getExe lidSuspend} 2";
+      };
+      # Replaces logind's re-suspend when woken with the lid still closed.
+      powerManagement.resumeCommands = ''
+        ${pkgs.systemd}/bin/systemd-run --no-block --on-active=30s ${lib.getExe lidSuspend} 0
+      '';
 
       # Terminal sudo can't show a polkit popup; `run0` gets the noctalia fingerprint prompt.
       security.sudo.extraConfig = ''
