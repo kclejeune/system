@@ -59,6 +59,21 @@
         "type": "github"
       }
     },
+    "crane_2": {
+      "locked": {
+        "lastModified": 1790899423,
+        "narHash": "sha256-THGtz65UGJU+sonZidRboyCMk+9DclpMF7pwL4uDV4M=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "47b6b27ed9a3a9181415e4367d0c30ab2a0e0250",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
     "darwin": {
       "inputs": {
         "nixpkgs": [
@@ -673,6 +688,7 @@
         "noctalia": "noctalia",
         "rust-overlay": "rust-overlay",
         "sops-nix": "sops-nix",
+        "sparkles": "sparkles",
         "systems": "systems_2",
         "terranix": "terranix",
         "tinted-schemes": "tinted-schemes",
@@ -716,6 +732,33 @@
       "original": {
         "owner": "Mic92",
         "repo": "sops-nix",
+        "type": "github"
+      }
+    },
+    "sparkles": {
+      "inputs": {
+        "crane": "crane_2",
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixos-unstable"
+        ],
+        "rust-overlay": [
+          "rust-overlay"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791095315,
+        "narHash": "sha256-k0R+7sLWunFWyYT0vHD6NBMXmzJqCRlZghPMucZU4Lo=",
+        "owner": "kclejeune",
+        "repo": "sparkles",
+        "rev": "2fafbe8c3581270f0f4e4ad4504922f20a2cfb7b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kclejeune",
+        "repo": "sparkles",
         "type": "github"
       }
     },

@@ -34,6 +34,11 @@
     nh.url = "github:kclejeune/nh/fix/remote-diff-ssh-ng-protocol-mismatch";
     nh.inputs.nixpkgs.follows = "nixpkgs";
 
+    sparkles.url = "github:kclejeune/sparkles";
+    sparkles.inputs.nixpkgs.follows = "nixos-unstable";
+    sparkles.inputs.flake-parts.follows = "flake-parts";
+    sparkles.inputs.rust-overlay.follows = "rust-overlay";
+
     # Only a `follows` target for inputs that still declare it.
     flake-compat.url = "github:nix-community/flake-compat";
 
@@ -260,6 +265,7 @@
           vault = mkHomelab [
             config.flake.nixosModules.vault
             config.flake.nixosModules.rustfs
+            config.flake.nixosModules.sparkles
             # backup needs real restic/* in secrets/vault.yaml; enable once set.
             # config.flake.nixosModules.backup
           ];
@@ -375,6 +381,7 @@
             traceway-cli = final.traceway.cli;
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
             nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
+            sparkles = inputs.sparkles.packages.${prev.stdenv.hostPlatform.system}.default;
 
             # tmux 3.7c needs jemalloc chosen explicitly on Darwin; drop once nixpkgs has the fix.
             tmux = prev.tmux.overrideAttrs (old: {

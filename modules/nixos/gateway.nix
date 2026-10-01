@@ -346,6 +346,15 @@ in
               "preferred_username"
               "groups"
             ];
+            # Sparkles maps lldap groups to roles; it also reads userinfo, but the ID
+            # token carrying them saves the extra request.
+            claims_policies.sparkles.id_token = [
+              "email"
+              "email_verified"
+              "name"
+              "preferred_username"
+              "groups"
+            ];
             # Without these the ID token has only `sub`. No groups: RustFS treats each
             # group as a policy name and fails the login on any unknown one.
             claims_policies.rustfs.id_token = [
@@ -516,6 +525,29 @@ in
                 ];
                 access_token_signed_response_alg = "RS256";
                 userinfo_signed_response_alg = "none";
+                token_endpoint_auth_method = "none";
+                require_pkce = true;
+                pkce_challenge_method = "S256";
+              }
+              {
+                # Public client (PKCE, no secret): the Sparkles auth config on vault then
+                # holds nothing secret. Sparkles builds the callback from its public_url,
+                # set in modules/nixos/sparkles.nix. Admission is by group in Sparkles.
+                client_id = "sparkles";
+                client_name = "Sparkles";
+                claims_policy = "sparkles";
+                public = true;
+                authorization_policy = "two_factor";
+                consent_mode = "implicit";
+                redirect_uris = [
+                  "https://sparkles.${config.site.lanDomain}/$/auth/oidc/callback"
+                ];
+                scopes = [
+                  "openid"
+                  "profile"
+                  "email"
+                  "groups"
+                ];
                 token_endpoint_auth_method = "none";
                 require_pkce = true;
                 pkce_challenge_method = "S256";

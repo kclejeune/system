@@ -116,6 +116,7 @@ _: {
           sig
           skopeo
           sops
+          sparkles
           src-cli
           ssh-to-age
           sshpass

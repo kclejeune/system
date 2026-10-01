@@ -23,6 +23,8 @@ _: {
         s3.endpoints."tcp:443" = "http://127.0.0.1:9001";
       };
 
-      # /var/lib/rustfs needs snapshotting once backup is enabled.
+      services.sparklesLan.enable = true;
+
+      # /var/lib/rustfs and /var/lib/sparkles need snapshotting once backup is enabled.
     };
 }

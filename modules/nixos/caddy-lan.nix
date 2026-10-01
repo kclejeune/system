@@ -44,7 +44,7 @@ _: {
       # LAN service groups separately in Traceway.
       mkTracing =
         sub:
-        lib.optionalString agent.enable ''
+        lib.optionalString (agent.enable && !(lib.elem sub cfg.selfTraced)) ''
           tracing {
             span ${sub}
             span_attributes {
@@ -107,6 +107,18 @@ _: {
             Extra Caddyfile directives for a proxied subdomain, emitted before
             its reverse_proxy. Keyed the same as `proxies`. For backends whose
             UI does not live at the site root.
+          '';
+        };
+
+        selfTraced = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "sparkles" ];
+          description = ''
+            Proxied subdomains whose backend sends its own OpenTelemetry server
+            spans. Caddy does not trace these. Its spans carry the request path
+            but no http.route, so Traceway would list every path (each hashed UI
+            asset, for example) as an endpoint and count each request twice.
           '';
         };
       };
