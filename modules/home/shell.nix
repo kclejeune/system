@@ -14,6 +14,10 @@ _: {
         if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init ${shell})"; fi
       '';
 
+      fnoxInstall = shell: ''
+        if command -v fnox >/dev/null 2>&1; then eval "$(command fnox activate ${shell})"; fi
+      '';
+
       slinkyInstall = shell: ''
         if command -v slinky >/dev/null 2>&1; then eval "$(command slinky config hook ${shell})"; fi
       '';
@@ -98,6 +102,7 @@ _: {
           setopt CHASE_LINKS
           setopt CHASE_DOTS
           ${wtInstall "zsh"}
+          ${fnoxInstall "zsh"}
           # ${slinkyInstall "zsh"}
         '';
         # Non-interactive shells (scripts, CI, agents) skip .zshrc. Turn off NOMATCH (an
@@ -154,6 +159,7 @@ _: {
         initExtra = ''
           eval "$(mise activate bash)"
           ${wtInstall "bash"}
+          ${fnoxInstall "bash"}
           # ${slinkyInstall "bash"}
         '';
       };
