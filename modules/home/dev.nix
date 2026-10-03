@@ -91,6 +91,7 @@ _: {
           nixpacks
           nmap
           nodejs_22
+          nsc
           nurl
           openldap
           openssl
