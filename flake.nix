@@ -84,7 +84,7 @@
     comin.inputs.treefmt-nix.follows = "treefmt-nix";
     comin.inputs.flake-compat.follows = "flake-compat";
 
-    lanzaboote.url = "github:nix-community/lanzaboote/v1.1.0";
+    lanzaboote.url = "github:nix-community/lanzaboote/v1.2.0";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
     lanzaboote.inputs.pre-commit.follows = "git-hooks";
     # lanzaboote's pin still uses the deprecated stdenv.isLinux/isDarwin.
