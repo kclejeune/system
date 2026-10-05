@@ -16,6 +16,7 @@ _: {
         "1password/tap"
         "beeftornado/rmtree"
         "nikitabobko/tap"
+        "penso/tap"
       ];
       casks = [
         "1password-cli"
@@ -23,6 +24,7 @@ _: {
         "bartender"
         "ghostty"
         "hammerspoon"
+        "herdr-gpui"
         "httpie-desktop"
         "jetbrains-toolbox"
         "kitty"

@@ -330,6 +330,29 @@
         "url": "https://flakehub.com/f/cachix/git-hooks.nix/0.1.941"
       }
     },
+    "herdr-gpui": {
+      "inputs": {
+        "nixpkgs": [
+          "nixos-unstable"
+        ],
+        "rust-overlay": [
+          "rust-overlay"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791212708,
+        "narHash": "sha256-sZL5USYIuVjDl8/9ritzeYoXMG0/ewMxm7vZ7x20r3Q=",
+        "owner": "penso",
+        "repo": "herdr-gpui",
+        "rev": "068c317a709da7c756184b1415131dc73d397a49",
+        "type": "github"
+      },
+      "original": {
+        "owner": "penso",
+        "repo": "herdr-gpui",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -675,6 +698,7 @@
         "flake-compat": "flake-compat_2",
         "flake-parts": "flake-parts_2",
         "git-hooks": "git-hooks",
+        "herdr-gpui": "herdr-gpui",
         "home-manager": "home-manager",
         "import-tree": "import-tree",
         "lanzaboote": "lanzaboote",

@@ -39,6 +39,10 @@
     sparkles.inputs.flake-parts.follows = "flake-parts";
     sparkles.inputs.rust-overlay.follows = "rust-overlay";
 
+    herdr-gpui.url = "github:penso/herdr-gpui";
+    herdr-gpui.inputs.nixpkgs.follows = "nixos-unstable";
+    herdr-gpui.inputs.rust-overlay.follows = "rust-overlay";
+
     # Only a `follows` target for inputs that still declare it.
     flake-compat.url = "github:nix-community/flake-compat";
 
@@ -380,6 +384,7 @@
             traceway = final.callPackage ./pkgs/traceway/package.nix { };
             traceway-cli = final.traceway.cli;
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
+            herdr-gpui = inputs.herdr-gpui.packages.${prev.stdenv.hostPlatform.system}.default;
             nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
             sparkles = inputs.sparkles.packages.${prev.stdenv.hostPlatform.system}.default;
 
