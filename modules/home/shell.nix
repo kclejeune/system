@@ -60,6 +60,12 @@ _: {
           # nixpkgs renames Zed's binary to avoid clashing with nodePackages.zed.
           zed = "zeditor";
         };
+        # NixOS hosts get this from environment.enableAllTerminfo; elsewhere SSH from
+        # kitty arrives with TERM=xterm-kitty and no matching entry. ncurses always
+        # searches ~/.terminfo, so no TERMINFO_DIRS is needed.
+        file.".terminfo" = lib.mkIf (pkgs.stdenvNoCC.hostPlatform.isLinux && !onNixos) {
+          source = "${pkgs.kitty.terminfo}/share/terminfo";
+        };
       };
 
       xdg =
