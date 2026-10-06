@@ -79,6 +79,7 @@ _: {
           mise
           mmv
           mosh
+          namespace-cli
           nil
           nimbus
           nix-inspect
@@ -91,7 +92,6 @@ _: {
           nixpacks
           nmap
           nodejs_22
-          nsc
           nurl
           openldap
           openssl
