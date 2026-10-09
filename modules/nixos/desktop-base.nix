@@ -35,6 +35,9 @@ in
         keep-derivations = true;
       };
 
+      # Continuous trim; heavy writes outpace the weekly fstrim.
+      fileSystems."/".options = [ "discard" ];
+
       imports = [
         flakeCfg.flake.nixosModules.fonts
         flakeCfg.flake.nixosModules.keyd

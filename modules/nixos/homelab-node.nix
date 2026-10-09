@@ -36,6 +36,9 @@ in
       users.mutableUsers = lib.mkDefault false;
       system.stateVersion = lib.mkDefault "25.11";
 
+      # Continuous trim; heavy writes outpace the weekly fstrim.
+      fileSystems."/".options = [ "discard" ];
+
       services.caddyLan.enable = lib.mkDefault true;
 
       # Advertise the LAN but don't accept it back: the node is already on it.
