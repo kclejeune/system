@@ -340,11 +340,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791212708,
-        "narHash": "sha256-sZL5USYIuVjDl8/9ritzeYoXMG0/ewMxm7vZ7x20r3Q=",
+        "lastModified": 1791274932,
+        "narHash": "sha256-wxmN7WW7NWpUp35IjpfzAUnM5UqJQwV/sq7/M6GCIYw=",
         "owner": "penso",
         "repo": "herdr-gpui",
-        "rev": "068c317a709da7c756184b1415131dc73d397a49",
+        "rev": "cf9161b99d7fa2b6209fa103208ecd1b6f53c1a5",
         "type": "github"
       },
       "original": {
