@@ -64,6 +64,9 @@ jobs:
           extra-conf: |
             accept-flake-config = true
             max-substitution-jobs = 4
+            # Large NARs from cache.kclj.io sometimes arrive truncated on runners, and
+            # Nix doesn't retry decompression errors; build from source instead.
+            fallback = true
             # GC mid-build when space runs low instead of failing with ENOSPC; bounds sit
             # well under the smallest runner's free space.
             min-free = 2147483648

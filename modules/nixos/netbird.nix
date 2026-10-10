@@ -1,6 +1,6 @@
 _: {
   flake.nixosModules.netbird =
-    { config, lib, ... }:
+    { config, ... }:
     {
       services.netbird.enable = true;
 

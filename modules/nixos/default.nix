@@ -52,8 +52,13 @@ in
       };
 
       services.openssh.enable = true;
-      # So SSH sessions from kitty/ghostty keep their native TERM.
-      environment.enableAllTerminfo = true;
+      # So SSH sessions from kitty/ghostty keep their native TERM. Not
+      # enableAllTerminfo: it builds every listed terminal, and one breaking
+      # (contour on GCC 16) takes down every host.
+      environment.systemPackages = [
+        pkgs.kitty.terminfo
+        pkgs.ghostty.terminfo
+      ];
 
       networking = {
         nftables.enable = lib.mkDefault true;

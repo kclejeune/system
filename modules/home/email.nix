@@ -3,7 +3,6 @@ _: {
   flake.homeModules.email =
     {
       config,
-      pkgs,
       lib,
       ...
     }:

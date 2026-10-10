@@ -101,7 +101,7 @@ and copies it over SSH.
    ssh-to-age < "$keys/etc/ssh/ssh_host_ed25519_key.pub"
    ```
 
-2. **Enroll the key in sops.** Add the printed age key as `&<hostname>` under
+1. **Enroll the key in sops.** Add the printed age key as `&<hostname>` under
    `keys:` in `.sops.yaml`, reference it in every `creation_rules` entry the
    host needs (at minimum `secrets/users.yaml`), then re-encrypt:
 
@@ -110,7 +110,7 @@ and copies it over SSH.
    git add -A
    ```
 
-3. **Boot the target into a NixOS installer ISO** (disable Secure Boot in
+1. **Boot the target into a NixOS installer ISO** (disable Secure Boot in
    firmware if it won't boot). The minimal ISO has no NetworkManager; join
    Wi-Fi with `sudo systemctl start wpa_supplicant` + `wpa_cli`. Set a
    password with `passwd`, note the IP, and from the provisioning machine:
@@ -122,7 +122,7 @@ and copies it over SSH.
    nixos-anywhere copies these `authorized_keys` to root and reconnects as
    root, so key auth is required — a password alone isn't enough.
 
-4. **Install.** Run from an interactive terminal: disko prompts for the LUKS
+1. **Install.** Run from an interactive terminal: disko prompts for the LUKS
    passphrase over the SSH tty.
 
    ```bash
@@ -136,10 +136,9 @@ and copies it over SSH.
    Add `--no-substitute-on-destination` if the target has LAN access to the
    provisioning machine but no internet uplink. The installer ISO is
    detected, so nothing is downloaded on the target. Check the install
-   output for `setting up secrets for users...` with no `Cannot read ssh
-key` / `failed to decrypt` errors after it.
+   output for `setting up secrets for users...` with no `Cannot read ssh key` / `failed to decrypt` errors after it.
 
-5. **After first boot**, enroll a FIDO2 key for LUKS unlock:
+1. **After first boot**, enroll a FIDO2 key for LUKS unlock:
 
    ```bash
    sudo systemd-cryptenroll --fido2-device=auto /dev/disk/by-partlabel/disk-main-luks

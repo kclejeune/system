@@ -345,10 +345,13 @@
                   modules = [
                     config.flake.homeModules.default
                     config.flake.homeModules.profile-personal
-                    ({ pkgs, ... }: {
-                      nix.package = pkgs.nix;
-                      home = { inherit username homeDirectory; };
-                    })
+                    (
+                      { pkgs, ... }:
+                      {
+                        nix.package = pkgs.nix;
+                        home = { inherit username homeDirectory; };
+                      }
+                    )
                   ];
                 };
               }
@@ -538,12 +541,10 @@
             treefmt = {
               programs = {
                 actionlint.enable = true;
-                zizmor.enable = true;
                 statix.enable = true;
                 deadnix = {
                   enable = true;
                   no-lambda-arg = true;
-                  no-lambda-pattern-names = true;
                 };
                 nixfmt.enable = true;
                 oxfmt.enable = true;
