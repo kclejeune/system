@@ -25,6 +25,29 @@ _: {
 
       services.sparklesLan.enable = true;
 
+      # slurp is created through the UI; declared settings apply once it exists,
+      # and changes made in the UI override them until reset.
+      services.sparkles.settings.datasets.slurp.assistant = {
+        enabled = true;
+        ingest = true;
+        send = "documents";
+      };
+      # Agent memory is named under https://kclj.io/sparkles/memory/, independent of
+      # the host that serves it. The urn: pattern keeps any graphs imported before
+      # the base moved. Consolidation proposes the facts that two sessions agree on
+      # as a branch to review, and retention then drops session graphs whose facts
+      # are all consolidated.
+      services.sparkles.settings.datasets.slurp.memory = {
+        imports.base = "https://kclj.io/sparkles/memory/import/";
+        agentGraphs = [
+          "https://kclj.io/sparkles/memory/import/*"
+          "urn:x-sparkles:import/*"
+        ];
+        consolidatedGraph = "https://kclj.io/sparkles/memory/consolidated";
+        consolidation.every = "1d";
+        retention.after = "365d";
+      };
+
       # /var/lib/rustfs and /var/lib/sparkles need snapshotting once backup is enabled.
     };
 }

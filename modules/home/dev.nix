@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  sparklesServer = "https://sparkles.${config.flake.lib.site.lanDomain}";
+in
+{
   # Deliberately on every host, headless ones included, so SSH sessions have the
   # full toolkit.
   flake.homeModules.dev =
@@ -153,6 +157,13 @@ _: {
           chromium
           playwright-test
         ];
+
+      # Shared memory dataset created through the Sparkles UI. Credentials stay
+      # in the CLI's separate auth-login store.
+      xdg.configFile."sparkles/memory.toml".text = ''
+        server = "${sparklesServer}"
+        dataset = "slurp"
+      '';
 
       # Playwright's downloaded browsers don't run on NixOS. This pins them to
       # the nixpkgs revision, so only a matching Playwright version finds them;
