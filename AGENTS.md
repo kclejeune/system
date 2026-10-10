@@ -112,7 +112,7 @@ for home-manager modules, to the relevant aggregator's `hm.imports`.
 
 ```bash
 nix develop                     # treefmt, prek, nh, gh, nurl, sops, ssh-to-age, nvd, …
-nix fmt                         # nixfmt, statix, deadnix, shellcheck, actionlint, zizmor, …
+nix fmt                         # nixfmt, statix, deadnix, shellcheck, actionlint, …
 nix run .#drvs > before.json    # drvPath of every host; diff before/after a refactor
 nix build --no-link .#nixosConfigurations.<host>.config.system.build.toplevel
 nix build --no-link .#checks.x86_64-linux.treefmt
@@ -125,9 +125,9 @@ full-flake evals can OOM.
 ## Updating `pkgs/`
 
 1. Latest tag: `gh release view --repo <owner>/<repo> --json tagName -q .tagName`.
-2. Source hash: `nurl https://github.com/<owner>/<repo> <tag>`
+1. Source hash: `nurl https://github.com/<owner>/<repo> <tag>`
    (`nix-prefetch-url --unpack` gives the wrong hash for `fetchFromGitHub`).
-3. Rust `cargoHash`: set a fake hash, `nix build .#<pkg>`, copy the `got:`.
+1. Rust `cargoHash`: set a fake hash, `nix build .#<pkg>`, copy the `got:`.
 
 Before adding a package here, check nixpkgs; drop local copies once upstream
 catches up.

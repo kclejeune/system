@@ -493,7 +493,6 @@ in
       # Kept for its dmenu mode; noctalia is the primary launcher.
       programs.vicinae = {
         enable = true;
-        useLayerShell = true;
         systemd.enable = true;
         systemd.target = "graphical-session.target";
       };

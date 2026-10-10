@@ -85,8 +85,7 @@ config has drifted from live state — fix the config, not the router.
   the provider omits gets sent as its zero value. Applying a plan with
   unexplained WLAN diffs can clear the passphrase and drop every wireless
   client at once.
-- **`minimum_data_rate_2g_kbps` is inert unless `minrate_setting_preference =
-"manual"`.** On `auto` the controller ignores the value and reports `1000`
+- **`minimum_data_rate_2g_kbps` is inert unless `minrate_setting_preference = "manual"`.** On `auto` the controller ignores the value and reports `1000`
   back, which reads as permanent drift.
 - **An empty `plan` does not prove an apply is a no-op.** The provider sends
   some controller booleans _derived_ from another attribute rather than read

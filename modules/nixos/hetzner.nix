@@ -2,7 +2,6 @@ _: {
   # Shared configuration for Hetzner Cloud VMs provisioned via nixos-infect.
   flake.nixosModules.hetzner =
     {
-      config,
       lib,
       modulesPath,
       pkgs,
