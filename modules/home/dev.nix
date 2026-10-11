@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, inputs, ... }:
 let
   sparklesServer = "https://sparkles.${config.flake.lib.site.lanDomain}";
 in
@@ -13,6 +13,8 @@ in
       ...
     }:
     {
+      imports = [ inputs.sparkles.homeModules.default ];
+
       home.packages =
         with pkgs;
         [
@@ -120,7 +122,6 @@ in
           sig
           skopeo
           sops
-          sparkles
           src-cli
           ssh-to-age
           sshpass
@@ -158,12 +159,13 @@ in
           playwright-test
         ];
 
-      # Shared memory dataset created through the Sparkles UI. Credentials stay
-      # in the CLI's separate auth-login store.
-      xdg.configFile."sparkles/memory.toml".text = ''
-        server = "${sparklesServer}"
-        dataset = "slurp"
-      '';
+      # The CLI, with `sparkles memory` pointed at the shared memory dataset created
+      # through the Sparkles UI. Credentials stay in the CLI's separate auth-login store.
+      programs.sparkles = {
+        enable = true;
+        server = sparklesServer;
+        memory.dataset = "slurp";
+      };
 
       # Playwright's downloaded browsers don't run on NixOS. This pins them to
       # the nixpkgs revision, so only a matching Playwright version finds them;

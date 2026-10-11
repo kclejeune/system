@@ -773,11 +773,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791667571,
-        "narHash": "sha256-xfd3/aA/RsxF0QQKsdDi/9DeiWDufYOjOvDOpfxnj0U=",
+        "lastModified": 1791681399,
+        "narHash": "sha256-5yGcWJ/Tj+eBlCNpyLXucjix6F4al6bBInRhBHWR6Rs=",
         "owner": "kclejeune",
         "repo": "sparkles",
-        "rev": "79520bf4464d42a97e5641d4a3d8addd89881e67",
+        "rev": "fc123d04f600b5d0fb15b9f7323722963e48b20e",
         "type": "github"
       },
       "original": {

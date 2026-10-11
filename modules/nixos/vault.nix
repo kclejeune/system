@@ -48,6 +48,15 @@ _: {
         retention.after = "365d";
       };
 
+      # Prefixes for every dataset, completed in the query editor and `sparkles lsp`.
+      # memory: and notes: avoid escaping the slashes of memory IRIs, and none of
+      # them shadows the prefixes Sparkles reserves (mem:, sparkles:).
+      services.sparkles.settings.defaults.prefixes = {
+        kclj = "https://kclj.io/sparkles/";
+        memory = "https://kclj.io/sparkles/memory/";
+        notes = "https://kclj.io/sparkles/memory/notes/";
+      };
+
       # /var/lib/rustfs and /var/lib/sparkles need snapshotting once backup is enabled.
     };
 }
