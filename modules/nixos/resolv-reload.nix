@@ -1,5 +1,10 @@
-# DNS fix-ups for VPNs that take over /etc/resolv.conf (Cloudflare WARP)
-# under NetworkManager + systemd-resolved.
+# Hands Cloudflare WARP's DNS proxy to systemd-resolved.
+#
+# warp-svc is meant to register its proxy with resolved over D-Bus, but it
+# fails to parse NixOS's bare systemd version ("could not find '-' in version
+# slug: '261.3'") and falls back to rewriting /etc/resolv.conf. nss-resolve
+# never reads that file, so lookups miss Gateway and WARP's own DNS check fails
+# into a reconnect loop. Drop this once warp-svc stops logging that error.
 _: {
   flake.nixosModules.resolv-reload =
     {
@@ -10,105 +15,41 @@ _: {
     }:
     let
       cfg = config.services.resolv-reload;
+      device = "sys-subsystem-net-devices-CloudflareWARP.device";
     in
     {
-      options.services.resolv-reload = {
-        enable = lib.mkEnableOption "DNS reconciliation for VPNs that hijack /etc/resolv.conf" // {
-          # On when such a VPN, resolved and NetworkManager are all present.
-          default =
-            config.services.cloudflare-warp.enable
-            && config.services.resolved.enable
-            && config.networking.networkmanager.enable;
+      options.services.resolv-reload.enable =
+        lib.mkEnableOption "routing systemd-resolved queries through the Cloudflare WARP DNS proxy"
+        // {
+          default = config.services.cloudflare-warp.enable && config.services.resolved.enable;
         };
-
-        ignoreInterfaces = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ ];
-          description = ''
-            Interface names (shell glob patterns, matched by the dispatcher's
-            `case`) that must NOT trigger DNS reconciliation — loopback, container
-            bridges, and VPN tunnels. The default is computed from which services
-            are enabled (see the module); append here for host-specific interfaces.
-          '';
-        };
-      };
 
       config = lib.mkIf cfg.enable {
-        # Interfaces the dispatcher ignores; mkDefault so hosts can extend.
-        services.resolv-reload.ignoreInterfaces = lib.mkDefault (
-          [
-            "lo"
-            "p2p-dev-*"
-          ]
-          ++ lib.optional config.services.cloudflare-warp.enable "CloudflareWARP"
-          ++ lib.optional config.services.tailscale.enable config.services.tailscale.interfaceName
-          ++ lib.optional config.services.netbird.enable config.services.netbird.clients.default.interface
-          ++ lib.optionals config.virtualisation.docker.enable [
-            "docker*"
-            "veth*"
-          ]
-        );
-
-        # On disconnect the VPN leaves its dead DoH proxy in resolved's Global scope
-        # until a reload (SIGHUP); on connect the LAN links' +DefaultRoute races it
-        # and the LAN resolver poisons internal names. Fire on resolv.conf changes
-        # (the only reliable VPN up/down signal), at boot, and on LAN link changes.
-        systemd.paths.resolv-reload = {
-          wantedBy = [ "multi-user.target" ];
-          pathConfig = {
-            PathChanged = "/etc/resolv.conf";
-            Unit = "resolv-reload.service";
-          };
-        };
+        # WARP recreates the interface on every connect, and resolved drops a
+        # link's DNS settings with it, so reapply each time it appears.
         systemd.services.resolv-reload = {
-          wantedBy = [ "multi-user.target" ];
-          after = [ "NetworkManager.service" ];
-          serviceConfig.Type = "oneshot";
-          path = [
-            pkgs.systemd
-            pkgs.networkmanager
-            pkgs.gawk
+          wantedBy = [ device ];
+          bindsTo = [ device ];
+          after = [
+            device
+            "systemd-resolved.service"
           ];
+          path = [ pkgs.systemd ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            # resolved can see the link a moment after udev does.
+            Restart = "on-failure";
+            RestartSec = 1;
+          };
+          # "~." makes WARP win every name no other link claims; WARP's fallback
+          # domains (home.arpa, local, …) still reach the LAN through its proxy.
           script = ''
-            # Managed ethernet/wifi links currently connected. nmcli -t is colon
-            # separated (DEVICE:TYPE:STATE).
-            lan_links=$(nmcli -t -f DEVICE,TYPE,STATE device status \
-              | awk -F: '$3=="connected" && ($2=="ethernet" || $2=="wifi"){print $1}')
-
-            if [ -L /etc/resolv.conf ]; then
-              # VPN disconnected: give the LAN links the catch-all and reload
-              # resolved so the stale VPN proxy drops from Global and resolution
-              # falls through to DHCP DNS.
-              for l in $lan_links; do resolvectl default-route "$l" yes || true; done
-              systemctl reload systemd-resolved || true
-            else
-              # VPN connected: strip the LAN catch-all so the VPN's Global scope
-              # wins uncontested and the LAN resolver can't poison internal names.
-              for l in $lan_links; do resolvectl default-route "$l" no || true; done
-            fi
-            resolvectl flush-caches || true
+            resolvectl dns CloudflareWARP 127.0.2.2 127.0.2.3
+            resolvectl domain CloudflareWARP '~.'
+            resolvectl flush-caches
           '';
         };
-
-        # LAN links changing while the VPN stays up. Idempotent, so overlap with
-        # the .path trigger is harmless.
-        networking.networkmanager.dispatcherScripts = [
-          {
-            type = "basic";
-            source = pkgs.writeShellScript "resolv-reload-lan-trigger" ''
-              iface="$1"
-              action="$2"
-              case "$action" in
-                up | down) ;;
-                *) exit 0 ;;
-              esac
-              case "$iface" in
-                ${lib.concatStringsSep " | " cfg.ignoreInterfaces}) exit 0 ;;
-              esac
-              ${pkgs.systemd}/bin/systemctl start resolv-reload.service || true
-            '';
-          }
-        ];
       };
     };
 }
