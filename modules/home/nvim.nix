@@ -165,6 +165,7 @@ _: {
             json
             json5
             just
+            kdl
             kotlin
             latex
             llvm
@@ -248,6 +249,11 @@ _: {
           source = "${nvim-treesitter}/runtime/queries";
           recursive = true;
         };
+        # `; extends` injections (mise run/#MISE/#USAGE) layered on the queries above
+        "nvim/after" = {
+          source = ./assets/nvim/after;
+          recursive = true;
+        };
       };
 
       programs.neovim = {
@@ -281,6 +287,7 @@ _: {
             vimtex
             indent-blankline-nvim
             nvim-lspconfig
+            otter-nvim
             # queries only — the textobject engine is mini.ai
             nvim-treesitter-textobjects
             nvim-treesitter-context
@@ -299,7 +306,7 @@ _: {
             ;
         };
 
-        initLua = lib.mkBefore ''
+        initLua = lib.mkBefore /* lua */ ''
           local plugins = {
           ${pluginList config.programs.neovim.plugins}
           }

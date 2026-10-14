@@ -6,6 +6,12 @@ return {
     "nvim-treesitter/nvim-treesitter",
     dir = require("lazy-nix-helper").get_plugin_path("nvim-treesitter"),
     lazy = false,
+    init = function()
+        -- scopes the after/queries/toml mise injections to mise config files
+        vim.treesitter.query.add_predicate("is-mise?", function(_, _, bufnr, _)
+            return require("mise").is_config(tonumber(bufnr))
+        end, { force = true, all = false })
+    end,
     config = function()
         -- no jsonc grammar in nixpkgs; json5 is a superset (comments,
         -- trailing commas) so it highlights jsonc fine

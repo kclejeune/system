@@ -71,7 +71,7 @@ in
         else
           pkgs.writeShellScript "regreet-scaled" ''
             ${lib.concatStrings (
-              lib.mapAttrsToList (output: scale: ''
+              lib.mapAttrsToList (output: scale: /* bash */ ''
                 ${lib.getExe pkgs.wlr-randr} --output ${output} --scale ${toString scale} || true
               '') greeterScales
             )}

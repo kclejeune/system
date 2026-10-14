@@ -5,7 +5,7 @@ _: {
       programs.direnv = {
         enable = true;
         nix-direnv.enable = true;
-        stdlib = ''
+        stdlib = /* bash */ ''
           # stolen from @i077; store .direnv in cache instead of project dir
           declare -A direnv_layout_dirs
           direnv_layout_dir() {

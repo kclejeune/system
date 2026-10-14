@@ -65,7 +65,7 @@ in
       '';
 
       # Shared by the static config and the darkModeChange hook so they can't drift.
-      hyprThemeCmds = palette: ''
+      hyprThemeCmds = palette: /* bash */ ''
         ${hyprctl} keyword general:col.active_border "rgba(${palette.lavender}ff) rgba(${palette.blue}ff) 45deg"
         ${hyprctl} keyword general:col.inactive_border "rgba(${palette.overlay0}aa)"
         ${hyprctl} keyword decoration:shadow:color "rgba(${palette.crust}ee)"
@@ -101,7 +101,7 @@ in
             hooks = (asset.hooks or { }) // {
               enabled = true;
               # `$1` is substituted before `sh -lc`, so this must be a command, not a path.
-              darkModeChange = ''
+              darkModeChange = /* bash */ ''
                 if [ "$1" = "true" ]; then
                   ${hyprThemeCmds dark}
                 else
@@ -109,7 +109,7 @@ in
                 fi
               '';
               # Feed the greeter a blurred copy; it picks it up on its next start.
-              wallpaperChange = ''
+              wallpaperChange = /* bash */ ''
                 ${pkgs.imagemagick}/bin/magick "$1" -blur 0x16 \
                   /var/lib/regreet/background.png 2>/dev/null || true
               '';
@@ -454,7 +454,7 @@ in
       # Started from exec-once; upstream deprecated its systemd unit.
       programs.noctalia-shell.enable = true;
 
-      home.activation.noctaliaSettingsBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      home.activation.noctaliaSettingsBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] /* bash */ ''
         cfg="$HOME/.config/noctalia/settings.json"
         $DRY_RUN_CMD mkdir -p "$(dirname "$cfg")"
         # Always replace — settings.json is treated as ephemeral.
@@ -466,7 +466,7 @@ in
         $DRY_RUN_CMD install -m 644 ${noctaliaSettings} "$cfg"
       '';
 
-      home.activation.noctaliaPluginsBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      home.activation.noctaliaPluginsBootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] /* bash */ ''
         cfg="$HOME/.config/noctalia/plugins.json"
         $DRY_RUN_CMD mkdir -p "$(dirname "$cfg")"
         $DRY_RUN_CMD rm -f "$cfg"
@@ -474,13 +474,13 @@ in
       '';
 
       # So the wallpaper picker doesn't report a missing directory on fresh installs.
-      home.activation.makeWallpapersDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      home.activation.makeWallpapersDir = lib.hm.dag.entryAfter [ "writeBoundary" ] /* bash */ ''
         $DRY_RUN_CMD mkdir -p $HOME/Pictures/Wallpapers
       '';
 
       # Keep the greeter background current on first boot (before noctalia's hook has
       # fired) and when the wallpaper changes outside noctalia.
-      home.activation.seedGreeterBackground = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      home.activation.seedGreeterBackground = lib.hm.dag.entryAfter [ "writeBoundary" ] /* bash */ ''
         src="$HOME/Pictures/Wallpapers/wallpaper-dark.png"
         dst="/var/lib/regreet/background.png"
         if [ -f "$src" ] && [ -w "$dst" ]; then
@@ -755,7 +755,7 @@ in
 
       # greetd execs UWSM without a login shell, so HM's session vars never load;
       # UWSM sources this before starting the compositor.
-      xdg.configFile."uwsm/env".text = ''
+      xdg.configFile."uwsm/env".text = /* bash */ ''
         source ${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh
       '';
 

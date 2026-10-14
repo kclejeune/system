@@ -422,7 +422,7 @@
               # catppuccin's matplotlib extra breaks on matplotlib 3.11; only the palette is used.
               (_: pyprev: {
                 catppuccin = pyprev.catppuccin.overridePythonAttrs (old: {
-                  postPatch = (old.postPatch or "") + ''
+                  postPatch = (old.postPatch or "") + /* bash */ ''
                     substituteInPlace catppuccin/__init__.py \
                       --replace-fail 'if importlib.util.find_spec("matplotlib") is not None:' 'if False:'
                   '';

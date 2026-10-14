@@ -58,7 +58,7 @@ in
 
       networking.networkmanager.dispatcherScripts = [
         {
-          source = pkgs.writeText "tzupdate-on-connectivity" ''
+          source = pkgs.writeText "tzupdate-on-connectivity" /* bash */ ''
             #!/bin/sh
             # connectivity-change also fires on the way down (suspend, NM restart).
             [ "$2" = "connectivity-change" ] && [ "$CONNECTIVITY_STATE" = "FULL" ] \
@@ -189,7 +189,7 @@ in
         lidEventCommands = "${lib.getExe lidSuspend} 2";
       };
       # Replaces logind's re-suspend when woken with the lid still closed.
-      powerManagement.resumeCommands = ''
+      powerManagement.resumeCommands = /* bash */ ''
         ${pkgs.systemd}/bin/systemd-run --no-block --on-active=30s ${lib.getExe lidSuspend} 0
       '';
 

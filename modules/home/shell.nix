@@ -10,15 +10,15 @@ _: {
     let
       zshCustomPrefix = "oh-my-zsh";
       homeDir = config.home.homeDirectory;
-      wtInstall = shell: ''
+      wtInstall = shell: /* bash */ ''
         if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init ${shell})"; fi
       '';
 
-      fnoxInstall = shell: ''
+      fnoxInstall = shell: /* bash */ ''
         if command -v fnox >/dev/null 2>&1; then eval "$(command fnox activate ${shell})"; fi
       '';
 
-      slinkyInstall = shell: ''
+      slinkyInstall = shell: /* bash */ ''
         if command -v slinky >/dev/null 2>&1; then eval "$(command slinky config hook ${shell})"; fi
       '';
       onNixos = osConfig != null && pkgs.stdenvNoCC.hostPlatform.isLinux;
@@ -162,7 +162,7 @@ _: {
       programs.bash = {
         enable = true;
         sessionVariables = config.home.sessionVariables // { };
-        initExtra = ''
+        initExtra = /* bash */ ''
           eval "$(mise activate bash)"
           ${wtInstall "bash"}
           ${fnoxInstall "bash"}

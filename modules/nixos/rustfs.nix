@@ -222,7 +222,7 @@ _: {
             done
 
             # create-bucket errors on an existing bucket, so probe first.
-            ${lib.concatMapStringsSep "\n" (bucket: ''
+            ${lib.concatMapStringsSep "\n" (bucket: /* bash */ ''
               if ${lib.getExe pkgs.awscli2} --endpoint-url "$endpoint" \
                    s3api head-bucket --bucket ${lib.escapeShellArg bucket} >/dev/null 2>&1; then
                 echo "bucket ${bucket} already exists"
