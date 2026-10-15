@@ -340,11 +340,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791212708,
-        "narHash": "sha256-sZL5USYIuVjDl8/9ritzeYoXMG0/ewMxm7vZ7x20r3Q=",
+        "lastModified": 1791787990,
+        "narHash": "sha256-1Cu5WK9n+BcTORRixvCLxOre1A2KRQIuwo+nu9dq1hg=",
         "owner": "penso",
         "repo": "herdr-gpui",
-        "rev": "068c317a709da7c756184b1415131dc73d397a49",
+        "rev": "34c66ad872ae32cb7579cb40294d6e449433be52",
         "type": "github"
       },
       "original": {
@@ -459,11 +459,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791076659,
-        "narHash": "sha256-ovebllBKNI6kWfbCUuedkYDaDFIxkfmaxyJSYwagCZQ=",
+        "lastModified": 1791769660,
+        "narHash": "sha256-B6qdbQYsFsqgwHAmAVynYhxcaJAYp4VUYCGIdv73944=",
         "owner": "kclejeune",
         "repo": "nimbus",
-        "rev": "b9a25dd141022dd171346be3a9fe269f0ead37e6",
+        "rev": "a9bf0058450de58302ee2e5f01049d43c4d1aaa3",
         "type": "github"
       },
       "original": {
@@ -726,11 +726,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791620365,
-        "narHash": "sha256-CVZXIDNw7HEwyD8X6q9Ln370Sc0ZqRlTzDRwOZ1hJMY=",
+        "lastModified": 1791795448,
+        "narHash": "sha256-12C5ef8a3endLXBvLOVR/jynM9EHGgP1t+y5uBorwx4=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "e90fafa71b440fabcd52dd7fb017ab2da81c781a",
+        "rev": "404b7a5537f0adc6e5c558a1b94612e683dec504",
         "type": "github"
       },
       "original": {
@@ -746,11 +746,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791564412,
-        "narHash": "sha256-XeFH51BnMGx6kX7WaY8oif3/c6QxY8vJVdTb5LRHOKU=",
+        "lastModified": 1791710405,
+        "narHash": "sha256-mVD4XIc5JkqMW2K04IkFUzHgHmyJZlzw5ktfgMDCbKU=",
         "owner": "Mic92",
         "repo": "sops-nix",
-        "rev": "311ef9409edcbb8368af04f4bc0456c5f3dd80bf",
+        "rev": "ee48786c6f9160d2c1a084aac841f68195b8420c",
         "type": "github"
       },
       "original": {
@@ -773,11 +773,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791681399,
-        "narHash": "sha256-5yGcWJ/Tj+eBlCNpyLXucjix6F4al6bBInRhBHWR6Rs=",
+        "lastModified": 1791780761,
+        "narHash": "sha256-8tRjxv+k2TM4zCpY499Uz8kdZg3170ZelK+g/hD80TE=",
         "owner": "kclejeune",
         "repo": "sparkles",
-        "rev": "fc123d04f600b5d0fb15b9f7323722963e48b20e",
+        "rev": "1371f8431c55c61a1719fc22891dbc3ea5fc0ece",
         "type": "github"
       },
       "original": {
