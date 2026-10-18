@@ -167,6 +167,15 @@ in
         memory.dataset = "slurp";
       };
 
+      # mise defaults all_compile=true when it detects NixOS (/etc/NIXOS), assuming
+      # prebuilt binaries won't run, and then compiles tools like node from source.
+      # Every NixOS host enrolls nix-ld, so the prebuilt binaries work. A conf.d file
+      # leaves config.toml writable for `mise use -g` and `mise settings`.
+      xdg.configFile."mise/conf.d/00-nix.toml".text = ''
+        [settings]
+        all_compile = false
+      '';
+
       # Playwright's downloaded browsers don't run on NixOS. This pins them to
       # the nixpkgs revision, so only a matching Playwright version finds them;
       # the `chrome` channel is covered by desktop-base's /opt/google symlink.
