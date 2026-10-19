@@ -1,7 +1,7 @@
 _: {
-  # LAN Caddy with real Let's Encrypt certs for *.lan.kclj.io (Cloudflare
-  # DNS-01). UniFi is authoritative for lan.kclj.io and refuses API records
-  # under it, so proxied names without a matching DHCP client (cups, status)
+  # LAN Caddy with real Let's Encrypt certs for LAN names and their kclj.dev
+  # aliases (Cloudflare DNS-01). UniFi is authoritative for lan.kclj.io and
+  # refuses API records under it, so names without a DHCP client (cups, status)
   # need manual UniFi Local DNS Records.
   flake.nixosModules.caddy-lan =
     {
@@ -90,6 +90,7 @@ _: {
           description = ''
             subdomain -> upstream "host:port". Each becomes a
             <subdomain>.<baseDomain> vhost with DNS-01 TLS + reverse_proxy.
+            It also accepts <subdomain>.<site.proxyDomain> for NetBird access.
             The name must resolve to this host: either it matches a UniFi DHCP
             client hostname, or add a UniFi Local DNS Record for it.
 
@@ -150,6 +151,7 @@ _: {
           virtualHosts = lib.mapAttrs' (
             sub: upstream:
             lib.nameValuePair "${sub}.${cfg.baseDomain}" {
+              serverAliases = [ "${sub}.${config.site.proxyDomain}" ];
               extraConfig = ''
                 ${tlsBlock}
                 ${mkTracing sub}

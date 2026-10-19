@@ -602,6 +602,7 @@ in
                 redirect_uris = [
                   "https://trek.${config.site.lanDomain}/api/auth/oidc/callback"
                   "https://trek.${config.site.proxyDomain}/api/auth/oidc/callback"
+                  "https://trek.${config.site.tailnetDomain}/api/auth/oidc/callback"
                 ];
                 scopes = [
                   "openid"

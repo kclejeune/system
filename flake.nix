@@ -270,6 +270,7 @@
             config.flake.nixosModules.vault
             config.flake.nixosModules.rustfs
             config.flake.nixosModules.sparkles
+            config.flake.nixosModules.smtp
             config.flake.nixosModules.trek
             # backup needs real restic/* in secrets/vault.yaml; enable once set.
             # config.flake.nixosModules.backup

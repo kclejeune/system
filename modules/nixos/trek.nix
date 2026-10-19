@@ -6,13 +6,17 @@ _: {
     let
       domain = "trek.${config.site.lanDomain}";
       aliasDomain = "trek.${config.site.proxyDomain}";
+      tailnetDomain = "trek.${config.site.tailnetDomain}";
       port = 8096;
+      servePort = 8097;
       stateDir = "/var/lib/trek";
     in
     {
       sops.secrets."trek/oidc_client_secret" = { };
       sops.templates."trek.env".content = ''
         OIDC_CLIENT_SECRET=${config.sops.placeholder."trek/oidc_client_secret"}
+        SMTP_USER=${config.sops.placeholder."smtp/username"}
+        SMTP_PASS=${config.sops.placeholder."smtp/password"}
       '';
 
       # The entrypoint fixes volume ownership and then drops to the node user.
@@ -38,9 +42,12 @@ _: {
           PORT = "3000";
           TZ = "America/New_York";
           APP_URL = "https://${domain}";
-          ALLOWED_ORIGINS = "https://${domain},https://${aliasDomain}";
+          ALLOWED_ORIGINS = "https://${domain},https://${aliasDomain},https://${tailnetDomain}";
           FORCE_HTTPS = "true";
           TRUST_PROXY = "1";
+          SMTP_HOST = config.smtp.host;
+          SMTP_PORT = toString config.smtp.port;
+          SMTP_FROM = "TREK <noreply+trek@${config.site.domain}>";
           OIDC_ISSUER = "https://auth.${config.site.domain}";
           OIDC_CLIENT_ID = "trek";
           OIDC_DISPLAY_NAME = "Authelia";
@@ -72,6 +79,20 @@ _: {
       systemd.services.podman-trek.restartTriggers = [ config.sops.templates."trek.env".content ];
 
       services.caddyLan.proxies.trek = "127.0.0.1:${toString port}";
+      services.tailscale.serve.services.trek.endpoints."tcp:443" =
+        "http://127.0.0.1:${toString servePort}";
+
+      # Tailscale terminates HTTPS for ts.net; Caddy keeps the same request
+      # protections as the LAN route without trying to issue a ts.net cert.
+      services.caddy.virtualHosts."http://${tailnetDomain}:${toString servePort}" = {
+        listenAddresses = [ "127.0.0.1" ];
+        extraConfig = ''
+          ${config.services.caddyLan.extraDirectives.trek}
+          reverse_proxy 127.0.0.1:${toString port} {
+            header_up X-Forwarded-Proto https
+          }
+        '';
+      };
       services.caddyLan.extraDirectives.trek = ''
         # Even if another interface becomes reachable, this app is private.
         # remote_ip uses the connection address, not a spoofable client header.

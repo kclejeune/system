@@ -6,6 +6,12 @@ _: {
       networking.hostName = "vault";
       sops.defaultSopsFile = ../../secrets/vault.yaml;
 
+      smtp = {
+        host = "smtp.fastmail.com";
+        # TREK enables implicit TLS on 465; other ports use opportunistic STARTTLS.
+        port = 465;
+      };
+
       services.rustfsLan = {
         enable = true;
         buckets = [ "tfstate" ];
