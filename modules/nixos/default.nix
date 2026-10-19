@@ -60,6 +60,14 @@ in
         pkgs.ghostty.terminfo
       ];
 
+      # Kill the user cgroup under sustained memory pressure instead of
+      # thrashing. Two parallel rustc builds wedged atlas for 1.5 days once the
+      # kernel OOM killer had taken one and the page cache was gone.
+      systemd.oomd = {
+        enable = lib.mkDefault true;
+        enableUserSlices = lib.mkDefault true;
+      };
+
       networking = {
         nftables.enable = lib.mkDefault true;
         firewall = {
