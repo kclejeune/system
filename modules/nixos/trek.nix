@@ -1,0 +1,93 @@
+_: {
+  # Upstream's OCI image includes Node, the frontend and Kitinerary. Keep its
+  # release/digest pinned; a native package would duplicate that build pipeline.
+  flake.nixosModules.trek =
+    { config, ... }:
+    let
+      domain = "trek.${config.site.lanDomain}";
+      aliasDomain = "trek.${config.site.proxyDomain}";
+      port = 8096;
+      stateDir = "/var/lib/trek";
+    in
+    {
+      sops.secrets."trek/oidc_client_secret" = { };
+      sops.templates."trek.env".content = ''
+        OIDC_CLIENT_SECRET=${config.sops.placeholder."trek/oidc_client_secret"}
+      '';
+
+      # The entrypoint fixes volume ownership and then drops to the node user.
+      # Keep the parent private; data/ also holds the generated JWT/encryption
+      # keys, which must be preserved alongside the database and uploads.
+      systemd.tmpfiles.rules = [
+        "d ${stateDir} 0700 root root - -"
+        "d ${stateDir}/data 0700 root root - -"
+        "d ${stateDir}/uploads 0700 root root - -"
+      ];
+
+      virtualisation.oci-containers.containers.trek = {
+        image = "docker.io/mauriceboe/trek:4.3.3@sha256:1ef1ccf41af8ae409e0435518facb5789b6adc99681ef26d1869508355455749";
+        ports = [ "127.0.0.1:${toString port}:3000" ];
+        volumes = [
+          "${stateDir}/data:/app/data"
+          "${stateDir}/uploads:/app/uploads"
+        ];
+        environmentFiles = [ config.sops.templates."trek.env".path ];
+        environment = {
+          NODE_ENV = "production";
+          NODE_OPTIONS = "--max-old-space-size=320";
+          PORT = "3000";
+          TZ = "America/New_York";
+          APP_URL = "https://${domain}";
+          ALLOWED_ORIGINS = "https://${domain},https://${aliasDomain}";
+          FORCE_HTTPS = "true";
+          TRUST_PROXY = "1";
+          OIDC_ISSUER = "https://auth.${config.site.domain}";
+          OIDC_CLIENT_ID = "trek";
+          OIDC_DISPLAY_NAME = "Authelia";
+          OIDC_ONLY = "true";
+          OIDC_SCOPE = "openid email profile groups";
+          OIDC_ADMIN_CLAIM = "groups";
+          OIDC_ADMIN_VALUE = "lldap_admin";
+        };
+        extraOptions = [
+          "--memory=512m"
+          "--memory-swap=512m"
+          "--cpus=0.5"
+          "--cap-drop=ALL"
+          "--cap-add=CHOWN"
+          "--cap-add=SETUID"
+          "--cap-add=SETGID"
+          "--read-only"
+          "--tmpfs=/tmp:rw,noexec,nosuid,size=128m"
+          "--security-opt=no-new-privileges:true"
+          # Podman does not see the Docker healthcheck in this OCI image.
+          "--health-cmd=wget -qO- http://127.0.0.1:3000/api/health"
+          "--health-interval=30s"
+          "--health-timeout=10s"
+          "--health-retries=3"
+          "--health-start-period=30s"
+          "--health-on-failure=kill"
+        ];
+      };
+      systemd.services.podman-trek.restartTriggers = [ config.sops.templates."trek.env".content ];
+
+      services.caddyLan.proxies.trek = "127.0.0.1:${toString port}";
+      services.caddyLan.extraDirectives.trek = ''
+        # Even if another interface becomes reachable, this app is private.
+        # remote_ip uses the connection address, not a spoofable client header.
+        @trekOutside not remote_ip 127.0.0.0/8 ::1 ${config.site.lanCidr} ${builtins.concatStringsSep " " config.site.overlayCidrs} fd7a:115c:a1e0::/48
+
+        # Apply these before the generated reverse_proxy.
+        route {
+          respond @trekOutside 403
+
+          # Avoid compression 1.8.1's aborted-response leak (GHSA-vc2v-76pw-4v95).
+          # Explicit identity also stops the proxy transport adding gzip.
+          request_header Accept-Encoding identity
+          request_body {
+            max_size 500MB
+          }
+        }
+      '';
+    };
+}

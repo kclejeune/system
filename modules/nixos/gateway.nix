@@ -363,6 +363,13 @@ in
               "name"
               "preferred_username"
             ];
+            claims_policies.trek.id_token = [
+              "email"
+              "email_verified"
+              "name"
+              "preferred_username"
+              "groups"
+            ];
             # Traceway auto-provisions every OIDC login with write access, so
             # membership is enforced here. Tiers match services.traceway.oidc.roleMap.
             authorization_policies.traceway_users = {
@@ -380,6 +387,17 @@ in
             };
             # Incus LTS has no per-user authz, so any OIDC login is admin.
             authorization_policies.incus_admins = {
+              default_policy = "deny";
+              rules = [
+                {
+                  policy = "two_factor";
+                  subject = [ "group:lldap_admin" ];
+                }
+              ];
+            };
+            # TREK makes the first SSO user an admin. Initially restrict all access
+            # to existing administrators so someone else cannot claim that account.
+            authorization_policies.trek_admins = {
               default_policy = "deny";
               rules = [
                 {
@@ -570,6 +588,28 @@ in
                   "profile"
                   "email"
                 ];
+                token_endpoint_auth_method = "client_secret_post";
+                require_pkce = true;
+                pkce_challenge_method = "S256";
+              }
+              {
+                client_id = "trek";
+                client_name = "TREK";
+                client_secret = "$pbkdf2-sha512$310000$gPOs1XIUHSZcQg0ail5ALQ$g92m4MG5BR6M3uYuupFtNTa1zcI6tGX.30VgR42gHvxg1zPq3AfHNRhZSeZPXmgOmX7T12WYMsf2KPKcTVp7rA";
+                authorization_policy = "trek_admins";
+                consent_mode = "implicit";
+                claims_policy = "trek";
+                redirect_uris = [
+                  "https://trek.${config.site.lanDomain}/api/auth/oidc/callback"
+                  "https://trek.${config.site.proxyDomain}/api/auth/oidc/callback"
+                ];
+                scopes = [
+                  "openid"
+                  "email"
+                  "profile"
+                  "groups"
+                ];
+                # TREK posts the client secret and supports S256 PKCE.
                 token_endpoint_auth_method = "client_secret_post";
                 require_pkce = true;
                 pkce_challenge_method = "S256";
