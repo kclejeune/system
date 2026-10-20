@@ -27,6 +27,9 @@
     # Every nixpkgs revision, lazily: `pkgs.multiverse.tip.<pkg>`, `.at "26.05"`, `.version "<pkg>" "<ver>"`.
     multiverse.url = "github:fzakaria/nixpkgs-multiverse";
 
+    mr-boxington.url = "github:jdx/mr-boxington";
+    mr-boxington.inputs.nixpkgs.follows = "nixpkgs";
+
     nimbus.url = "github:kclejeune/nimbus";
     nimbus.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -388,6 +391,18 @@
             tpm-keyring-unlock = final.callPackage ./pkgs/tpm-keyring-unlock/package.nix { };
             traceway = final.callPackage ./pkgs/traceway/package.nix { };
             traceway-cli = final.traceway.cli;
+            # Upstream's derivation ships no shell completions.
+            mbx = inputs.mr-boxington.packages.${prev.stdenv.hostPlatform.system}.mbx.overrideAttrs (old: {
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.installShellFiles ];
+              postInstall =
+                (old.postInstall or "")
+                + final.lib.optionalString (final.stdenv.buildPlatform.canExecute final.stdenv.hostPlatform) ''
+                  installShellCompletion --cmd mbx \
+                    --bash <($out/bin/mbx completion bash) \
+                    --fish <($out/bin/mbx completion fish) \
+                    --zsh <($out/bin/mbx completion zsh)
+                '';
+            });
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
             herdr-gpui = inputs.herdr-gpui.packages.${prev.stdenv.hostPlatform.system}.default;
             nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
@@ -463,6 +478,7 @@
             packages = {
               inherit (pkgs)
                 cb
+                mbx
                 sem-cli
                 nimbus
                 ;

@@ -159,6 +159,12 @@ in
           playwright-test
         ];
 
+      # Plain `cargo` goes through mbx; rustup still selects the toolchain.
+      programs.mr-boxington = {
+        enable = true;
+        rustAnalyzer = true;
+      };
+
       # The CLI, with `sparkles memory` pointed at the shared memory dataset created
       # through the Sparkles UI. Credentials stay in the CLI's separate auth-login store.
       programs.sparkles = {

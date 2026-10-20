@@ -417,6 +417,26 @@
         "type": "github"
       }
     },
+    "mr-boxington": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792510537,
+        "narHash": "sha256-PQ34lXL3RcDahnEgikiZXwS75jg6doHpFyBPoiqURjU=",
+        "owner": "jdx",
+        "repo": "mr-boxington",
+        "rev": "650fe65076a878c91e146b54f54c05a8f96e04cd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jdx",
+        "repo": "mr-boxington",
+        "type": "github"
+      }
+    },
     "multiverse": {
       "locked": {
         "lastModified": 1791717379,
@@ -716,6 +736,7 @@
         "home-manager": "home-manager",
         "import-tree": "import-tree",
         "lanzaboote": "lanzaboote",
+        "mr-boxington": "mr-boxington",
         "multiverse": "multiverse",
         "nh": "nh",
         "nimbus": "nimbus",
