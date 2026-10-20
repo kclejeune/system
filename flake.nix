@@ -27,6 +27,13 @@
     # Every nixpkgs revision, lazily: `pkgs.multiverse.tip.<pkg>`, `.at "26.05"`, `.version "<pkg>" "<ver>"`.
     multiverse.url = "github:fzakaria/nixpkgs-multiverse";
 
+    # Share package and tooling inputs with the rest of this flake.
+    llm-agents.url = "github:numtide/llm-agents.nix";
+    llm-agents.inputs.nixpkgs.follows = "nixpkgs";
+    llm-agents.inputs.systems.follows = "systems";
+    llm-agents.inputs.flake-parts.follows = "flake-parts";
+    llm-agents.inputs.treefmt-nix.follows = "treefmt-nix";
+
     mr-boxington.url = "github:jdx/mr-boxington";
     mr-boxington.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -380,12 +387,33 @@
               };
             };
 
-            # nixpkgs only packages the macOS app.
+            # The full collection stays namespaced; selected tools also replace nixpkgs versions.
+            llm-agents = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system};
+            inherit (final.llm-agents)
+              beads
+              ccusage
+              claude-code
+              claude-desktop
+              codex
+              crush
+              gemini-cli
+              opencode
+              ;
+
+            # Keep ChatGPT from registering itself as a web browser on Linux.
             chatgpt =
               if final.stdenv.hostPlatform.isLinux then
-                final.callPackage ./pkgs/chatgpt/package.nix { }
+                final.llm-agents.chatgpt.override {
+                  chatgpt-unwrapped = final.llm-agents.chatgpt.unwrapped.overrideAttrs (old: {
+                    postInstall = (old.postInstall or "") + ''
+                      substituteInPlace $out/share/applications/chatgpt.desktop \
+                        --replace-fail 'x-scheme-handler/http;' "" \
+                        --replace-fail 'x-scheme-handler/https;' ""
+                    '';
+                  });
+                }
               else
-                prev.chatgpt;
+                final.llm-agents.chatgpt;
             cb = final.callPackage ./pkgs/cb/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             tpm-keyring-unlock = final.callPackage ./pkgs/tpm-keyring-unlock/package.nix { };

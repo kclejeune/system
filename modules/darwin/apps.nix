@@ -1,5 +1,10 @@
 _: {
-  flake.darwinModules.apps = _: {
+  flake.darwinModules.apps = { pkgs, ... }: {
+    environment.systemPackages = with pkgs; [
+      chatgpt
+      claude-desktop
+    ];
+
     homebrew = {
       casks = [
         "1password"

@@ -8,6 +8,8 @@ _: {
     }:
     {
       environment.systemPackages = with pkgs; [
+        chatgpt
+        claude-desktop
         discord
         notion-app
       ];
