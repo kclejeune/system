@@ -30,6 +30,18 @@ _: {
           '';
         };
 
+        enableDirenvIntegration = lib.mkOption {
+          type = lib.types.bool;
+          default = config.programs.direnv.enable;
+          defaultText = lib.literalExpression "config.programs.direnv.enable";
+          description = ''
+            Move the Cargo shim back in front of PATH after direnv's `use flake` or
+            `use nix` loads a dev shell, so plain `cargo` there runs through mbx and
+            delegates to the shell's own toolchain. A bare `nix develop` still puts
+            its `cargo` first; use `mbx build` there.
+          '';
+        };
+
         rustAnalyzer = lib.mkOption {
           type = lib.types.bool;
           default = false;
@@ -60,6 +72,20 @@ _: {
 
         # sessionPath prepends, and mkBefore keeps the shim ahead of ~/.cargo/bin.
         home.sessionPath = lib.mkIf cfg.cargoShim (lib.mkBefore [ (dirOf shim) ]);
+
+        # direnv sources lib/*.sh in glob order, so this wraps nix-direnv's
+        # `use_flake` from hm-nix-direnv.sh before any .envrc runs.
+        xdg.configFile."direnv/lib/mbx.sh" = lib.mkIf (cfg.cargoShim && cfg.enableDirenvIntegration) {
+          text = ''
+            for __mbx_use in use_flake use_nix; do
+              if declare -f "$__mbx_use" >/dev/null; then
+                eval "__mbx_orig_$(declare -f "$__mbx_use")"
+                eval "$__mbx_use() { __mbx_orig_$__mbx_use \"\$@\" && PATH_add ${dirOf shim}; }"
+              fi
+            done
+            unset __mbx_use
+          '';
+        };
 
         home.file = {
           "${configDir}/mbx/config.toml" = lib.mkIf (cfg.settings != { }) {
