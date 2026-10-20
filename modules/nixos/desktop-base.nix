@@ -77,6 +77,9 @@ in
         };
       };
 
+      # Follow the latest packaged kernel on laptops; servers keep the default LTS.
+      boot.kernelPackages = pkgs.linuxPackages_latest;
+
       boot.kernel.sysctl."net.core.rmem_max" = 2097152;
       boot.kernel.sysctl."net.core.rmem_default" = 1048576;
 
