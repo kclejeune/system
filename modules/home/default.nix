@@ -88,7 +88,7 @@ in
         man.enable = true;
         nix-your-shell = {
           enable = true;
-          nix-output-monitor.enable = true;
+          nix-output-monitor.enable = false;
         };
         nh = {
           enable = true;
