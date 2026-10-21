@@ -31,6 +31,12 @@ in
         shell = pkgs.zsh;
       };
 
+      # On Darwin this filters the Nix-managed CA bundle, not the macOS Keychain.
+      security.pki.caCertificateBlacklist = [
+        "Comodo AAA Services root"
+        "emSign ECC Root CA - G3"
+      ];
+
       hm.imports = [ flakeCfg.flake.homeModules.default ];
 
       home-manager = {
