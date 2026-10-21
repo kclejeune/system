@@ -6,7 +6,12 @@ in
   # Common stack for the P3 Tiny homelab nodes. The gateway doesn't use it:
   # it accepts routes, advertises none, and has no server-base.
   flake.nixosModules.homelab-node =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       imports = [
         flakeCfg.flake.nixosModules.hardware-p3-tiny
@@ -22,6 +27,9 @@ in
         flakeCfg.flake.nixosModules.comin
         flakeCfg.flake.nixosModules.traceway-agent
       ];
+
+      # follow latest kernel for homelab nodes
+      boot.kernelPackages = pkgs.linuxPackages_latest;
 
       # One ingest token shared by all four nodes.
       sops.secrets.${config.services.traceway.agent.tokenSecret}.sopsFile = ../../secrets/homelab.yaml;
