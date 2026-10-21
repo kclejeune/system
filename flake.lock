@@ -544,11 +544,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792532329,
-        "narHash": "sha256-oMxd+17vgxrfNrEseGU6M2Xn6jPCPEyWeVhAf7x5Ifo=",
+        "lastModified": 1792550313,
+        "narHash": "sha256-Y/YshgmOukrolyf1taATXWv0s//1Y9kVurmZSMG5e/A=",
         "owner": "kclejeune",
         "repo": "nimbus",
-        "rev": "d9ddf55b552547895d85fd75f3cfd1c8c0452ac3",
+        "rev": "95c8ac85a624b03d75dcc4aa9a7a9c3ffd073b09",
         "type": "github"
       },
       "original": {
@@ -873,11 +873,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792527482,
-        "narHash": "sha256-plP3R0+fD9TJxuRj8jW+5Xt5OTBiKOoBTRL3wFBWWOo=",
+        "lastModified": 1792541416,
+        "narHash": "sha256-GQ5bK+/Pl4Nfal1ntKlWieBSU5M4VGHbweOmcMvGDNo=",
         "owner": "kclejeune",
         "repo": "sparkles",
-        "rev": "0ec0f4ebd7c2c57a00448b2579dc732250b97fb9",
+        "rev": "a015926218b53bf63b461380ebb74c770503ffc3",
         "type": "github"
       },
       "original": {
