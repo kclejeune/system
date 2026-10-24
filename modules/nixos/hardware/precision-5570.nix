@@ -1,20 +1,10 @@
 _: {
   flake.nixosModules.hardware-precision-5570 =
     {
-      config,
       lib,
       modulesPath,
       ...
     }:
-    let
-      # Specialisations only change nvidia modprobe options (not in the
-      # initrd), so reuse the base initrd instead of storing three copies.
-      sharedInitrd = {
-        boot.initrd.systemd.contents."/etc/modprobe.d/nixos.conf".source =
-          lib.mkForce
-            config.environment.etc."modprobe.d/nixos.conf".source;
-      };
-    in
     {
       imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
 
@@ -101,32 +91,6 @@ _: {
       # Per-engine dGPU suspend; PRIME offload comes from nixos-hardware.
       hardware.nvidia.powerManagement.enable = true;
       hardware.nvidia.powerManagement.finegrained = true;
-
-      hardware.nvidia.primeBatterySaverSpecialisation = true;
-
-      # nh reads /etc/specialisation to pick the activation script.
-      specialisation.battery-saver.configuration = {
-        imports = [ sharedInitrd ];
-        environment.etc."specialisation".text = "battery-saver";
-      };
-
-      # PRIME sync for docking: the external ports are wired to the dGPU. High idle draw.
-      specialisation.dgpu.configuration = {
-        imports = [ sharedInitrd ];
-        system.nixos.tags = [ "dgpu" ];
-        environment.etc."specialisation".text = "dgpu";
-
-        hardware.nvidia = {
-          prime.sync.enable = lib.mkForce true;
-          prime.offload.enable = lib.mkForce false;
-          prime.offload.enableOffloadCmd = lib.mkForce false;
-
-          # Incompatible with sync mode.
-          powerManagement.finegrained = lib.mkForce false;
-
-          forceFullCompositionPipeline = true;
-        };
-      };
 
       nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
     };
