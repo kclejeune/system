@@ -294,7 +294,9 @@ in
           };
 
           access_control = {
-            default_policy = "deny";
+            # Authelia rejects `deny` when no explicit rules exist. Preserve
+            # the previous wildcard rules' effective two-factor requirement.
+            default_policy = "two_factor";
           };
 
           storage.local.path = "${autheliaStateDir}/db.sqlite3";
