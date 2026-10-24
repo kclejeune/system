@@ -11,6 +11,7 @@ _: {
     let
       cfg = config.services.tailscale.server;
       tailscale = lib.getExe config.services.tailscale.package;
+      jq = lib.getExe pkgs.jq;
 
       mkServeCmd =
         svcName: epKey: target:
@@ -82,11 +83,32 @@ _: {
 
         # Upstream's `serve set-config` makes tcp:<port> raw forwarders without TLS
         # termination, so run `tailscale serve --service --https` per endpoint.
-        # Additive: removed services linger until `tailscale serve clear svc:<name>`.
+        # Clear existing service definitions first so this is a reconciliation,
+        # rather than an additive update which leaves removed services exposed.
         (lib.mkIf config.services.tailscale.serve.enable {
           systemd.services.tailscale-serve.serviceConfig.ExecStart = lib.mkForce (
             pkgs.writeShellScript "tailscale-serve-apply" ''
               set -euo pipefail
+
+              state=""
+              for _ in {1..60}; do
+                state="$(${tailscale} status --json 2>/dev/null \
+                  | ${jq} -r '.BackendState // empty' 2>/dev/null || true)"
+                [[ "$state" == "Running" ]] && break
+                sleep 1
+              done
+
+              if [[ "$state" != "Running" ]]; then
+                echo "tailscale did not reach Running state (last state: ''${state:-unknown})" >&2
+                exit 1
+              fi
+
+              current="$(${tailscale} serve status --json 2>/dev/null || printf '{}')"
+              while IFS= read -r service; do
+                [[ "$service" == svc:* ]] || continue
+                ${tailscale} serve clear "$service"
+              done < <(printf '%s' "$current" | ${jq} -r '.Services // {} | keys[]')
+
               ${lib.concatStringsSep "\n" serveCmds}
             ''
           );

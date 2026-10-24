@@ -85,6 +85,7 @@ in
           mise
           mmv
           mosh
+          mvs
           namespace-cli
           nil
           nimbus

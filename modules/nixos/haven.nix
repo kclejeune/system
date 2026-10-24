@@ -4,6 +4,7 @@ _: {
   flake.nixosModules.haven =
     {
       config,
+      pkgs,
       ...
     }:
     let
@@ -54,9 +55,12 @@ _: {
 
       virtualisation.incus = {
         enable = true;
+        # Track current Incus for prompt security fixes. Feature releases are
+        # supported only until the next monthly release, so keep this current.
+        package = pkgs.incus;
         ui.enable = true;
         preseed = {
-          # Loopback only; Caddy is the sole ingress. Incus LTS has no per-user
+          # Loopback only; Caddy is the sole ingress. Incus has no per-user
           # authorization, so any OIDC login is admin — the gate is Authelia's
           # lldap_admin-only `incus` client. Public client: nothing secret here.
           config = {

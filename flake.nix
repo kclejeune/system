@@ -386,6 +386,29 @@
                 inherit (prev.config) allowUnfree allowBroken allowUnsupportedSystem;
               };
             };
+            mvs = inputs.multiverse.packages.${prev.stdenv.hostPlatform.system}.mvs;
+
+            # Security releases available in multiverse ahead of the primary
+            # nixpkgs input. Modules continue to consume the ordinary package
+            # attributes, so these can be dropped independently as nixpkgs catches up.
+            incus = final.multiverse.tip.incus;
+            rustfs = final.multiverse.tip.rustfs;
+            tailscale =
+              (prev.tailscale.override {
+                buildGo127Module = prev.buildGo127Module.override {
+                  go = final.multiverse.tip.go_1_27;
+                };
+              }).overrideAttrs
+                (finalAttrs: {
+                  version = "1.104.2";
+                  src = final.fetchFromGitHub {
+                    owner = "tailscale";
+                    repo = "tailscale";
+                    tag = "v${finalAttrs.version}";
+                    hash = "sha256-vMkNFJSwf/UPCUnMZiFd+cfOspdvHMU4GPs/LAqxib0=";
+                  };
+                  vendorHash = "sha256-VxuDS8QKZ82W/MOlfng0+ZCPSPl5KnK3FYW1puDiNe4=";
+                });
 
             # The full collection stays namespaced; selected tools also replace nixpkgs versions.
             llm-agents = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system};
@@ -507,6 +530,7 @@
               inherit (pkgs)
                 cb
                 mbx
+                mvs
                 sem-cli
                 nimbus
                 ;
@@ -526,6 +550,7 @@
                     nix-fast-build
                     nimbus
                     gh
+                    mvs
                     nurl
                     nvd
                     sops

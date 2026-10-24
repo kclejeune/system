@@ -37,6 +37,15 @@ _: {
           '';
         };
 
+        requirePin = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = ''
+            Require the client to enter UxPlay's random four-digit PIN. The PIN
+            is displayed by UxPlay when a client attempts to connect.
+          '';
+        };
+
         extraArgs = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ ];
@@ -88,6 +97,7 @@ _: {
                 cfg.name
                 "-p"
               ]
+              ++ lib.optional cfg.requirePin "-pin"
               ++ cfg.extraArgs
             );
             Restart = "on-failure";
