@@ -7,6 +7,13 @@ in
   # `desktop` without them.
   flake.nixosModules.desktop =
     { config, ... }:
+    let
+      trustedSsids = [
+        "Rorschach"
+        "BernardsHome"
+        "DEKK"
+      ];
+    in
     {
       imports = [
         flakeCfg.flake.nixosModules.desktop-base
@@ -14,8 +21,10 @@ in
         flakeCfg.flake.nixosModules.avahi
         flakeCfg.flake.nixosModules.airprint
         flakeCfg.flake.nixosModules.airplay
+        flakeCfg.flake.nixosModules.trusted-network-firewall
       ];
 
+      services.openssh.openFirewall = false;
       services.airprint = {
         enable = true;
         ippUsb = true;
@@ -23,6 +32,20 @@ in
         openFirewall = false;
       };
       services.airplay.enable = true;
+
+      networking.firewall.trustedNetwork.rules = {
+        ssh = {
+          ssids = trustedSsids;
+          # Wired networks cannot be authenticated without extra identity
+          # information. SSH is hardened enough for this deliberate fallback.
+          trustedEthernet = true;
+          allowedTCPPorts = [ 22 ];
+        };
+        cups = {
+          ssids = trustedSsids;
+          allowedTCPPorts = [ 631 ];
+        };
+      };
 
       users = {
         mutableUsers = false;

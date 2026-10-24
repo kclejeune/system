@@ -68,15 +68,16 @@ _: {
           }
         ];
 
-        # Listen everywhere so mDNS clients reach IPP; allowFrom limits it to the
-        # LAN + overlays. No cups-browsed: we only share, and it's the
+        # Listen everywhere so mDNS clients reach IPP. The host firewall limits
+        # which directly attached networks can reach it; CUPS then accepts local
+        # subnets plus the overlays. No cups-browsed: we only share, and it's the
         # CVE-2024-47176 surface.
         services.printing = {
           enable = true;
           listenAddresses = [ "*:631" ];
           allowFrom = [
             "localhost"
-            config.site.lanCidr
+            "@LOCAL"
           ]
           ++ config.site.overlayCidrs;
           browsing = true;
