@@ -37,6 +37,15 @@ _: {
           default = "2G";
           description = "systemd MemoryMax cap for the service.";
         };
+        cloudflareCidrs = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = ''
+            Cloudflare edge CIDRs allowed to supply CF-Connecting-IP. Requests
+            from all other sources remain supported and use their socket source
+            address, so agents do not have to traverse Cloudflare.
+          '';
+        };
         duckdbMemoryLimit = lib.mkOption {
           type = lib.types.str;
           default = "1GB";
@@ -260,8 +269,24 @@ _: {
           '';
         };
 
-        # Ingest is hit from Cloudflare's edge and browsers, so it stays public and
-        # unthrottled per-IP; hosts may throttle the dashboard ("/").
+        # Preserve direct agent ingestion while deriving a non-spoofable client
+        # key: trust CF-Connecting-IP only when the socket source is a published
+        # Cloudflare edge. Both direct and proxied clients then get independent
+        # origin-side limits.
+        services.nginx.commonHttpConfig = lib.mkAfter ''
+          geo $remote_addr $traceway_from_cloudflare {
+            default 0;
+            ${lib.concatMapStringsSep "\n" (cidr: "${cidr} 1;") cfg.cloudflareCidrs}
+          }
+          map "$traceway_from_cloudflare:$http_cf_connecting_ip" $traceway_client_addr {
+            default $remote_addr;
+            ~^1:(.+)$ $1;
+          }
+          limit_req_zone $traceway_client_addr zone=traceway_dashboard:10m rate=30r/s;
+          limit_req_zone $traceway_client_addr zone=traceway_ingest:10m rate=120r/s;
+          limit_conn_zone $traceway_client_addr zone=traceway_client:10m;
+        '';
+
         services.nginx.virtualHosts.${cfg.domain} =
           let
             upstream = "http://127.0.0.1:${toString cfg.port}";
@@ -270,8 +295,8 @@ _: {
             # recommendedProxySettings, so restate them.
             proxyHeaders = ''
               proxy_set_header Host $host;
-              proxy_set_header X-Real-IP $remote_addr;
-              proxy_set_header X-Forwarded-For $remote_addr;
+              proxy_set_header X-Real-IP $traceway_client_addr;
+              proxy_set_header X-Forwarded-For $traceway_client_addr;
               proxy_set_header X-Forwarded-Proto $scheme;
               proxy_set_header X-Forwarded-Host $host;
               proxy_set_header X-Forwarded-Server $hostname;
@@ -287,6 +312,8 @@ _: {
               # OTLP/report batches and session-recording chunks can be large
               # and gzip'd; don't buffer them through nginx's temp files.
               proxy_request_buffering off;
+              limit_req zone=traceway_ingest burst=240 nodelay;
+              limit_req_status 429;
             '';
           in
           {
@@ -300,6 +327,9 @@ _: {
             # in any location below would stop these inheriting.
             extraConfig = ''
               client_max_body_size 64m;
+              client_body_timeout 30s;
+              limit_conn traceway_client 32;
+              limit_conn_status 429;
 
               add_header Strict-Transport-Security "max-age=63072000" always;
               add_header X-Content-Type-Options "nosniff" always;
@@ -308,9 +338,14 @@ _: {
               add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" always;
             '';
             locations = {
-              "/" = proxyLoc "" // {
-                proxyWebsockets = true;
-              };
+              "/" =
+                proxyLoc ''
+                  limit_req zone=traceway_dashboard burst=60 nodelay;
+                  limit_req_status 429;
+                ''
+                // {
+                  proxyWebsockets = true;
+                };
               "/api/report" = ingest;
               # Not "/api/otel/": /api/otel/spans/... is a dashboard route.
               "/api/otel/v1" = ingest;

@@ -7,6 +7,7 @@ in
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
@@ -42,10 +43,42 @@ in
       ntfyPort = lib.toInt (lib.removePrefix ":" config.services.ntfy-sh.settings.listen-http);
       tracewayDomain = "traceway.${domain}";
 
+      # Published at https://www.cloudflare.com/ips/. These are used only to
+      # decide whether CF-Connecting-IP is trustworthy; direct Traceway agents
+      # remain supported and retain their socket source address.
+      cloudflareCidrs = [
+        "173.245.48.0/20"
+        "103.21.244.0/22"
+        "103.22.200.0/22"
+        "103.31.4.0/22"
+        "141.101.64.0/18"
+        "108.162.192.0/18"
+        "190.93.240.0/20"
+        "188.114.96.0/20"
+        "197.234.240.0/22"
+        "198.41.128.0/17"
+        "162.158.0.0/15"
+        "104.16.0.0/13"
+        "104.24.0.0/14"
+        "172.64.0.0/13"
+        "131.0.72.0/22"
+        "2400:cb00::/32"
+        "2606:4700::/32"
+        "2803:f800::/32"
+        "2405:b500::/32"
+        "2405:8100::/32"
+        "2a06:98c0::/29"
+        "2c0f:f248::/32"
+      ];
+
       mkHttpsVhost = extra: {
         forceSSL = true;
         enableACME = true;
-        extraConfig = extra;
+        # Per-host rather than includeSubDomains: kclj.io has unrelated hosts.
+        extraConfig = ''
+          add_header Strict-Transport-Security "max-age=63072000" always;
+          ${extra}
+        '';
       };
     in
     {
@@ -61,6 +94,10 @@ in
       smtp.host = "smtp.fastmail.com";
 
       networking.hostName = "gateway";
+
+      # Track the newest kernel line in the pinned nixpkgs, including its
+      # matching out-of-tree kernel modules and tools.
+      boot.kernelPackages = pkgs.linuxPackages_latest;
 
       # /nix lives on this volume, so it must mount in initrd.
       boot.initrd.availableKernelModules = [ "virtio_scsi" ];
@@ -258,16 +295,6 @@ in
 
           access_control = {
             default_policy = "deny";
-            rules = [
-              {
-                domain = "*.kclj.io";
-                policy = "two_factor";
-              }
-              {
-                domain = "*.kclj.dev";
-                policy = "two_factor";
-              }
-            ];
           };
 
           storage.local.path = "${autheliaStateDir}/db.sqlite3";
@@ -276,10 +303,13 @@ in
             redis.host = config.services.redis.servers.authelia.unixSocket;
             cookies = [
               {
-                inherit domain;
+                # OIDC only needs the IdP host. A parent-domain cookie would be
+                # disclosed to every sibling service under *.kclj.io. Rotate
+                # the name so previously-issued parent-domain cookies cannot
+                # authenticate after this change.
+                name = "authelia_session_v2";
+                domain = authDomain;
                 authelia_url = "https://${authDomain}";
-                # The cookie covers every *.kclj.io host, so keep a stolen or
-                # forgotten session short-lived.
                 inactivity = "1w";
                 expiration = "1M";
                 remember_me = "1M";
@@ -668,6 +698,8 @@ in
 
       services.nginx = {
         enable = true;
+        # Security fixes ahead of the host's intentionally stable nixpkgs pin.
+        package = pkgs.multiverse.tip.nginx;
         defaultSSLListenPort = nginxInternalSSLPort;
         # The 443 SNI stream re-proxies here over loopback with PROXY protocol to
         # carry the client IP. Port 80 (ACME + redirects) is direct and must not
@@ -804,13 +836,14 @@ in
           USER_CREATION = "true";
         };
       };
-      # On the DMZ box: ingest is an unauthenticated parser of SDK payloads from
-      # the internet, so it sits behind nginx + CrowdSec rather than opening a path
+      # On the DMZ box: ingest parses token-authenticated SDK payloads from the
+      # internet, so it sits behind nginx + CrowdSec rather than opening a path
       # into the LAN. The R2 bucket needs a lifecycle rule on recordings/ (the
       # retention worker is a no-op on S3).
       services.traceway = {
         domain = tracewayDomain;
         port = tracewayPort;
+        inherit cloudflareCidrs;
         s3 = {
           bucket = "traceway";
           endpoint = "https://${config.site.cloudflareAccountId}.r2.cloudflarestorage.com";
@@ -828,18 +861,6 @@ in
         };
         # bare address: the app passes it verbatim to MAIL FROM
         smtpFrom = "noreply+traceway@${domain}";
-      };
-      # Dashboard gets the host's general per-IP limit; the module leaves the
-      # ingest locations unthrottled on purpose (shared Cloudflare egress IPs).
-      services.nginx.virtualHosts.${tracewayDomain} = {
-        extraConfig = ''
-          limit_conn per_ip 50;
-          limit_conn_status 429;
-        '';
-        locations."/".extraConfig = ''
-          limit_req zone=general burst=60 nodelay;
-          limit_req_status 429;
-        '';
       };
 
       # Full client: accepts tailnet routes, advertises no LAN.
@@ -1092,7 +1113,7 @@ in
       };
 
       # Podman ships no unqualified-search registries.
-      virtualisation.containers.registries.search = [ "docker.io" ];
+      virtualisation.containers.registries.settings.registries.search.registries = [ "docker.io" ];
 
       virtualisation.oci-containers.containers.netbird-proxy = {
         # Lockstep with the netbird server version.

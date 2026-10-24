@@ -117,6 +117,44 @@ _: {
           crowdsec-firewall-bouncer-register = lib.mkIf config.services.crowdsec-firewall-bouncer.enable {
             serviceConfig.DynamicUser = lib.mkForce false;
           };
+
+          # The upstream updater runs as crowdsec, so its unprivileged
+          # `systemctl reload` fails. Keep the networked update unprivileged and
+          # trigger a separate, tightly sandboxed root-only reload on success.
+          crowdsec-update-hub = lib.mkIf cfg.autoUpdateService {
+            unitConfig.OnSuccess = [ "crowdsec-reload-after-hub-update.service" ];
+            serviceConfig = {
+              ExecStart = lib.mkForce [
+                "${lib.getExe' cfg.package "cscli"} --error hub update"
+                "${lib.getExe' cfg.package "cscli"} --error hub upgrade"
+              ];
+              ExecStartPost = lib.mkForce [ ];
+            };
+          };
+
+          crowdsec-reload-after-hub-update = lib.mkIf cfg.autoUpdateService {
+            description = "Reload CrowdSec after a successful hub update";
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = "${config.systemd.package}/bin/systemctl reload crowdsec.service";
+              NoNewPrivileges = true;
+              PrivateTmp = true;
+              PrivateDevices = true;
+              ProtectSystem = "strict";
+              ProtectHome = true;
+              ProtectKernelTunables = true;
+              ProtectKernelModules = true;
+              ProtectControlGroups = true;
+              RestrictAddressFamilies = [ "AF_UNIX" ];
+              RestrictNamespaces = true;
+              RestrictRealtime = true;
+              RestrictSUIDSGID = true;
+              LockPersonality = true;
+              CapabilityBoundingSet = "";
+              SystemCallFilter = [ "@system-service" ];
+              SystemCallArchitectures = "native";
+            };
+          };
         }
         // lib.mapAttrs' (
           name: bouncer:

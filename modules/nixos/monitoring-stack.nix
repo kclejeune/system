@@ -2,7 +2,12 @@ _: {
   # Loki/Alloy (logs), Prometheus/Alertmanager (metrics), Karma/Grafana (UIs).
   # Scrapes other gateway services, so it assumes the gateway.
   flake.nixosModules.monitoring-stack =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       lokiPort = 3100;
       grafanaPort = 3000;
@@ -256,6 +261,8 @@ _: {
 
       services.grafana = {
         enable = true;
+        # Security fixes ahead of the host's intentionally stable nixpkgs pin.
+        package = pkgs.multiverse.tip.grafana;
         settings = {
           server = {
             # The NetBird proxy dials this on gateway's wt0 IP (backends can't be loopback).
@@ -344,6 +351,14 @@ _: {
             }
           ];
         };
+      };
+
+      # Contain regressions such as unbounded rule-conversion allocations to the
+      # monitoring service instead of allowing them to exhaust the gateway.
+      systemd.services.grafana.serviceConfig = {
+        MemoryHigh = "1536M";
+        MemoryMax = "2G";
+        MemorySwapMax = 0;
       };
 
       # Served only via the NetBird proxy. Use target type Peer (the gateway): a
