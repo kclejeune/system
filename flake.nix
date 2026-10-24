@@ -501,6 +501,14 @@
 
             # catppuccin-gtk's build.py breaks on Python 3.14's argparse.
             catppuccin-gtk = prev.catppuccin-gtk.override { python3 = final.python313; };
+
+            # Force every launch path (desktop entry, URL handler and shell) to
+            # use the unlocked GNOME Keyring instead of Chromium's basic store.
+            vscode =
+              if final.stdenv.hostPlatform.isLinux then
+                prev.vscode.override { commandLineArgs = "--password-store=gnome-libsecret"; }
+              else
+                prev.vscode;
           };
         };
 

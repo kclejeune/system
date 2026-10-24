@@ -682,18 +682,6 @@ in
         wdisplays
       ];
 
-      # argv.json is owned by VS Code and conflicts with HM.
-      xdg.desktopEntries.code = {
-        name = "Visual Studio Code";
-        exec = "code --password-store=gnome-libsecret %F";
-        icon = "vscode";
-        comment = "Code Editor";
-        categories = [
-          "Development"
-          "IDE"
-        ];
-      };
-
       xdg.desktopEntries.obsidian = {
         name = "Obsidian";
         exec = "obsidian --password-store=gnome-libsecret %u";
