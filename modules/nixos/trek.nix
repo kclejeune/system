@@ -29,7 +29,7 @@ _: {
       ];
 
       virtualisation.oci-containers.containers.trek = {
-        image = "docker.io/mauriceboe/trek:4.3.3@sha256:1ef1ccf41af8ae409e0435518facb5789b6adc99681ef26d1869508355455749";
+        image = "docker.io/mauriceboe/trek:5.0.0@sha256:0c0a8f5b488fc2967248695e04bb000bb177d0b63d3385089d33dca6fde4daf9";
         ports = [ "127.0.0.1:${toString port}:3000" ];
         volumes = [
           "${stateDir}/data:/app/data"
@@ -72,7 +72,8 @@ _: {
           "--health-interval=30s"
           "--health-timeout=10s"
           "--health-retries=3"
-          "--health-start-period=30s"
+          # Allow the first 5.x database snapshot and migration to finish.
+          "--health-start-period=10m"
           "--health-on-failure=kill"
         ];
       };
@@ -102,9 +103,6 @@ _: {
         route {
           respond @trekOutside 403
 
-          # Avoid compression 1.8.1's aborted-response leak (GHSA-vc2v-76pw-4v95).
-          # Explicit identity also stops the proxy transport adding gzip.
-          request_header Accept-Encoding identity
           request_body {
             max_size 500MB
           }
