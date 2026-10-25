@@ -72,8 +72,7 @@ _: {
           "--health-interval=30s"
           "--health-timeout=10s"
           "--health-retries=3"
-          # Allow the first 5.x database snapshot and migration to finish.
-          "--health-start-period=10m"
+          "--health-start-period=30s"
           "--health-on-failure=kill"
         ];
       };
