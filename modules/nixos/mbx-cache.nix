@@ -128,9 +128,11 @@ _: {
           # isolate the native process from host devices and kernel state.
           NoNewPrivileges = true;
           PrivateDevices = true;
+          # tmpfs defaults to root-owned 0755. Uploads are staged in /tmp by
+          # the unprivileged service before their digests are checked and sent to R2.
           TemporaryFileSystem = [
-            "/tmp:rw,nosuid,nodev,noexec,size=6G"
-            "/var/tmp:rw,nosuid,nodev,noexec,size=64M"
+            "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=6G"
+            "/var/tmp:rw,nosuid,nodev,noexec,mode=1777,size=64M"
           ];
           ProtectSystem = "strict";
           ProtectHome = true;
