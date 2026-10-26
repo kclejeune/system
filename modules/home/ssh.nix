@@ -1,6 +1,6 @@
 { config, lib, ... }:
 let
-  inherit (config.flake.lib.site) lanDomain tailnetDomain;
+  inherit (config.flake.lib.site) domain lanDomain tailnetDomain;
   # pam_rssh sudo (deploy, nh --target-host) needs the forwarded agent. Root on
   # the far end can use it while connected, so only forward to our own servers.
   agentForwardHosts = [
@@ -15,6 +15,7 @@ let
   ];
   agentForwardPattern = lib.concatStringsSep " " (
     agentForwardHosts
+    ++ [ "gateway.${domain}" ]
     ++ map (h: "${h}.${tailnetDomain}") agentForwardHosts
     ++ map (h: "${h}.${lanDomain}") agentForwardHosts
   );
