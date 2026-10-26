@@ -147,8 +147,17 @@ _: {
           OAUTH_SESSION_SECRET=${config.sops.placeholder."traceway/oauth_session_secret"}
           APP_BASE_URL=https://${cfg.domain}
 
-          # Unset means allow in self-hosted mode.
+          # Security invariants for the internet-facing instance. Keep private
+          # destinations and in-process browser execution off unless the
+          # service's network/process isolation is deliberately redesigned.
           SYNTHETICS_ALLOW_PRIVATE_TARGETS=false
+          ALLOW_PRIVATE_NOTIFICATION_TARGETS=false
+          SYNTHETICS_BROWSER_MODE=off
+          EMAIL_PREVIEW_ENABLED=false
+
+          # Leave disabled unless the packaged release is known to limit error
+          # telemetry to URL paths rather than request metadata.
+          MONITORING_TRACEWAY_URL=
 
           DUCKDB_MEMORY_LIMIT=${cfg.duckdbMemoryLimit}
           DUCKDB_THREADS=${toString cfg.duckdbThreads}

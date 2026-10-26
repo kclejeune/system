@@ -6,13 +6,13 @@
 }:
 
 let
-  version = "2.0.2-dev";
+  version = "2.0.7";
 
   src = fetchFromGitHub {
-    owner = "kclejeune";
+    owner = "tracewayapp";
     repo = "traceway";
-    rev = "3f401cd84a93c522ceadea974fb523d2fe027866";
-    hash = "sha256-JRkj7ICFVOCMpeirdcVOo7kvSU5QDUN8GuW+NBjEV1w=";
+    tag = "backend/v${version}";
+    hash = "sha256-gbox7EiMAJxqtPxkthxY331+cfRjEIn4onQQv8TfSEQ=";
   };
 
   goPackage =
@@ -32,7 +32,7 @@ let
     pname = "traceway-frontend";
     inherit version src;
     sourceRoot = "${src.name}/frontend";
-    npmDepsHash = "sha256-UJWw5ZaX8kashSyrxcdHplOIVWxjSNbAz8e9zz1yE6E=";
+    npmDepsHash = "sha256-I890PwoOtAKg74UWWdoq5TmTyAOU3EB6N4ipiSC0zns=";
 
     env.CLOUD_MODE = "false";
 
@@ -78,7 +78,7 @@ goPackage {
   # duckdb-go-bindings ships prebuilt static libraries (.a) that `go mod
   # vendor` drops; keep the module cache instead of a vendor tree.
   proxyVendor = true;
-  vendorHash = "sha256-rqbcMj0GJTvmWPsZ7D0DXQH4rsgiJnT369K81Ygtxcc=";
+  vendorHash = "sha256-CZS2ze9EvdFAtguiUUqeF4/ycdPh5YXuvj58N/onp5I=";
 
   # telemetry_duckdb: SQLite main DB + DuckDB telemetry DB (the `-duckdb`
   # container flavour). DuckDB links those prebuilt glibc static libs, hence
