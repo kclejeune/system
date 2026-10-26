@@ -29,7 +29,7 @@ in
           cacert
           cachix
           cb
-          cirrus-cli
+          ccusage
           clang
           clang-tools
           claude-code
