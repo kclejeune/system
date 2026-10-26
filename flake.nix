@@ -392,24 +392,28 @@
             # Security releases available in multiverse ahead of the primary
             # nixpkgs input. Modules continue to consume the ordinary package
             # attributes, so these can be dropped independently as nixpkgs catches up.
-            incus = final.multiverse.tip.incus;
-            rustfs = final.multiverse.tip.rustfs;
-            tailscale =
-              (prev.tailscale.override {
-                buildGo127Module = prev.buildGo127Module.override {
-                  go = final.multiverse.tip.go_1_27;
-                };
-              }).overrideAttrs
-                (finalAttrs: {
-                  version = "1.104.2";
-                  src = final.fetchFromGitHub {
-                    owner = "tailscale";
-                    repo = "tailscale";
-                    tag = "v${finalAttrs.version}";
-                    hash = "sha256-vMkNFJSwf/UPCUnMZiFd+cfOspdvHMU4GPs/LAqxib0=";
-                  };
-                  vendorHash = "sha256-VxuDS8QKZ82W/MOlfng0+ZCPSPl5KnK3FYW1puDiNe4=";
-                });
+            inherit (final.multiverse.tip)
+              incus
+              netbird
+              netbird-combined
+              netbird-dashboard
+              netbird-management
+              netbird-relay
+              netbird-signal
+              netbird-ui
+              netbird-upload
+              rustfs
+              tailscale
+              ;
+            # The proxy moved its version variables into package main; the
+            # shared NetBird ldflags still target the old version package.
+            netbird-proxy = final.multiverse.tip.netbird-proxy.overrideAttrs (oldAttrs: {
+              ldflags = (oldAttrs.ldflags or [ ]) ++ [
+                "-X main.Version=${final.multiverse.tip.netbird-proxy.version}"
+                "-X main.Commit=nixpkgs"
+                "-X main.BuildDate=reproducible"
+              ];
+            });
 
             # The full collection stays namespaced; selected tools also replace nixpkgs versions.
             llm-agents = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system};

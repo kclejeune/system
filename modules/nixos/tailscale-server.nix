@@ -70,7 +70,6 @@ _: {
             extraSetFlags = [
               "--accept-dns"
               "--advertise-connector"
-              "--ssh=false"
               "--operator=${config.user.name}"
               "--accept-routes=${lib.boolToString cfg.acceptRoutes}"
             ]

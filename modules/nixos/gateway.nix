@@ -28,6 +28,9 @@ in
       netbirdDomain = "netbird.${domain}";
       netbirdProxyDomain = config.site.proxyDomain;
       netbirdProxyPort = 8443;
+      # Embedded peer address of the co-located reverse proxy. Backend firewall
+      # rules intentionally fail closed if the proxy re-registers with a new IP.
+      netbirdProxyPeerIp = "10.64.233.218";
       # 51820 is the host's wt0 and 49152+ coturn's relay range. Fixed so the
       # firewall can admit direct peer→proxy connections instead of TURN relay.
       netbirdProxyWgPort = 51821;
@@ -43,9 +46,9 @@ in
       ntfyPort = lib.toInt (lib.removePrefix ":" config.services.ntfy-sh.settings.listen-http);
       tracewayDomain = "traceway.${domain}";
 
-      # Published at https://www.cloudflare.com/ips/. These are used only to
-      # decide whether CF-Connecting-IP is trustworthy; direct Traceway agents
-      # remain supported and retain their socket source address.
+      # Published at https://www.cloudflare.com/ips/. These decide whether
+      # CF-Connecting-IP/X-Forwarded-For is trustworthy; direct clients retain
+      # their socket source address.
       cloudflareCidrs = [
         "173.245.48.0/20"
         "103.21.244.0/22"
@@ -70,6 +73,11 @@ in
         "2a06:98c0::/29"
         "2c0f:f248::/32"
       ];
+      loopbackCidrs = [
+        "127.0.0.1/32"
+        "::1/128"
+      ];
+      trustedHttpProxies = loopbackCidrs ++ cloudflareCidrs;
 
       mkHttpsVhost = extra: {
         forceSSL = true;
@@ -80,11 +88,21 @@ in
           ${extra}
         '';
       };
+      gatewayProxyHeaders = ''
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $gateway_client_addr;
+        proxy_set_header X-Forwarded-For $gateway_client_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $hostname;
+      '';
     in
     {
       imports = [
         flakeCfg.flake.nixosModules.crowdsec
+        flakeCfg.flake.nixosModules.mbx-cache
         flakeCfg.flake.nixosModules.monitoring-stack
+        flakeCfg.flake.nixosModules.netbird-proxy
         flakeCfg.flake.nixosModules.ntfy
         flakeCfg.flake.nixosModules.smtp
         flakeCfg.flake.nixosModules.traceway
@@ -134,6 +152,13 @@ in
           ntfyPort
           beszelPort
         ];
+
+        # mbx has no intended direct mesh entrypoint. Admit only the public
+        # proxy's embedded peer so other mesh peers cannot bypass its CIDR,
+        # country, or CrowdSec policy.
+        extraInputRules = lib.mkAfter ''
+          iifname "${config.services.netbird.clients.default.interface}" ip saddr ${netbirdProxyPeerIp} tcp dport 8098 accept comment "mbx cache from NetBird proxy"
+        '';
       };
 
       # Own table ahead of nixos-fw so these fire before its port accepts.
@@ -737,18 +762,28 @@ in
 
         commonHttpConfig = ''
           # Take the real client IP from the loopback stream proxy's
-          # PROXY-protocol header, rewriting $remote_addr before the
-          # limit_req/limit_conn zones and access log evaluate it — so per-IP
-          # rate-limiting, X-Forwarded-For, and crowdsec all see the real client.
+          # PROXY-protocol header. If that address belongs to Cloudflare, trust
+          # its client header; never trust that header from a direct connection.
           set_real_ip_from 127.0.0.1;
           set_real_ip_from ::1;
           real_ip_header proxy_protocol;
 
-          limit_req_zone $binary_remote_addr zone=general:10m rate=30r/s;
-          limit_req_zone $binary_remote_addr zone=authelia_api:10m rate=10r/s;
-          limit_conn_zone $binary_remote_addr zone=per_ip:10m;
+          geo $remote_addr $gateway_from_cloudflare {
+            default 0;
+            ${lib.concatMapStringsSep "\n" (cidr: "${cidr} 1;") cloudflareCidrs}
+          }
+          map "$gateway_from_cloudflare:$http_cf_connecting_ip" $gateway_client_addr {
+            default $remote_addr;
+            ~^1:(.+)$ $1;
+          }
 
-          access_log /var/log/nginx/access.log;
+          limit_req_zone $gateway_client_addr zone=general:10m rate=30r/s;
+          limit_req_zone $gateway_client_addr zone=authelia_api:10m rate=10r/s;
+          limit_conn_zone $gateway_client_addr zone=per_ip:10m;
+
+          log_format gateway '$gateway_client_addr - $remote_user [$time_local] "$request" '
+                             '$status $body_bytes_sent "$http_referer" "$http_user_agent"';
+          access_log /var/log/nginx/access.log gateway;
           error_log /var/log/nginx/error.log;
         '';
 
@@ -773,7 +808,8 @@ in
             locations."/" = {
               proxyPass = "http://127.0.0.1:${toString autheliaPort}";
               proxyWebsockets = true;
-              extraConfig = ''
+              recommendedProxySettings = false;
+              extraConfig = gatewayProxyHeaders + ''
                 limit_req zone=general burst=60 nodelay;
                 limit_req_status 429;
               '';
@@ -781,7 +817,8 @@ in
 
             locations."/api/" = {
               proxyPass = "http://127.0.0.1:${toString autheliaPort}";
-              extraConfig = ''
+              recommendedProxySettings = false;
+              extraConfig = gatewayProxyHeaders + ''
                 limit_req zone=authelia_api burst=20 nodelay;
                 limit_req_status 429;
               '';
@@ -899,6 +936,12 @@ in
           settings = {
             DataStoreEncryptionKey._secret = config.sops.secrets."netbird/datastore_encryption_key".path;
             TURNConfig.Secret._secret = config.sops.secrets."netbird/turn_password".path;
+            # Walk X-Forwarded-For right-to-left through nginx and, when used,
+            # Cloudflare. A direct client cannot spoof past its appended source.
+            ReverseProxy = {
+              TrustedPeers = loopbackCidrs;
+              TrustedHTTPProxies = trustedHttpProxies;
+            };
             # Keys netbird-idp-migrate strips; null in management.json reads as absent.
             IdpManagerConfig = lib.mkForce null;
             PKCEAuthorizationFlow = lib.mkForce null;
@@ -964,6 +1007,12 @@ in
         ];
         startLimitIntervalSec = 60;
         startLimitBurst = 10;
+        environment = {
+          NB_API_RATE_LIMITING_ENABLED = "true";
+          NB_API_RATE_LIMITING_RPM = "60";
+          NB_API_RATE_LIMITING_BURST = "10";
+          NB_API_RATE_LIMITING_TRUSTED_PROXIES = lib.concatStringsSep "," trustedHttpProxies;
+        };
         serviceConfig.RestartSec = "5s";
       };
 
@@ -997,8 +1046,20 @@ in
       # The netbird module's vhost lacks Dex's /oauth2 and the dashboard's
       # post-migration auth callbacks.
       services.nginx.virtualHosts.${netbirdDomain} = mkHttpsVhost "" // {
+        locations."/api" = {
+          recommendedProxySettings = false;
+          extraConfig = gatewayProxyHeaders + ''
+            limit_req zone=general burst=60 nodelay;
+            limit_req_status 429;
+          '';
+        };
         locations."/oauth2/" = {
           proxyPass = "http://127.0.0.1:${toString netbirdMgmtPort}";
+          recommendedProxySettings = false;
+          extraConfig = gatewayProxyHeaders + ''
+            limit_req zone=authelia_api burst=20 nodelay;
+            limit_req_status 429;
+          '';
         };
         locations."/nb-auth" = {
           tryFiles = "$uri /index.html";
@@ -1114,49 +1175,39 @@ in
         console_management = true;
       };
 
-      # Podman ships no unqualified-search registries.
-      virtualisation.containers.registries.settings.registries.search.registries = [ "docker.io" ];
-
-      virtualisation.oci-containers.containers.netbird-proxy = {
-        # Lockstep with the netbird server version.
-        image = "netbirdio/reverse-proxy:${config.services.netbird.server.management.package.version}";
+      services.netbird-proxy = {
+        enable = true;
         environmentFiles = [ config.sops.templates."netbird-proxy.env".path ];
-        volumes = [
-          "netbird-proxy-certs:/certs"
-          # Private mode needs a persistent WireGuard identity; the rootfs is read-only.
-          "netbird-proxy-state:/var/lib/netbird"
-        ];
-        extraOptions = [
-          "--network=host"
-          "--cap-drop=ALL"
-          "--cap-add=NET_BIND_SERVICE"
-          "--read-only"
-          "--tmpfs=/tmp:rw,noexec,nosuid,size=64m"
-          "--security-opt=no-new-privileges:true"
-        ];
+        # The Podman volumes were migrated successfully on 2026-10-26. Keep
+        # the module's migration support available, but do not schedule it.
+        migration.enable = false;
+        environment = {
+          NB_PROXY_DOMAIN = netbirdProxyDomain;
+          NB_PROXY_MANAGEMENT_ADDRESS = "http://127.0.0.1:${toString netbirdMgmtPort}";
+          NB_PROXY_ADDRESS = "127.0.0.1:${toString netbirdProxyPort}";
+          NB_PROXY_ACME_CERTIFICATES = "true";
+          NB_PROXY_ACME_CHALLENGE_TYPE = "tls-alpn-01";
+          NB_PROXY_ALLOW_INSECURE = "true";
+          NB_PROXY_PROXY_PROTOCOL = "true";
+          NB_PROXY_PRIVATE = "true";
+          NB_PROXY_WG_PORT = toString netbirdProxyWgPort;
+          # *.kclj.dev is DNS-only: nginx's loopback stream proxy is the sole
+          # trusted hop and carries the real public source via PROXY protocol.
+          NB_PROXY_TRUSTED_PROXIES = lib.concatStringsSep "," loopbackCidrs;
+        };
       };
 
       sops.templates."netbird-proxy.env".content = ''
         NB_PROXY_TOKEN=${config.sops.placeholder."netbird/proxy_token"}
-        NB_PROXY_DOMAIN=${netbirdProxyDomain}
-        NB_PROXY_MANAGEMENT_ADDRESS=http://127.0.0.1:${toString netbirdMgmtPort}
-        NB_PROXY_ADDRESS=127.0.0.1:${toString netbirdProxyPort}
-        NB_PROXY_ACME_CERTIFICATES=true
-        NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
-        NB_PROXY_ALLOW_INSECURE=true
-        NB_PROXY_PROXY_PROTOCOL=true
-        NB_PROXY_PRIVATE=true
-        NB_PROXY_WG_PORT=${toString netbirdProxyWgPort}
-        NB_PROXY_TRUSTED_PROXIES=127.0.0.1/32,::1/128
       ''
       + lib.optionalString config.services.crowdsec.enable ''
         NB_PROXY_CROWDSEC_API_URL=http://127.0.0.1:${toString crowdsecLapiPort}
         NB_PROXY_CROWDSEC_API_KEY=${config.sops.placeholder."crowdsec/bouncer_key"}
       '';
 
-      systemd.services.podman-netbird-proxy = lib.mkMerge [
+      systemd.services.netbird-proxy = lib.mkMerge [
         {
-          # oci-containers don't restart on env-file content changes.
+          # EnvironmentFile content changes do not alter the generated unit.
           restartTriggers = [ config.sops.templates."netbird-proxy.env".content ];
         }
         # The bouncer key must be registered before the proxy starts.
@@ -1169,7 +1220,10 @@ in
       # SNI routing: *.kclj.dev passes through to netbird-proxy (own TLS),
       # everything else to nginx.
       services.nginx.streamConfig = ''
-        limit_conn_zone $remote_addr zone=stream_per_ip:10m;
+        # Keep a gateway-wide ceiling per source. Do not use
+        # $ssl_preread_server_name in a limit_conn key: limit_conn runs before
+        # ssl_preread and would cache an empty SNI, breaking backend selection.
+        limit_conn_zone $binary_remote_addr zone=stream_per_ip:10m;
 
         map $ssl_preread_server_name $backend {
           ~^[a-zA-Z0-9-]+\.kclj\.dev$  netbird_proxy;
@@ -1193,7 +1247,7 @@ in
           # NB_PROXY_PROXY_PROTOCOL. ssl_preread reads SNI before this.
           proxy_protocol on;
           ssl_preread on;
-          limit_conn stream_per_ip 20;
+          limit_conn stream_per_ip 128;
           proxy_connect_timeout 10s;
           proxy_timeout 300s;
           proxy_pass $backend;

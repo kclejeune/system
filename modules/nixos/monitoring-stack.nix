@@ -15,9 +15,9 @@ _: {
       alertmanagerPort = 9093;
       karmaPort = 8082; # karma's default 8080 collides with netbird-proxy
       netbirdProxyDomain = config.site.proxyDomain;
-      # Overlay IP of the netbird-proxy container's embedded NetBird peer — the
+      # Overlay IP of netbird-proxy's embedded NetBird peer — the
       # only source Grafana accepts the X-NetBird-User header from.
-      netbirdProxyPeerIp = "10.64.244.130";
+      netbirdProxyPeerIp = "10.64.233.218";
       autheliaMetricsAddr = lib.removeSuffix "/" (
         lib.removePrefix "tcp://" config.services.authelia.instances.main.settings.telemetry.metrics.address
       );

@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, inputs, ... }:
 let
   flakeCfg = config;
 
@@ -32,14 +32,46 @@ in
         sopsFile = ../../secrets/users.yaml;
         neededForUsers = true;
       };
+      sops.secrets."mbx-cache/client-token" = {
+        sopsFile = ../../secrets/users.yaml;
+        key = "mbx-cache/token";
+        owner = config.user.name;
+      };
       users.users.${config.user.name}.hashedPasswordFile =
         config.sops.secrets."users/kclejeune/password-hash".path;
     };
   # Standalone HM has no system identity module to forward from.
-  home = _: {
-    identity = {
-      enable = true;
-      inherit (personalIdentity) displayName email sshSigningKey;
+  home =
+    {
+      config,
+      lib,
+      pkgs,
+      osConfig ? null,
+      ...
+    }:
+    let
+      onNixos = osConfig != null && pkgs.stdenv.hostPlatform.isLinux;
+      tokenPath =
+        if onNixos then
+          "/run/secrets/mbx-cache/client-token"
+        else
+          config.sops.secrets."mbx-cache/token".path;
+    in
+    {
+      imports = [ inputs.sops-nix.homeManagerModules.sops ];
+      identity = {
+        enable = true;
+        inherit (personalIdentity) displayName email sshSigningKey;
+      };
+      sops = lib.mkIf (!onNixos) {
+        age.keyFile = "${config.xdg.configHome}/sops/age/keys.txt";
+        secrets."mbx-cache/token".sopsFile = ../../secrets/users.yaml;
+      };
+      programs.mr-boxington.settings.remote = {
+        url = "https://mbx.kclj.dev";
+        namespace = "kclejeune/dev";
+        mode = "read-write";
+        token_file = tokenPath;
+      };
     };
-  };
 }
