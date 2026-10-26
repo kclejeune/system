@@ -442,6 +442,7 @@
               else
                 final.llm-agents.chatgpt;
             cb = final.callPackage ./pkgs/cb/package.nix { };
+            mbx-cache = final.callPackage ./pkgs/mbx-cache/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             tpm-keyring-unlock = final.callPackage ./pkgs/tpm-keyring-unlock/package.nix { };
             traceway = final.callPackage ./pkgs/traceway/package.nix { };

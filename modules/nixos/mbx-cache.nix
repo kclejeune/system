@@ -1,12 +1,18 @@
 _: {
   flake.nixosModules.mbx-cache =
-    { config, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       port = 8098;
     in
     {
-      # The distroless image runs as uid 65532. PostgreSQL peer authentication
-      # maps that uid to this host user through the mounted Unix socket.
+      # Retain the former container uid so the native migration does not change
+      # the service identity. PostgreSQL peer authentication maps this account
+      # to the database role below.
       users.users.mbx-cache = {
         isSystemUser = true;
         uid = 65532;
@@ -45,9 +51,17 @@ _: {
         AWS_SECRET_ACCESS_KEY=${config.sops.placeholder."mbx-cache/s3_secret_key"}
       '';
 
-      virtualisation.oci-containers.containers.mbx-cache = {
-        image = "ghcr.io/jdx/mbx-cache:main@sha256:31eee649e9e2c489645382b2d2d72f177dd6ce882d6c92bfd8a462e537965035";
-        environmentFiles = [ config.sops.templates."mbx-cache.env".path ];
+      systemd.services.mbx-cache = {
+        description = "Mr Boxington remote build cache";
+        wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ];
+        requires = [ "postgresql.service" ];
+        after = [
+          "network-online.target"
+          "postgresql.service"
+        ];
+        conflicts = [ "podman-mbx-cache.service" ];
+        restartTriggers = [ config.sops.templates."mbx-cache.env".content ];
         environment = {
           MBX_CACHE_LISTEN = "0.0.0.0:${toString port}";
           MBX_CACHE_DATABASE_URL = "postgres://mbx_cache@localhost/mbx_cache?host=/run/postgresql";
@@ -99,20 +113,50 @@ _: {
               ];
             }
           ];
+          SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
         };
-        volumes = [ "/run/postgresql:/run/postgresql" ];
-        extraOptions = [
-          "--network=host"
-          "--cap-drop=ALL"
-          "--security-opt=no-new-privileges:true"
-          "--read-only"
-          "--tmpfs=/tmp:rw,noexec,nosuid"
-        ];
-      };
-      systemd.services.podman-mbx-cache = {
-        requires = [ "postgresql.service" ];
-        after = [ "postgresql.service" ];
-        restartTriggers = [ config.sops.templates."mbx-cache.env".content ];
+        serviceConfig = {
+          ExecStart = lib.getExe pkgs.mbx-cache;
+          EnvironmentFile = config.sops.templates."mbx-cache.env".path;
+          User = "mbx-cache";
+          Group = "mbx-cache";
+          Restart = "always";
+          RestartSec = "5s";
+          TimeoutStopSec = "30s";
+
+          # Match the former read-only, capability-free container and further
+          # isolate the native process from host devices and kernel state.
+          NoNewPrivileges = true;
+          PrivateDevices = true;
+          TemporaryFileSystem = [
+            "/tmp:rw,nosuid,nodev,noexec,size=6G"
+            "/var/tmp:rw,nosuid,nodev,noexec,size=64M"
+          ];
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectKernelLogs = true;
+          ProtectControlGroups = true;
+          ProtectClock = true;
+          ProtectHostname = true;
+          ProtectProc = "invisible";
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_INET6"
+            "AF_UNIX"
+          ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          LockPersonality = true;
+          MemoryDenyWriteExecute = true;
+          CapabilityBoundingSet = "";
+          AmbientCapabilities = "";
+          SystemCallFilter = [ "@system-service" ];
+          SystemCallArchitectures = "native";
+          UMask = "0077";
+        };
       };
     };
 }
