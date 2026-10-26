@@ -1,5 +1,5 @@
 _: {
-  # Tailscale server role (gateway + homelab nodes): serve cert, operator, ssh,
+  # Tailscale server role (gateway + homelab nodes): serve cert, operator,
   # exit-node and app-connector flags. Forwarding lives in subnet-router.
   flake.nixosModules.tailscale-server =
     {
@@ -70,7 +70,7 @@ _: {
             extraSetFlags = [
               "--accept-dns"
               "--advertise-connector"
-              "--ssh"
+              "--ssh=false"
               "--operator=${config.user.name}"
               "--accept-routes=${lib.boolToString cfg.acceptRoutes}"
             ]

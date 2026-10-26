@@ -9,6 +9,7 @@ _: {
         # forwarding sysctls.
         useRoutingFeatures = "client";
         openFirewall = true;
+        extraSetFlags = [ "--ssh=false" ];
       };
 
       # Native nftables: iptables-nft can't parse other nftables users' rules,
