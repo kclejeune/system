@@ -486,11 +486,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792546355,
-        "narHash": "sha256-diBo1BnncIuDRan9oN6orGbYXerAp5Kygj1arx9AQJU=",
+        "lastModified": 1793048022,
+        "narHash": "sha256-2PH39Z3wklQ4/dKXlVw0FaCwBi9LdwYaXi18v7CXuUk=",
         "owner": "jdx",
         "repo": "mr-boxington",
-        "rev": "4979f5378946616299dd9982749e9f6285b0f1b5",
+        "rev": "6f8625155599391e1d9a88179cc4e9bcf3afc82e",
         "type": "github"
       },
       "original": {

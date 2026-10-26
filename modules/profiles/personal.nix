@@ -71,6 +71,10 @@ in
         url = "https://mbx.kclj.dev";
         namespace = "kclejeune/dev";
         mode = "read-write";
+        # This global config is Nix-managed and cannot be changed by a checkout.
+        # Permit authenticated local builds, not just protected-branch CI, to
+        # populate the shared cache.
+        trust_writes = true;
         token_file = tokenPath;
       };
     };
