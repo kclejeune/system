@@ -29,7 +29,8 @@
 
     # Share package and tooling inputs with the rest of this flake.
     llm-agents.url = "github:numtide/llm-agents.nix";
-    llm-agents.inputs.nixpkgs.follows = "nixpkgs";
+    # deliberately following numtide nixpkgs to inherit cache
+    # llm-agents.inputs.nixpkgs.follows = "nixpkgs";
     llm-agents.inputs.systems.follows = "systems";
     llm-agents.inputs.flake-parts.follows = "flake-parts";
     llm-agents.inputs.treefmt-nix.follows = "treefmt-nix";
