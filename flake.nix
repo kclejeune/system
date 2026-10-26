@@ -417,7 +417,6 @@
               beads
               ccusage
               claude-code
-              claude-desktop
               codex
               crush
               gemini-cli
@@ -510,6 +509,11 @@
                 prev.vscode.override { commandLineArgs = "--password-store=gnome-libsecret"; }
               else
                 prev.vscode;
+            claude-desktop =
+              if final.stdenv.hostPlatform.isLinux then
+                final.llm-agents.claude-desktop.override { commandLineArgs = "--password-store=gnome-libsecret"; }
+              else
+                final.llm-agents.claude-desktop;
           };
         };
 
