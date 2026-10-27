@@ -96,6 +96,12 @@ _: {
         };
 
         systemd.services = {
+          # Local parser files are installed during activation; reload the
+          # running engine when they change so it actually reads the new rules.
+          crowdsec.reloadTriggers = [
+            (pkgs.writeText "crowdsec-local-parsers.json" (builtins.toJSON cfg.localConfig.parsers))
+          ];
+
           # DynamicUser + static User leaves the state dir owned by a stale uid after
           # a plain restart or reboot; pin the static user so ownership is stable.
           crowdsec.serviceConfig = {
