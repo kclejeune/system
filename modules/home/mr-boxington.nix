@@ -26,6 +26,11 @@ _: {
         mbx setup --yes >/dev/null
         cp -r "$HOME/${shimDir}" $out
       '';
+      frontShim = ''
+        __mbx_shim=${lib.escapeShellArg (dirOf shim)}
+        PATH="$__mbx_shim''${PATH:+:}''${PATH//"$__mbx_shim:"/}"
+        unset __mbx_shim
+      '';
     in
     {
       options.programs.mr-boxington = {
@@ -87,6 +92,13 @@ _: {
 
         # sessionPath prepends, and mkBefore keeps the shim ahead of ~/.cargo/bin.
         home.sessionPath = lib.mkIf cfg.cargoShim (lib.mkBefore [ (dirOf shim) ]);
+
+        # sessionPath only runs once per environment, from .zshenv or .profile, and
+        # the system rc files run after it: off NixOS, /etc/zsh/zshrc sources
+        # nix-daemon.sh, which puts ~/.nix-profile/bin and rustup's cargo back in
+        # front. Move the shim forward again once interactive init is done.
+        programs.zsh.initContent = lib.mkIf cfg.cargoShim (lib.mkAfter frontShim);
+        programs.bash.initExtra = lib.mkIf cfg.cargoShim (lib.mkAfter frontShim);
 
         # direnv sources lib/*.sh in glob order, so this wraps nix-direnv's
         # `use_flake` from hm-nix-direnv.sh before any .envrc runs.
