@@ -163,6 +163,13 @@ in
       programs.mr-boxington = {
         enable = true;
         rustAnalyzer = true;
+        settings.http.timeout = "5m";
+        # Share one storage budget across worktrees on each host.
+        settings.gc = {
+          max_size = "100GiB";
+          max_total_size = "200GiB";
+          min_free_size = "50GiB";
+        };
       };
 
       # The CLI, with `sparkles memory` pointed at the shared memory dataset created
