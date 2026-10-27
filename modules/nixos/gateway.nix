@@ -502,8 +502,12 @@ in
                 consent_mode = "implicit";
                 claims_policy = "nimbus";
                 redirect_uris = [
-                  "https://app.cache.kclj.io/api/auth/oauth2/callback/oidc"
+                  "https://app.cache.kclj.io/api/auth/callback/oidc"
                   # Local nimbus dev (`vite dev`).
+                  "http://localhost:5173/api/auth/callback/oidc"
+                  # Retire after Nimbus's native-callback migration is deployed.
+                  # Gateway activates first; the running Worker still uses these.
+                  "https://app.cache.kclj.io/api/auth/oauth2/callback/oidc"
                   "http://localhost:5173/api/auth/oauth2/callback/oidc"
                 ];
                 scopes = [
