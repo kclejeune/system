@@ -9,13 +9,13 @@ rustPlatform.buildRustPackage rec {
   pname = "mbx-cache";
   version = "0.2.0-unstable-2026-10-27";
 
-  # kclejeune/mr-boxington-cache:fix/build-script-schema-5
-  rev = "640b6485c249007a8aa64dfbe89cd9be8b90d529";
+  # kclejeune/mr-boxington-cache:fix/rustc-driver-and-pack-uploads
+  rev = "c9c3f59c39e4570e338f7e60d31f2d501a69f16b";
   src = fetchFromGitHub {
     owner = "kclejeune";
     repo = "mr-boxington-cache";
     inherit rev;
-    hash = "sha256-gPdbhMnvGq1XNNTU1V01Syv/LZ88uf9bDrm6kHm7rlw=";
+    hash = "sha256-qWnsyH/IxnbqF8YjpTzytLUU85IqLbANQJCQWH8t4Ks=";
   };
 
   cargoHash = "sha256-8+Yd7v/erI2hNt5KrknIGaEh6PLjezukD2LkCOYAGE8=";

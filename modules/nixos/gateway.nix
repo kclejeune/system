@@ -45,6 +45,11 @@ in
       tracewayPort = 8095;
       ntfyPort = lib.toInt (lib.removePrefix ":" config.services.ntfy-sh.settings.listen-http);
       tracewayDomain = "traceway.${domain}";
+      # Public addresses used when local services call gateway's public names.
+      gatewayPublicIps = [
+        "5.161.248.157"
+        "2a01:4ff:f0:4c93::1"
+      ];
 
       # Published at https://www.cloudflare.com/ips/. These decide whether
       # CF-Connecting-IP/X-Forwarded-For is trustworthy; direct clients retain
@@ -777,8 +782,15 @@ in
             ~^1:(.+)$ $1;
           }
 
+          # NetBird management may fetch OIDC discovery concurrently while
+          # serving cache requests. Do not rate-limit gateway's own calls.
+          map $gateway_client_addr $authelia_ratelimit_key {
+            default $gateway_client_addr;
+            ${lib.concatMapStringsSep "\n" (ip: ''"${ip}" "";'') gatewayPublicIps}
+          }
+
           limit_req_zone $gateway_client_addr zone=general:10m rate=30r/s;
-          limit_req_zone $gateway_client_addr zone=authelia_api:10m rate=10r/s;
+          limit_req_zone $authelia_ratelimit_key zone=authelia_api:10m rate=10r/s;
           limit_conn_zone $gateway_client_addr zone=per_ip:10m;
 
           log_format gateway '$gateway_client_addr - $remote_user [$time_local] "$request" '
@@ -1126,6 +1138,24 @@ in
               "100.100.0.0/16"
               "10.64.0.0/16"
             ];
+          };
+        }
+        {
+          name = "gateway/traceway-collector";
+          description = "Ignore successfully authenticated collector ingestion requests";
+          whitelist = {
+            reason = "successful OpenTelemetry Collector ingestion";
+            expression = [
+              ''evt.Meta.log_type == "http_access-log" && evt.Meta.http_verb == "POST" && evt.Meta.http_status == "200" && evt.Meta.http_user_agent startsWith "OpenTelemetry Collector Contrib/" && evt.Meta.http_path in ["/api/otel/v1/logs", "/api/otel/v1/metrics", "/api/otel/v1/traces"]''
+            ];
+          };
+        }
+        {
+          name = "gateway/self";
+          description = "Never ban gateway's own public addresses";
+          whitelist = {
+            reason = "gateway's own public addresses";
+            ip = gatewayPublicIps;
           };
         }
       ];
