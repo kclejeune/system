@@ -41,6 +41,14 @@ in
         exec noctalia-shell ipc --pid "$(pgrep -fxo '.*/bin/quickshell')" "$@"
       '';
 
+      # Before sleep: DPMS on so the panel suspends lit. Idle-suspending with DPMS
+      # already off (lock 300s, dpms off 310s, suspend 900s) resumes to a black
+      # screen that `dpms on` can't recover; lid suspends with it on are fine.
+      beforeSleepHook = pkgs.writeShellScript "noctalia-before-sleep" ''
+        ${hyprctl} dispatch dpms on || true
+        exec ${noctaliaIpc} call lockScreen lock
+      '';
+
       # After resume: DPMS on first so the lock screen is visible, then wait for the
       # Goodix reader (the kernel re-enumerates it 3-8s after PrepareForSleep), then
       # re-arm fingerprint auth. Best-effort so a failure can't strand the lock.
@@ -512,7 +520,7 @@ in
         settings = {
           general = {
             lock_cmd = "${noctaliaIpc} call lockScreen lock";
-            before_sleep_cmd = "${noctaliaIpc} call lockScreen lock";
+            before_sleep_cmd = "${beforeSleepHook}";
             after_sleep_cmd = "${afterSleepHook}";
             inhibit_sleep = 3;
           };

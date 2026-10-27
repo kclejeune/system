@@ -185,6 +185,9 @@ in
         HandleLidSwitch = "ignore";
         HandleLidSwitchExternalPower = "ignore";
         HandleLidSwitchDocked = "ignore";
+        # hypridle holds a delay lock until noctalia locks; a slow lock past the
+        # 5s default lets logind suspend mid-lock, which wedges xe on resume.
+        InhibitDelayMaxSec = 15;
       };
 
       services.acpid = {
