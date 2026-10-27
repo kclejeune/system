@@ -9,9 +9,23 @@ _: {
     let
       cfg = config.programs.mr-boxington;
       toml = pkgs.formats.toml { };
-      shim = "${cfg.package}/libexec/mbx/cargo";
       # mbx resolves both files through `dirs::config_dir`, which ignores XDG on macOS.
       configDir = if pkgs.stdenv.hostPlatform.isDarwin then "Library/Application Support" else ".config";
+      # `mbx doctor` only recognizes the shim where `mbx setup` installs it, under
+      # `dirs::data_local_dir`, not the package's libexec wrapper.
+      shimDir = "${
+        if pkgs.stdenv.hostPlatform.isDarwin then "Library/Application Support" else ".local/share"
+      }/mbx/bin";
+      shim = "${config.home.homeDirectory}/${shimDir}/cargo";
+      # Let the packaged mbx write its own launcher and `mbx-target`, so the bytes
+      # match what doctor compares against across upgrades. Outside a mise shell,
+      # setup installs only the shim and edits no mise config.
+      setupShim = pkgs.runCommand "mbx-cargo-shim" { nativeBuildInputs = [ cfg.package ]; } ''
+        export HOME=$TMPDIR
+        unset XDG_DATA_HOME XDG_CONFIG_HOME MISE_CONFIG_FILE
+        mbx setup --yes >/dev/null
+        cp -r "$HOME/${shimDir}" $out
+      '';
     in
     {
       options.programs.mr-boxington = {
@@ -23,10 +37,11 @@ _: {
           type = lib.types.bool;
           default = true;
           description = ''
-            Put the package's Cargo shim ahead of every other `cargo` on PATH, so
-            plain `cargo` runs through mbx. The shim delegates to the next `cargo`
-            on PATH (rustup's proxy), so rustup still picks the toolchain. This
-            replaces `mbx setup` and mise's `mr_boxington` option.
+            Install the Cargo shim where `mbx setup` would and put it ahead of
+            every other `cargo` on PATH, so plain `cargo` runs through mbx. The
+            shim delegates to the next `cargo` on PATH (rustup's proxy), so rustup
+            still picks the toolchain. This replaces `mbx setup` and mise's
+            `mr_boxington` option.
           '';
         };
 
@@ -80,7 +95,7 @@ _: {
             for __mbx_use in use_flake use_nix; do
               if declare -f "$__mbx_use" >/dev/null; then
                 eval "__mbx_orig_$(declare -f "$__mbx_use")"
-                eval "$__mbx_use() { __mbx_orig_$__mbx_use \"\$@\" && PATH_add ${dirOf shim}; }"
+                eval "$__mbx_use() { __mbx_orig_$__mbx_use \"\$@\" && PATH_add \"${dirOf shim}\"; }"
               fi
             done
             unset __mbx_use
@@ -88,6 +103,8 @@ _: {
         };
 
         home.file = {
+          "${shimDir}/cargo" = lib.mkIf cfg.cargoShim { source = "${setupShim}/cargo"; };
+          "${shimDir}/mbx-target" = lib.mkIf cfg.cargoShim { source = "${setupShim}/mbx-target"; };
           "${configDir}/mbx/config.toml" = lib.mkIf (cfg.settings != { }) {
             source = toml.generate "mbx-config.toml" cfg.settings;
           };
