@@ -99,6 +99,19 @@ _: {
                   write = [ "kclejeune/sparkles" ];
                 }
                 {
+                  # Claim values match exactly; the server cannot restrict
+                  # this grant to the workflow's release-tag prefixes.
+                  claims = {
+                    repository = "kclejeune/sparkles";
+                    repository_owner_id = "11745400";
+                    repository_id = "1396834489";
+                    event_name = "push";
+                    ref_type = "tag";
+                  };
+                  read = [ "kclejeune/sparkles" ];
+                  write = [ "kclejeune/sparkles" ];
+                }
+                {
                   claims = {
                     repository = "kclejeune/sparkles";
                     repository_owner_id = "11745400";
