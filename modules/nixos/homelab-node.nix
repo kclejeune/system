@@ -19,6 +19,7 @@ in
         flakeCfg.flake.nixosModules.nix-ld
         flakeCfg.flake.nixosModules.caddy-lan
         flakeCfg.flake.nixosModules.profile-personal
+        flakeCfg.flake.nixosModules.codex-remote-control
         flakeCfg.flake.nixosModules.tailscale
         flakeCfg.flake.nixosModules.netbird
         flakeCfg.flake.nixosModules.subnet-router
@@ -38,7 +39,10 @@ in
       users.users.${config.user.name} = {
         isNormalUser = true;
         extraGroups = lib.mkDefault [ "wheel" ];
+        # Start the Codex service at boot, before an SSH login.
+        linger = true;
       };
+
       # The password is rewritten from sops on every activation. If decryption
       # fails, recover via SSH key + pam_rssh sudo or the console; root SSH is off.
       users.mutableUsers = lib.mkDefault false;
