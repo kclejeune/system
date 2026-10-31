@@ -110,7 +110,8 @@
     # Fork for the `lockScreen.restartAuth` IPC used by hyprland.nix's
     # lock-before-sleep (fingerprint after resume). Revert once merged upstream.
     noctalia.url = "github:kclejeune/noctalia-shell/kcl/restart-auth-support";
-    noctalia.inputs.nixpkgs.follows = "nixos-unstable";
+    # Qt 6.12 breaks this pinned Noctalia/Quickshell; keep its working Qt until updated.
+    noctalia.inputs.nixpkgs.url = "github:nixos/nixpkgs/6510408d147d8c5e6d76043e899e9251756f6a75";
     noctalia.inputs.noctalia-qs.inputs.treefmt-nix.follows = "treefmt-nix";
 
     base16.url = "github:SenchoPens/base16.nix";

@@ -19,7 +19,6 @@ _: {
       boot.kernelModules = [ "kvm-intel" ];
 
       # systemd initrd for the FIDO2 LUKS unlock.
-      boot.initrd.systemd.enable = true;
       boot.initrd.systemd.fido2.enable = true;
 
       disko.devices = {

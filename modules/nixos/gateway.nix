@@ -1086,7 +1086,7 @@ in
       };
 
       services.crowdsec.enable = true;
-      services.crowdsec.settings.general = {
+      services.crowdsec.settings.config = {
         api.server.listen_uri = "127.0.0.1:${toString crowdsecLapiPort}";
         prometheus.listen_port = crowdsecMetricsPort;
       };
@@ -1102,7 +1102,7 @@ in
 
       # authelia from its file, not journald: the syslog prefix breaks the
       # LePresidente parser's JSON.
-      services.crowdsec.localConfig.acquisitions = [
+      services.crowdsec.settings.acquisitions = [
         {
           source = "journalctl";
           journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
@@ -1131,7 +1131,7 @@ in
       ];
 
       # Never ban an overlay peer.
-      services.crowdsec.localConfig.parsers.s02Enrich = [
+      services.crowdsec.settings.parsers.s02Enrich = [
         {
           name = "gateway/trusted-overlay";
           description = "Never ban tailscale/netbird overlay sources";
@@ -1165,7 +1165,7 @@ in
       ];
 
       # Escalating bans (4h, 8h, … capped at 48h); CrowdSec has no native increment.
-      services.crowdsec.localConfig.profiles =
+      services.crowdsec.settings.profiles =
         let
           # Ternary, not min, keeps the result an integer for Sprintf '%dh'.
           escalatingBan =

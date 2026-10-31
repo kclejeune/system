@@ -22,7 +22,6 @@ _: {
       # systemd initrd for unattended TPM2 LUKS unlock. Enroll once with
       # `sudo systemd-cryptenroll --tpm2-device=auto /dev/nvme0n1p2`
       # (--tpm2-pcrs=7 also binds Secure Boot state).
-      boot.initrd.systemd.enable = true;
 
       disko.devices = {
         disk.main = {
