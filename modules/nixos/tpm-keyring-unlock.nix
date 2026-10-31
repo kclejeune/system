@@ -8,6 +8,24 @@ _: {
     }:
     let
       cfg = config.services.tpm-keyring-unlock;
+      # The wrapper is root-only; keep the PAM helper environment empty and
+      # execute the fixed store script through an ELF executable.
+      unsealLauncher = pkgs.writeCBin "tpm-keyring-unseal" ''
+        #include <unistd.h>
+
+        int main(int argc, char **argv) {
+          if (argc != 2) return 1;
+          char *const args[] = {
+            "${pkgs.bash}/bin/bash",
+            "${cfg.package}/libexec/tpm-keyring-unlock/tpm-keyring-unseal",
+            argv[1],
+            NULL
+          };
+          char *const env[] = { NULL };
+          execve(args[0], args, env);
+          return 127;
+        }
+      '';
     in
     {
       options.services.tpm-keyring-unlock = {
@@ -57,7 +75,7 @@ _: {
         # Symbolic mode: the wrapper service prepends `u-s,g-s,` and chmod
         # rejects mixing that with octal.
         security.wrappers.tpm-keyring-unseal = {
-          source = "${cfg.package}/libexec/tpm-keyring-unlock/tpm-keyring-unseal";
+          source = "${unsealLauncher}/bin/tpm-keyring-unseal";
           owner = "root";
           group = "root";
           permissions = "u=rx,g=,o=";
