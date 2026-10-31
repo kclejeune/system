@@ -60,6 +60,8 @@ _: {
 
         services.crowdsec.settings = {
           config.api.server.enable = true;
+          # Keep the existing LAPI database and its machine/bouncer registrations.
+          config.db_config.db_path = "/var/lib/crowdsec/state/crowdsec.db";
           # /var/lib/crowdsec is root-owned and the setup script writes as crowdsec.
           config.api.client.credentials_path = lib.mkDefault "/etc/crowdsec/local_api_credentials.yaml";
           config.api.server.online_client.credentials_path =
@@ -83,6 +85,14 @@ _: {
             };
           }
         ];
+
+        # tmpfiles expands percent specifiers in arguments. Profiles contain
+        # Sprintf('%dh', ...), so escape percent signs before writing the file.
+        systemd.tmpfiles.settings."10-crowdsec"."/etc/crowdsec/profiles.yaml"."f+".argument = lib.mkForce (
+          lib.replaceStrings [ "%" ] [ "%%" ] (
+            lib.concatMapStringsSep "\n---\n" (lib.generators.toYAML { }) cfg.settings.profiles
+          )
+        );
 
         # After /etc switches, so the current tmpfiles config is in place.
         system.activationScripts.crowdsec-prune-localconfig = {
