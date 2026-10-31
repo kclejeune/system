@@ -153,7 +153,15 @@ in
           lazyjournal
         ]
         # GUI apps: nothing to run them on a headless host.
-        ++ lib.optionals config.desktop.enable [ gitbutler ]
+        ++ lib.optionals config.desktop.enable [
+          # GitButler's Rust test suite exceeds the disk on macOS CI runners.
+          (
+            if pkgs.stdenv.hostPlatform.isDarwin then
+              gitbutler.overrideAttrs { doCheck = false; }
+            else
+              gitbutler
+          )
+        ]
         ++ lib.optionals (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) [
           chromium
           playwright-test
