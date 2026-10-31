@@ -23,7 +23,7 @@ _: {
       );
       netbirdMgmtMetricsPort = config.services.netbird.server.management.metricsPort;
       netbirdSignalMetricsPort = config.services.netbird.server.signal.metricsPort;
-      crowdsecMetricsPort = config.services.crowdsec.settings.general.prometheus.listen_port;
+      crowdsecMetricsPort = config.services.crowdsec.settings.config.prometheus.listen_port;
       mkScrapeConfig = job_name: target: {
         inherit job_name;
         static_configs = [ { targets = [ target ]; } ];

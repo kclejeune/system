@@ -117,7 +117,6 @@ in
         "vt.global_cursor_default=0"
       ];
       boot.consoleLogLevel = 0;
-      boot.initrd.verbose = false;
 
       # --retain-splash holds the splash until cage draws (no fbcon flash); the
       # leading `-` tolerates the re-run on switch after plymouth has exited.

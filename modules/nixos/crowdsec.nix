@@ -59,14 +59,15 @@ _: {
         services.crowdsec.hub.collections = lib.mkDefault [ "crowdsecurity/linux" ];
 
         services.crowdsec.settings = {
-          general.api.server.enable = true;
+          config.api.server.enable = true;
           # /var/lib/crowdsec is root-owned and the setup script writes as crowdsec.
-          lapi.credentialsFile = lib.mkDefault "/etc/crowdsec/local_api_credentials.yaml";
-          capi.credentialsFile = lib.mkDefault "/etc/crowdsec/online_api_credentials.yaml";
+          config.api.client.credentials_path = lib.mkDefault "/etc/crowdsec/local_api_credentials.yaml";
+          config.api.server.online_client.credentials_path =
+            lib.mkDefault "/etc/crowdsec/online_api_credentials.yaml";
         };
 
         # A banned 127.0.0.1 would make the bouncer drop all loopback traffic.
-        services.crowdsec.localConfig.parsers.s02Enrich = [
+        services.crowdsec.settings.parsers.s02Enrich = [
           {
             name = "crowdsec/trusted-loopback-private";
             description = "Whitelist loopback and RFC1918 source IPs";
@@ -83,12 +84,6 @@ _: {
           }
         ];
 
-        # The module passes -c <store path>, so bare `cscli` (bouncer registration,
-        # admin) needs this.
-        systemd.tmpfiles.settings."99-crowdsec-cscli-config"."/etc/crowdsec/config.yaml"."L+".argument =
-          toString
-            ((pkgs.formats.yaml { }).generate "crowdsec.yaml" config.services.crowdsec.settings.general);
-
         # After /etc switches, so the current tmpfiles config is in place.
         system.activationScripts.crowdsec-prune-localconfig = {
           deps = [ "etc" ];
@@ -99,7 +94,7 @@ _: {
           # Local parser files are installed during activation; reload the
           # running engine when they change so it actually reads the new rules.
           crowdsec.reloadTriggers = [
-            (pkgs.writeText "crowdsec-local-parsers.json" (builtins.toJSON cfg.localConfig.parsers))
+            (pkgs.writeText "crowdsec-local-parsers.json" (builtins.toJSON cfg.settings.parsers))
           ];
 
           # DynamicUser + static User leaves the state dir owned by a stale uid after

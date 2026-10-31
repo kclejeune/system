@@ -18,7 +18,6 @@ _: {
       boot.kernelModules = [ "kvm-intel" ];
 
       # systemd initrd for the FIDO2 LUKS unlock.
-      boot.initrd.systemd.enable = true;
       boot.initrd.systemd.fido2.enable = true;
 
       # 2G ESP: there's no separate /boot, so every generation's UKI lives here.
