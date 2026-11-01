@@ -16,13 +16,85 @@
       publicUrl = "https://${cfg.subdomain}.${config.services.caddyLan.baseDomain}";
       # Requires traceway-agent on the host.
       agent = config.services.traceway.agent;
+      # Pricing is the standard short-prompt rate; Haiku and OpenAI charge
+      # more for long prompts, which these fixed rates cannot represent.
       haiku = {
         provider = "anthropic";
         model = "claude-haiku-5-5";
+        contextTokens = 1000000;
+        maxOutputTokens = 128000;
+        requestTimeoutSecs = 90;
+        pricing = {
+          inputPerMTok = 0.10;
+          outputPerMTok = 0.50;
+        };
       };
       sonnet = {
         provider = "anthropic";
         model = "claude-sonnet-5-5";
+        contextTokens = 1000000;
+        maxOutputTokens = 128000;
+        requestTimeoutSecs = 90;
+        pricing = {
+          inputPerMTok = 2.00;
+          outputPerMTok = 10.00;
+        };
+      };
+      opus = {
+        provider = "anthropic";
+        model = "claude-opus-5-5";
+        contextTokens = 1000000;
+        maxOutputTokens = 128000;
+        requestTimeoutSecs = 90;
+        pricing = {
+          inputPerMTok = 4.00;
+          outputPerMTok = 20.00;
+        };
+      };
+      luna = {
+        provider = "openai";
+        model = "gpt-6-luna";
+        contextTokens = 1050000;
+        maxOutputTokens = 128000;
+        pricing = {
+          inputPerMTok = 0.10;
+          outputPerMTok = 0.50;
+        };
+      };
+      terra = {
+        provider = "openai";
+        model = "gpt-6.1-terra";
+        contextTokens = 1050000;
+        maxOutputTokens = 128000;
+        pricing = {
+          inputPerMTok = 1.00;
+          outputPerMTok = 5.00;
+        };
+      };
+      sol = {
+        provider = "openai";
+        model = "gpt-6.1-sol";
+        contextTokens = 1050000;
+        maxOutputTokens = 128000;
+        pricing = {
+          inputPerMTok = 2.00;
+          outputPerMTok = 10.00;
+        };
+      };
+      # Roles use only the provider and model ID; the remaining fields are
+      # per-model provider settings.
+      modelRef = model: { inherit (model) provider model; };
+      providerModels = models: {
+        allowedModels = map (model: model.model) models;
+        models = builtins.listToAttrs (
+          map (model: {
+            name = model.model;
+            value = builtins.removeAttrs model [
+              "provider"
+              "model"
+            ];
+          }) models
+        );
       };
     in
     {
@@ -77,58 +149,48 @@
         # the endpoints and key sources locked below stay with this file.
         services.sparkles.models.settings = {
           providers = {
-            anthropic = {
-              kind = "anthropic";
-              endpoint = "https://api.anthropic.com";
-              apiKey.secret = "anthropic";
-              allowedModels = [
-                haiku.model
-                sonnet.model
-              ];
-              # Bound grounding below the models' full context windows.
-              contextTokens = 200000;
-              maxOutputTokens = 4096;
-              requestTimeoutSecs = 90;
-              models = {
-                ${haiku.model} = {
-                  # Stay within Haiku's cheaper prompt-length tier.
-                  contextTokens = 100000;
-                  pricing = {
-                    inputPerMTok = 0.10;
-                    outputPerMTok = 0.50;
-                  };
-                };
-                ${sonnet.model}.pricing = {
-                  inputPerMTok = 2.00;
-                  outputPerMTok = 10.00;
-                };
+            anthropic =
+              (providerModels [
+                haiku
+                sonnet
+                opus
+              ])
+              // {
+                kind = "anthropic";
+                endpoint = "https://api.anthropic.com";
+                apiKey.secret = "anthropic";
               };
-            };
             # Available for explicit per-dataset role overrides; Claude handles
             # all default roles, so registering this provider makes no calls.
-            openai = {
-              kind = "openai";
-              endpoint = "https://api.openai.com/v1";
-              apiKey.secret = "openai";
-            };
+            openai =
+              (providerModels [
+                luna
+                terra
+                sol
+              ])
+              // {
+                kind = "openai";
+                endpoint = "https://api.openai.com/v1";
+                apiKey.secret = "openai";
+              };
           };
           roles = {
-            draft = [
+            draft = map modelRef [
               haiku
               sonnet
             ];
-            repair = [ sonnet ];
-            summarize = [
+            repair = [ (modelRef sonnet) ];
+            summarize = map modelRef [
               haiku
               sonnet
             ];
-            # Source-backed facts deserve stronger reasoning and room for spans.
-            extract = [ (sonnet // { maxOutputTokens = 8192; }) ];
-            explain = [
+            # Source-backed facts deserve stronger reasoning.
+            extract = [ (modelRef sonnet) ];
+            explain = map modelRef [
               haiku
               sonnet
             ];
-            optimize = [ sonnet ];
+            optimize = [ (modelRef sonnet) ];
           };
         };
 
