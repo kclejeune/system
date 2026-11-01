@@ -39,6 +39,36 @@ Non-Nix assets that aren't flake-parts modules live in `secrets/`,
 `modules/home/assets/{dotfiles,nvim,yazi}/` (source-path references for
 the corresponding home modules).
 
+### Updating local packages
+
+`nix develop` provides `nix-update`. For packages with a conventional GitHub
+source and inline hashes, run it from the repository root, then review the diff:
+
+```bash
+nix-update --flake sem-cli --override-filename pkgs/sem-cli/package.nix --build
+nix-update --flake tpm-keyring-unlock --override-filename pkgs/tpm-keyring-unlock/package.nix --build
+nix-update --flake traceway --override-filename pkgs/traceway/package.nix \
+  --version-regex 'backend/v(.*)' --subpackage cli --subpackage frontend --build
+nix build --no-link .#traceway.cli
+git diff -- pkgs/
+```
+
+Run the TPM and Traceway updates on Linux. `nix-update` updates source and
+supported dependency hashes; `--build` checks the resulting package. Add
+`--version <version>` to select a release. To make another ordinary package
+updateable this way, expose it under `packages` in `flake.nix` and keep its
+version and hashes in its Nix file. New files must be tracked by Git for flake
+evaluation.
+
+Traceway shares its source and version across the backend, CLI, and frontend;
+the subpackage flags refresh their separate Go and npm hashes. Check that the
+matching backend and CLI release tags still point to the same commit. The
+backend build includes the frontend; the separate build checks the CLI.
+
+`mbx-cache` follows a specific fork commit, so choose its revision deliberately.
+`cb` is a local script with no upstream version. Flake inputs such as `smolvm`
+are maintained through `flake.lock` instead.
+
 ### Overlapping nix-darwin and NixOS
 
 nix-darwin and NixOS share identical shell/user/fonts/packages setup via

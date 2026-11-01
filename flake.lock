@@ -451,6 +451,40 @@
         "type": "github"
       }
     },
+    "libkrun-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790725010,
+        "narHash": "sha256-1kL0sdQP6ijlB2oncKzZcl74qzmE6obiX5Hr6ezuqbc=",
+        "owner": "smol-machines",
+        "repo": "libkrun",
+        "rev": "3285db7404144ed61faf0848bb424c0f82743f41",
+        "type": "github"
+      },
+      "original": {
+        "owner": "smol-machines",
+        "repo": "libkrun",
+        "rev": "3285db7404144ed61faf0848bb424c0f82743f41",
+        "type": "github"
+      }
+    },
+    "libkrunfw-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790794569,
+        "narHash": "sha256-S2hB4SVRGLmur4oIcr21gZ8k7n/iXKvQ7unOH9fbZoU=",
+        "owner": "smol-machines",
+        "repo": "libkrunfw",
+        "rev": "bfb229911374698399dcedcc92019287870759ab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "smol-machines",
+        "repo": "libkrunfw",
+        "rev": "bfb229911374698399dcedcc92019287870759ab",
+        "type": "github"
+      }
+    },
     "llm-agents": {
       "inputs": {
         "bun2nix": "bun2nix",
@@ -839,6 +873,7 @@
         "nixpkgs": "nixpkgs_5",
         "noctalia": "noctalia",
         "rust-overlay": "rust-overlay",
+        "smolvm": "smolvm",
         "sops-nix": "sops-nix",
         "sparkles": "sparkles",
         "systems": "systems_2",
@@ -864,6 +899,28 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "smolvm": {
+      "inputs": {
+        "libkrun-src": "libkrun-src",
+        "libkrunfw-src": "libkrunfw-src",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793517942,
+        "narHash": "sha256-Xnnws2ttUF6LR84NfRGwEKvN7PQc7BIiXaSR4L6X51E=",
+        "owner": "smol-machines",
+        "repo": "smolvm",
+        "rev": "03a5c2270d287b09e4aab52e28d384ab66dd5818",
+        "type": "github"
+      },
+      "original": {
+        "owner": "smol-machines",
+        "repo": "smolvm",
         "type": "github"
       }
     },

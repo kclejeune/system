@@ -68,6 +68,7 @@ in
           go-task
           grype
           helm-docs
+          llm-agents.herdr-core
           httpie
           hyperfine
           iperf
@@ -120,6 +121,7 @@ in
           rustup
           sd
           shellcheck
+          smolvm
           sig
           skopeo
           sops
@@ -154,13 +156,8 @@ in
         ]
         # GUI apps: nothing to run them on a headless host.
         ++ lib.optionals config.desktop.enable [
-          # GitButler's Rust test suite exceeds the disk on macOS CI runners.
-          (
-            if pkgs.stdenv.hostPlatform.isDarwin then
-              gitbutler.overrideAttrs { doCheck = false; }
-            else
-              gitbutler
-          )
+          llm-agents.herdr-app
+          llm-agents.gitbutler
         ]
         ++ lib.optionals (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) [
           chromium

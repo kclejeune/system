@@ -69,7 +69,10 @@ in
         go.enable = true;
         gpg.enable = true;
         btop.enable = true;
-        herdr.enable = true;
+        herdr = {
+          enable = true;
+          package = pkgs.llm-agents.herdr;
+        };
         htop.enable = true;
         jq.enable = true;
         k9s = {

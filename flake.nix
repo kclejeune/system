@@ -4,11 +4,12 @@
   nixConfig = {
     extra-substituters = [
       "https://cache.kclj.io"
+      "https://cache.numtide.com"
     ];
     extra-trusted-public-keys = [
       "cache.kclj.io-1:StGAmbogIZLS5IAQD2IQCbbmIjv3Sq8rl/AVEw4Sy7s="
-      "kclejeune:u0sa4anVXC4bKlzEsijdSlLyWVaEkApu6KWyDbbJMkk="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
     ];
@@ -40,6 +41,9 @@
 
     nimbus.url = "github:kclejeune/nimbus";
     nimbus.inputs.nixpkgs.follows = "nixpkgs";
+
+    smolvm.url = "github:smol-machines/smolvm";
+    smolvm.inputs.nixpkgs.follows = "nixpkgs";
 
     # Fork: fixes --target-host ssh-ng MaxSessions flooding.
     nh.url = "github:kclejeune/nh/fix/remote-diff-ssh-ng-protocol-mismatch";
@@ -461,6 +465,27 @@
                 '';
             });
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
+            # Upstream 1.33.0 still has the 1.32.2 release hashes; remove when fixed.
+            smolvm =
+              let
+                upstream = inputs.smolvm.packages.${prev.stdenv.hostPlatform.system}.default;
+                hashes = {
+                  x86_64-linux = "sha256-l+DGTVCrxAdJmALapshJrAEO8p1E4dl2ZNingGeScnQ=";
+                  aarch64-linux = "sha256-yoAILDmbcbj0r+QF8TJeAfrWyixIF8iXI+3pK+6PJzc=";
+                  aarch64-darwin = "sha256-L3dyIw4cU6J9tYn9PGUZCkPrAUvBB7L5y9aoX1Xnw/U=";
+                };
+              in
+              if upstream.version == "1.33.0" then
+                upstream.overrideAttrs (old: {
+                  src = final.fetchurl {
+                    inherit (old.src) url;
+                    hash = hashes.${prev.stdenv.hostPlatform.system};
+                  };
+                  # Guest /etc/mtab points into /proc, which is mounted at runtime.
+                  dontCheckForBrokenSymlinks = true;
+                })
+              else
+                upstream;
             herdr-gpui = inputs.herdr-gpui.packages.${prev.stdenv.hostPlatform.system}.default;
             nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
             sparkles = inputs.sparkles.packages.${prev.stdenv.hostPlatform.system}.default;
@@ -552,7 +577,11 @@
                 mvs
                 sem-cli
                 nimbus
+                smolvm
                 ;
+            }
+            // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+              inherit (pkgs) tpm-keyring-unlock traceway;
             };
 
             legacyPackages = pkgs;
@@ -567,6 +596,7 @@
                     uv
                     nh
                     nix-fast-build
+                    nix-update
                     nimbus
                     gh
                     mvs
@@ -579,7 +609,12 @@
                 })
                 ++ config.pre-commit.settings.enabledPackages
                 ++ (lib.attrValues config.treefmt.build.programs)
-                ++ (lib.attrValues config.packages);
+                ++ (lib.attrValues (
+                  removeAttrs config.packages [
+                    "tpm-keyring-unlock"
+                    "traceway"
+                  ]
+                ));
               shellHook = config.pre-commit.installationScript;
             };
 

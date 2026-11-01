@@ -71,7 +71,7 @@ in
 goPackage {
   pname = "traceway";
 
-  passthru.cli = cli;
+  passthru = { inherit cli frontend; };
 
   modRoot = "backend";
 
