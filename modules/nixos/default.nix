@@ -31,9 +31,9 @@ in
         keep-outputs = lib.mkDefault false;
         keep-derivations = lib.mkDefault false;
         # Let Nix collect garbage mid-build instead of failing with a full disk,
-        # which also wedges the store DB and nh-clean with it.
-        min-free = 5 * 1024 * 1024 * 1024;
-        max-free = 20 * 1024 * 1024 * 1024;
+        # which also wedges the store DB and nh-clean with it. Small disks lower these.
+        min-free = lib.mkDefault (20 * 1024 * 1024 * 1024);
+        max-free = lib.mkDefault (50 * 1024 * 1024 * 1024);
       };
 
       users.defaultUserShell = pkgs.zsh;

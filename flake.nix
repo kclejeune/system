@@ -236,6 +236,11 @@
             host = {
               networking.hostName = "wally";
               hm.imports = [ config.flake.homeModules.displays-5570-home ];
+              # A 460 GB disk that runs gates; see homelab-node.nix.
+              hm.programs.mr-boxington.settings.gc = {
+                max_total_size = "150GiB";
+                min_free_size = "75GiB";
+              };
             };
           };
 

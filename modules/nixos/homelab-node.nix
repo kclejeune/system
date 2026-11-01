@@ -29,6 +29,13 @@ in
         flakeCfg.flake.nixosModules.traceway-agent
       ];
 
+      # 460 GB disks: keep the shared mbx cache small enough that a gate's build target,
+      # about 40 GiB and not collectable while the build runs, still fits.
+      hm.programs.mr-boxington.settings.gc = {
+        max_total_size = "150GiB";
+        min_free_size = "75GiB";
+      };
+
       # follow latest kernel for homelab nodes
       boot.kernelPackages = pkgs.linuxPackages_latest;
       # These servers have no need for multipath TCP; ordinary TCP remains available.

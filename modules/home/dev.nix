@@ -164,10 +164,11 @@
         enable = true;
         rustAnalyzer = true;
         settings.http.timeout = "5m";
-        # Share one storage budget across worktrees on each host.
+        # Share one storage budget across worktrees on each host. Hosts with smaller
+        # disks lower it, since a build's live target is not collected while it runs.
         settings.gc = {
-          max_total_size = "200GiB";
-          min_free_size = "50GiB";
+          max_total_size = lib.mkDefault "200GiB";
+          min_free_size = lib.mkDefault "50GiB";
         };
       };
 

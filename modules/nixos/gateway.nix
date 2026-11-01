@@ -103,6 +103,16 @@ in
       '';
     in
     {
+      # A 75 GB disk: keep the smaller Nix free-space thresholds.
+      nix.settings.min-free = 5 * 1024 * 1024 * 1024;
+      nix.settings.max-free = 20 * 1024 * 1024 * 1024;
+      # The gateway serves the mbx cache but builds nothing; a small local budget keeps
+      # an occasional build from filling the disk.
+      hm.programs.mr-boxington.settings.gc = {
+        max_total_size = "20GiB";
+        min_free_size = "15GiB";
+      };
+
       imports = [
         flakeCfg.flake.nixosModules.crowdsec
         flakeCfg.flake.nixosModules.mbx-cache
