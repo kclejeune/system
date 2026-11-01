@@ -121,6 +121,8 @@ in
       # Track the newest kernel line in the pinned nixpkgs, including its
       # matching out-of-tree kernel modules and tools.
       boot.kernelPackages = pkgs.linuxPackages_latest;
+      # This server has no need for multipath TCP; ordinary TCP remains available.
+      boot.kernel.sysctl."net.mptcp.enabled" = 0;
 
       # /nix lives on this volume, so it must mount in initrd.
       boot.initrd.availableKernelModules = [ "virtio_scsi" ];

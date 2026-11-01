@@ -31,6 +31,8 @@ in
 
       # follow latest kernel for homelab nodes
       boot.kernelPackages = pkgs.linuxPackages_latest;
+      # These servers have no need for multipath TCP; ordinary TCP remains available.
+      boot.kernel.sysctl."net.mptcp.enabled" = 0;
 
       # One ingest token shared by all four nodes.
       sops.secrets.${config.services.traceway.agent.tokenSecret}.sopsFile = ../../secrets/homelab.yaml;
