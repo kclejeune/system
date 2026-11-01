@@ -65,7 +65,9 @@ _: {
       home.packages = [
         pkgs.llm-agents.herdr-core
       ]
-      ++ lib.optional config.desktop.enable pkgs.llm-agents.herdr-app
+      ++ lib.optional (
+        config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux
+      ) pkgs.llm-agents.herdr-app
       ++ lib.optional (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) pkgs.herdr-gpui;
 
       xdg.configFile = lib.mkIf config.desktop.enable {

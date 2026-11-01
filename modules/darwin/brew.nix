@@ -26,6 +26,11 @@ _: {
         "bartender"
         "ghostty"
         "hammerspoon"
+        # GPUI also installs Herdr.app in /Applications.
+        {
+          name = "herdr-app";
+          args.appdir = "~/Applications";
+        }
         "herdr-gpui"
         "httpie-desktop"
         "jetbrains-toolbox"
