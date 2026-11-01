@@ -68,6 +68,20 @@ in
         enableUserSlices = lib.mkDefault true;
       };
 
+      # An OOM kill ends only the killed process. With the default "stop" it
+      # also stops the unit or scope around it: a multiplexer with every shell
+      # in it, or an SSH session.
+      systemd.settings.Manager.DefaultOOMPolicy = lib.mkDefault "continue";
+      systemd.user.settings.Manager.DefaultOOMPolicy = lib.mkDefault "continue";
+
+      # Keep remote access alive while a host thrashes. Not OOMScoreAdjust on
+      # sshd: sessions inherit it, so builds over SSH would become unkillable.
+      systemd.services.sshd.serviceConfig.MemoryMin = lib.mkDefault "64M";
+      systemd.services.tailscaled.serviceConfig = lib.mkIf config.services.tailscale.enable {
+        MemoryMin = lib.mkDefault "128M";
+        OOMScoreAdjust = lib.mkDefault (-900);
+      };
+
       networking = {
         nftables.enable = lib.mkDefault true;
         firewall = {
