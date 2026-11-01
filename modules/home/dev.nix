@@ -10,7 +10,13 @@
       ...
     }:
     {
-      imports = [ inputs.sparkles.homeModules.default ];
+      imports = [
+        inputs.sparkles.homeModules.default
+        inputs.hex-dictation.homeManagerModules.default
+      ];
+
+      # Upstream's Nix module currently supports x86-64 Linux.
+      programs.hex.enable = config.desktop.enable && pkgs.stdenv.hostPlatform.system == "x86_64-linux";
 
       home.packages =
         with pkgs;

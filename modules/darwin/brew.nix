@@ -14,6 +14,7 @@ _: {
 
       taps = [
         "1password/tap"
+        "anomalyco/tap"
         "beeftornado/rmtree"
         "nikitabobko/tap"
         "penso/tap"
@@ -21,6 +22,7 @@ _: {
       casks = [
         "1password-cli"
         "aerospace"
+        "anomalyco/tap/hex"
         "bartender"
         "ghostty"
         "hammerspoon"

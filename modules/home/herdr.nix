@@ -10,6 +10,7 @@ _: {
       appSettings = (pkgs.formats.json { }).generate "herdr-app-settings.json" {
         zoom = 1.0;
         sounds.enabled = true;
+        telemetry = false;
         minimum_contrast = 1.0;
         theme = {
           light = "one-half-light";

@@ -388,6 +388,29 @@
         "type": "github"
       }
     },
+    "hex-dictation": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixos-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793570483,
+        "narHash": "sha256-XofDZ+8U+pFG46Ucc3p2ZitgBS4fTDZsqdcgkY+sntc=",
+        "owner": "anomalyco",
+        "repo": "hex",
+        "rev": "a54d5726bf86ef0701ccb7537b6e622a69252bd5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "repo": "hex",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -859,6 +882,7 @@
         "flake-parts": "flake-parts_2",
         "git-hooks": "git-hooks",
         "herdr-gpui": "herdr-gpui",
+        "hex-dictation": "hex-dictation",
         "home-manager": "home-manager",
         "import-tree": "import-tree",
         "lanzaboote": "lanzaboote",

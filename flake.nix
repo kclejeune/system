@@ -42,6 +42,10 @@
     nimbus.url = "github:kclejeune/nimbus";
     nimbus.inputs.nixpkgs.follows = "nixpkgs";
 
+    hex-dictation.url = "github:anomalyco/hex";
+    hex-dictation.inputs.nixpkgs.follows = "nixos-unstable";
+    hex-dictation.inputs.home-manager.follows = "home-manager";
+
     smolvm.url = "github:smol-machines/smolvm";
     smolvm.inputs.nixpkgs.follows = "nixpkgs";
 
