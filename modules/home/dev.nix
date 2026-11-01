@@ -1,7 +1,4 @@
-{ config, inputs, ... }:
-let
-  sparklesServer = "https://sparkles.${config.flake.lib.site.lanDomain}";
-in
+{ inputs, ... }:
 {
   # Deliberately on every host, headless ones included, so SSH sessions have the
   # full toolkit.
@@ -174,13 +171,9 @@ in
         };
       };
 
-      # The CLI, with `sparkles memory` pointed at the shared memory dataset created
-      # through the Sparkles UI. Credentials stay in the CLI's separate auth-login store.
-      programs.sparkles = {
-        enable = true;
-        server = sparklesServer;
-        memory.dataset = "slurp";
-      };
+      # The CLI. profile-personal points it at the home server and its memory dataset,
+      # so a work machine that skips that profile gets no personal endpoint.
+      programs.sparkles.enable = true;
 
       # mise defaults all_compile=true when it detects NixOS (/etc/NIXOS), assuming
       # prebuilt binaries won't run, and then compiles tools like node from source.

@@ -67,6 +67,12 @@ in
         age.keyFile = "${config.xdg.configHome}/sops/age/keys.txt";
         secrets."mbx-cache/token".sopsFile = ../../secrets/users.yaml;
       };
+      # `sparkles memory` uses the shared memory dataset created through the Sparkles
+      # UI on the home server. Credentials stay in the CLI's separate auth-login store.
+      programs.sparkles = {
+        server = "https://sparkles.${flakeCfg.flake.lib.site.lanDomain}";
+        memory.dataset = "slurp";
+      };
       programs.mr-boxington.settings.remote = {
         url = "https://mbx.kclj.dev";
         namespace = "kclejeune/dev";
