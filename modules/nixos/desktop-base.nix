@@ -301,7 +301,6 @@ in
         pkgs.dmidecode
         pkgs.firefox
         pkgs.google-chrome
-        pkgs.herdr-gpui
         pkgs.kitty
         pkgs.obsidian
         pkgs.pulseaudio

@@ -25,6 +25,7 @@ in
         flakeCfg.flake.homeModules.fzf
         flakeCfg.flake.homeModules.mr-boxington
         flakeCfg.flake.homeModules.git
+        flakeCfg.flake.homeModules.herdr
         flakeCfg.flake.homeModules.identity
         flakeCfg.flake.homeModules.nushell
         flakeCfg.flake.homeModules.nvim
@@ -69,7 +70,6 @@ in
         go.enable = true;
         gpg.enable = true;
         btop.enable = true;
-        herdr.enable = true;
         htop.enable = true;
         jq.enable = true;
         k9s = {
