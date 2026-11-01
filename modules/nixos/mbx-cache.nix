@@ -141,10 +141,16 @@ _: {
           # isolate the native process from host devices and kernel state.
           NoNewPrivileges = true;
           PrivateDevices = true;
-          # tmpfs defaults to root-owned 0755. Uploads are staged in /tmp by
-          # the unprivileged service before their digests are checked and sent to R2.
+          # Stage concurrent uploads on disk, rather than consuming the gateway's
+          # RAM and swap in a bounded tmpfs. systemd owns this directory for the
+          # service, and the bind keeps applications that use /tmp inside it.
+          CacheDirectory = "mbx-cache";
+          CacheDirectoryMode = "0700";
+          BindPaths = [ "/var/cache/mbx-cache:/tmp" ];
+          # The directory is dedicated to temporary upload files. A stopped server
+          # has no active uploads, so remove abandoned files before it starts again.
+          ExecStartPre = "${pkgs.findutils}/bin/find /var/cache/mbx-cache -maxdepth 1 -type f -name .tmp* -delete";
           TemporaryFileSystem = [
-            "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=6G"
             "/var/tmp:rw,nosuid,nodev,noexec,mode=1777,size=64M"
           ];
           ProtectSystem = "strict";
