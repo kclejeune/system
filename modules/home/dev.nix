@@ -17,6 +17,7 @@
 
       # Upstream's Nix module currently supports x86-64 Linux.
       programs.hex.enable = config.desktop.enable && pkgs.stdenv.hostPlatform.system == "x86_64-linux";
+      programs.hex.package = lib.mkIf config.programs.hex.enable pkgs.hex-dictation;
 
       home.packages =
         with pkgs;
