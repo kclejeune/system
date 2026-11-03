@@ -136,6 +136,10 @@ _: {
           Restart = "always";
           RestartSec = "5s";
           TimeoutStopSec = "30s";
+          # Each staged upload holds two descriptors, and uploads that clients
+          # abandon mid-stream have kept theirs open, so the default soft limit
+          # of 1024 ran out and every request failed with EMFILE (HTTP 500).
+          LimitNOFILE = 65536;
 
           # Match the former read-only, capability-free container and further
           # isolate the native process from host devices and kernel state.
