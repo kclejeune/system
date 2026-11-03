@@ -262,6 +262,10 @@
               # cage starts at 1x; match the session's eDP-1 scale.
               services.greeter.outputScales.eDP-1 = 2;
               hm.imports = [ config.flake.homeModules.displays-framework-13-home ];
+              # The shared action store alone outgrew 200 GiB, which left managed targets
+              # no budget, so every hourly collection removed each worktree's idle target.
+              # A 1.8 TB disk with many lane worktrees can afford the room.
+              hm.programs.mr-boxington.settings.gc.max_total_size = "450GiB";
             };
           };
 

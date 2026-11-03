@@ -1158,11 +1158,16 @@ in
         }
         {
           name = "gateway/traceway-collector";
-          description = "Ignore successfully authenticated collector ingestion requests";
+          description = "Ignore collector ingestion requests that succeed or fail upstream";
+          # When Traceway is down, the homelab collectors keep retrying and the
+          # proxy answers 502/503/504 (or logs 499 when a collector gives up).
+          # Matching only 200 let those retries trip http-bad-user-agent and ban
+          # every homelab address, which also locked the hosts out of mbx.kclj.dev.
+          # Authentication failures (401/403) stay unlisted so they still count.
           whitelist = {
-            reason = "successful OpenTelemetry Collector ingestion";
+            reason = "OpenTelemetry Collector ingestion, including retries during an upstream outage";
             expression = [
-              ''evt.Meta.log_type == "http_access-log" && evt.Meta.http_verb == "POST" && evt.Meta.http_status == "200" && evt.Meta.http_user_agent startsWith "OpenTelemetry Collector Contrib/" && evt.Meta.http_path in ["/api/otel/v1/logs", "/api/otel/v1/metrics", "/api/otel/v1/traces"]''
+              ''evt.Meta.log_type == "http_access-log" && evt.Meta.http_verb == "POST" && evt.Meta.http_status in ["200", "499", "502", "503", "504"] &&evt.Meta.http_user_agent startsWith "OpenTelemetry Collector Contrib/" && evt.Meta.http_path in ["/api/otel/v1/logs", "/api/otel/v1/metrics", "/api/otel/v1/traces"]''
             ];
           };
         }
