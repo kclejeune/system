@@ -82,7 +82,7 @@ jobs:
           NIMBUS_ENDPOINT: ${{ vars.NIMBUS_ENDPOINT }}
           NIMBUS_AUTH_TOKEN: ${{ secrets.NIMBUS_AUTH_TOKEN }}
         run: |
-          nimbus watch-exec kclejeune nix-fast-build \
+          nimbus watch-exec --jobs 2 kclejeune nix-fast-build \
             --flake ".#cacheable.${{ matrix.system }}" \
             --no-nom \
             --skip-cached \
