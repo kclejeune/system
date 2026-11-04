@@ -447,6 +447,8 @@
 
             # The full collection stays namespaced; selected tools also replace nixpkgs versions.
             llm-agents = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system};
+
+            opencode = final.llm-agents.opencode2;
             inherit (final.llm-agents)
               beads
               ccusage
@@ -454,7 +456,6 @@
               codex
               crush
               gemini-cli
-              opencode
               ;
 
             # Keep ChatGPT from registering itself as a web browser on Linux.
