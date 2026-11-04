@@ -6,13 +6,13 @@
 }:
 
 let
-  version = "2.0.7";
+  version = "2.0.8";
 
   src = fetchFromGitHub {
     owner = "tracewayapp";
     repo = "traceway";
     tag = "backend/v${version}";
-    hash = "sha256-gbox7EiMAJxqtPxkthxY331+cfRjEIn4onQQv8TfSEQ=";
+    hash = "sha256-HpAqdj3oKxOEuyS5Vn1A3KP7Uf9/2q528YKr3taEito=";
   };
 
   goPackage =
@@ -32,7 +32,7 @@ let
     pname = "traceway-frontend";
     inherit version src;
     sourceRoot = "${src.name}/frontend";
-    npmDepsHash = "sha256-I890PwoOtAKg74UWWdoq5TmTyAOU3EB6N4ipiSC0zns=";
+    npmDepsHash = "sha256-OcJ3IV41dnnOtpozhHInS6ObQzUwYoIPSodc69W7Oz8=";
 
     env.CLOUD_MODE = "false";
 
