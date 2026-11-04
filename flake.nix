@@ -24,6 +24,9 @@
 
     # Only here as a `follows` target so transitive `systems` inputs dedupe.
     systems.url = "github:nix-systems/default";
+    # Likewise only a `follows` target, for deploy-rs, fnox and mermaid-rs-renderer.
+    flake-utils.url = "github:numtide/flake-utils";
+    flake-utils.inputs.systems.follows = "systems";
 
     # Every nixpkgs revision, lazily: `pkgs.multiverse.tip.<pkg>`, `.at "26.05"`, `.version "<pkg>" "<ver>"`.
     multiverse.url = "github:fzakaria/nixpkgs-multiverse";
@@ -38,6 +41,15 @@
 
     mr-boxington.url = "github:jdx/mr-boxington";
     mr-boxington.inputs.nixpkgs.follows = "nixpkgs";
+
+    fnox.url = "github:jdx/fnox";
+    fnox.inputs.nixpkgs.follows = "nixpkgs";
+    fnox.inputs.flake-utils.follows = "flake-utils";
+    fnox.inputs.crane.follows = "sparkles/crane";
+
+    mermaid-rs-renderer.url = "github:1jehuang/mermaid-rs-renderer";
+    mermaid-rs-renderer.inputs.nixpkgs.follows = "nixpkgs";
+    mermaid-rs-renderer.inputs.flake-utils.follows = "flake-utils";
 
     nimbus.url = "github:kclejeune/nimbus";
     nimbus.inputs.nixpkgs.follows = "nixpkgs";
@@ -99,7 +111,7 @@
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
     deploy-rs.inputs.flake-compat.follows = "flake-compat";
-    deploy-rs.inputs.utils.inputs.systems.follows = "systems";
+    deploy-rs.inputs.utils.follows = "flake-utils";
 
     # `follows` is lockfile hygiene only; modules/nixos/comin.nix builds comin from the host's nixpkgs.
     comin.url = "github:nlewo/comin";
@@ -478,6 +490,11 @@
                 '';
             });
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
+            # Tracks upstream master; nixpkgs trails releases by several minors.
+            fnox = inputs.fnox.packages.${prev.stdenv.hostPlatform.system}.default;
+            # Provides the `mmdr` CLI; not in nixpkgs.
+            mermaid-rs-renderer =
+              inputs.mermaid-rs-renderer.packages.${prev.stdenv.hostPlatform.system}.default;
             # nixpkgs.hex is an unrelated hex-dump tool.
             hex-dictation =
               inputs.hex-dictation.packages.${prev.stdenv.hostPlatform.system}.default.overrideAttrs

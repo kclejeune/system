@@ -16,8 +16,10 @@
       ];
 
       # Upstream's Nix module currently supports x86-64 Linux.
-      programs.hex.enable = config.desktop.enable && pkgs.stdenv.hostPlatform.system == "x86_64-linux";
-      programs.hex.package = lib.mkIf config.programs.hex.enable pkgs.hex-dictation;
+      programs.hex = {
+        enable = config.desktop.enable && pkgs.stdenv.hostPlatform.system == "x86_64-linux";
+        package = pkgs.hex-dictation;
+      };
 
       # Multiple PipeWire contexts in Hex can reduce RLIMIT_RTTIME to zero;
       # a subsequent realtime audio thread then kills the entire process.
@@ -40,14 +42,20 @@
           asciidoctor
           ast-grep
           aube
+          awscli2
+          # azure-cli
           basedpyright
           beads
           bento
           bfs
+          buf
+          buffrs
           cacert
           cachix
+          cargo-binstall
           cb
           ccusage
+          circleci-cli
           clang
           clang-tools
           claude-code
@@ -65,6 +73,7 @@
           dnsutils
           doxx
           dust
+          eksctl
           fd
           ffmpeg
           findutils
@@ -80,10 +89,13 @@
           gnugrep
           gnupg
           gnused
+          go-task
+          gofumpt
           golangci-lint
+          gomplate
+          google-cloud-sdk
           goreleaser
           (lib.hiPrio gotools)
-          go-task
           grype
           helm-docs
           httpie
@@ -100,6 +112,7 @@
           lazyworktree
           lfk
           luajit
+          mermaid-rs-renderer
           mise
           mmv
           mosh
@@ -118,17 +131,22 @@
           nmap
           nodejs_22
           nurl
+          opencode
           openldap
           openssl
+          opentofu
           ouch
           oxfmt
           oxlint
           parallel
+          pkl
           prek
           prettier
           process-compose
           procps
+          protobuf
           pv
+          pyinfra
           pyright
           rclone
           restic
@@ -138,32 +156,25 @@
           rustup
           sd
           shellcheck
-          smolvm
           sig
           skopeo
+          smolvm
           sops
           src-cli
           ssh-to-age
           sshpass
           stylua
+          taplo
+          terraform
           traceway-cli
           tree
           trivy
+          ty
           usage
           uv
           worktrunk
           yq-go
           zoxide
-          (python3.withPackages (
-            ps: with ps; [
-              httpx
-              matplotlib
-              networkx
-              numpy
-              polars
-              scipy
-            ]
-          ))
         ]
         ++ lib.optionals (config.nix.package != null) [ config.nix.package ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ iproute2mac ]
@@ -184,7 +195,7 @@
       programs.mr-boxington = {
         enable = true;
         rustAnalyzer = true;
-        settings.http.timeout = "5m";
+        settings.http.timeout = "1m";
         # Share one storage budget across worktrees on each host. Hosts with smaller
         # disks lower it, since a build's live target is not collected while it runs.
         settings.gc = {
