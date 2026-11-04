@@ -7,15 +7,15 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "mbx-cache";
-  version = "0.2.0-unstable-2026-10-28";
+  version = "0.2.0-unstable-2026-11-04";
 
   # kclejeune/mr-boxington-cache:fix/rustc-driver-and-pack-uploads
-  rev = "ffcb27527c370ca60cd65bc848e717033de7b451";
+  rev = "031126658f917a235999a8e143cfa57f833ba2cd";
   src = fetchFromGitHub {
     owner = "kclejeune";
     repo = "mr-boxington-cache";
     inherit rev;
-    hash = "sha256-6O+C8PbRhi5ainQGdSZx9v2r2NIjjYo9MJFPS9YZGGs=";
+    hash = "sha256-28kpfPakUrC7GAQl7825BHPdrE1nzXyhsOOMOKGERzA=";
   };
 
   cargoHash = "sha256-8+Yd7v/erI2hNt5KrknIGaEh6PLjezukD2LkCOYAGE8=";
