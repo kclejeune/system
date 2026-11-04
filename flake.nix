@@ -448,7 +448,29 @@
             # The full collection stays namespaced; selected tools also replace nixpkgs versions.
             llm-agents = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system};
 
-            opencode = final.llm-agents.opencode2;
+            # Upstream renames the binary to `opencode2` to coexist with v1, which no
+            # host uses; restore the original name. Throws if upstream's phases change.
+            opencode = final.llm-agents.opencode2.overrideAttrs (
+              old:
+              let
+                rename =
+                  from: to: s:
+                  if final.lib.hasInfix from s then
+                    builtins.replaceStrings [ from ] [ to ] s
+                  else
+                    throw "opencode overlay: '${from}' not found; recheck llm-agents opencode2";
+              in
+              {
+                pname = "opencode";
+                installPhase = rename "$out/bin/opencode2" "$out/bin/opencode" old.installPhase;
+                postFixup = final.lib.optionalString final.stdenv.hostPlatform.isLinux (
+                  rename ".opencode2-wrapped" ".opencode-wrapped" old.postFixup
+                );
+                meta = old.meta // {
+                  mainProgram = "opencode";
+                };
+              }
+            );
             inherit (final.llm-agents)
               beads
               ccusage
