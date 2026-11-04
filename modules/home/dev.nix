@@ -19,6 +19,20 @@
       programs.hex.enable = config.desktop.enable && pkgs.stdenv.hostPlatform.system == "x86_64-linux";
       programs.hex.package = lib.mkIf config.programs.hex.enable pkgs.hex-dictation;
 
+      # Multiple PipeWire contexts in Hex can reduce RLIMIT_RTTIME to zero;
+      # a subsequent realtime audio thread then kills the entire process.
+      # Disable client realtime scheduling for Hex while retaining audio I/O.
+      systemd.user.services.hex.Service.Environment = lib.mkIf config.programs.hex.enable [
+        "PIPEWIRE_CONFIG_DIR=${
+          pkgs.runCommand "hex-pipewire-config" { } ''
+            mkdir -p "$out"
+            cp ${pkgs.pipewire}/share/pipewire/client.conf "$out/client.conf"
+            substituteInPlace "$out/client.conf" \
+              --replace-fail 'module.rt = !false' 'module.rt = true'
+          ''
+        }"
+      ];
+
       home.packages =
         with pkgs;
         [
