@@ -302,6 +302,7 @@ in
         pkgs.firefox
         pkgs.google-chrome
         pkgs.kitty
+        pkgs.llm-agents.orca
         pkgs.obsidian
         pkgs.pulseaudio
         pkgs.signal-desktop

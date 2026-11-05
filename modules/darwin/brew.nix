@@ -18,6 +18,7 @@ _: {
         "beeftornado/rmtree"
         "nikitabobko/tap"
         "penso/tap"
+        "stablyai/orca"
       ];
       casks = [
         "1password-cli"

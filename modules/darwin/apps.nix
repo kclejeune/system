@@ -17,6 +17,7 @@ _: {
         "notion"
         "signal"
         "slack"
+        "orca"
       ];
       masApps = { };
     };
