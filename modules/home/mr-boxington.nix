@@ -105,8 +105,16 @@ _: {
         ];
 
         home.file = {
-          "${shimDir}/cargo" = lib.mkIf cfg.cargoShim { source = "${setupShim}/cargo"; };
-          "${shimDir}/mbx-target" = lib.mkIf cfg.cargoShim { source = "${setupShim}/mbx-target"; };
+          # `mbx setup` (including mise's integration) can recreate these generated
+          # files. Restore the Nix-managed shims without accumulating backups.
+          "${shimDir}/cargo" = lib.mkIf cfg.cargoShim {
+            source = "${setupShim}/cargo";
+            force = true;
+          };
+          "${shimDir}/mbx-target" = lib.mkIf cfg.cargoShim {
+            source = "${setupShim}/mbx-target";
+            force = true;
+          };
           "${configDir}/mbx/config.toml" = lib.mkIf (cfg.settings != { }) {
             source = toml.generate "mbx-config.toml" cfg.settings;
           };
