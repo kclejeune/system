@@ -39,6 +39,7 @@ _: {
           ansi = builtins.genList (n: color "palette = ${toString n}=") 16;
         };
       sheprdSettings = (pkgs.formats.toml { }).generate "sheprd-settings.toml" {
+        herdr_2_terminals = true;
         layout = "comfortable-rounded";
         theme = "light:OneHalfLight,dark:OneHalfDark";
         terminal.family = "JetBrains Mono";
