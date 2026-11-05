@@ -26,11 +26,12 @@ _: {
         "bartender"
         "ghostty"
         "hammerspoon"
-        # GPUI also installs Herdr.app in /Applications.
+        # Sheprd's cask also installs Herdr.app in /Applications.
         {
           name = "herdr-app";
           args.appdir = "~/Applications";
         }
+        # Sheprd retains this cask token and the Herdr.app bundle name.
         "herdr-gpui"
         "httpie-desktop"
         "jetbrains-toolbox"

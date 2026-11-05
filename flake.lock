@@ -414,29 +414,6 @@
         "url": "https://flakehub.com/f/cachix/git-hooks.nix/0.1.941"
       }
     },
-    "herdr-gpui": {
-      "inputs": {
-        "nixpkgs": [
-          "nixos-unstable"
-        ],
-        "rust-overlay": [
-          "rust-overlay"
-        ]
-      },
-      "locked": {
-        "lastModified": 1793607481,
-        "narHash": "sha256-kSCJOx6KX9nMm19p5E+4j4/NDiNZdSZkzWMcirVkmbI=",
-        "owner": "penso",
-        "repo": "herdr-gpui",
-        "rev": "91ec7fa6f4bc3024a6b55f24809b844615ea4be7",
-        "type": "github"
-      },
-      "original": {
-        "owner": "penso",
-        "repo": "herdr-gpui",
-        "type": "github"
-      }
-    },
     "hex-dictation": {
       "inputs": {
         "home-manager": [
@@ -955,7 +932,6 @@
         "flake-utils": "flake-utils",
         "fnox": "fnox",
         "git-hooks": "git-hooks",
-        "herdr-gpui": "herdr-gpui",
         "hex-dictation": "hex-dictation",
         "home-manager": "home-manager",
         "import-tree": "import-tree",
@@ -972,6 +948,7 @@
         "nixpkgs": "nixpkgs_5",
         "noctalia": "noctalia",
         "rust-overlay": "rust-overlay",
+        "sheprd": "sheprd",
         "smolvm": "smolvm",
         "sops-nix": "sops-nix",
         "sparkles": "sparkles",
@@ -998,6 +975,29 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "sheprd": {
+      "inputs": {
+        "nixpkgs": [
+          "nixos-unstable"
+        ],
+        "rust-overlay": [
+          "rust-overlay"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793867445,
+        "narHash": "sha256-xbBrtiOnf+pnI3Un2gP5/9NZ2l21hDhkr0MDQYXwePc=",
+        "owner": "sheprd-labs",
+        "repo": "sheprd",
+        "rev": "88a7ecf752a68f3db2be968fcd3bc051fc93eace",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sheprd-labs",
+        "repo": "sheprd",
         "type": "github"
       }
     },

@@ -17,7 +17,7 @@ _: {
           dark = "one-half-dark";
         };
       };
-      # GPUI and Ghostty share these source palettes; convert their colors to
+      # Sheprd and Ghostty share these source palettes; convert their colors to
       # the JSON format used by herdr-app instead of maintaining another copy.
       appTheme =
         name:
@@ -38,7 +38,7 @@ _: {
           selection = color "selection-background = ";
           ansi = builtins.genList (n: color "palette = ${toString n}=") 16;
         };
-      gpuiSettings = (pkgs.formats.toml { }).generate "herdr-gpui-settings.toml" {
+      sheprdSettings = (pkgs.formats.toml { }).generate "sheprd-settings.toml" {
         layout = "comfortable-rounded";
         theme = "light:OneHalfLight,dark:OneHalfDark";
         terminal.family = "JetBrains Mono";
@@ -68,7 +68,7 @@ _: {
       ++ lib.optional (
         config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux
       ) pkgs.llm-agents.herdr-app
-      ++ lib.optional (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) pkgs.herdr-gpui;
+      ++ lib.optional (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) pkgs.sheprd;
 
       xdg.configFile = lib.mkIf config.desktop.enable {
         "herdr-app/themes/one-half-light.json".source = appTheme "OneHalfLight";
@@ -90,8 +90,8 @@ _: {
         )
       );
 
-      # GPUI writes this file too; merge rather than replacing it with a store link.
-      home.activation.herdrGpuiSettings = lib.mkIf config.desktop.enable (
+      # Sheprd still uses Herdr's config path and writes this file too.
+      home.activation.sheprdSettings = lib.mkIf config.desktop.enable (
         lib.hm.dag.entryAfter [ "linkGeneration" ] (
           lib.hm.generators.mkImpureConfigMerger {
             inherit pkgs;
@@ -99,7 +99,7 @@ _: {
             empty = "{}";
             jqOperation = "$dynamic * $static";
             path = "${config.xdg.configHome}/herdr/config-gpui.local.toml";
-            staticSettings = gpuiSettings;
+            staticSettings = sheprdSettings;
             mode = "600";
           }
         )

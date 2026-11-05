@@ -70,9 +70,9 @@
     sparkles.inputs.flake-parts.follows = "flake-parts";
     sparkles.inputs.rust-overlay.follows = "rust-overlay";
 
-    herdr-gpui.url = "github:penso/herdr-gpui";
-    herdr-gpui.inputs.nixpkgs.follows = "nixos-unstable";
-    herdr-gpui.inputs.rust-overlay.follows = "rust-overlay";
+    sheprd.url = "github:sheprd-labs/sheprd";
+    sheprd.inputs.nixpkgs.follows = "nixos-unstable";
+    sheprd.inputs.rust-overlay.follows = "rust-overlay";
 
     # Only a `follows` target for inputs that still declare it.
     flake-compat.url = "github:nix-community/flake-compat";
@@ -550,7 +550,7 @@
                 })
               else
                 upstream;
-            herdr-gpui = inputs.herdr-gpui.packages.${prev.stdenv.hostPlatform.system}.default;
+            sheprd = inputs.sheprd.packages.${prev.stdenv.hostPlatform.system}.default;
             nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
             sparkles = inputs.sparkles.packages.${prev.stdenv.hostPlatform.system}.default;
 
