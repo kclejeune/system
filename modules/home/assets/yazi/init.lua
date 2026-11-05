@@ -1,3 +1,3 @@
-require("full-border"):setup({ type = ui.Border.ROUNDED })
+require("full-border"):setup({ set = "rounded" })
 require("git"):setup()
 require("zoxide"):setup({ update_db = true })
