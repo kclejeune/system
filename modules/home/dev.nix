@@ -175,6 +175,16 @@
           worktrunk
           yq-go
           zoxide
+          (python3.withPackages (
+            ps: with ps; [
+              httpx
+              matplotlib
+              networkx
+              numpy
+              polars
+              scipy
+            ]
+          ))
         ]
         ++ lib.optionals (config.nix.package != null) [ config.nix.package ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ iproute2mac ]
