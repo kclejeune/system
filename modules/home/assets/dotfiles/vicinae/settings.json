@@ -88,7 +88,7 @@
         "logout": {
           "preferences": {
             "confirm": true,
-            "customProgram": "hyprctl dispatch exit"
+            "customProgram": "hypr-exit"
           }
         },
         "power-off": {

@@ -17,10 +17,15 @@ in
       wayland.windowManager.hyprland.settings = {
         # mkBefore so eDP-1 gets its mode on the first frame, ahead of the catch-all.
         monitor = lib.mkBefore [
-          "eDP-1, 1920x1200@59.95Hz, 0x0, 1.25"
+          {
+            output = "eDP-1";
+            mode = "1920x1200@59.95Hz";
+            position = "0x0";
+            scale = 1.25;
+          }
         ];
 
-        workspace = desk.workspaces;
+        workspace_rule = desk.workspaces;
       };
 
       services.kanshi.settings = desk.mkKanshiProfiles {

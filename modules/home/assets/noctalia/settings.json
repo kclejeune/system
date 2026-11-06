@@ -569,7 +569,7 @@
       },
       {
         "action": "logout",
-        "command": "hyprctl dispatch exit",
+        "command": "hypr-exit",
         "countdownEnabled": true,
         "enabled": true,
         "keybind": "5"

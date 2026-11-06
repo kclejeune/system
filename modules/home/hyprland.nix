@@ -17,9 +17,13 @@ in
       theme = flakeCfg.flake.lib.mkTheme pkgs;
       dark = theme.palettes.dark;
       light = theme.palettes.light;
-      c = dark;
 
       hyprctl = "${config.wayland.windowManager.hyprland.package}/bin/hyprctl";
+      toLua = lib.generators.toLua { multiline = false; };
+
+      # Under the Lua config, `hyprctl dispatch X` evaluates `hl.dispatch(X)`.
+      hyprDispatch = expr: "${hyprctl} dispatch ${lib.escapeShellArg expr}";
+      dpms = action: hyprDispatch ''hl.dsp.dpms({ action = "${action}" })'';
 
       # `hyprctl reload` doesn't re-init plugins, and hypr-dynamic-cursors sometimes
       # gets stuck sluggish; bounce it. Its store path comes from the live process.
@@ -45,7 +49,7 @@ in
       # already off (lock 300s, dpms off 310s, suspend 900s) resumes to a black
       # screen that `dpms on` can't recover; lid suspends with it on are fine.
       beforeSleepHook = pkgs.writeShellScript "noctalia-before-sleep" ''
-        ${hyprctl} dispatch dpms on || true
+        ${dpms "on"} || true
         exec ${noctaliaIpc} call lockScreen lock
       '';
 
@@ -53,7 +57,7 @@ in
       # Goodix reader (the kernel re-enumerates it 3-8s after PrepareForSleep), then
       # re-arm fingerprint auth. Best-effort so a failure can't strand the lock.
       afterSleepHook = pkgs.writeShellScript "noctalia-after-sleep" ''
-        ${hyprctl} dispatch dpms on || true
+        ${dpms "on"} || true
 
         # 30 × 0.3s = 9s budget — covers observed 3–8s post-resume
         # Goodix USB re-enumeration window with margin.
@@ -73,28 +77,23 @@ in
       '';
 
       # Shared by the static config and the darkModeChange hook so they can't drift.
-      hyprThemeCmds = palette: /* bash */ ''
-        ${hyprctl} keyword general:col.active_border "rgba(${palette.lavender}ff) rgba(${palette.blue}ff) 45deg"
-        ${hyprctl} keyword general:col.inactive_border "rgba(${palette.overlay0}aa)"
-        ${hyprctl} keyword decoration:shadow:color "rgba(${palette.crust}ee)"
+      hyprTheme = palette: {
+        general.col = {
+          active_border = {
+            colors = [
+              "rgba(${palette.lavender}ff)"
+              "rgba(${palette.blue}ff)"
+            ];
+            angle = 45;
+          };
+          inactive_border = "rgba(${palette.overlay0}aa)";
+        };
+        decoration.shadow.color = "rgba(${palette.crust}ee)";
+      };
+      # `hyprctl keyword` is gone under the Lua config; eval an hl.config call instead.
+      hyprThemeCmd = palette: ''
+        ${hyprctl} eval ${lib.escapeShellArg "hl.config(${toLua (hyprTheme palette)})"}
       '';
-
-      # Letters mirror aerospace; c/h/j/k/l/w belong to other binds.
-      wsLetters = lib.stringToCharacters "abdefgimnopqrstuvxyz";
-      wsBinds = builtins.concatLists (
-        map (k: [
-          "$mod, ${k}, workspace, name:${lib.toUpper k}"
-          "$mod SHIFT, ${k}, movetoworkspace, name:${lib.toUpper k}"
-        ]) wsLetters
-      );
-      # $mod SHIFT 4/5 are the macOS-style screenshot binds.
-      numBinds = builtins.concatLists (
-        map (
-          n:
-          [ "$mod, ${toString n}, workspace, ${toString n}" ]
-          ++ lib.optional (n != 4 && n != 5) "$mod SHIFT, ${toString n}, movetoworkspace, ${toString n}"
-        ) (lib.range 1 9)
-      );
 
       # Re-seeded from the asset on every activation; runtime changes last until the
       # next switch. Persist them with `noctalia-settings-apply` into the asset.
@@ -111,9 +110,9 @@ in
               # `$1` is substituted before `sh -lc`, so this must be a command, not a path.
               darkModeChange = /* bash */ ''
                 if [ "$1" = "true" ]; then
-                  ${hyprThemeCmds dark}
+                  ${hyprThemeCmd dark}
                 else
-                  ${hyprThemeCmds light}
+                  ${hyprThemeCmd light}
                 fi
               '';
               # Feed the greeter a blurred copy; it picks it up on its next start.
@@ -157,8 +156,6 @@ in
         xwayland.enable = true;
         # Must be false under UWSM; HM's session target conflicts with it.
         systemd.enable = false;
-        # HM now defaults to Lua, which Hyprland 0.54 silently ignores.
-        configType = "hyprlang";
 
         # hyprbars, hyprgrass and hypr-dynamic-cursors don't build against nixpkgs'
         # Hyprland 0.55; re-enable once the packaged plugins catch up.
@@ -166,296 +163,438 @@ in
           # hypr-dynamic-cursors
         ];
 
+        # Each attribute renders as `hl.<name>(...)`; lists render one call per element.
         settings = {
           # Per-host rules prepend via mkBefore (displays-* modules); this catch-all stays last.
           monitor = lib.mkAfter [
-            ", preferred, auto, 1.25"
+            {
+              output = "";
+              mode = "preferred";
+              position = "auto";
+              scale = 1.25;
+            }
           ];
 
-          general = {
-            # noctalia's recommended values; blurred panels look cramped otherwise.
-            gaps_in = 5;
-            gaps_out = 10;
-            border_size = 2;
-            "col.active_border" = "rgba(${c.lavender}ff) rgba(${c.blue}ff) 45deg";
-            "col.inactive_border" = "rgba(${c.overlay0}aa)";
-            layout = "dwindle";
-            allow_tearing = false;
+          config = lib.recursiveUpdate (hyprTheme dark) {
+            general = {
+              # noctalia's recommended values; blurred panels look cramped otherwise.
+              gaps_in = 5;
+              gaps_out = 10;
+              border_size = 2;
+              layout = "dwindle";
+              allow_tearing = false;
+            };
+
+            decoration = {
+              rounding = 20;
+              rounding_power = 2;
+              blur = {
+                enabled = true;
+                size = 3;
+                passes = 2;
+                vibrancy = 0.1696;
+                new_optimizations = true;
+              };
+              shadow = {
+                enabled = true;
+                range = 4;
+                render_power = 3;
+              };
+              active_opacity = 1.0;
+              inactive_opacity = 0.98;
+            };
+
+            animations.enabled = true;
+
+            dwindle.preserve_split = true;
+
+            master.new_status = "master";
+
+            input = {
+              kb_layout = "us";
+              follow_mouse = 1;
+              sensitivity = 0;
+              accel_profile = "adaptive";
+              repeat_delay = 304;
+              repeat_rate = 77;
+              touchpad = {
+                natural_scroll = true;
+                disable_while_typing = true;
+                # Finger-count clicks so a resting palm can't right/middle-click.
+                clickfinger_behavior = true;
+                # Palm rejection without giving up tap-to-click.
+                tap_and_drag = false;
+                drag_lock = false;
+                middle_button_emulation = false;
+              };
+            };
+
+            misc = {
+              force_default_wallpaper = 0;
+              disable_hyprland_logo = true;
+              focus_on_activate = true;
+              # noctalia's power buttons kill the lock client before Hyprland exits; a long
+              # delay keeps the "lockdead" screen from flashing during logout/reboot.
+              lockdead_screen_delay = 5000;
+              # Let a relaunched lock client reattach after a crash instead of hard-locking.
+              allow_session_lock_restore = true;
+            };
+
+            ecosystem.no_update_news = true;
           };
 
-          decoration = {
-            rounding = 20;
-            rounding_power = 2;
-            blur = {
-              enabled = true;
-              size = 3;
-              passes = 2;
-              vibrancy = 0.1696;
-              new_optimizations = true;
-            };
-            shadow = {
-              enabled = true;
-              range = 4;
-              render_power = 3;
-              color = "rgba(${c.crust}ee)";
-            };
-            active_opacity = 1.0;
-            inactive_opacity = 0.98;
-          };
-
-          animations = {
-            enabled = true;
-            bezier = [
-              "easeOutQuint, 0.23, 1, 0.32, 1"
-              "easeInOutCubic, 0.65, 0.05, 0.35, 0.95"
-              "linear, 0, 0, 1, 1"
-              "almostLinear, 0.5, 0.5, 0.75, 1.0"
-              "quick, 0.15, 0, 0.1, 1"
+          # HM renders `curve` ahead of `animation` (importantPrefixes).
+          curve =
+            let
+              bezier = name: x1: y1: x2: y2: {
+                _args = [
+                  name
+                  {
+                    type = "bezier";
+                    points = [
+                      [
+                        x1
+                        y1
+                      ]
+                      [
+                        x2
+                        y2
+                      ]
+                    ];
+                  }
+                ];
+              };
+            in
+            [
+              (bezier "easeOutQuint" 0.23 1 0.32 1)
+              (bezier "easeInOutCubic" 0.65 0.05 0.35 0.95)
+              (bezier "linear" 0 0 1 1)
+              (bezier "almostLinear" 0.5 0.5 0.75 1.0)
+              (bezier "quick" 0.15 0 0.1 1)
             ];
-            animation = [
-              "global, 1, 10, default"
-              "border, 1, 5.39, easeOutQuint"
-              "windows, 1, 4.79, easeOutQuint"
-              "windowsIn, 1, 4.1, easeOutQuint, popin 87%"
-              "windowsOut, 1, 1.49, linear, popin 87%"
-              "fadeIn, 1, 1.73, almostLinear"
-              "fadeOut, 1, 1.46, almostLinear"
-              "fade, 1, 3.03, quick"
-              "layers, 1, 3.81, easeOutQuint"
-              "workspaces, 1, 1.94, almostLinear, fade"
-            ];
-          };
 
-          dwindle = {
-            preserve_split = true;
-          };
-
-          master = {
-            new_status = "master";
-          };
-
-          input = {
-            kb_layout = "us";
-            follow_mouse = 1;
-            sensitivity = 0;
-            accel_profile = "adaptive";
-            repeat_delay = 304;
-            repeat_rate = 77;
-            touchpad = {
-              natural_scroll = true;
-              disable_while_typing = true;
-              # Finger-count clicks so a resting palm can't right/middle-click.
-              clickfinger_behavior = true;
-              # Palm rejection without giving up tap-to-click.
-              "tap-and-drag" = false;
-              drag_lock = false;
-              middle_button_emulation = false;
-            };
-          };
-
-          gesture = [
-            "3, horizontal, workspace"
+          animation = map (a: a // { enabled = true; }) [
+            {
+              leaf = "global";
+              speed = 10;
+              bezier = "default";
+            }
+            {
+              leaf = "border";
+              speed = 5.39;
+              bezier = "easeOutQuint";
+            }
+            {
+              leaf = "windows";
+              speed = 4.79;
+              bezier = "easeOutQuint";
+            }
+            {
+              leaf = "windowsIn";
+              speed = 4.1;
+              bezier = "easeOutQuint";
+              style = "popin 87%";
+            }
+            {
+              leaf = "windowsOut";
+              speed = 1.49;
+              bezier = "linear";
+              style = "popin 87%";
+            }
+            {
+              leaf = "fadeIn";
+              speed = 1.73;
+              bezier = "almostLinear";
+            }
+            {
+              leaf = "fadeOut";
+              speed = 1.46;
+              bezier = "almostLinear";
+            }
+            {
+              leaf = "fade";
+              speed = 3.03;
+              bezier = "quick";
+            }
+            {
+              leaf = "layers";
+              speed = 3.81;
+              bezier = "easeOutQuint";
+            }
+            {
+              leaf = "workspaces";
+              speed = 1.94;
+              bezier = "almostLinear";
+              style = "fade";
+            }
           ];
 
-          misc = {
-            force_default_wallpaper = 0;
-            disable_hyprland_logo = true;
-            focus_on_activate = true;
-            # noctalia's power buttons kill the lock client before Hyprland exits; a long
-            # delay keeps the "lockdead" screen from flashing during logout/reboot.
-            lockdead_screen_delay = 5000;
-            # Let a relaunched lock client reattach after a crash instead of hard-locking.
-            allow_session_lock_restore = true;
+          gesture = {
+            fingers = 3;
+            direction = "horizontal";
+            action = "workspace";
           };
-
-          ecosystem = {
-            no_update_news = true;
-          };
-
-          # Apps go through uwsm-app so each gets its own scope in app.slice
-          # (https://wiki.hypr.land/Useful-Utilities/Systemd-start/).
-          exec-once = [
-            # Upstream deprecated noctalia's systemd startup.
-            "uwsm-app -- noctalia-shell"
-
-            "uwsm-app -- 1password --silent"
-          ];
 
           # External-monitor pins live in the displays-* modules.
-          workspace = [
-            "name:T, monitor:eDP-1"
-            "name:S, monitor:eDP-1"
-            "name:Z, monitor:eDP-1"
-            "name:D"
-            "name:N"
-            "name:O"
-            "name:G"
-            "name:M"
+          workspace_rule = [
+            {
+              workspace = "name:T";
+              monitor = "eDP-1";
+            }
+            {
+              workspace = "name:S";
+              monitor = "eDP-1";
+            }
+            {
+              workspace = "name:Z";
+              monitor = "eDP-1";
+            }
+            { workspace = "name:D"; }
+            { workspace = "name:N"; }
+            { workspace = "name:O"; }
+            { workspace = "name:G"; }
+            { workspace = "name:M"; }
           ];
 
-          "$mod" = "ALT";
-          "$ipc" = "${noctaliaIpc} call";
+          window_rule =
+            lib.concatLists (
+              lib.mapAttrsToList
+                (
+                  ws: classes:
+                  map (class: {
+                    match.class = class;
+                    workspace = "name:${ws}";
+                  }) classes
+                )
+                {
+                  # Terminals
+                  T = [
+                    "kitty"
+                    "org.alacritty"
+                    "ghostty"
+                    "com.mitchellh.ghostty"
+                  ];
+                  # Browsers; firefox-devedition kept for an easy switch back.
+                  B = [
+                    "brave-browser"
+                    "firefox"
+                    "firefox-devedition"
+                    "chromium-browser"
+                  ];
+                  # Editors
+                  V = [
+                    "code"
+                    "code-url-handler"
+                    "dev.zed.Zed"
+                  ];
+                  # IDEs
+                  I = [
+                    "jetbrains-idea"
+                    "jetbrains-pycharm"
+                    "jetbrains-datagrip"
+                  ];
+                  # Social / messaging
+                  S = [
+                    "Slack"
+                    "signal"
+                    "discord"
+                  ];
+                  # Video calls
+                  Z = [ "zoom" ];
+                  # Notes
+                  N = [ "obsidian" ];
+                  # Email / calendar
+                  O = [ "thunderbird" ];
+                  # Files
+                  F = [ "org.gnome.Nautilus" ];
+                  D = [ "docker-desktop" ];
+                }
+            )
+            # Float transient windows.
+            ++ [
+              {
+                match = {
+                  class = "1Password";
+                  title = "Quick.Access";
+                };
+                float = true;
+              }
+              {
+                match.class = "nm-connection-editor";
+                float = true;
+              }
+              {
+                match.class = "com.saivert.pwvucontrol";
+                float = true;
+                size = "800 600";
+              }
+              {
+                match.class = "io.github.kaii_lb.Overskride";
+                float = true;
+                size = "600 500";
+              }
+              {
+                match.title = "Picture-in-Picture";
+                float = true;
+              }
+            ];
 
-          bind = [
-            "$mod, h, movefocus, l"
-            "$mod, j, movefocus, d"
-            "$mod, k, movefocus, u"
-            "$mod, l, movefocus, r"
-
-            "$mod SHIFT, h, movewindow, l"
-            "$mod SHIFT, j, movewindow, d"
-            "$mod SHIFT, k, movewindow, u"
-            "$mod SHIFT, l, movewindow, r"
-
-            # Hyprland 0.54 removed the `togglesplit` dispatcher.
-            "$mod, slash, layoutmsg, togglesplit"
-            "$mod, comma, exec, hyprctl keyword general:layout $(hyprctl getoption general:layout -j | jq -r 'if .str == \"dwindle\" then \"master\" else \"dwindle\" end')"
-
-            "$mod, Tab, workspace, previous"
-            "$mod SHIFT, Tab, movecurrentworkspacetomonitor, +1"
-
-            # Alt+Space stays on vicinae for its dmenu mode.
-            "$mod, Return, exec, uwsm-app -- kitty"
-            "SUPER, Space, exec, $ipc launcher toggle"
-            "$mod, Space, exec, vicinae toggle"
-
-            "SUPER, d, exec, $ipc darkMode toggle"
-
-            "SUPER, r, exec, ${hyprReload}"
-
-            "$mod CTRL, q, exec, $ipc lockScreen lock"
-            "SUPER, l, exec, $ipc lockScreen lock"
-
-            ", Print, exec, $ipc plugin:screen-shot-and-record screenshot"
-            "SHIFT, Print, exec, $ipc plugin:screen-shot-and-record ocr"
-
-            # Mirrors macOS Cmd+Shift+4/5; CTRL copies to the clipboard.
-            "$mod SHIFT, 4, exec, screenshot region file"
-            "$mod SHIFT CTRL, 4, exec, screenshot region clipboard"
-            "$mod SHIFT, 5, exec, screenshot screen file"
-            "$mod SHIFT CTRL, 5, exec, screenshot screen clipboard"
-
-            "$mod SHIFT, e, exec, $ipc sessionMenu toggle"
-            "$mod, c, exec, $ipc launcher clipboard"
-
-            # alt-c is the clipboard.
-            "$mod, w, killactive"
-
-            "$mod SHIFT, semicolon, submap, service"
-            "$mod SHIFT, slash, submap, join"
-
-            "$mod, 0, workspace, name:0"
-            "$mod SHIFT, 0, movetoworkspace, name:0"
-          ]
-          ++ wsBinds
-          ++ numBinds;
-
-          # bindl also fires while locked.
-          bindl = [
-            ", XF86AudioMute, exec, $ipc volume muteOutput"
-            ", XF86AudioMicMute, exec, $ipc volume muteInput"
-          ];
-
-          # On release, so chords like Super+L don't also open the launcher.
-          bindr = [
-            "SUPER, SUPER_L, exec, $ipc launcher toggle"
-          ];
-
-          binde = [
-            "$mod SHIFT, minus, resizeactive, -50 0"
-            "$mod SHIFT, equal, resizeactive, 50 0"
-            ", XF86AudioRaiseVolume, exec, $ipc volume increase"
-            ", XF86AudioLowerVolume, exec, $ipc volume decrease"
-            ", XF86MonBrightnessUp, exec, $ipc brightness increase"
-            ", XF86MonBrightnessDown, exec, $ipc brightness decrease"
-          ];
+          # Blur the noctalia bar/panel/launcher backgrounds.
+          layer_rule = {
+            name = "noctalia";
+            match.namespace = "noctalia-background-.*$";
+            ignore_alpha = 0.5;
+            blur = true;
+            blur_popups = true;
+          };
         };
 
-        extraConfig = ''
-          # -- Window rules (inline syntax, Hyprland 0.54+) --
+        extraConfig = /* lua */ ''
+          local mod = "ALT"
+          local ipc = ${toLua "${noctaliaIpc} call"}
+          local hypr_reload = ${toLua "${hyprReload}"}
 
-          # T — Terminals
-          windowrule = match:class kitty, workspace name:T
-          windowrule = match:class org.alacritty, workspace name:T
-          windowrule = match:class ghostty, workspace name:T
-          windowrule = match:class com.mitchellh.ghostty, workspace name:T
+          local exec = hl.dsp.exec_cmd
+          local dirs = { left = "h", down = "j", up = "k", right = "l" }
 
-          # B — Browsers
-          windowrule = match:class brave-browser, workspace name:B
-          windowrule = match:class firefox, workspace name:B
-          # kept for an easy switch back to firefox-devedition
-          windowrule = match:class firefox-devedition, workspace name:B
-          windowrule = match:class chromium-browser, workspace name:B
+          local function noctalia(args)
+            return exec(ipc .. " " .. args)
+          end
 
-          # V — Editors
-          windowrule = match:class code, workspace name:V
-          windowrule = match:class code-url-handler, workspace name:V
-          windowrule = match:class dev.zed.Zed, workspace name:V
+          -- Windows on the focused workspace.
+          local function workspace_windows()
+            local ws = hl.get_active_workspace()
+            if not ws then
+              return {}
+            end
+            return hl.get_workspace_windows(ws)
+          end
 
-          # I — IDEs
-          windowrule = match:class jetbrains-idea, workspace name:I
-          windowrule = match:class jetbrains-pycharm, workspace name:I
-          windowrule = match:class jetbrains-datagrip, workspace name:I
+          -- Replaces the removed `workspaceopt allfloat`: float everything, or
+          -- tile everything if it's all floating already.
+          local function toggle_workspace_float()
+            local wins = workspace_windows()
+            local action = "disable"
+            for _, w in ipairs(wins) do
+              if not w.floating then
+                action = "enable"
+                break
+              end
+            end
+            for _, w in ipairs(wins) do
+              hl.dispatch(hl.dsp.window.float({ action = action, window = w }))
+            end
+          end
 
-          # S — Social / messaging
-          windowrule = match:class Slack, workspace name:S
-          windowrule = match:class signal, workspace name:S
-          windowrule = match:class discord, workspace name:S
+          -- aerospace's close-all-windows-but-current.
+          local function close_other_windows()
+            for _, w in ipairs(workspace_windows()) do
+              if not w.active then
+                hl.dispatch(hl.dsp.window.close({ window = w }))
+              end
+            end
+          end
 
-          # Z — Zoom / video calls
-          windowrule = match:class zoom, workspace name:Z
+          for dir, key in pairs(dirs) do
+            hl.bind(mod .. " + " .. key, hl.dsp.focus({ direction = dir }))
+            hl.bind(mod .. " + SHIFT + " .. key, hl.dsp.window.move({ direction = dir }))
+          end
 
-          # N — Notes
-          windowrule = match:class obsidian, workspace name:N
+          hl.bind(mod .. " + slash", hl.dsp.layout("togglesplit"))
+          hl.bind(mod .. " + comma", function()
+            local layout = hl.get_config("general.layout")
+            hl.config({ general = { layout = layout == "dwindle" and "master" or "dwindle" } })
+          end)
 
-          # O — Email / calendar
-          windowrule = match:class thunderbird, workspace name:O
+          hl.bind(mod .. " + Tab", hl.dsp.focus({ workspace = "previous" }))
+          hl.bind(mod .. " + SHIFT + Tab", hl.dsp.workspace.move({ monitor = "+1" }))
 
-          # F — Files
-          windowrule = match:class org.gnome.Nautilus, workspace name:F
+          -- Alt+Space stays on vicinae for its dmenu mode.
+          hl.bind(mod .. " + Return", exec("uwsm-app -- kitty"))
+          hl.bind("SUPER + Space", noctalia("launcher toggle"))
+          hl.bind(mod .. " + Space", exec("vicinae toggle"))
 
-          # D — Docker
-          windowrule = match:class docker-desktop, workspace name:D
+          hl.bind("SUPER + d", noctalia("darkMode toggle"))
+          hl.bind("SUPER + r", exec(hypr_reload))
 
-          # Float transient windows
-          windowrule = match:class 1Password match:title Quick.Access, float true
-          windowrule = match:class nm-connection-editor, float true
-          windowrule = match:class com.saivert.pwvucontrol, float true, size 800 600
-          windowrule = match:class io.github.kaii_lb.Overskride, float true, size 600 500
-          windowrule = match:title Picture-in-Picture, float true
+          hl.bind(mod .. " + CTRL + q", noctalia("lockScreen lock"))
+          hl.bind("SUPER + l", noctalia("lockScreen lock"))
 
-          # -- Noctalia layer rules --
-          # Blur the bar/panel/launcher backgrounds. Block syntax — fields
-          # use underscores (per the Layer Rules table in the Hyprland wiki)
-          # and `match:namespace` selects the noctalia surfaces.
-          layerrule {
-            name = noctalia
-            match:namespace = noctalia-background-.*$
-            ignore_alpha = 0.5
-            blur = true
-            blur_popups = true
-          }
+          hl.bind("Print", noctalia("plugin:screen-shot-and-record screenshot"))
+          hl.bind("SHIFT + Print", noctalia("plugin:screen-shot-and-record ocr"))
 
-          # -- Service submap (alt-shift-semicolon) --
-          submap = service
-          bind = ALT, r, exec, hyprctl dispatch workspaceopt allfloat
-          bind = ALT, f, togglefloating,
-          bind = , backspace, exec, hyprctl dispatch closewindow address:!active
-          bind = , escape, exec, hyprctl reload
-          bind = , escape, submap, reset
-          submap = reset
+          -- Mirrors macOS Cmd+Shift+4/5; CTRL copies to the clipboard.
+          hl.bind(mod .. " + SHIFT + 4", exec("screenshot region file"))
+          hl.bind(mod .. " + SHIFT + CTRL + 4", exec("screenshot region clipboard"))
+          hl.bind(mod .. " + SHIFT + 5", exec("screenshot screen file"))
+          hl.bind(mod .. " + SHIFT + CTRL + 5", exec("screenshot screen clipboard"))
 
-          # -- Join submap (alt-shift-slash) --
-          # Hyprland doesn't have aerospace's join-with, but we can move
-          # windows into groups. Use alt-hjkl to move the active window
-          # in a direction (same as alt-shift-ctrl-hjkl in aerospace).
-          submap = join
-          bind = ALT, h, movewindow, l
-          bind = ALT, j, movewindow, d
-          bind = ALT, k, movewindow, u
-          bind = ALT, l, movewindow, r
-          bind = , escape, submap, reset
-          submap = reset
+          hl.bind(mod .. " + SHIFT + e", noctalia("sessionMenu toggle"))
+          -- alt-c is the clipboard, so close lives on alt-w.
+          hl.bind(mod .. " + c", noctalia("launcher clipboard"))
+          hl.bind(mod .. " + w", hl.dsp.window.close())
+
+          hl.bind(mod .. " + SHIFT + semicolon", hl.dsp.submap("service"))
+          hl.bind(mod .. " + SHIFT + slash", hl.dsp.submap("join"))
+
+          -- Letters mirror aerospace; c/h/j/k/l/w belong to other binds.
+          for key in ("abdefgimnopqrstuvxyz"):gmatch(".") do
+            local ws = "name:" .. key:upper()
+            hl.bind(mod .. " + " .. key, hl.dsp.focus({ workspace = ws }))
+            hl.bind(mod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = ws }))
+          end
+
+          -- $mod SHIFT 4/5 are the screenshot binds above.
+          for i = 1, 9 do
+            hl.bind(mod .. " + " .. i, hl.dsp.focus({ workspace = i }))
+            if i ~= 4 and i ~= 5 then
+              hl.bind(mod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }))
+            end
+          end
+          hl.bind(mod .. " + 0", hl.dsp.focus({ workspace = "name:0" }))
+          hl.bind(mod .. " + SHIFT + 0", hl.dsp.window.move({ workspace = "name:0" }))
+
+          -- locked: also fires on the lock screen.
+          hl.bind("XF86AudioMute", noctalia("volume muteOutput"), { locked = true })
+          hl.bind("XF86AudioMicMute", noctalia("volume muteInput"), { locked = true })
+
+          -- On release, so chords like Super+L don't also open the launcher.
+          hl.bind("SUPER + SUPER_L", noctalia("launcher toggle"), { release = true })
+
+          hl.bind(mod .. " + SHIFT + minus", hl.dsp.window.resize({ x = -50, y = 0, relative = true }), { repeating = true })
+          hl.bind(mod .. " + SHIFT + equal", hl.dsp.window.resize({ x = 50, y = 0, relative = true }), { repeating = true })
+          hl.bind("XF86AudioRaiseVolume", noctalia("volume increase"), { repeating = true })
+          hl.bind("XF86AudioLowerVolume", noctalia("volume decrease"), { repeating = true })
+          hl.bind("XF86MonBrightnessUp", noctalia("brightness increase"), { repeating = true })
+          hl.bind("XF86MonBrightnessDown", noctalia("brightness decrease"), { repeating = true })
+
+          -- alt-shift-semicolon
+          hl.define_submap("service", function()
+            hl.bind("ALT + r", toggle_workspace_float)
+            hl.bind("ALT + f", hl.dsp.window.float({ action = "toggle" }))
+            hl.bind("backspace", close_other_windows)
+            hl.bind("escape", function()
+              hl.dispatch(hl.dsp.submap("reset"))
+              hl.exec_cmd(hypr_reload)
+            end)
+          end)
+
+          -- alt-shift-slash. Hyprland has no aerospace join-with; moving the window
+          -- in a direction is the closest equivalent.
+          hl.define_submap("join", function()
+            for dir, key in pairs(dirs) do
+              hl.bind("ALT + " .. key, hl.dsp.window.move({ direction = dir }))
+            end
+            hl.bind("escape", hl.dsp.submap("reset"))
+          end)
+
+          -- Apps go through uwsm-app so each gets its own scope in app.slice
+          -- (https://wiki.hypr.land/Useful-Utilities/Systemd-start/).
+          hl.on("hyprland.start", function()
+            -- Upstream deprecated noctalia's systemd startup.
+            hl.exec_cmd("uwsm-app -- noctalia-shell")
+            hl.exec_cmd("uwsm-app -- 1password --silent")
+          end)
         '';
       };
 
@@ -531,8 +670,8 @@ in
             }
             {
               timeout = 310;
-              on-timeout = "hyprctl dispatch dpms off";
-              on-resume = "hyprctl dispatch dpms on";
+              on-timeout = dpms "off";
+              on-resume = dpms "on";
             }
             {
               timeout = 900;
@@ -601,9 +740,12 @@ in
         pwvucontrol
         overskride
 
-        # Manual use only: the session menu uses a bare `hyprctl dispatch exit`
+        # Manual use only: the noctalia/vicinae logout entries call hypr-exit
         # because hyprshutdown hangs when an app ignores the close event.
         hyprshutdown
+        (writeShellScriptBin "hypr-exit" ''
+          exec ${hyprDispatch "hl.dsp.exit()"}
+        '')
 
         # `diff` compares the store copy (not ~/.config, which noctalia rewrites) with
         # live state; `dump`/`apply` print live state to paste into the asset.

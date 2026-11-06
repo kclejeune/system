@@ -30,10 +30,21 @@ let
   };
 in
 {
+  # hl.workspace_rule specs.
   workspaces = [
-    "name:B, monitor:desc:Dell Inc. DELL U2718Q 4K8X779B03VL, default:true"
-    "name:V, monitor:desc:Dell Inc. DELL U2718Q 4K8X77950L3L"
-    "name:I, monitor:desc:Dell Inc. DELL U2718Q 4K8X77950L3L"
+    {
+      workspace = "name:B";
+      monitor = "desc:${u2718qLeft.criteria}";
+      default = true;
+    }
+    {
+      workspace = "name:V";
+      monitor = "desc:${u2718qRight.criteria}";
+    }
+    {
+      workspace = "name:I";
+      monitor = "desc:${u2718qRight.criteria}";
+    }
   ];
 
   # `edp` maps a position to the panel's output entry; `below` is where the panel

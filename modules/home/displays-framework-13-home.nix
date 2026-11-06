@@ -16,10 +16,15 @@ in
     {
       wayland.windowManager.hyprland.settings = {
         monitor = lib.mkBefore [
-          "eDP-1, preferred, 0x0, 2"
+          {
+            output = "eDP-1";
+            mode = "preferred";
+            position = "0x0";
+            scale = 2;
+          }
         ];
 
-        workspace = desk.workspaces;
+        workspace_rule = desk.workspaces;
       };
 
       services.kanshi.settings = desk.mkKanshiProfiles {
