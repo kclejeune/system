@@ -32,7 +32,6 @@ _: {
           awk-language-server
           basedpyright
           clang-tools
-          clang
           claude-code
           cmake-language-server
           cuelsp
@@ -225,7 +224,12 @@ _: {
           plugin: "  [\"${sanitizePluginName plugin.name}\"] = \"${plugin.outPath}\",\n"
         ) plugins;
 
-      extraPackages = coreExtraPackages ++ lib.optionals config.desktop.enable desktopExtraPackages;
+      extraPackages =
+        coreExtraPackages
+        ++ lib.optionals config.desktop.enable desktopExtraPackages
+        # Linux only: on macOS this wrapper shadows /usr/bin/cc and can't link
+        # Rust outside a Nix dev shell (see dev.nix).
+        ++ lib.optionals (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) [ pkgs.clang ];
     in
     {
       # On PATH too, so the tools work outside the nvim wrapper.

@@ -56,7 +56,6 @@
           cb
           ccusage
           circleci-cli
-          clang
           clang-tools
           claude-code
           cmake
@@ -189,6 +188,10 @@
         ++ lib.optionals (config.nix.package != null) [ config.nix.package ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ iproute2mac ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+          # On macOS this wrapper shadows /usr/bin/cc, and outside a Nix dev
+          # shell its SDK lacks libiconv, so every Rust link fails with
+          # `library not found for -liconv`. Use the Xcode toolchain there.
+          clang
           systemctl-tui
           lazyjournal
         ]
