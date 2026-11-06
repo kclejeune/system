@@ -111,12 +111,14 @@ _: {
           ${fnoxInstall "zsh"}
           # ${slinkyInstall "zsh"}
         '';
-        # Non-interactive shells (scripts, CI, agents) skip .zshrc. Turn off NOMATCH (an
-        # unmatched glob aborts the whole command) and EQUALS (`echo ===` fails) there;
-        # interactive shells keep NOMATCH's typo protection.
+        # Claude Code and Codex run commands via `zsh -c` but write them for bash. Give
+        # those shells bash-like word splitting, pass unmatched globs through (NOMATCH
+        # aborts the command), and disable `=cmd` expansion (`echo ===` fails).
+        # ZSH_EXECUTION_STRING is only set for `-c`, so zsh scripts the agents launch
+        # (which inherit CLAUDECODE) keep normal zsh semantics, as do interactive shells.
         envExtra = ''
-          if [[ ! -o interactive ]]; then
-            setopt NO_NOMATCH NO_EQUALS
+          if [[ ! -o interactive && -n $ZSH_EXECUTION_STRING && ( -n $CLAUDECODE || -n $CODEX_THREAD_ID ) ]]; then
+            setopt SH_WORD_SPLIT NO_NOMATCH NO_EQUALS
           fi
         '';
         oh-my-zsh = {
