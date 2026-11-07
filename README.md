@@ -65,6 +65,15 @@ the subpackage flags refresh their separate Go and npm hashes. Check that the
 matching backend and CLI release tags still point to the same commit. The
 backend build includes the frontend; the separate build checks the CLI.
 
+`boat` packages upstream release binaries in `pkgs/boat/package.nix`. Find the
+production tag from the redirect of
+`https://boat.dev/api/boat/cli/download?platform=linux-x64&channel=prod`;
+the repository's latest release may be another component or a staging build.
+Update the version and each platform's hash with `nix store prefetch-file --json`
+against its versioned GitHub asset URL, then run
+`nix build --no-link .#boat .#boat.tests.version`. Refresh the license hash if it
+changes. The package disables Boat's automatic updater; updates go through Nix.
+
 `mbx-cache` follows a specific fork commit, so choose its revision deliberately.
 `cb` is a local script with no upstream version. Flake inputs such as `smolvm`
 are maintained through `flake.lock` instead.

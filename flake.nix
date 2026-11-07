@@ -494,6 +494,7 @@
                 }
               else
                 final.llm-agents.chatgpt;
+            boat = final.callPackage ./pkgs/boat/package.nix { };
             cb = final.callPackage ./pkgs/cb/package.nix { };
             mbx-cache = final.callPackage ./pkgs/mbx-cache/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
@@ -636,6 +637,7 @@
 
             packages = {
               inherit (pkgs)
+                boat
                 cb
                 mbx
                 mvs

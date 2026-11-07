@@ -58,7 +58,10 @@ in
           config.sops.secrets."mbx-cache/token".path;
     in
     {
-      imports = [ inputs.sops-nix.homeManagerModules.sops ];
+      imports = [
+        inputs.sops-nix.homeManagerModules.sops
+        flakeCfg.flake.homeModules.boat
+      ];
       identity = {
         enable = true;
         inherit (personalIdentity) displayName email sshSigningKey;
