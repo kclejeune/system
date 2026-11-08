@@ -514,6 +514,13 @@ in
           hl.bind("SUPER + Space", noctalia("launcher toggle"))
           hl.bind(mod .. " + Space", exec("vicinae toggle"))
 
+          ${lib.optionalString (lib.attrByPath [ "programs" "hex" "enable" ] false config) ''
+            -- Hyprland requires explicit bindings for Hex's portal shortcuts.
+            -- The IDs include the shortcuts saved in Hex's settings.
+            hl.bind("CTRL + Space", hl.dsp.global("anomaly.hex:dictation-CTRL-space"))
+            hl.bind("F9", hl.dsp.global("anomaly.hex:capture-F9"))
+          ''}
+
           hl.bind("SUPER + d", noctalia("darkMode toggle"))
           hl.bind("SUPER + r", exec(hypr_reload))
 
