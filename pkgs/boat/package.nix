@@ -75,10 +75,18 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   '';
 
   postInstall = lib.optionalString (stdenvNoCC.buildPlatform.canExecute stdenvNoCC.hostPlatform) ''
+    # Upstream emits a script for `eval`, but compinit needs an autoloadable
+    # function named after the completion file and a #compdef header.
+    "$out/bin/boat" completions zsh > boat.zsh
+    substituteInPlace boat.zsh \
+      --replace-fail '# boat shell completion (zsh)' '#compdef boat' \
+      --replace-fail '_boat_complete' '_boat' \
+      --replace-fail 'compdef _boat boat' ""
+
     installShellCompletion --cmd boat \
       --bash <("$out/bin/boat" completions bash) \
       --fish <("$out/bin/boat" completions fish) \
-      --zsh <("$out/bin/boat" completions zsh)
+      --zsh boat.zsh
   '';
 
   passthru.tests.version = testers.testVersion { package = finalAttrs.finalPackage; };
