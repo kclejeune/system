@@ -904,6 +904,14 @@ in
         source ${config.home.sessionVariablesPackage}/etc/profile.d/hm-session-vars.sh
       '';
 
+      # rtkit re-promotes Hyprland to SCHED_RR on every resume, even after its
+      # SIGXCPU handler dropped RT; the kernel has by then raised the soft
+      # RLIMIT_RTTIME past the 200ms hard limit, so the next long frame is a
+      # silent SIGKILL and start-hyprland falls back to safe mode.
+      xdg.configFile."uwsm/env-hyprland".text = ''
+        export HYPRLAND_NO_RT=1
+      '';
+
       xdg.mime.enable = true;
 
       # HM's hyprland module pins NIX_XDG_DESKTOP_PORTAL_DIR to the user profile,
