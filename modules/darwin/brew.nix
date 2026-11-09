@@ -17,7 +17,7 @@ _: {
         "anomalyco/tap"
         "beeftornado/rmtree"
         "nikitabobko/tap"
-        "penso/tap"
+        "sheprd-labs/tap"
         "stablyai/orca"
       ];
       casks = [
@@ -27,13 +27,8 @@ _: {
         "bartender"
         "ghostty"
         "hammerspoon"
-        # Sheprd's cask also installs Herdr.app in /Applications.
-        {
-          name = "herdr-app";
-          args.appdir = "~/Applications";
-        }
-        # Sheprd retains this cask token and the Herdr.app bundle name.
-        "herdr-gpui"
+        "herdr-app"
+        "sheprd"
         "httpie-desktop"
         "jetbrains-toolbox"
         "kitty"
