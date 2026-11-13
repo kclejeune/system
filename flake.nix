@@ -518,21 +518,20 @@
             });
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
             # Tracks upstream master; nixpkgs trails releases by several minors.
-            fnox = inputs.fnox.packages.${prev.stdenv.hostPlatform.system}.default;
+            fnox =
+              let
+                upstream = inputs.fnox.packages.${prev.stdenv.hostPlatform.system}.default;
+              in
+              # Darwin's strip hangs on this release after upstream signs the binary.
+              if prev.stdenv.hostPlatform.isDarwin && upstream.version == "1.48.0" then
+                upstream.overrideAttrs { dontStrip = true; }
+              else
+                upstream;
             # Provides the `mmdr` CLI; not in nixpkgs.
             mermaid-rs-renderer =
               inputs.mermaid-rs-renderer.packages.${prev.stdenv.hostPlatform.system}.default;
             # nixpkgs.hex is an unrelated hex-dump tool.
-            hex-dictation =
-              inputs.hex-dictation.packages.${prev.stdenv.hostPlatform.system}.default.overrideAttrs
-                (old: {
-                  # The scroll test needs the full model list, not the comparison view.
-                  # Remove once upstream fixes the test fixture.
-                  postPatch = (old.postPatch or "") + ''
-                    substituteInPlace src/rune_ui/tests.rs \
-                      --replace-fail 'runtime("picker-downloading", true, (900.0, 480.0))' 'runtime("picker-custom-models", true, (900.0, 480.0))'
-                  '';
-                });
+            hex-dictation = inputs.hex-dictation.packages.${prev.stdenv.hostPlatform.system}.default;
             # Upstream 1.33.0 still has the 1.32.2 release hashes; remove when fixed.
             smolvm =
               let
