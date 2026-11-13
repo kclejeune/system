@@ -25,7 +25,7 @@ _: {
           "github.com/mholt/caddy-ratelimit@v0.1.0"
           "github.com/mholt/caddy-l4@v0.1.1"
         ];
-        hash = "sha256-RjyrY8zQlhJi1VJ39Ia2PJMyr5pCDlbv1YF55N9OiGM=";
+        hash = "sha256-ZDxfGwZsAEKxy61oWwsOFkXC8wwp/ajTovq2jCCs1p0=";
       };
 
       # This LAN intercepts :53 (public resolvers are refused) and answers

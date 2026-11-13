@@ -3,6 +3,10 @@
   lib,
   fetchFromGitHub,
   rustPlatform,
+  aws-lc,
+  pkg-config,
+  sqlite,
+  zstd,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -19,6 +23,13 @@ rustPlatform.buildRustPackage rec {
   };
 
   cargoHash = "sha256-8+Yd7v/erI2hNt5KrknIGaEh6PLjezukD2LkCOYAGE8=";
+
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [
+    aws-lc
+    sqlite
+    zstd
+  ];
 
   env = {
     MBX_CACHE_BUILD_REVISION = rev;

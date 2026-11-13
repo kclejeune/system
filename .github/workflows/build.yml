@@ -17,7 +17,7 @@ jobs:
   build:
     name: build (${{ matrix.system }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 120
+    timeout-minutes: ${{ matrix.timeout-minutes }}
     strategy:
       fail-fast: false
       matrix:
@@ -25,19 +25,24 @@ jobs:
           # Sized to GitHub's runners: linux 4 vCPU / 16 GB, macOS 3 vCPU / 7 GB.
           - system: x86_64-linux
             runner: ubuntu-24.04
+            # Cold updates build every server and desktop, plus both deploy checks.
+            timeout-minutes: 240
             # One worker: every attr shares one single-threaded base eval, so more workers
             # just duplicate it (measured) and contend on the eval cache. eval-cores would
             # split it, but nix-eval-jobs 2.34.3 rejects it.
             eval-workers: 1
+            # Deploy checks evaluate every host together and need this headroom.
             eval-max-memory: 12288
-            build-jobs: 2
+            build-jobs: 1
           - system: aarch64-linux
             runner: ubuntu-24.04-arm
+            timeout-minutes: 120
             eval-workers: 2
             eval-max-memory: 3072
             build-jobs: 2
           - system: aarch64-darwin
             runner: macos-15
+            timeout-minutes: 120
             # 7 GB total: one worker only, and two concurrent builds at most.
             eval-workers: 1
             eval-max-memory: 5120
@@ -64,6 +69,8 @@ jobs:
           extra-conf: |
             accept-flake-config = true
             max-substitution-jobs = 4
+            # Bound compiler memory while the evaluator is running alongside builds.
+            cores = 2
             # Large NARs from cache.kclj.io sometimes arrive truncated on runners, and
             # Nix doesn't retry decompression errors; build from source instead.
             fallback = true
