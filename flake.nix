@@ -523,16 +523,7 @@
             mermaid-rs-renderer =
               inputs.mermaid-rs-renderer.packages.${prev.stdenv.hostPlatform.system}.default;
             # nixpkgs.hex is an unrelated hex-dump tool.
-            hex-dictation =
-              inputs.hex-dictation.packages.${prev.stdenv.hostPlatform.system}.default.overrideAttrs
-                (old: {
-                  # The scroll test needs the full model list, not the comparison view.
-                  # Remove once upstream fixes the test fixture.
-                  postPatch = (old.postPatch or "") + ''
-                    substituteInPlace src/rune_ui/tests.rs \
-                      --replace-fail 'runtime("picker-downloading", true, (900.0, 480.0))' 'runtime("picker-custom-models", true, (900.0, 480.0))'
-                  '';
-                });
+            hex-dictation = inputs.hex-dictation.packages.${prev.stdenv.hostPlatform.system}.default;
             # Upstream 1.33.0 still has the 1.32.2 release hashes; remove when fixed.
             smolvm =
               let
