@@ -518,7 +518,15 @@
             });
             nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
             # Tracks upstream master; nixpkgs trails releases by several minors.
-            fnox = inputs.fnox.packages.${prev.stdenv.hostPlatform.system}.default;
+            fnox =
+              let
+                upstream = inputs.fnox.packages.${prev.stdenv.hostPlatform.system}.default;
+              in
+              # Darwin's strip hangs on this release after upstream signs the binary.
+              if prev.stdenv.hostPlatform.isDarwin && upstream.version == "1.48.0" then
+                upstream.overrideAttrs { dontStrip = true; }
+              else
+                upstream;
             # Provides the `mmdr` CLI; not in nixpkgs.
             mermaid-rs-renderer =
               inputs.mermaid-rs-renderer.packages.${prev.stdenv.hostPlatform.system}.default;
