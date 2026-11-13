@@ -448,6 +448,13 @@
                 final.zlib
               ];
             });
+            rustfs = final.multiverse.tip.rustfs.overrideAttrs (old: {
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.pkg-config ];
+              buildInputs = (old.buildInputs or [ ]) ++ [
+                final.aws-lc
+                final.zstd
+              ];
+            });
 
             # Brave was removed from nixpkgs; keep the last indexed release available.
             brave = final.multiverse.version "brave" "1.98.63";
@@ -465,7 +472,6 @@
               netbird-signal
               netbird-ui
               netbird-upload
-              rustfs
               tailscale
               ;
             # The proxy moved its version variables into package main; the
