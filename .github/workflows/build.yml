@@ -29,9 +29,9 @@ jobs:
             # just duplicate it (measured) and contend on the eval cache. eval-cores would
             # split it, but nix-eval-jobs 2.34.3 rejects it.
             eval-workers: 1
-            # Leave half the runner's RAM for the daemon, two builds, and the runner agent.
-            eval-max-memory: 8192
-            build-jobs: 2
+            # Deploy checks evaluate every host together and need this headroom.
+            eval-max-memory: 12288
+            build-jobs: 1
           - system: aarch64-linux
             runner: ubuntu-24.04-arm
             eval-workers: 2
@@ -65,6 +65,8 @@ jobs:
           extra-conf: |
             accept-flake-config = true
             max-substitution-jobs = 4
+            # Bound compiler memory while the evaluator is running alongside builds.
+            cores = 2
             # Large NARs from cache.kclj.io sometimes arrive truncated on runners, and
             # Nix doesn't retry decompression errors; build from source instead.
             fallback = true

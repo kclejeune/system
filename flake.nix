@@ -419,6 +419,36 @@
             };
             mvs = inputs.multiverse.packages.${prev.stdenv.hostPlatform.system}.mvs;
 
+            # The collector's Swiss dependency does not support Go 1.27 yet.
+            opentelemetry-collector-contrib =
+              if prev.opentelemetry-collector-contrib.version == "0.155.0" then
+                (prev.opentelemetry-collector-releases.override {
+                  buildGoModule = final.buildGo126Module;
+                }).otelcol-contrib
+              else
+                prev.opentelemetry-collector-contrib;
+
+            # nixpkgs now requires Rust crates to link these system libraries.
+            doxx = prev.doxx.overrideAttrs (old: {
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.pkg-config ];
+              buildInputs = (old.buildInputs or [ ]) ++ [ final.zstd ];
+            });
+            aube = prev.aube.overrideAttrs (old: {
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.pkg-config ];
+              buildInputs = (old.buildInputs or [ ]) ++ [
+                final.aws-lc
+                final.zstd
+              ];
+            });
+            weave = prev.weave.overrideAttrs (old: {
+              buildInputs = (old.buildInputs or [ ]) ++ [
+                final.aws-lc
+                final.libgit2
+                final.libssh2
+                final.zlib
+              ];
+            });
+
             # Brave was removed from nixpkgs; keep the last indexed release available.
             brave = final.multiverse.version "brave" "1.98.63";
 
@@ -554,7 +584,9 @@
                 })
               else
                 upstream;
-            sheprd = inputs.sheprd.packages.${prev.stdenv.hostPlatform.system}.default;
+            sheprd = inputs.sheprd.packages.${prev.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
+              buildInputs = (old.buildInputs or [ ]) ++ [ final.sqlite ];
+            });
             nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
             sparkles = inputs.sparkles.packages.${prev.stdenv.hostPlatform.system}.default;
 
