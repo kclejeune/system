@@ -291,6 +291,14 @@ _: {
             default $remote_addr;
             ~^1:(.+)$ $1;
           }
+          # The MCP SDK rejects a public Host on a loopback connection as DNS
+          # rebinding. Match nginx's upstream address for these routes; the
+          # public issuer stays in APP_BASE_URL and X-Forwarded-Host.
+          map $uri $traceway_upstream_host {
+            default $host;
+            /mcp 127.0.0.1;
+            /mcp/write 127.0.0.1;
+          }
           limit_req_zone $traceway_client_addr zone=traceway_dashboard:10m rate=30r/s;
           limit_req_zone $traceway_client_addr zone=traceway_ingest:10m rate=120r/s;
           limit_conn_zone $traceway_client_addr zone=traceway_client:10m;
@@ -303,7 +311,7 @@ _: {
             # A location-level proxy_set_header drops the inherited
             # recommendedProxySettings, so restate them.
             proxyHeaders = ''
-              proxy_set_header Host $host;
+              proxy_set_header Host $traceway_upstream_host;
               proxy_set_header X-Real-IP $traceway_client_addr;
               proxy_set_header X-Forwarded-For $traceway_client_addr;
               proxy_set_header X-Forwarded-Proto $scheme;
