@@ -419,6 +419,9 @@
             };
             mvs = inputs.multiverse.packages.${prev.stdenv.hostPlatform.system}.mvs;
 
+            # Brave was removed from nixpkgs; keep the last indexed release available.
+            brave = final.multiverse.version "brave" "1.98.63";
+
             # Security releases available in multiverse ahead of the primary
             # nixpkgs input. Modules continue to consume the ordinary package
             # attributes, so these can be dropped independently as nixpkgs catches up.
