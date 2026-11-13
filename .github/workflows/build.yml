@@ -29,7 +29,8 @@ jobs:
             # just duplicate it (measured) and contend on the eval cache. eval-cores would
             # split it, but nix-eval-jobs 2.34.3 rejects it.
             eval-workers: 1
-            eval-max-memory: 12288
+            # Leave half the runner's RAM for the daemon, two builds, and the runner agent.
+            eval-max-memory: 8192
             build-jobs: 2
           - system: aarch64-linux
             runner: ubuntu-24.04-arm
