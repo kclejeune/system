@@ -516,7 +516,17 @@
                     --zsh <($out/bin/mbx completion zsh)
                 '';
             });
-            nimbus = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
+            nimbus =
+              let
+                upstream = inputs.nimbus.packages.${prev.stdenv.hostPlatform.system}.nimbus;
+              in
+              # Upstream's Bubble Tea update left a stale vendorHash; remove once refreshed.
+              if upstream.vendorHash == "sha256-AzyrrLbOqVLfCHfEiCIsS5bOvHJgy9R6n2VppNhvZOM=" then
+                upstream.overrideAttrs {
+                  vendorHash = "sha256-g8kxjarbKsHpJfbiMFzu9CaXP5ULAe37InKJ7tv3TrY=";
+                }
+              else
+                upstream;
             # Tracks upstream master; nixpkgs trails releases by several minors.
             fnox = inputs.fnox.packages.${prev.stdenv.hostPlatform.system}.default;
             # Provides the `mmdr` CLI; not in nixpkgs.
