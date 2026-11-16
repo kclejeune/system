@@ -3,7 +3,12 @@
   fetchFromGitHub,
   rustPlatform,
   pkg-config,
+  libgit2,
+  libssh2,
   openssl,
+  sqlite,
+  zlib,
+  zstd,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -25,7 +30,14 @@ rustPlatform.buildRustPackage rec {
     pkg-config
   ];
 
-  buildInputs = [ openssl ];
+  buildInputs = [
+    libgit2
+    libssh2
+    openssl
+    sqlite
+    zlib
+    zstd
+  ];
 
   doCheck = false;
 
