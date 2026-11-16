@@ -454,6 +454,11 @@
                 final.aws-lc
                 final.zstd
               ];
+              # LTO with one codegen unit exhausts the 16 GB CI runner.
+              env = (old.env or { }) // {
+                CARGO_PROFILE_RELEASE_LTO = "false";
+                CARGO_PROFILE_RELEASE_CODEGEN_UNITS = "16";
+              };
             });
 
             # Brave was removed from nixpkgs; keep the last indexed release available.
@@ -542,7 +547,15 @@
             traceway-cli = final.traceway.cli;
             # Upstream's derivation ships no shell completions.
             mbx = inputs.mr-boxington.packages.${prev.stdenv.hostPlatform.system}.mbx.overrideAttrs (old: {
-              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.installShellFiles ];
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+                final.installShellFiles
+                final.pkg-config
+              ];
+              # cargoSetupHook requires these system libraries in the bumped nixpkgs.
+              buildInputs = (old.buildInputs or [ ]) ++ [
+                final.aws-lc
+                final.zstd
+              ];
               postInstall =
                 (old.postInstall or "")
                 + final.lib.optionalString (final.stdenv.buildPlatform.canExecute final.stdenv.hostPlatform) ''
@@ -592,7 +605,14 @@
             sheprd = inputs.sheprd.packages.${prev.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
               buildInputs = (old.buildInputs or [ ]) ++ [ final.sqlite ];
             });
-            nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
+            nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.pkg-config ];
+              buildInputs = (old.buildInputs or [ ]) ++ [
+                final.aws-lc
+                final.sqlite
+                final.zstd
+              ];
+            });
             sparkles = inputs.sparkles.packages.${prev.stdenv.hostPlatform.system}.default;
 
             # tmux 3.7c needs jemalloc chosen explicitly on Darwin; drop once nixpkgs has the fix.
