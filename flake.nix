@@ -279,15 +279,13 @@
               # A 1.8 TB disk with many lane worktrees can afford the room.
               hm.programs.mr-boxington.settings.gc.max_total_size = "450GiB";
 
-              # The 8 GiB swap LV cannot hold a hibernation image of this 30 GiB machine, so
-              # upower's critical-battery hybrid sleep failed with ENOSPC and fell back to a
-              # suspend that drained the battery. A swap file sized past RAM holds the image.
+              # The old 8 GiB swap LV could not hold a hibernation image of this 30 GiB machine,
+              # so upower's critical-battery hybrid sleep failed with ENOSPC and fell back to a
+              # suspend that drained the battery. A swap file sized past RAM replaces it.
               swapDevices = [
                 {
                   device = "/var/lib/swapfile";
                   size = 40 * 1024;
-                  # Above the swap LV's default, so systemd hibernates into the file.
-                  priority = 10;
                 }
               ];
               # The systemd initrd resumes from the swap file through the HibernateLocation

@@ -58,10 +58,6 @@ _: {
         lvm_vg.vg = {
           type = "lvm_vg";
           lvs = {
-            swap = {
-              size = "8G";
-              content.type = "swap";
-            };
             root = {
               size = "100%FREE";
               content = {
