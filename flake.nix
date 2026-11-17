@@ -278,6 +278,27 @@
               # no budget, so every hourly collection removed each worktree's idle target.
               # A 1.8 TB disk with many lane worktrees can afford the room.
               hm.programs.mr-boxington.settings.gc.max_total_size = "450GiB";
+
+              # The 8 GiB swap LV cannot hold a hibernation image of this 30 GiB machine, so
+              # upower's critical-battery hybrid sleep failed with ENOSPC and fell back to a
+              # suspend that drained the battery. A swap file sized past RAM holds the image.
+              swapDevices = [
+                {
+                  device = "/var/lib/swapfile";
+                  size = 40 * 1024;
+                }
+              ];
+              # Resume from the swap file. Set resume_offset after the first switch from
+              # `filefrag -v /var/lib/swapfile` (first physical_offset), then rebuild.
+              boot.resumeDevice = "/dev/mapper/vg-root";
+              # boot.kernelParams = [ "resume_offset=OFFSET" ];
+              # Hibernate rather than hybrid-sleep at critical battery, with time to write it.
+              services.upower = {
+                percentageLow = 15;
+                percentageCritical = 8;
+                percentageAction = 6;
+                criticalPowerAction = "Hibernate";
+              };
             };
           };
 
