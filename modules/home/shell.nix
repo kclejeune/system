@@ -39,6 +39,9 @@ _: {
           MISE_AGE_KEY_FILE = ageKey;
           SOPS_AGE_KEY_FILE = ageKey;
           FNOX_AGE_KEY_FILE = ageKey;
+          # proto (repo-pinned toolchains via .prototools, e.g. moon in git
+          # hooks) installs under XDG data rather than its ~/.proto default.
+          PROTO_HOME = "${config.xdg.dataHome}/proto";
         }
         // lib.optionalAttrs (!onNixos) {
           # On NixOS nh's hostname default already matches; elsewhere use <user>@<system>.
@@ -49,6 +52,10 @@ _: {
           "${homeDir}/.rustup/bin"
           "${homeDir}/.cargo/bin"
           "${homeDir}/.krew/bin"
+          # proto's shims resolve each tool's version from .prototools; bin
+          # holds proto itself and its globally linked tools.
+          "${config.xdg.dataHome}/proto/shims"
+          "${config.xdg.dataHome}/proto/bin"
         ];
         shellAliases = {
           neofetch = "fastfetch";
