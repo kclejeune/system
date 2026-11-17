@@ -286,12 +286,12 @@
                 {
                   device = "/var/lib/swapfile";
                   size = 40 * 1024;
+                  # Above the swap LV's default, so systemd hibernates into the file.
+                  priority = 10;
                 }
               ];
-              # Resume from the swap file. Set resume_offset after the first switch from
-              # `filefrag -v /var/lib/swapfile` (first physical_offset), then rebuild.
-              boot.resumeDevice = "/dev/mapper/vg-root";
-              # boot.kernelParams = [ "resume_offset=OFFSET" ];
+              # The systemd initrd resumes from the swap file through the HibernateLocation
+              # EFI variable that systemd-sleep writes, so no resume_offset is needed.
               # Hibernate rather than hybrid-sleep at critical battery, with time to write it.
               services.upower = {
                 percentageLow = 15;
