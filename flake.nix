@@ -555,6 +555,7 @@
                 final.llm-agents.chatgpt;
             boat = final.callPackage ./pkgs/boat/package.nix { };
             cb = final.callPackage ./pkgs/cb/package.nix { };
+            instabox = final.callPackage ./pkgs/instabox/package.nix { };
             mbx-cache = final.callPackage ./pkgs/mbx-cache/package.nix { };
             sem-cli = final.callPackage ./pkgs/sem-cli/package.nix { };
             tpm-keyring-unlock = final.callPackage ./pkgs/tpm-keyring-unlock/package.nix { };
@@ -699,6 +700,7 @@
               inherit (pkgs)
                 boat
                 cb
+                instabox
                 mbx
                 mvs
                 sem-cli

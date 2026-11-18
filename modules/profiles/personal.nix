@@ -65,6 +65,7 @@ in
       imports = [
         inputs.sops-nix.homeManagerModules.sops
         flakeCfg.flake.homeModules.boat
+        flakeCfg.flake.homeModules.instabox
       ];
       identity = {
         enable = true;
