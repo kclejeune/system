@@ -182,6 +182,7 @@
               numpy
               polars
               scipy
+              websocket-client
             ]
           ))
         ]
