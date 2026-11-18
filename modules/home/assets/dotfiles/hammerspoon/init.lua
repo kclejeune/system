@@ -32,4 +32,8 @@ end)
 --     },
 -- })
 
-caps2esc = require("caps2esc")
+-- kanata (darwin/kanata.nix) handles Caps Lock once its daemon is installed;
+-- running both would send Escape twice.
+if not hs.fs.attributes("/Library/LaunchDaemons/org.nixos.kanata.plist") then
+    caps2esc = require("caps2esc")
+end

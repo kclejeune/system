@@ -49,9 +49,6 @@ _: {
       };
     };
 
-    system.keyboard = {
-      enableKeyMapping = true;
-      remapCapsLockToControl = true;
-    };
+    # Caps Lock remapping lives in darwin/kanata.nix.
   };
 }

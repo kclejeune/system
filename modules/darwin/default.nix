@@ -18,6 +18,7 @@ in
         flakeCfg.flake.darwinModules.nixpkgs-wiring
         flakeCfg.flake.darwinModules.brew
         flakeCfg.flake.darwinModules.preferences
+        flakeCfg.flake.darwinModules.kanata
         # Every darwin host is a GUI host; NixOS gets fonts via desktop-base.
         flakeCfg.flake.darwinModules.fonts
         flakeCfg.flake.darwinModules.nix-caches
