@@ -101,6 +101,28 @@ in
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Server $hostname;
       '';
+      # multiverse.tip had not indexed 1.30.7 on 2026-11-18. Keep HTTP/2
+      # (NetBird's gRPC endpoints require it) while patching the nginx2root CVEs;
+      # drop this definition once multiverse.tip.nginx is at least 1.30.7.
+      nginxPatched =
+        let
+          nginxPkgs = pkgs.multiverse.tip;
+        in
+        nginxPkgs.callPackage
+          (
+            { callPackage, ... }@args:
+            callPackage "${nginxPkgs.path}/pkgs/servers/http/nginx/generic.nix" args {
+              version = "1.30.7";
+              hash = "sha256-JWW1yDcFDpWPcPsPc8SOK8pFQq00n9NW9G+wxyYQvG4=";
+              flavor = "stable";
+            }
+          )
+          {
+            openssl = nginxPkgs.openssl_4_1;
+            zlib-ng = nginxPkgs.zlib-ng.override { withZlibCompat = true; };
+            withPerl = false;
+            modules = [ nginxPkgs.nginxModules.moreheaders ];
+          };
     in
     {
       # A 75 GB disk: keep the smaller Nix free-space thresholds.
@@ -131,6 +153,12 @@ in
       # Track the newest kernel line in the pinned nixpkgs, including its
       # matching out-of-tree kernel modules and tools.
       boot.kernelPackages = pkgs.linuxPackages_latest;
+      # nginx2root's unpublished kernel LPE is reachable through SCTP. This
+      # host does not use SCTP; block both automatic and explicit modprobe loads.
+      boot.blacklistedKernelModules = [ "sctp" ];
+      boot.extraModprobeConfig = ''
+        install sctp ${pkgs.coreutils}/bin/false
+      '';
       # This server has no need for multipath TCP; ordinary TCP remains available.
       boot.kernel.sysctl."net.mptcp.enabled" = 0;
 
@@ -747,7 +775,7 @@ in
       services.nginx = {
         enable = true;
         # Security fixes ahead of the host's intentionally stable nixpkgs pin.
-        package = pkgs.multiverse.tip.nginx;
+        package = nginxPatched;
         defaultSSLListenPort = nginxInternalSSLPort;
         # The 443 SNI stream re-proxies here over loopback with PROXY protocol to
         # carry the client IP. Port 80 (ACME + redirects) is direct and must not
@@ -853,6 +881,13 @@ in
             };
           };
       };
+      # A modprobe install rule does not unload a module that was already
+      # present when this generation activated. Fail closed before nginx starts.
+      systemd.services.nginx.preStart = lib.mkBefore ''
+        if ${pkgs.gnugrep}/bin/grep -q '^sctp ' /proc/modules; then
+          ${pkgs.kmod}/bin/modprobe --remove sctp
+        fi
+      '';
 
       services.lldap = {
         enable = true;
