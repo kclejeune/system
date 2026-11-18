@@ -49,6 +49,6 @@ _: {
       };
     };
 
-    # Caps Lock remapping lives in darwin/kanata.nix.
+    # Caps Lock remapping (Hammerspoon or kanata) lives in darwin/kanata.nix.
   };
 }
