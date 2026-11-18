@@ -180,6 +180,7 @@
               config.flake.nixosModules.desktop
               config.flake.nixosModules.personal-apps
               config.flake.nixosModules.profile-personal
+              config.flake.nixosModules.personal-monitoring
             ]
             ++ extra
             ++ [

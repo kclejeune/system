@@ -45,6 +45,14 @@ creation_rules:
           - *forge
           - *vault
           - *atlas
+  # Monitoring credentials shared only by the personal laptops.
+  - path_regex: secrets/laptops\.yaml$
+    key_groups:
+      - age:
+          - *kclejeune
+          - *wally
+          - *phil
+          - *stanley
   # Operator-only secrets consumed by `nix run .#unifi.*` (terranix) from the
   # workstation — no host key can read these.
   - path_regex: secrets/terraform\.yaml$
