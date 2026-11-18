@@ -15,6 +15,10 @@ let
     identity = personalIdentity // {
       enable = true;
     };
+    # Authorize Herdr Mobile only on personal hosts, without granting root access.
+    user.openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII8rBFnz5b/WrQ+qMNLOOk3kD3xQhhsbNI4V8XHhog26 herdr-mobile"
+    ];
     hm.imports = [ flakeCfg.flake.homeModules.profile-personal ];
   };
 in
