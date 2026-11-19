@@ -66,6 +66,7 @@ in
         inputs.sops-nix.homeManagerModules.sops
         flakeCfg.flake.homeModules.boat
         flakeCfg.flake.homeModules.instabox
+        flakeCfg.flake.homeModules.lizard
       ];
       identity = {
         enable = true;
