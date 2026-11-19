@@ -580,8 +580,8 @@
               let
                 upstream = inputs.fnox.packages.${prev.stdenv.hostPlatform.system}.default;
               in
-              # Darwin's strip hangs on this release after upstream signs the binary.
-              if prev.stdenv.hostPlatform.isDarwin && upstream.version == "1.48.0" then
+              # Darwin's strip can hang on the binary signed during installPhase.
+              if prev.stdenv.hostPlatform.isDarwin then
                 upstream.overrideAttrs { dontStrip = true; }
               else
                 upstream;
