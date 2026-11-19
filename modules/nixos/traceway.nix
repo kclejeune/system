@@ -64,11 +64,6 @@ _: {
           default = 30;
           description = "Telemetry row retention (SQLite + DuckDB). 0 disables pruning.";
         };
-        ingestMaxConcurrent = lib.mkOption {
-          type = lib.types.ints.positive;
-          default = 4;
-          description = "Maximum concurrent telemetry ingest requests (INGEST_MAX_CONCURRENT). Size this for memoryLimit because each request can hold a decoded body.";
-        };
         opampPollIntervalSeconds = lib.mkOption {
           type = lib.types.ints.between 60 86400;
           default = 300;
@@ -174,7 +169,6 @@ _: {
           SQLITE_RETENTION_DAYS=${toString cfg.retentionDays}
           DUCKDB_RETENTION_DAYS=${toString cfg.retentionDays}
           V2_MOVE_OVER=${lib.boolToString cfg.v2MoveOver}
-          INGEST_MAX_CONCURRENT=${toString cfg.ingestMaxConcurrent}
           OPAMP_POLL_INTERVAL_SECONDS=${toString cfg.opampPollIntervalSeconds}
 
           STORAGE_TYPE=s3
