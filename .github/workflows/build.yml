@@ -25,13 +25,12 @@ jobs:
           # Sized to GitHub's runners: linux 4 vCPU / 16 GB, macOS 3 vCPU / 7 GB.
           - system: x86_64-linux
             runner: ubuntu-24.04
-            # Cold updates build every server and desktop, plus both deploy checks.
+            # Cold updates build every server and desktop.
             timeout-minutes: 240
             # One worker: every attr shares one single-threaded base eval, so more workers
             # just duplicate it (measured) and contend on the eval cache. eval-cores would
             # split it, but nix-eval-jobs 2.34.3 rejects it.
             eval-workers: 1
-            # Deploy checks evaluate every host together and need this headroom.
             eval-max-memory: 12288
             build-jobs: 1
           - system: aarch64-linux

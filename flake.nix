@@ -845,7 +845,12 @@
                 filterSystem (self.darwinConfigurations // self.nixosConfigurations)
               ))
               // self'.devShells
-              // self'.checks;
+              # Both deploy-rs checks pull in the wrapped deploy profiles.
+              # Comin uses the system closures above.
+              // builtins.removeAttrs self'.checks [
+                "deploy-activate"
+                "deploy-schema"
+              ];
             # Every deploy node is x86_64-linux.
             checks = lib.optionalAttrs (system == "x86_64-linux") (pkgs.deploy-rs.lib.deployChecks self.deploy);
           };
