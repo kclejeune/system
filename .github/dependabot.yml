@@ -16,6 +16,15 @@ updates:
       interval: daily
       time: "11:30"
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 1
+      # Use flake input names for Multiverse and repos under kclejeune.
+      exclude:
+        - "multiverse"
+        - "nh"
+        - "nimbus"
+        - "noctalia"
+        - "sparkles"
     groups:
       # These track each other, so bump them in one PR.
       nixpkgs:
