@@ -64,6 +64,16 @@ _: {
           default = 30;
           description = "Telemetry row retention (SQLite + DuckDB). 0 disables pruning.";
         };
+        ingestMaxConcurrent = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 4;
+          description = "Maximum concurrent telemetry ingest requests (INGEST_MAX_CONCURRENT). Size this for memoryLimit because each request can hold a decoded body.";
+        };
+        opampPollIntervalSeconds = lib.mkOption {
+          type = lib.types.ints.between 60 86400;
+          default = 300;
+          description = "Polling interval in seconds advertised to OpAMP clients (OPAMP_POLL_INTERVAL_SECONDS).";
+        };
         v2MoveOver = lib.mkOption {
           type = lib.types.bool;
           default = true;
@@ -164,6 +174,8 @@ _: {
           SQLITE_RETENTION_DAYS=${toString cfg.retentionDays}
           DUCKDB_RETENTION_DAYS=${toString cfg.retentionDays}
           V2_MOVE_OVER=${lib.boolToString cfg.v2MoveOver}
+          INGEST_MAX_CONCURRENT=${toString cfg.ingestMaxConcurrent}
+          OPAMP_POLL_INTERVAL_SECONDS=${toString cfg.opampPollIntervalSeconds}
 
           STORAGE_TYPE=s3
           S3_BUCKET=${cfg.s3.bucket}
@@ -307,7 +319,7 @@ _: {
         services.nginx.virtualHosts.${cfg.domain} =
           let
             upstream = "http://127.0.0.1:${toString cfg.port}";
-            # The app trusts every X-Forwarded-For hop, so send only the client address.
+            # The backend trusts loopback, so send only the vetted client address.
             # A location-level proxy_set_header drops the inherited
             # recommendedProxySettings, so restate them.
             proxyHeaders = ''
@@ -364,6 +376,7 @@ _: {
                   proxyWebsockets = true;
                 };
               "/api/report" = ingest;
+              "= /api/recordings" = ingest;
               # Not "/api/otel/": /api/otel/spans/... is a dashboard route.
               "/api/otel/v1" = ingest;
               "/api/profiles/ingest" = ingest;
