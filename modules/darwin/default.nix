@@ -24,7 +24,10 @@ in
         flakeCfg.flake.darwinModules.nix-caches
       ];
 
-      hm.imports = [ flakeCfg.flake.homeModules.onepassword ];
+      hm.imports = [
+        flakeCfg.flake.homeModules.onepassword
+        flakeCfg.flake.homeModules.t3code-service
+      ];
       hm.desktop.enable = true;
 
       system.primaryUser = config.user.name;

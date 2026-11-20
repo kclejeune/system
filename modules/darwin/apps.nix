@@ -17,6 +17,7 @@ _: {
         "notion"
         "signal"
         "slack"
+        "t3-code"
         "orca"
       ];
       masApps = { };

@@ -29,6 +29,8 @@ in
         flakeCfg.flake.nixosModules.traceway-agent
       ];
 
+      hm.imports = [ flakeCfg.flake.homeModules.t3code-service ];
+
       # 460 GB disks: keep the shared mbx cache small enough that a gate's build target,
       # about 40 GiB and not collectable while the build runs, still fits.
       hm.programs.mr-boxington.settings.gc = {
@@ -48,7 +50,7 @@ in
       users.users.${config.user.name} = {
         isNormalUser = true;
         extraGroups = lib.mkDefault [ "wheel" ];
-        # Start the Codex service at boot, before an SSH login.
+        # Start user services at boot, before an SSH login.
         linger = true;
       };
 

@@ -163,6 +163,7 @@
           ssh-to-age
           sshpass
           stylua
+          llm-agents.t3code
           taplo
           terraform
           traceway-cli
@@ -202,6 +203,7 @@
         ]
         ++ lib.optionals (config.desktop.enable && pkgs.stdenv.hostPlatform.isLinux) [
           chromium
+          llm-agents.t3code-desktop
           playwright-test
         ];
 

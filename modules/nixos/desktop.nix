@@ -24,6 +24,8 @@ in
         flakeCfg.flake.nixosModules.trusted-network-firewall
       ];
 
+      hm.imports = [ flakeCfg.flake.homeModules.t3code-service ];
+
       services.openssh.openFirewall = false;
       services.airprint = {
         enable = true;
