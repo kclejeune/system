@@ -39,6 +39,7 @@
         with pkgs;
         [
           age
+          antigravity-cli
           asciidoctor
           ast-grep
           aube

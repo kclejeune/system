@@ -531,6 +531,7 @@
               }
             );
             inherit (final.llm-agents)
+              antigravity-cli
               beads
               ccusage
               claude-code
