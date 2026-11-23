@@ -507,47 +507,7 @@
             });
 
             # The full collection stays namespaced; selected tools also replace nixpkgs versions.
-            llm-agents =
-              let
-                inherit (prev.stdenv.hostPlatform) system;
-                packages = inputs.llm-agents.packages.${system};
-                version = "0.1.11";
-                toolchain = import inputs.llm-agents.inputs.nixpkgs { inherit system; };
-                src = toolchain.fetchFromGitHub {
-                  owner = "pingdotgg";
-                  repo = "t3code";
-                  tag = "v${version}";
-                  hash = "sha256-oI8gyTWFgtTmVK+0cVQaEcfO8EzxUUOW5s8JFG/z/U8=";
-                };
-                unwrapped =
-                  (packages.t3code.unwrapped.override {
-                    nodejs_24 = toolchain.nodejs_26;
-                    pnpm_11 = toolchain.pnpm_12;
-                  }).overrideAttrs
-                    (old: {
-                      inherit version src;
-                      pnpmDeps = old.pnpmDeps.override {
-                        inherit version src;
-                        fetcherVersion = 5;
-                        hash = "sha256-s/vm8Ox4o/AYpNC/amYP1KFWwh7SY5bCmVBuIJn9f/c=";
-                      };
-                      preBuild =
-                        builtins.replaceStrings
-                          [ "node scripts/update-release-package-versions.ts ${old.version}" ]
-                          [ "node scripts/update-release-package-versions.ts ${version}" ]
-                          old.preBuild;
-                      meta = old.meta // {
-                        changelog = "https://github.com/pingdotgg/t3code/releases/tag/v${version}";
-                      };
-                    });
-                t3code = packages.t3code.override { t3code-unwrapped = unwrapped; };
-              in
-              # 0.1.11 fixes the Antigravity OAuth flow on headless hosts.
-              packages
-              // final.lib.optionalAttrs (final.lib.versionOlder packages.t3code.version version) {
-                inherit t3code;
-                t3code-desktop = packages.t3code-desktop.override { inherit t3code; };
-              };
+            llm-agents = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system};
 
             # Upstream renames the binary to `opencode2` to coexist with v1, which no
             # host uses; restore the original name. Throws if upstream's phases change.
