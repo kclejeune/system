@@ -657,7 +657,20 @@
             sheprd = inputs.sheprd.packages.${prev.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
               buildInputs = (old.buildInputs or [ ]) ++ [ final.sqlite ];
             });
-            nh = inputs.nh.packages.${prev.stdenv.hostPlatform.system}.default;
+            nh =
+              let
+                inherit (prev.stdenv.hostPlatform) system;
+                # Use the same nixpkgs as the fork on every host.
+                pkgs = inputs.nixpkgs.legacyPackages.${system};
+              in
+              inputs.nh.packages.${system}.default.overrideAttrs (old: {
+                # Match nixpkgs' nh recipe for the Rust crates' system libraries.
+                nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.pkg-config ];
+                buildInputs = (old.buildInputs or [ ]) ++ [
+                  pkgs.aws-lc
+                  pkgs.zstd
+                ];
+              });
             sparkles = inputs.sparkles.packages.${prev.stdenv.hostPlatform.system}.default;
 
             # tmux 3.7c needs jemalloc chosen explicitly on Darwin; drop once nixpkgs has the fix.
