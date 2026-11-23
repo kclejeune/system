@@ -23,6 +23,11 @@ in
         notion-app
       ];
 
+      # Codex's node_repl MCP config can use this path across ChatGPT upgrades.
+      hm.systemd.user.tmpfiles.rules = [
+        "L+ %h/.codex/chatgpt-resources - - - - ${pkgs.chatgpt.unwrapped}/lib/chatgpt/resources"
+      ];
+
       services.syncthing = {
         enable = true;
         user = config.user.name;
