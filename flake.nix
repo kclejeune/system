@@ -664,10 +664,11 @@
                 pkgs = inputs.nixpkgs.legacyPackages.${system};
               in
               inputs.nh.packages.${system}.default.overrideAttrs (old: {
-                # Match nixpkgs' nh recipe for the Rust crates' system libraries.
+                # nixpkgs requires the Rust crates to link these system libraries.
                 nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.pkg-config ];
                 buildInputs = (old.buildInputs or [ ]) ++ [
                   pkgs.aws-lc
+                  pkgs.sqlite
                   pkgs.zstd
                 ];
               });
