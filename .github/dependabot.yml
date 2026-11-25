@@ -20,6 +20,7 @@ updates:
       default-days: 1
       # Use flake input names for Multiverse and repos under kclejeune.
       exclude:
+        - "llm-agents"
         - "multiverse"
         - "nh"
         - "nimbus"
