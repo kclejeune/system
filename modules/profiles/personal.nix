@@ -36,11 +36,6 @@ in
         sopsFile = ../../secrets/users.yaml;
         neededForUsers = true;
       };
-      sops.secrets."mbx-cache/client-token" = {
-        sopsFile = ../../secrets/users.yaml;
-        key = "mbx-cache/token";
-        owner = config.user.name;
-      };
       users.users.${config.user.name}.hashedPasswordFile =
         config.sops.secrets."users/kclejeune/password-hash".path;
     };
@@ -55,11 +50,6 @@ in
     }:
     let
       onNixos = osConfig != null && pkgs.stdenv.hostPlatform.isLinux;
-      tokenPath =
-        if onNixos then
-          "/run/secrets/mbx-cache/client-token"
-        else
-          config.sops.secrets."mbx-cache/token".path;
     in
     {
       imports = [
@@ -74,7 +64,6 @@ in
       };
       sops = lib.mkIf (!onNixos) {
         age.keyFile = "${config.xdg.configHome}/sops/age/keys.txt";
-        secrets."mbx-cache/token".sopsFile = ../../secrets/users.yaml;
       };
       # `sparkles memory` uses the shared memory dataset created through the Sparkles
       # UI on the home server. Credentials stay in the CLI's separate auth-login store.
@@ -82,15 +71,6 @@ in
         server = "https://sparkles.${flakeCfg.flake.lib.site.lanDomain}";
         memory.dataset = "slurp";
       };
-      programs.mr-boxington.settings.remote = {
-        url = "https://mbx.kclj.dev";
-        namespace = "kclejeune/dev";
-        mode = "read-write";
-        # This global config is Nix-managed and cannot be changed by a checkout.
-        # Permit authenticated local builds, not just protected-branch CI, to
-        # populate the shared cache.
-        trust_writes = true;
-        token_file = tokenPath;
-      };
+
     };
 }

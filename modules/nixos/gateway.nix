@@ -28,9 +28,6 @@ in
       netbirdDomain = "netbird.${domain}";
       netbirdProxyDomain = config.site.proxyDomain;
       netbirdProxyPort = 8443;
-      # Embedded peer address of the co-located reverse proxy. Backend firewall
-      # rules intentionally fail closed if the proxy re-registers with a new IP.
-      netbirdProxyPeerIp = "10.64.233.218";
       # 51820 is the host's wt0 and 49152+ coturn's relay range. Fixed so the
       # firewall can admit direct peer→proxy connections instead of TURN relay.
       netbirdProxyWgPort = 51821;
@@ -128,7 +125,7 @@ in
       # A 75 GB disk: keep the smaller Nix free-space thresholds.
       nix.settings.min-free = 5 * 1024 * 1024 * 1024;
       nix.settings.max-free = 20 * 1024 * 1024 * 1024;
-      # The gateway serves the mbx cache but builds nothing; a small local budget keeps
+      # The gateway builds little; a small local cache budget keeps
       # an occasional build from filling the disk.
       hm.programs.mr-boxington.settings.gc = {
         max_total_size = "20GiB";
@@ -137,7 +134,6 @@ in
 
       imports = [
         flakeCfg.flake.nixosModules.crowdsec
-        flakeCfg.flake.nixosModules.mbx-cache
         flakeCfg.flake.nixosModules.monitoring-stack
         flakeCfg.flake.nixosModules.netbird-proxy
         flakeCfg.flake.nixosModules.ntfy
@@ -197,13 +193,6 @@ in
           ntfyPort
           beszelPort
         ];
-
-        # mbx has no intended direct mesh entrypoint. Admit only the public
-        # proxy's embedded peer so other mesh peers cannot bypass its CIDR,
-        # country, or CrowdSec policy.
-        extraInputRules = lib.mkAfter ''
-          iifname "${config.services.netbird.clients.default.interface}" ip saddr ${netbirdProxyPeerIp} tcp dport 8098 accept comment "mbx cache from NetBird proxy"
-        '';
       };
 
       # Own table ahead of nixos-fw so these fire before its port accepts.
